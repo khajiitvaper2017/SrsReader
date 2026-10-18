@@ -85,7 +85,9 @@ export function Empty({
     </div>
   );
 }
-export function useSettings(scope: "extensionPages" | "popups" = "extensionPages") {
+export function useSettings(
+  scope: "extensionPages" | "popups" = "extensionPages",
+) {
   const [settings, setSettings] = useState<Settings>(defaults);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -99,7 +101,10 @@ export function useSettings(scope: "extensionPages" | "popups" = "extensionPages
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
   }, [settings.theme]);
-  useEffect(() => installInputPrevention(() => settings, scope), [settings, scope]);
+  useEffect(
+    () => installInputPrevention(() => settings, scope),
+    [settings, scope],
+  );
   return [settings, setSettings, ready] as const;
 }
 export function useChanges(callback: () => void) {

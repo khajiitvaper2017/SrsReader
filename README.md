@@ -18,6 +18,8 @@ In Firefox, open `about:debugging#/runtime/this-firefox`, choose **Load Temporar
 
 For development, use `npm run dev` or `npm run dev:firefox`. Create distribution ZIPs with `npm run zip` and `npm run zip:firefox`.
 
+Run `npm run fix` to apply ESLint fixes and format the project with Prettier. Lint errors that cannot be fixed automatically are reported in the terminal. Use `npm run format` for formatting alone, or `npm run format:check` to check formatting without changing files. The project uses Prettier’s default style from `.prettierrc.json`.
+
 ## First setup
 
 On first installation, a setup window opens. Choose a language, import a dictionary, and choose one or more lookup controls. Nothing is selected for lookup by default. **Finish setup** is available once a dictionary and a lookup control are selected.

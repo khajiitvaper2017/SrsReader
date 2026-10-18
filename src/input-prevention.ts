@@ -58,7 +58,11 @@ export function installInputPrevention(
           (options.textHover && overText(event))))
     ) {
       if (event.type === "mousedown") suppressedButtons.add(event.button);
-      if (event.button === 1 ? event.type === "mouseup" : event.type === "mousedown")
+      if (
+        event.button === 1
+          ? event.type === "mouseup"
+          : event.type === "mousedown"
+      )
         return;
       event.preventDefault();
       event.stopPropagation();
@@ -68,6 +72,7 @@ export function installInputPrevention(
   const events = ["mousedown", "mouseup", "auxclick"] as const;
   for (const name of events) document.addEventListener(name, prevent, true);
   return () => {
-    for (const name of events) document.removeEventListener(name, prevent, true);
+    for (const name of events)
+      document.removeEventListener(name, prevent, true);
   };
 }
