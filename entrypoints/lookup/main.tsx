@@ -394,7 +394,15 @@ function LookupEntry({
                         (form) => !form.startsWith("redirected from "),
                       ),
                     ),
-                  ].join(" · ")}
+                  ]
+                    .map((form) =>
+                      form === "z-"
+                        ? t("czech_z_prefix_form")
+                        : form === "za-"
+                          ? t("czech_za_prefix_form")
+                          : form,
+                    )
+                    .join(" · ")}
                 </div>
               )}
               <div className="lookup-reading">

@@ -127,7 +127,7 @@ export async function grade(
   });
 }
 export async function undoReview(id: string) {
-  await db.transaction("rw", [db.vocabulary, db.reviews], async () => {
+  return db.transaction("rw", [db.vocabulary, db.reviews], async () => {
     const review = await db.reviews.get(id);
     if (!review)
       throw new Error(t("this_review_is_no_longer_available_to_undo"));
@@ -141,6 +141,7 @@ export async function undoReview(id: string) {
       });
     else await db.vocabulary.delete(review.wordId);
     await db.reviews.delete(id);
+    return review.wordId;
   });
 }
 export async function preview(word?: Vocabulary) {

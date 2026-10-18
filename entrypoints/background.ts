@@ -39,14 +39,18 @@ export default defineBackground(() => {
     "lookup",
     "createSession",
   ]);
-  async function notify() {
-    clearLookupCache();
-    void browser.runtime.sendMessage({ event: "changed" }).catch(() => {});
+  async function notify(wordId?: string) {
+    if (!wordId) clearLookupCache();
+    const message = {
+      event: "changed",
+      word: wordId
+        ? { id: wordId, state: stateOf(await db.vocabulary.get(wordId)) }
+        : undefined,
+    };
+    void browser.runtime.sendMessage(message).catch(() => {});
     for (const tab of await browser.tabs.query({}))
       if (tab.id)
-        void browser.tabs
-          .sendMessage(tab.id, { event: "changed" })
-          .catch(() => {});
+        void browser.tabs.sendMessage(tab.id, message).catch(() => {});
   }
   async function resolved(term: string, id: string): Promise<LookupWord> {
     const settings = await getSettings();
@@ -224,7 +228,7 @@ export default defineBackground(() => {
             word.version++;
             word.updated = Date.now();
           });
-        await notify();
+        await notify(request.id);
         return;
       case "lookup":
         return (
@@ -257,7 +261,7 @@ export default defineBackground(() => {
         const word = await snapshot(await resolved(request.term, request.id));
         const saved = await mine(word, request.context);
         cacheAudio(word);
-        await notify();
+        await notify(word.id);
         return saved;
       }
       case "grade": {
@@ -270,13 +274,13 @@ export default defineBackground(() => {
           request.context,
         );
         cacheAudio(word);
-        await notify();
+        await notify(word.id);
         return result;
       }
       case "known": {
         const word = await snapshot(await resolved(request.term, request.id));
         const result = await setMastered(word, request.value);
-        await notify();
+        await notify(word.id);
         return result;
       }
       case "suspend":
@@ -288,7 +292,7 @@ export default defineBackground(() => {
             w.version++;
             w.updated = Date.now();
           });
-        await notify();
+        await notify(request.id);
         return;
       case "deleteWord":
         await db.transaction(
@@ -300,7 +304,7 @@ export default defineBackground(() => {
             await db.audio.delete(request.id);
           },
         );
-        await notify();
+        await notify(request.id);
         return;
       case "editWord":
         await db.vocabulary
@@ -323,7 +327,7 @@ export default defineBackground(() => {
             w.version++;
             w.updated = Date.now();
           });
-        await notify();
+        await notify(request.id);
         return;
       case "refreshWord": {
         const saved = await db.vocabulary.get(request.id);
@@ -345,12 +349,11 @@ export default defineBackground(() => {
             w.version++;
             w.updated = Date.now();
           });
-        await notify();
+        await notify(saved.id);
         return;
       }
       case "undo":
-        await undoReview(request.id);
-        await notify();
+        await notify(await undoReview(request.id));
         return;
       case "words":
         return (

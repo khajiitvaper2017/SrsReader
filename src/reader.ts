@@ -18,7 +18,7 @@ type Part = { node: Text; start: number; end: number };
 type Block = {
   text: string;
   parts: Part[];
-  spans: ScanSpan[];
+  spans: (ScanSpan & { range: Range })[];
   ranges: Range[];
   generation: number;
 };
@@ -41,6 +41,7 @@ export function startReader(
   const blocks = new Map<Element, Block>();
   const highlights = new Map<WordState | "unparsed", Highlight>();
   const queued = new Set<Element>();
+  const wordStates = new Map<string, WordState>();
   let settings: Settings = defaults;
   let active = false;
   const removeInputPrevention = options.onLookup
@@ -232,9 +233,10 @@ export function startReader(
             };
             const range = makeRange(parts, adjusted.start, adjusted.end);
             if (!range) continue;
-            block.spans.push(adjusted);
+            adjusted.state = wordStates.get(adjusted.ids[0]!) ?? adjusted.state;
+            block.spans.push({ ...adjusted, range });
             block.ranges.push(range);
-            highlights.get(span.state)!.add(range);
+            highlights.get(adjusted.state)!.add(range);
           }
           if (
             settings.wordColorsEnabled &&
@@ -495,6 +497,7 @@ export function startReader(
     observer?.disconnect();
     intersection?.disconnect();
     queued.clear();
+    wordStates.clear();
     for (const element of blocks.keys()) deleteBlock(element);
     if (!next || !preservePopup) closePopup();
     active = next;
@@ -728,6 +731,7 @@ export function startReader(
     event?: string;
     session?: string;
     height?: number;
+    word?: { id: string; state: WordState };
   }) => {
     if (message.event === "closeLookup") closePopup();
     if (
@@ -737,6 +741,18 @@ export function startReader(
     )
       sizePopup(message.height);
     if (message.event === "changed") {
+      if (message.word) {
+        const { id, state } = message.word;
+        wordStates.set(id, state);
+        for (const block of blocks.values())
+          for (const span of block.spans) {
+            if (span.ids[0] !== id || span.state === state) continue;
+            highlights.get(span.state)!.delete(span.range);
+            span.state = state;
+            highlights.get(state)!.add(span.range);
+          }
+        return;
+      }
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(
         () => void configure(true).catch(console.warn),

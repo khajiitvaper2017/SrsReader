@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { analyzeWords } from "./morphology";
+import { parsingCandidates, type ParsingCandidate } from "./parsing-rules";
 import {
   folded,
   normalize,
@@ -62,25 +63,34 @@ export async function lookupMany(
   });
   if (!missing.length || !dictionaries.length) return results;
   const graph = await fetchTerms(missing, dictionaries, language);
-  const analyses = await analyzeWords(
-    missing.filter((term) => !graph.get(term)?.length),
-    language,
-  );
-  const lemmas = [...new Set(analyses.values())];
-  if (lemmas.length)
-    for (const [key, value] of await fetchTerms(lemmas, dictionaries, language))
-      graph.set(key, value);
-  let frontier = [...missing, ...lemmas];
+  const fallbacks = new Map<string, ParsingCandidate[]>();
+  let frontier = missing;
   while (frontier.length) {
     const refs = new Set<string>();
-    for (const term of frontier)
-      for (const entry of graph.get(term) || []) {
+    const analyses = await analyzeWords(
+      frontier.filter((term) => !graph.get(term)?.length),
+      language,
+    );
+    for (const term of frontier) {
+      const rows = graph.get(term) || [];
+      if (!rows.length) {
+        const lemma = analyses.get(term);
+        const candidates: ParsingCandidate[] = [
+          ...(lemma ? [{ term: lemma, forms: [] }] : []),
+          ...parsingCandidates(term, language),
+        ];
+        fallbacks.set(term, candidates);
+        for (const candidate of candidates)
+          if (!graph.has(candidate.term)) refs.add(candidate.term);
+      }
+      for (const entry of rows) {
         for (const definition of entry.definitions)
           if (Array.isArray(definition) && definition[0]) {
             const target = normalize(definition[0]);
             if (!graph.has(target)) refs.add(target);
           }
       }
+    }
     frontier = [...refs];
     if (frontier.length)
       for (const [key, value] of await fetchTerms(
@@ -96,27 +106,41 @@ export async function lookupMany(
   const dictionaryPriority = new Map(dictionaries.map((d, i) => [d.id, i]));
   for (const term of missing) {
     const words = new Map<string, LookupWord>();
+    const prefixWords = new Map<string, LookupWord>();
     const unresolved = new Set<string>();
     const visited = new Set<string>();
     const visitedEntries = new Set<string>();
-    const todo = [{ term: analyses.get(term) || term, forms: [] as string[] }];
+    const todo = [{ term, forms: [] as string[], verbOnly: false }];
     while (todo.length) {
       const current = todo.pop()!;
-      if (visited.has(current.term)) continue;
-      visited.add(current.term);
+      const visitKey = JSON.stringify([current.term, current.verbOnly]);
+      if (visited.has(visitKey)) continue;
+      visited.add(visitKey);
       const rows = graph.get(current.term) || [];
       if (!rows.length) {
-        unresolved.add(current.term);
+        const candidates = fallbacks.get(current.term) || [];
+        if (!candidates.length) unresolved.add(current.term);
+        for (const candidate of candidates)
+          todo.push({
+            term: candidate.term,
+            forms: [...current.forms, ...candidate.forms],
+            verbOnly: current.verbOnly || !!candidate.verbOnly,
+          });
         continue;
       }
       for (const entry of rows) {
-        if (visitedEntries.has(entry.id)) continue;
-        visitedEntries.add(entry.id);
+        const entryKey = JSON.stringify([entry.id, current.verbOnly]);
+        if (visitedEntries.has(entryKey)) continue;
+        visitedEntries.add(entryKey);
         const dictionary = dictionaryByRevision.get(entry.revisionId)!;
         const definitions = entry.definitions.filter((d) => !Array.isArray(d));
-        if (definitions.length) {
+        if (
+          definitions.length &&
+          (!current.verbOnly || /(?:^|\s)(?:v|verb)(?:\s|$)/i.test(entry.tags))
+        ) {
+          const resolved = current.verbOnly ? prefixWords : words;
           const id = wordId(language, entry.key, entry.reading);
-          const word = words.get(id) || {
+          const word = resolved.get(id) || {
             id,
             lemma: entry.key,
             reading: entry.reading,
@@ -134,25 +158,28 @@ export async function lookupMany(
             tags: entry.tags,
             definitions,
           });
-          words.set(id, word);
+          resolved.set(id, word);
         }
         for (const definition of entry.definitions)
           if (Array.isArray(definition) && definition[0]) {
+            const target = normalize(definition[0]);
             todo.push({
-              term: normalize(definition[0]),
+              term: target,
               forms: [...current.forms, ...definition[1]],
+              verbOnly: current.verbOnly,
             });
           }
       }
     }
-    for (const word of words.values())
+    const resolved = words.size ? words : prefixWords;
+    for (const word of resolved.values())
       word.meanings.sort(
         (a, b) =>
           dictionaryPriority.get(a.dictionaryId)! -
           dictionaryPriority.get(b.dictionaryId)!,
       );
     const value = {
-      words: [...words.values()].sort(
+      words: [...resolved.values()].sort(
         (a, b) =>
           Number(a.lemma !== folded(a.lemma, language)) -
             Number(b.lemma !== folded(b.lemma, language)) ||
