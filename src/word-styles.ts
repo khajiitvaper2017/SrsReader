@@ -31,11 +31,11 @@ export const wordStylesSchema = z
   .default({
     unknown: { mode: "text", color: "#dc4c4c" },
     new: { mode: "text", color: "#e57c45" },
-    learning: { mode: "text", color: "#4a8bd6" },
+    learning: { mode: "text", color: "#d99a24" },
     review: { mode: "text", color: "#299978" },
     due: { mode: "background", color: "#d99a24" },
-    known: { mode: "text", color: "#40975c" },
-    suspended: { mode: "text", color: "#9298a4" },
+    known: { mode: "none", color: "#40975c" },
+    suspended: { mode: "none", color: "#9298a4" },
     unparsed: { mode: "none", color: "#9298a4" },
   });
 

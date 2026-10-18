@@ -32,6 +32,8 @@ export const settingsSchema = z
     disabledHosts: z.array(z.string()).default([]),
     theme: z.enum(["system", "light", "dark"]).default("system"),
     hideDictionarySources: z.boolean().default(true),
+    firstDictionaryOnly: z.boolean().default(true),
+    hiddenTags: z.array(z.string()).default([]),
     scanPopups: z.boolean().default(true),
     detectPageLanguage: z.boolean().default(true),
     nativeLanguage: languageSchema.default(systemLanguage),

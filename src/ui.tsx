@@ -1,4 +1,4 @@
-import { Volume2 } from "lucide-react";
+import { Volume2, ChevronDown, ChevronUp } from "lucide-react";
 import { t, i18n, setInterfaceLanguage, number } from "./i18n";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState, type ReactNode } from "react";
@@ -364,14 +364,52 @@ export function Meanings({
   language: string;
   settings: Settings;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const firstDictionary = meanings.find(
+    (meaning) => meaning.definitions.length,
+  )?.dictionaryId;
+  const hasMore = meanings.some(
+    (meaning) =>
+      meaning.definitions.length && meaning.dictionaryId !== firstDictionary,
+  );
+  const visible =
+    settings.firstDictionaryOnly && !expanded
+      ? meanings.filter((meaning) => meaning.dictionaryId === firstDictionary)
+      : meanings;
   const [styles, setStyles] = useState<Record<string, string>>({});
+  const [tagDescriptions, setTagDescriptions] = useState<
+    Record<string, string>
+  >({});
   const [monolingual, setMonolingual] = useState<string[]>([]);
   useEffect(() => {
+    setExpanded(false);
     let alive = true;
     void db.dictionaries
       .bulkGet(meanings.map((m) => m.dictionaryId))
-      .then((rows) => {
+      .then(async (rows) => {
+        const tags = await db.tags
+          .where("revisionId")
+          .anyOf(
+            rows
+              .filter((row) => row !== undefined)
+              .map((row) => row.revisionId),
+          )
+          .toArray();
         if (alive) {
+          setTagDescriptions(
+            Object.fromEntries(
+              rows
+                .filter((row) => row !== undefined)
+                .flatMap((row) =>
+                  tags
+                    .filter((tag) => tag.revisionId === row.revisionId)
+                    .map((tag) => [
+                      `${row.id}:${tag.name}`,
+                      tag.description || tag.name,
+                    ]),
+                ),
+            ),
+          );
           setStyles(
             Object.fromEntries(
               rows.filter((d) => d !== undefined).map((d) => [d.id, d.styles]),
@@ -387,10 +425,10 @@ export function Meanings({
     return () => {
       alive = false;
     };
-  }, [meanings, language]);
+  }, [meanings, language, settings.interfaceLanguage, settings.nativeLanguage]);
   return (
     <div className="meanings">
-      {meanings.map((meaning, i) => (
+      {visible.map((meaning, i) => (
         <section className="meaning" key={`${meaning.dictionaryId}:${i}`}>
           <div className="meaning-label">
             <span className="dictionary-name">
@@ -400,9 +438,15 @@ export function Meanings({
             </span>
             {meaning.tags
               .split(" ")
-              .filter(Boolean)
+              .filter((tag) => tag && !settings.hiddenTags.includes(tag))
               .map((tag, j) => (
-                <span className="tag" key={j}>
+                <span
+                  className="tag"
+                  key={j}
+                  title={
+                    tagDescriptions[`${meaning.dictionaryId}:${tag}`] || tag
+                  }
+                >
                   {tag}
                 </span>
               ))}
@@ -456,6 +500,20 @@ export function Meanings({
           )}
         </section>
       ))}
+      {settings.firstDictionaryOnly && hasMore && (
+        <button
+          className="quiet dictionary-expand"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? (
+            <ChevronUp aria-hidden="true" />
+          ) : (
+            <ChevronDown aria-hidden="true" />
+          )}
+          {expanded ? t("fewer_dictionaries") : t("more_dictionaries")}
+        </button>
+      )}
     </div>
   );
 }

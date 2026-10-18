@@ -12,7 +12,11 @@ Keep Settings open while downloading and importing. Once installed, dictionaries
 
 Use **↑** and **↓** to set definition priority: higher dictionaries appear first in the popup. Uncheck a dictionary to disable it.
 
+**Settings → Reading & appearance → Show first dictionary only** is enabled by default. It shows all definitions from the first dictionary with a match. **More dictionaries** reveals the remaining entries; **Fewer dictionaries** collapses them. Turn the setting off to show all dictionaries.
+
 Choose **Check updates**, then **Update** when a release is available. Checks are manual. Without an update source, import a newer ZIP with the same title and languages.
+
+Under **Settings → Reading & appearance → Dictionary tags**, search the tags from installed dictionaries and uncheck any you want to hide. A hidden tag is hidden across all dictionaries. Hover over a tag to read its explanation. These choices are included when exporting settings.
 
 ## Frequency
 

@@ -71,6 +71,7 @@ import {
 } from "../../src/languages";
 import { LookupControls } from "../../src/LookupControls";
 import { WordExamples } from "../../src/WordExamples";
+import { DictionaryTags } from "../../src/DictionaryTags";
 import { WordColors } from "../../src/WordColors";
 import { SentenceTranslation } from "../../src/SentenceTranslation";
 import { LanguageSelect } from "../../src/LanguageSelect";
@@ -1679,6 +1680,17 @@ function SettingsPage({
                   }
                 />
               </label>
+              <label className="setting-row">
+                <strong>{t("show_first_dictionary_only")}</strong>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={settings.firstDictionaryOnly}
+                  onChange={(event) =>
+                    void update({ firstDictionaryOnly: event.target.checked })
+                  }
+                />
+              </label>
               {!!settings.disabledHosts.length && (
                 <div className="setting-stack">
                   <strong>{t("disabled_websites")}</strong>
@@ -1712,6 +1724,11 @@ function SettingsPage({
                   }
                 />
               </label>
+              <DictionaryTags
+                dictionaries={dictionaries}
+                settings={settings}
+                onChange={(patch) => void update(patch)}
+              />
               <WordColors
                 settings={settings}
                 onChange={(patch) => void update(patch)}
