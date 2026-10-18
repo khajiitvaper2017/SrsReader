@@ -3,9 +3,53 @@ import {
   folded,
   normalize,
   type Frequency,
+  type LookupWord,
   type Settings,
   type Vocabulary,
 } from "./model";
+
+function frequencyRank(rows: Frequency[], lemma: string, reading: string) {
+  const matching = rows.filter(
+    (row) => row.reading === null || row.reading === normalize(reading),
+  );
+  const exact = matching.filter((row) => row.key === normalize(lemma));
+  const candidates = exact.length ? exact : matching;
+  const withReading = candidates.filter((row) => row.reading !== null);
+  return (withReading.length ? withReading : candidates).reduce(
+    (min, row) => Math.min(min, row.rank),
+    Infinity,
+  );
+}
+
+export async function wordFrequencies(
+  word: Pick<LookupWord, "lemma" | "reading" | "language">,
+) {
+  const dictionaries = (
+    await db.dictionaries.orderBy("order").toArray()
+  ).filter(
+    (d) => d.enabled && d.language === word.language && d.frequencyCount > 0,
+  );
+  if (!dictionaries.length) return [];
+  const rows = await db.frequencies
+    .where("[revisionId+folded]")
+    .anyOf(
+      dictionaries.map((d) => [
+        d.revisionId,
+        folded(word.lemma, word.language),
+      ]),
+    )
+    .toArray();
+  return dictionaries.flatMap((dictionary) => {
+    const rank = frequencyRank(
+      rows.filter((row) => row.revisionId === dictionary.revisionId),
+      word.lemma,
+      word.reading,
+    );
+    return Number.isFinite(rank)
+      ? [{ title: dictionary.index.title, rank }]
+      : [];
+  });
+}
 
 export async function orderNewWords(words: Vocabulary[], settings: Settings) {
   const dictionary = (await db.dictionaries.orderBy("order").toArray()).find(
@@ -31,18 +75,10 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
   const ranks = new Map<string, number>();
   await Promise.all(
     words.map(async (word) => {
-      const matching = (
-        byKey.get(folded(word.lemma, word.language)) || []
-      ).filter(
-        (row) =>
-          row.reading === null || row.reading === normalize(word.reading),
-      );
-      const exact = matching.filter((row) => row.key === normalize(word.lemma));
-      const candidates = exact.length ? exact : matching;
-      const reading = candidates.filter((row) => row.reading !== null);
-      const rank = (reading.length ? reading : candidates).reduce(
-        (min, row) => Math.min(min, row.rank),
-        Infinity,
+      const rank = frequencyRank(
+        byKey.get(folded(word.lemma, word.language)) || [],
+        word.lemma,
+        word.reading,
       );
       if (Number.isFinite(rank)) ranks.set(word.id, rank);
       else if (settings.missingFrequency === "random") {

@@ -837,6 +837,40 @@ mark {
   font-size: 11px;
   margin-bottom: 4px;
 }
+.frequency-badge {
+  margin: 4px 0 6px;
+  font-size: 11px;
+}
+.frequency-badge summary {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+.frequency-ranks {
+  display: grid;
+  gap: 4px;
+  padding: 7px;
+  margin-top: 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.frequency-ranks > div {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.frequency-ranks span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.frequency-ranks strong {
+  font-variant-numeric: tabular-nums;
+}
 .word-colors {
   padding: 10px 12px;
   border-top: 1px solid var(--line);

@@ -22,6 +22,7 @@ import {
 import "../../src/styles.css";
 import { ContentScriptContext } from "wxt/utils/content-script-context";
 import { startReader } from "../../src/reader";
+import { FrequencyBadge } from "../../src/FrequencyBadge";
 import { wordStateLabels } from "../../src/word-styles";
 import { readerKeysSchema } from "../../src/controls";
 
@@ -361,6 +362,7 @@ function LookupEntry({
                   onError={setError}
                 />
               </div>
+              <FrequencyBadge word={word} />
               {word.forms.filter((form) => !form.startsWith("redirected from "))
                 .length > 0 && (
                 <div className="muted small-text">

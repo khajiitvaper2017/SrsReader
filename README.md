@@ -56,6 +56,8 @@ Definitions are parsed too. Use the same lookup control on a word in a definitio
 
 Under **Settings → Reading & appearance → Word colors**, choose **Off**, **Text**, or **Background** and a color for each state. New words are words you have not saved; Saved words have not been reviewed yet. Learning includes relearning, Reviewing means the next review is in the future, and Due means a review is ready. Known and suspended words have their own styles. Unparsed covers words without a dictionary match. The same styles apply on websites and inside definitions. **Color words** switches all colors off without changing parsing or your saved styles; **Reset colors** restores the defaults.
 
+The popup’s **Freq.** badge combines ranks from enabled frequency dictionaries for the word’s language. Hover for each dictionary’s rank, or click to expand the list. With several dictionaries, the badge shows their harmonic mean, rounded to a whole rank. Missing ranks are left out; without a matching rank, no badge appears. New-card ordering still follows the first enabled frequency dictionary.
+
 **Settings → Reading & appearance → Hide dictionary source links** hides links such as Wiktionary and Kaikki in lookup popups. It is on by default; turn it off to show them.
 
 Configure lookup in **Settings → Lookup controls**. You can enable several bindings:
