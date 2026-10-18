@@ -54,7 +54,7 @@ Open a website in your selected language and use your lookup control on a highli
 
 Definitions are parsed too. Use the same lookup control on a word in a definition to open it. **Back** or **Escape** returns to the previous entry; the close button closes the popup. Turn this off with **Settings → Reading & appearance → Scan dictionary popups**.
 
-Under **Settings → Reading & appearance → Word colors**, choose **Off**, **Text**, or **Background** and a color for each state. New words are words you have not saved; Saved words have not been reviewed yet. Learning includes relearning, Reviewing means the next review is in the future, and Due means a review is ready. Known and suspended words have their own styles. Unparsed covers words without a dictionary match. The same styles apply on websites and inside definitions. **Color words** switches all colors off without changing parsing or your saved styles; **Reset colors** restores the defaults.
+Under **Settings → Reading & appearance → Word colors**, choose **Off**, **Text**, or **Background** and a color for each state. New words are words you have not saved; Saved words have not been reviewed yet. Learning includes relearning, Reviewing means the next review is in the future, and Due means a review is ready. Mastered words are green by default; suspended words have their own style. Unparsed covers words without a dictionary match. The same styles apply on websites and inside definitions. **Color words** switches all colors off without changing parsing or your saved styles; **Reset colors** restores the defaults.
 
 The popup’s **Freq.** badge combines ranks from enabled frequency dictionaries for the word’s language. Hover for each dictionary’s rank, or click to expand the list. With several dictionaries, the badge shows their harmonic mean, rounded to a whole rank. Missing ranks are left out; without a matching rank, no badge appears. New-card ordering still follows the first enabled frequency dictionary.
 
@@ -77,7 +77,9 @@ Prevention activates automatically for matching mouse lookup bindings, including
 
 Choose **Mine word** to save all meanings and the current sentence. Saving another example adds it to the same word. Choose **Again**, **Hard**, **Good**, or **Easy** to mine and review in one action, including a word you have never saved before. These buttons also review words before their scheduled due time. Opening a word alone does not count as a review.
 
-Choose **I know this** to mark a word known without scheduling it. The toolbar lets you pause all parsing or disable the current website. Browser-protected pages, image/canvas text, PDF viewers, and editable fields are not parsed.
+Choose **Master** in a lookup popup, Review, or Words to keep a word out of SRS. You can still save examples without changing its mastered status. **Unmaster** in a popup or Words restores its previous schedule, or adds it as a new card if it has never been studied. Review history is preserved. Find these words with the **Mastered** filter in Words; change their color under **Settings → Reading & appearance → Word colors**.
+
+The toolbar lets you pause all parsing or disable the current website. Browser-protected pages, image/canvas text, PDF viewers, and editable fields are not parsed.
 
 ## Review
 
@@ -93,7 +95,7 @@ Open **Review** from the toolbar. Choose **Word** or **In context** to change th
 
 Scheduling uses ts-fsrs 5.4.2 / FSRS-6, with 1-minute and 10-minute learning steps and a 10-minute relearning step. **Undo last review** restores the previous state unless that word has subsequently changed.
 
-Use **Words** to search, edit a saved definition or sentence, mark a word known, suspend it, or delete it. **Refresh from dictionary** replaces a saved definition with the current dictionary definition. Dictionary updates do not automatically rewrite saved definitions.
+Use **Words** to search, edit a saved definition or sentence, master or unmaster a word, suspend it, or delete it. **Refresh from dictionary** replaces a saved definition with the current dictionary definition. Dictionary updates do not automatically rewrite saved definitions.
 
 ## Audio
 
@@ -109,7 +111,7 @@ Exports are separate:
 
 - **Dictionaries → Export ZIP:** the installed dictionary’s original ZIP.
 - **Import & export → Settings → Export JSON:** reading preferences, lookup bindings, SRS options, and dictionary ordering.
-- **Import & export → Words & progress → Export ZIP:** saved words, definition snapshots, sentences, review history, known states, and downloaded recordings with attribution.
+- **Import & export → Words & progress → Export ZIP:** saved words, definition snapshots, sentences, review history, mastered states, and downloaded recordings with attribution.
 
 Import each file into its matching section. Settings and learning imports replace their own category after confirmation; they do not merge. Dictionaries can be restored before or after settings. Saved cards can be reviewed without their original dictionaries.
 

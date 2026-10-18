@@ -53,8 +53,19 @@ export async function mine(word: LookupWord, context?: ReadingContext) {
   return db.transaction("rw", db.vocabulary, async () => {
     const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
     addContext(saved, context);
-    if (!saved.card) saved.card = fromCard(createEmptyCard());
-    saved.known = false;
+    if (!saved.card && !saved.known) saved.card = fromCard(createEmptyCard());
+    saved.updated = Date.now();
+    saved.version++;
+    await db.vocabulary.put(saved);
+    return saved;
+  });
+}
+export async function setMastered(word: LookupWord, value: boolean) {
+  return db.transaction("rw", db.vocabulary, async () => {
+    const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
+    saved.known = value;
+    saved.suspended = false;
+    if (!value && !saved.card) saved.card = fromCard(createEmptyCard());
     saved.updated = Date.now();
     saved.version++;
     await db.vocabulary.put(saved);
@@ -75,6 +86,8 @@ export async function grade(
       throw new Error(
         "This word changed in another tab. Reopen it before grading.",
       );
+    if (before?.known)
+      throw new Error("Unmaster this word before reviewing it.");
     if (before?.suspended)
       throw new Error("Resume this word before grading it.");
     const saved = structuredClone(before || freshWord(word));
@@ -86,7 +99,6 @@ export async function grade(
       rating,
     );
     saved.card = fromCard(result.card);
-    saved.known = false;
     saved.updated = now.getTime();
     saved.version++;
     await db.vocabulary.put(saved);

@@ -18,7 +18,7 @@ export const wordStateLabels = {
   learning: "Learning",
   review: "Reviewing",
   due: "Due",
-  known: "Known",
+  known: "Mastered",
   suspended: "Suspended",
   unparsed: "Unparsed",
 };
@@ -34,7 +34,7 @@ export const wordStylesSchema = z
     learning: { mode: "text", color: "#4a8bd6" },
     review: { mode: "text", color: "#299978" },
     due: { mode: "background", color: "#d99a24" },
-    known: { mode: "none", color: "#299978" },
+    known: { mode: "text", color: "#40975c" },
     suspended: { mode: "text", color: "#9298a4" },
     unparsed: { mode: "none", color: "#9298a4" },
   });

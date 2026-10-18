@@ -306,6 +306,13 @@ mark {
   background: var(--green-soft);
   color: var(--green);
 }
+button.master-action,
+button.master-action:hover {
+  color: var(--green);
+}
+button.master-action[aria-pressed="true"] {
+  background: var(--green-soft);
+}
 .state-suspended {
   background: var(--hover);
   color: var(--muted);

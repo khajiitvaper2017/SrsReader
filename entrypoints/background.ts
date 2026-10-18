@@ -14,7 +14,7 @@ import {
   type ReadingContext,
 } from "../src/model";
 import {
-  freshWord,
+  setMastered,
   getSettings,
   grade,
   mine,
@@ -207,14 +207,7 @@ export default defineBackground(() => {
       }
       case "known": {
         const word = await snapshot(await resolved(request.term, request.id));
-        const result = await db.transaction("rw", db.vocabulary, async () => {
-          const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
-          saved.known = request.value;
-          saved.updated = Date.now();
-          saved.version++;
-          await db.vocabulary.put(saved);
-          return saved;
-        });
+        const result = await setMastered(word, request.value);
         await notify();
         return result;
       }
@@ -316,7 +309,7 @@ export default defineBackground(() => {
         const midnight = new Date();
         midnight.setHours(0, 0, 0, 0);
         return {
-          total: words.filter((w) => w.card).length,
+          total: words.length,
           known: words.filter((w) => w.known).length,
           due: words.filter((w) => stateOf(w) === "due").length,
           today: await db.reviews

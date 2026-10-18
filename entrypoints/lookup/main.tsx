@@ -226,6 +226,7 @@ function LookupEntry({
         rating >= 1 &&
         rating <= 4 &&
         !busy &&
+        !saved?.known &&
         (!settings.onlyAgainGood || rating === 1 || rating === 3)
       ) {
         event.preventDefault();
@@ -267,14 +268,16 @@ function LookupEntry({
       setBusy(false);
     }
   }
-  async function known() {
+  async function toggleMastery() {
     if (!word) return;
     setBusy(true);
+    setError("");
     try {
       setSaved(
         await rpc({ action: "known", id: word.id, term, value: !saved?.known }),
       );
-      setNotice(saved?.known ? "Marked unknown" : "Marked known");
+      setLastReview("");
+      setNotice("");
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -389,18 +392,20 @@ function LookupEntry({
                 disabled={busy}
                 onClick={() => void act()}
               >
-                <Icon name={saved?.card ? "check" : "plus"} />
-                {saved?.card ? "Save example" : "Mine word"}
+                <Icon name={saved?.card || saved?.known ? "check" : "plus"} />
+                {saved?.card || saved?.known ? "Save example" : "Mine word"}
               </button>
               <button
-                className="quiet"
+                className="quiet master-action"
+                aria-pressed={!!saved?.known}
                 disabled={busy}
-                onClick={() => void known()}
+                onClick={() => void toggleMastery()}
               >
-                {saved?.known ? "Unmark known" : "I know this"}
+                <Icon name="check" />
+                {saved?.known ? "Unmaster" : "Master"}
               </button>
             </div>
-            {saved?.suspended ? (
+            {saved?.known ? null : saved?.suspended ? (
               <button
                 className="quiet"
                 onClick={() =>

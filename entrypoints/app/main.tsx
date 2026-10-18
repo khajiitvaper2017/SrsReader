@@ -366,6 +366,24 @@ function ReviewPage({
             </button>
             {word && (
               <button
+                className="quiet master-action"
+                disabled={busy}
+                onClick={() =>
+                  void rpc({
+                    action: "known",
+                    id: word.id,
+                    term: word.lemma,
+                    value: true,
+                  })
+                    .then(load)
+                    .catch((error) => setError(error.message))
+                }
+              >
+                <Icon name="check" /> Master
+              </button>
+            )}
+            {word && (
+              <button
                 className="quiet"
                 disabled={busy}
                 onClick={() =>
@@ -580,7 +598,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                   </div>
                 </div>
               ))}
-              {word.card && (
+              {word.card && !word.known && (
                 <div className="schedule-info">
                   <span>Next review</span>
                   <strong>{new Date(word.card.due).toLocaleString()}</strong>
@@ -610,7 +628,8 @@ function WordsPage({ settings }: { settings: Settings }) {
                   Refresh from dictionary
                 </button>
                 <button
-                  className="quiet"
+                  className="quiet master-action"
+                  aria-pressed={word.known}
                   onClick={() =>
                     void action(() =>
                       rpc({
@@ -622,22 +641,25 @@ function WordsPage({ settings }: { settings: Settings }) {
                     )
                   }
                 >
-                  {word.known ? "Unmark known" : "Mark known"}
+                  <Icon name="check" />
+                  {word.known ? "Unmaster" : "Master"}
                 </button>
-                <button
-                  className="quiet"
-                  onClick={() =>
-                    void action(() =>
-                      rpc({
-                        action: "suspend",
-                        id: word.id,
-                        value: !word.suspended,
-                      }),
-                    )
-                  }
-                >
-                  {word.suspended ? "Resume" : "Suspend"}
-                </button>
+                {!word.known && (
+                  <button
+                    className="quiet"
+                    onClick={() =>
+                      void action(() =>
+                        rpc({
+                          action: "suspend",
+                          id: word.id,
+                          value: !word.suspended,
+                        }),
+                      )
+                    }
+                  >
+                    {word.suspended ? "Resume" : "Suspend"}
+                  </button>
+                )}
                 <button
                   className="danger quiet"
                   onClick={() => {
