@@ -7,6 +7,7 @@ import { rpc } from "../../src/api";
 import {
   folded,
   stateOf,
+  wordId,
   type LookupResult,
   type LookupWord,
   type ReadingContext,
@@ -130,9 +131,23 @@ function LookupEntry({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [lastReview, setLastReview] = useState("");
-  const word: LookupWord | undefined = result?.words.find(
-    (w) => w.id === selected,
-  );
+  const unparsed = result?.words.length === 0;
+  const word: LookupWord | undefined =
+    result?.words.find((w) => w.id === selected) ||
+    (unparsed && settings.studyLanguage
+      ? {
+          id: wordId(
+            settings.studyLanguage,
+            folded(term.trim(), settings.studyLanguage),
+            "",
+          ),
+          lemma: folded(term.trim(), settings.studyLanguage),
+          reading: "",
+          language: settings.studyLanguage,
+          meanings: [],
+          forms: [],
+        }
+      : undefined);
   useEffect(() => {
     if (!word) return;
     const root = document.querySelector<HTMLElement>(".lookup-reading")!;
@@ -194,6 +209,7 @@ function LookupEntry({
       .then((lookup) => {
         if (!alive) return;
         setResult(lookup);
+        setError(lookup.warning || "");
         setSelected(
           lookup.words.some((word) => word.id === page.selected)
             ? page.selected!
@@ -218,6 +234,7 @@ function LookupEntry({
         setTimes(times);
         setSettings(settings);
         setResult(result);
+        setError(result.warning || "");
       })
       .catch((error) => setError(error.message));
   }, [selected, term]);
@@ -248,6 +265,7 @@ function LookupEntry({
       if (
         rating >= 1 &&
         rating <= 4 &&
+        !unparsed &&
         !busy &&
         !saved?.known &&
         (!settings.onlyAgainGood || rating === 1 || rating === 3)
@@ -348,19 +366,6 @@ function LookupEntry({
           )}
           <ErrorBox error={error} />
           {!result && !error && <p className="muted">{t("looking_up")}</p>}
-          {result && !word && (
-            <>
-              <h1 lang={settings.studyLanguage}>{term}</h1>
-              <DefinitionEditor
-                key={term}
-                term={term}
-                context={context}
-                settings={settings}
-                onSaved={definitionSaved}
-                onError={setError}
-              />
-            </>
-          )}
           {word && (
             <>
               <div className="word-heading">
@@ -405,15 +410,17 @@ function LookupEntry({
                 </div>
                 <div className="lookup-heading-actions">
                   <FrequencyBadge word={word} />
-                  <button
-                    className="quiet icon-button"
-                    title={t("edit_definition")}
-                    aria-label={t("edit_definition")}
-                    disabled={busy}
-                    onClick={() => setEditing((value) => !value)}
-                  >
-                    <Pencil aria-hidden="true" />
-                  </button>
+                  {!unparsed && (
+                    <button
+                      className="quiet icon-button"
+                      title={t("edit_definition")}
+                      aria-label={t("edit_definition")}
+                      disabled={busy}
+                      onClick={() => setEditing((value) => !value)}
+                    >
+                      <Pencil aria-hidden="true" />
+                    </button>
+                  )}
                   <AudioButton
                     word={word}
                     settings={settings}
@@ -458,8 +465,10 @@ function LookupEntry({
                   />
                 )}
               </div>
-              {word.forms.filter((form) => !form.startsWith("redirected from "))
-                .length > 0 && (
+              {(word.forms.filter(
+                (form) => !form.startsWith("redirected from "),
+              ).length > 0 ||
+                word.meanings.some((meaning) => meaning.grammar?.length)) && (
                 <div className="muted small-text">
                   {[
                     ...new Set(
@@ -476,19 +485,29 @@ function LookupEntry({
                           : form,
                     )
                     .join(" · ")}
+                  {word.forms.length > 0 &&
+                    word.meanings.some((meaning) => meaning.grammar?.length) &&
+                    " · "}
+                  {word.meanings
+                    .flatMap((meaning) => meaning.grammar || [])
+                    .map((part, index) => (
+                      <span key={index} title={part.title}>
+                        {part.text}
+                      </span>
+                    ))}
                 </div>
               )}
               <div className="lookup-reading">
-                {editing ? (
+                {unparsed || editing ? (
                   <DefinitionEditor
                     key={word.id}
-                    word={word}
+                    word={unparsed ? undefined : word}
                     term={term}
                     context={context}
                     settings={settings}
                     onSaved={definitionSaved}
                     onError={setError}
-                    onCancel={() => setEditing(false)}
+                    onCancel={unparsed ? undefined : () => setEditing(false)}
                   />
                 ) : (
                   <Meanings
@@ -508,7 +527,7 @@ function LookupEntry({
           )}
         </div>
       </main>
-      {word && (
+      {word && !unparsed && (
         <section className="lookup-actions">
           <div className="lookup-action-row">
             <div className="row mining-actions">

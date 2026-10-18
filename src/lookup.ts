@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { analyzeWords } from "./morphology";
 import { parsingCandidates, type ParsingCandidate } from "./parsing-rules";
+import { mergeNechybujte } from "./nechybujte";
 import {
   folded,
   normalize,
@@ -224,16 +225,20 @@ export async function lookupMany(
       ),
     ]),
   ];
-  const personal = await db.vocabulary
+  const savedEntries = await db.vocabulary
     .where("lemma")
     .anyOf(lemmas)
     .filter(
       (word) =>
         word.language === language &&
-        word.meanings.some((meaning) => meaning.dictionaryId === "personal"),
+        word.meanings.some(
+          (meaning) =>
+            meaning.dictionaryId === "personal" ||
+            meaning.dictionaryId === "nechybujte",
+        ),
     )
     .toArray();
-  const byId = new Map(personal.map((word) => [word.id, word]));
+  const byId = new Map(savedEntries.map((word) => [word.id, word]));
   for (const term of terms.map(normalize)) {
     const result = results.get(term) || { words: [], unresolved: [] };
     const words = result.words.map((word) => {
@@ -243,14 +248,16 @@ export async function lookupMany(
             ...word,
             meanings: [
               ...saved.meanings.filter(
-                (meaning) => meaning.dictionaryId === "personal",
+                (meaning) =>
+                  meaning.dictionaryId === "personal" ||
+                  meaning.dictionaryId === "nechybujte",
               ),
               ...word.meanings,
             ],
           }
         : word;
     });
-    for (const word of personal) {
+    for (const word of savedEntries) {
       if (
         folded(word.lemma, language) !== folded(term, language) ||
         words.some((candidate) => candidate.id === word.id)
@@ -262,6 +269,15 @@ export async function lookupMany(
       words,
       unresolved: words.length ? [] : result.unresolved,
     });
+  }
+  if (language === "cs") {
+    const keys = terms.map((term) => folded(term, language));
+    const stored = await db.nechybujte.bulkGet(keys);
+    for (const [index, record] of stored.entries())
+      if (record) {
+        const term = normalize(terms[index]!);
+        results.set(term, mergeNechybujte(results.get(term)!, record.result));
+      }
   }
   return results;
 }

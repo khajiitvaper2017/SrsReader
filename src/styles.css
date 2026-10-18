@@ -281,8 +281,8 @@ mark {
   display: inline-block;
   padding: 0 4px;
   border-radius: 3px;
-  background: var(--hover);
-  color: var(--muted);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 10px;
   line-height: 1.6;
 }
@@ -1204,6 +1204,22 @@ button.master-action[aria-pressed="true"] {
 }
 .dictionary-content li {
   margin: 2px 0;
+}
+.dictionary-content ol[data-sc-content="glosses"] {
+  list-style: decimal !important;
+  padding-inline-start: 24px;
+}
+.dictionary-content ol[data-sc-content="glosses"] > li::before {
+  content: none !important;
+}
+.dictionary-content ol[data-sc-content="glosses"] > li::marker {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.dictionary-content [data-sc-content="tags"] span {
+  color: var(--accent) !important;
+  background-color: var(--accent-soft) !important;
+  border-color: var(--accent-line) !important;
 }
 .dictionary-content details {
   font-size: 12px;

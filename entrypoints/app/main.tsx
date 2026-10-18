@@ -1284,6 +1284,22 @@ function SettingsPage({
             {t("dictionaries_installed", { count: dictionaries.length })}
           </span>
         </div>
+        {settings.studyLanguage === "cs" && (
+          <label className="setting-row">
+            <span>
+              <strong>{t("nechybujte_online")}</strong>
+              <small>{t("nechybujte_online_help")}</small>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={settings.nechybujte}
+              onChange={(event) =>
+                void update({ nechybujte: event.target.checked })
+              }
+            />
+          </label>
+        )}
         <div
           className="import-zone"
           aria-busy={busy && progressTarget === "dictionary"}

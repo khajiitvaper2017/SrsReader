@@ -10,6 +10,7 @@ import type {
   Settings,
   Tag,
   Vocabulary,
+  LookupResult,
 } from "./model";
 
 class ReaderDatabase extends Dexie {
@@ -24,6 +25,7 @@ class ReaderDatabase extends Dexie {
   reviews!: Table<Review, string>;
   audio!: Table<AudioRecord, string>;
   settings!: Table<{ id: string; value: Settings }, string>;
+  nechybujte!: Table<{ term: string; result: LookupResult }, string>;
   exampleCorpora!: Table<
     { language: string; corpus: Blob; count: number; updated: number },
     string
@@ -52,6 +54,7 @@ class ReaderDatabase extends Dexie {
     });
     this.version(3).stores({ exampleCorpora: "language" });
     this.version(4).stores({ morphology: "language" });
+    this.version(5).stores({ nechybujte: "term" });
   }
 }
 export const db = new ReaderDatabase();

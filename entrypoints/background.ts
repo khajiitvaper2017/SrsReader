@@ -13,12 +13,15 @@ import { languageCode } from "../src/languages";
 import { wordExamples, exampleCorpusInfo } from "../src/examples";
 import { removeRevision } from "../src/dictionaries";
 import { clearLookupCache, lookupMany, scanText } from "../src/lookup";
+import { lookupNechybujte, mergeNechybujte } from "../src/nechybujte";
 import {
   folded,
   normalize,
   stateOf,
   wordId,
   type LookupWord,
+  type LookupResult,
+  type Settings,
   type ReadingContext,
 } from "../src/model";
 import {
@@ -63,11 +66,32 @@ export default defineBackground(() => {
       if (tab.id)
         void browser.tabs.sendMessage(tab.id, message).catch(() => {});
   }
+  async function lookup(
+    term: string,
+    settings: Settings,
+    refreshOnline = false,
+  ): Promise<LookupResult> {
+    const local = (await lookupMany([term], settings.studyLanguage)).get(
+      normalize(term),
+    ) || { words: [], unresolved: [] };
+    if (settings.studyLanguage !== "cs" || !settings.nechybujte) return local;
+    try {
+      return mergeNechybujte(
+        local,
+        await lookupNechybujte(term, refreshOnline),
+      );
+    } catch (error) {
+      return {
+        ...local,
+        warning: t("nechybujte_unavailable", {
+          message: (error as Error).message,
+        }),
+      };
+    }
+  }
   async function resolved(term: string, id: string): Promise<LookupWord> {
     const settings = await getSettings();
-    const match = (await lookupMany([term], settings.studyLanguage))
-      .get(normalize(term))
-      ?.words.find((w) => w.id === id);
+    const match = (await lookup(term, settings)).words.find((w) => w.id === id);
     if (match) return match;
     const saved = await db.vocabulary.get(id);
     if (saved)
@@ -246,11 +270,7 @@ export default defineBackground(() => {
         await notify(request.id);
         return;
       case "lookup":
-        return (
-          (await lookupMany([request.term], settings.studyLanguage)).get(
-            normalize(request.term),
-          ) || { words: [], unresolved: [] }
-        );
+        return lookup(request.term, settings);
       case "examples":
         return wordExamples(
           request.lemma,
@@ -386,9 +406,16 @@ export default defineBackground(() => {
         const saved = await db.vocabulary.get(request.id);
         if (!saved) throw new Error(t("word_not_found"));
         clearLookupCache();
-        const result = (await lookupMany([saved.lemma], saved.language))
-          .get(saved.lemma)
-          ?.words.find((w) => w.id === saved.id);
+        const response = await lookup(
+          saved.lemma,
+          {
+            ...settings,
+            studyLanguage: saved.language,
+          },
+          true,
+        );
+        if (response.warning) throw new Error(response.warning);
+        const result = response.words.find((w) => w.id === saved.id);
         if (
           !result ||
           !result.meanings.some(

@@ -136,7 +136,12 @@ export function startReader(
     const targets = new Set<Element>();
     while ((node = walker.nextNode())) {
       const parent = node.parentElement;
-      if (!parent || !node.textContent?.trim() || parent.closest(excluded))
+      if (
+        !parent ||
+        !node.textContent?.trim() ||
+        parent.closest(excluded) ||
+        !matchesLanguage(parent)
+      )
         continue;
       const block = parent.closest(blockSelector);
       if (block) targets.add(block);
@@ -145,6 +150,16 @@ export function startReader(
       intersection?.observe(block);
       if (immediate) enqueue(block);
     }
+  }
+  function matchesLanguage(element: Element) {
+    if (!options.onLookup) return true;
+    const marked = element.closest("[lang],[data-reading-language]");
+    if (!marked || !root.contains(marked)) return true;
+    const language =
+      marked.getAttribute("lang") ??
+      marked.getAttribute("data-reading-language") ??
+      "";
+    return language.split("-")[0] === settings.studyLanguage;
   }
   function readBlock(element: Element): { text: string; parts: Part[] } {
     const walker = document.createTreeWalker(
@@ -164,6 +179,7 @@ export function startReader(
       if (
         !parent ||
         parent.closest(excluded) ||
+        !matchesLanguage(parent) ||
         parent.closest(blockSelector) !== element
       )
         continue;
@@ -430,7 +446,9 @@ export function startReader(
     const range = selection.getRangeAt(0).cloneRange();
     if (
       !root.contains(range.startContainer) ||
-      range.startContainer.parentElement?.closest(excluded)
+      range.startContainer.parentElement?.closest(excluded) ||
+      !matchesLanguage(range.startContainer.parentElement!) ||
+      !matchesLanguage(range.endContainer.parentElement!)
     )
       return;
     const term = selection.toString().trim();
@@ -561,6 +579,15 @@ export function startReader(
             ? record.target
             : record.target.parentElement;
         if (element?.closest("[data-srs-reader]")) continue;
+        if (element && record.type === "attributes") {
+          for (const block of blocks.keys())
+            if (element === block || element.contains(block)) {
+              deleteBlock(block);
+              intersection?.unobserve(block);
+            }
+          collect(element);
+          continue;
+        }
         if (element) {
           const block = element.closest(blockSelector);
           if (block && blocks.has(block)) {
@@ -584,6 +611,12 @@ export function startReader(
       childList: true,
       subtree: true,
       characterData: true,
+      ...(options.onLookup
+        ? {
+            attributes: true,
+            attributeFilter: ["lang", "data-reading-language"],
+          }
+        : {}),
     });
     collect(root);
   }

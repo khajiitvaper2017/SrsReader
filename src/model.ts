@@ -34,6 +34,7 @@ export const settingsSchema = z
     hideDictionarySources: z.boolean().default(true),
     firstDictionaryOnly: z.boolean().default(true),
     ignoredTags: z.array(z.string()).default([]),
+    nechybujte: z.boolean().default(false),
     scanPopups: z.boolean().default(true),
     detectPageLanguage: z.boolean().default(true),
     nativeLanguage: languageSchema.default(systemLanguage),
@@ -196,6 +197,10 @@ export const meaningSchema = z.object({
   sourceUrl: z.string(),
   tags: z.string(),
   definitions: z.array(definitionSchema),
+  tagDescriptions: z.record(z.string(), z.string()).optional(),
+  grammar: z
+    .array(z.object({ text: z.string(), title: z.string().optional() }))
+    .optional(),
 });
 export type Meaning = z.infer<typeof meaningSchema>;
 export type LookupWord = {
@@ -206,7 +211,11 @@ export type LookupWord = {
   meanings: Meaning[];
   forms: string[];
 };
-export type LookupResult = { words: LookupWord[]; unresolved: string[] };
+export type LookupResult = {
+  words: LookupWord[];
+  unresolved: string[];
+  warning?: string;
+};
 
 export const scheduleSchema = z.object({
   due: z.number().finite(),

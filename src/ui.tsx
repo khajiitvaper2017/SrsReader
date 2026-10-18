@@ -409,6 +409,9 @@ export function Meanings({
     Record<string, string>
   >({});
   const [monolingual, setMonolingual] = useState<string[]>([]);
+  const [definitionLanguages, setDefinitionLanguages] = useState<
+    Record<string, string>
+  >({});
   useEffect(() => {
     setExpanded(false);
     let alive = true;
@@ -424,6 +427,13 @@ export function Meanings({
           )
           .toArray();
         if (alive) {
+          setDefinitionLanguages(
+            Object.fromEntries(
+              rows
+                .filter((row) => row !== undefined)
+                .map((row) => [row.id, row.target]),
+            ),
+          );
           setTagDescriptions(
             Object.fromEntries(
               rows
@@ -474,7 +484,9 @@ export function Meanings({
                       className="tag tag-action"
                       data-srs-reader=""
                       title={
-                        tagDescriptions[`${meaning.dictionaryId}:${tag}`] || tag
+                        meaning.tagDescriptions?.[tag] ||
+                        tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
+                        tag
                       }
                     >
                       {tag}
@@ -502,7 +514,9 @@ export function Meanings({
                     className="tag"
                     key={j}
                     title={
-                      tagDescriptions[`${meaning.dictionaryId}:${tag}`] || tag
+                      meaning.tagDescriptions?.[tag] ||
+                      tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
+                      tag
                     }
                   >
                     {tag}
@@ -516,17 +530,41 @@ export function Meanings({
               `[data-meaning="${i}"]`,
             )}
           </style>
-          <div className="dictionary-content" data-meaning={i}>
-            {meaning.definitions.map((definition: Definition, j) => (
-              <div key={j}>
-                <Structured
-                  value={definition}
-                  dictionaryId={meaning.dictionaryId}
-                />
-              </div>
-            ))}
+          <div
+            className="dictionary-content"
+            data-meaning={i}
+            data-reading-language={
+              meaning.dictionaryId === "nechybujte"
+                ? "cs"
+                : meaning.dictionaryId === "personal"
+                  ? settings.nativeLanguage
+                  : definitionLanguages[meaning.dictionaryId] || ""
+            }
+          >
+            {meaning.dictionaryId === "nechybujte" ? (
+              <ol data-sc-content="glosses">
+                {meaning.definitions.map((definition, j) => (
+                  <li key={j}>
+                    <Structured
+                      value={definition}
+                      dictionaryId={meaning.dictionaryId}
+                    />
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              meaning.definitions.map((definition: Definition, j) => (
+                <div key={j}>
+                  <Structured
+                    value={definition}
+                    dictionaryId={meaning.dictionaryId}
+                  />
+                </div>
+              ))
+            )}
           </div>
-          {monolingual.includes(meaning.dictionaryId) &&
+          {(monolingual.includes(meaning.dictionaryId) ||
+            meaning.dictionaryId === "nechybujte") &&
             language !== settings.nativeLanguage && (
               <TextTranslation
                 compact
