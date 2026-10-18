@@ -39,6 +39,7 @@ import type { ImportProgress } from "../../src/dictionaries";
 import "../../src/styles.css";
 import {
   languageIso3,
+  morphologyLanguage,
   languageName,
   systemLanguage,
 } from "../../src/languages";
@@ -760,12 +761,16 @@ function SettingsPage({
   >({});
   const worker = useRef<Worker | undefined>(undefined);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [morphology, setMorphology] = useState({ count: 0 });
   const [exampleCorpus, setExampleCorpus] = useState({
     count: 0,
     installed: false,
   });
   useEffect(() => {
     let alive = true;
+    void db.morphology.get(settings.studyLanguage).then((value) => {
+      if (alive) setMorphology({ count: value?.count ?? 0 });
+    });
     void rpc({ action: "exampleCorpus" })
       .then((value) => {
         if (alive) setExampleCorpus(value);
@@ -868,7 +873,10 @@ function SettingsPage({
       await importZip(await response.blob(), undefined, language);
     });
   }
-  async function installLanguageData(type: "examples", blob?: Blob) {
+  async function installLanguageData(
+    type: "examples" | "morphology",
+    blob?: Blob,
+  ) {
     if (!settings.studyLanguage)
       throw new Error(t("choose_a_study_language_first"));
     await new Promise<void>((resolve, reject) => {
@@ -896,7 +904,11 @@ function SettingsPage({
       });
     });
     await rpc({ action: "invalidate" });
-    setNotice(t("example_sentences_saved"));
+    setNotice(
+      type === "examples"
+        ? t("example_sentences_saved")
+        : t("word_forms_saved"),
+    );
   }
   async function fileImport(
     file: File | undefined,
@@ -938,6 +950,11 @@ function SettingsPage({
     setBusy(true);
     setError("");
     try {
+      if (
+        morphologyLanguage(settings.studyLanguage) &&
+        !(await db.morphology.get(settings.studyLanguage))
+      )
+        await installLanguageData("morphology");
       if (
         languageIso3(settings.studyLanguage) &&
         !(await rpc({ action: "exampleCorpus" })).installed
@@ -1026,6 +1043,29 @@ function SettingsPage({
           {notice}
         </div>
       )}
+      <section className="settings-section" id="word-forms">
+        <div className="section-heading">
+          <h2>{t("word_forms")}</h2>
+        </div>
+        <div className="setting-row">
+          <strong>
+            {morphology.count
+              ? t("word_forms_count", { count: morphology.count })
+              : t("no_additional_word_forms_installed")}
+          </strong>
+          <button
+            disabled={busy || !morphologyLanguage(settings.studyLanguage)}
+            onClick={() => void task(() => installLanguageData("morphology"))}
+          >
+            {morphology.count ? t("download_again") : t("download_word_forms")}
+          </button>
+        </div>
+        <div className="setting-footnote">
+          {morphologyLanguage(settings.studyLanguage)
+            ? t("extra_word_forms_from_simplemma_help_find_dictionary")
+            : t("dictionary_word_forms_are_used_no_extra_simplemma")}
+        </div>
+      </section>
       <section className="settings-section" id="example-sentences">
         <div className="section-heading">
           <h2>{t("example_sentences")}</h2>

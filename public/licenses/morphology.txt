@@ -1,13 +1,13 @@
-Czech word-form data for SrsReader
+Word-form data for SrsReader
 
 Source: Simplemma by Adrien Barbaresi and contributors.
 https://github.com/adbar/simplemma/tree/4a5d20a8428bbc8b4cd1faacfaf3b178b0f84257
-Original data: simplemma/strategies/dictionaries/data/cs.plzma
+Original data: simplemma/strategies/dictionaries/data/<language-code>.plzma
 
-The supplied mapping was converted from the upstream compressed representation
-to NFC UTF-8 form-tab-lemma rows and gzip. No linguistic mappings were changed.
-The compressed table is distributed in public/morphology/cs.tsv.gz and in the
-built extension's morphology directory.
+Selected language tables are downloaded directly from this pinned upstream
+revision. They are decoded locally and stored as NFC form-to-lemma mappings.
+No linguistic mappings are changed. No language table is bundled in SrsReader.
+The SMFC1 decoder is adapted from Simplemma's MIT-licensed frontcode.py.
 
 Upstream data credits and license information:
 
@@ -42,7 +42,7 @@ Source: https://github.com/michmech/lemmatization-lists
 
 Wiktionary and UniMorph's Wiktionary data:
 https://creativecommons.org/licenses/by-sa/3.0/
-https://github.com/unimorph/ces
+https://github.com/unimorph
 
 Wikinflection:
 https://creativecommons.org/licenses/by/4.0/
@@ -620,3 +620,76 @@ jurisdiction includes additional rights not granted under this License,
 these additional rights are granted in this License in order to meet the
 terms of this License.
 
+
+
+Simplemma PL_License.txt:
+#!DICT-ID pl.waw.ipipan.polimorf-2020.05.03
+#<COPYRIGHT>
+Portions copyright © 2011 Marek Futrega, Piotr Gackiewicz, Mirosław Prywata,
+Włodzimierz Macewicz, Marcin Miłkowski
+Portions copyright © 2007–2020 Zygmunt Saloni, Włodzimierz Gruszczyński,
+Marcin Woliński, Robert Wołosz, Danuta Skowrońska
+Portions copyright © 2011–2020 Institute of Computer Science, Polish Academy of Sciences
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY COPYRIGHT HOLDERS “AS IS” AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+#</COPYRIGHT>
+
+#!DICT-ID pl.sgjp.sgjp-2020.05.03
+#<COPYRIGHT>
+Copyright © 2007–2020 Marcin Woliński, Zbigniew Bronk, Włodzimierz Gruszczyński, Witold Kieraś, Zygmunt Saloni, Danuta Skowrońska, Robert Wołosz
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY COPYRIGHT HOLDERS “AS IS” AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+#</COPYRIGHT>
+
+
+Simplemma TR_Source.txt:
+http://st2.zargan.com/duyuru/Zargan_Linguistic_Resources_for_Turkish.html - Bilgin, O. (2016). Biçimbilimsel Bakımdan Karmaşık Türkçe Kelimelerin İşlenmesinde Frekans Etkileri (yayınlanmamış yüksek lisans tezi). Boğaziçi Üniversitesi, İstanbul.
+Erişim: http://st2.zargan.com/public/resources/turkish/frequency_effects_in_turkish.pdf
+
+
+Simplemma Other.txt:
+See 2b.- DATA COMPONENTS in https://github.com/TALP-UPC/FreeLing/blob/master/COPYING

@@ -1,10 +1,11 @@
 import { setInterfaceLanguage } from "./i18n";
 import { installExampleCorpus } from "./example-corpus";
+import { installMorphology } from "./morphology-data";
 
 self.onmessage = async (
   event: MessageEvent<{
     locale: string;
-    type: "examples";
+    type: "examples" | "morphology";
     language: string;
     blob?: Blob;
   }>,
@@ -12,11 +13,14 @@ self.onmessage = async (
   await setInterfaceLanguage(event.data.locale);
   try {
     const progress = (value: unknown) => self.postMessage({ progress: value });
-    const count = await installExampleCorpus(
-      event.data.language,
-      event.data.blob,
-      progress,
-    );
+    const count =
+      event.data.type === "morphology"
+        ? await installMorphology(event.data.language, progress)
+        : await installExampleCorpus(
+            event.data.language,
+            event.data.blob,
+            progress,
+          );
     self.postMessage({ count });
   } catch (error) {
     self.postMessage({

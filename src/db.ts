@@ -28,6 +28,10 @@ class ReaderDatabase extends Dexie {
     { language: string; corpus: Blob; count: number; updated: number },
     string
   >;
+  morphology!: Table<
+    { language: string; data: Blob; count: number; updated: number },
+    string
+  >;
 
   constructor() {
     super("srs-reader");
@@ -47,6 +51,7 @@ class ReaderDatabase extends Dexie {
       frequencies: "id, revisionId, [revisionId+folded]",
     });
     this.version(3).stores({ exampleCorpora: "language" });
+    this.version(4).stores({ morphology: "language" });
   }
 }
 export const db = new ReaderDatabase();

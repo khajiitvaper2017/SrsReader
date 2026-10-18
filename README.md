@@ -24,7 +24,7 @@ Run `npm run fix` to apply ESLint fixes and format the project with Prettier. Li
 
 On first installation, a setup window opens. Choose your **Study language**, then confirm your **Native language**, suggested from your system/browser language. It is used for translations and, by default, the interface. Under **Settings → Languages → Interface language**, choose **English**, **українська**, or **Same as native language** (default). This selector is also available during setup. Other native languages use the English interface. Language names, dates, and numbers follow the interface language. Import a dictionary for your study language and choose one or more lookup controls. Nothing is selected for lookup by default. **Finish setup** is available once a dictionary and a lookup control are selected.
 
-Finishing setup downloads Tatoeba examples for your study language when available and not already installed. You can import a detailed TSV or `.bz2` export under **Example sentences** before finishing setup instead.
+Finishing setup downloads additional word forms and Tatoeba examples for your study language when available and not already installed. You can import a detailed TSV or `.bz2` export under **Example sentences** before finishing setup instead.
 
 Setup saves your choices as you go. You can return to it with **Settings → Open setup**.
 
@@ -36,7 +36,7 @@ Use **Settings → Languages** to choose your study and native languages. **Find
 
 Word forms follow dictionary references to their base words. Forms and their base word share a card and review history. When several base words are possible, choose the intended word in the dictionary popup. References whose targets have no definition remain unavailable until a dictionary supplies them.
 
-If a Czech form has no dictionary entry, the reader also checks a bundled offline word-form table. A match opens the base word and uses its card. Existing dictionary entries and references take priority. The base word must still have an enabled dictionary definition; parsing cannot supply a missing meaning or turn a separate prefixed verb into its unprefixed verb.
+If a form has no dictionary entry, the reader also checks the study language’s downloaded word forms. Under **Settings → Word forms**, choose **Download word forms** to install Simplemma data for a supported language. Additional tables are available for supported languages, including Arabic, Czech, English, French, German, Spanish, and Ukrainian, and work offline after downloading. For languages without additional data, parsing uses the installed dictionaries’ forms. A match opens the base word and uses its card. Existing dictionary entries and references take priority. The base word must still have an enabled dictionary definition; parsing cannot supply a missing meaning or turn a separate prefixed verb into its unprefixed verb.
 
 Choose **Check updates** beside an installed dictionary to check its publisher’s update source. If an update is available, choose **Update** to install it. No update checks happen automatically. Dictionaries without update metadata can be replaced by importing a newer ZIP with the same title and languages.
 
@@ -139,7 +139,7 @@ Export learning data before removing the extension, clearing browser storage, or
 
 The supplied Czech dictionary is published by [wty](https://github.com/yomidevs/wiktionary-to-yomitan) from Wiktionary/Kaikki data. Preserve its source and attribution when sharing dictionary files or definitions. Pronunciation files retain the individual licenses shown on their Wikimedia Commons pages.
 
-The offline Czech word-form table comes from [Simplemma](https://github.com/adbar/simplemma), whose sources include Wiktionary/Kaikki and Michal Měchura’s lemmatization lists. Source and license notices are included in `public/licenses/morphology.txt`.
+Additional word-form tables come from [Simplemma](https://github.com/adbar/simplemma), whose sources include Wiktionary/Kaikki and Michal Měchura’s lemmatization lists. Only the chosen language’s table is downloaded and kept in browser storage. Source and license notices are included in `public/licenses/morphology.txt`.
 
 The bundled Bergamot runtime and model registry come from [browsermt/bergamot-translator](https://github.com/browsermt/bergamot-translator) and its model repository. Source and license information is included in `public/licenses/bergamot.txt`.
 
