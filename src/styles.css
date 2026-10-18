@@ -1260,7 +1260,7 @@ button.master-action[aria-pressed="true"] {
 .meaning-label .tag[title] {
   cursor: help;
 }
-.meaning-label button.tag-action[title] {
+.meaning-label button.tag-action {
   min-height: 0;
   border: 0;
   font-weight: 400;

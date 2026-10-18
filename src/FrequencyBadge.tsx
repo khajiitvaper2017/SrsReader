@@ -32,7 +32,7 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
       <summary
         title={`${rows.length > 1 ? t("combined_rank_harmonic_mean") : ""}${details}`}
       >
-        {t("freq")} {number(rank)}
+        {number(rank)}
       </summary>
       <div className="frequency-ranks">
         {rows.map((row) => (
