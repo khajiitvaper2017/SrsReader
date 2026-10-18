@@ -9,6 +9,7 @@ import { wordHighlightCss, wordStyleStates } from "./word-styles";
 import { detectLanguage } from "./browser-ai";
 import {
   defaults,
+  folded,
   type Settings,
   type ReadingContext,
   type WordState,
@@ -128,6 +129,58 @@ export function startReader(
     )
       ? "ignored"
       : (wordStates.get(candidate.id) ?? candidate.state);
+  }
+  function applyParsedTerm(term: string, candidates: ScanSpan["candidates"]) {
+    const escaped = term
+      .trim()
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\s+/gu, "\\s+");
+    const pattern = new RegExp(
+      `(?<![\\p{L}\\p{M}\\p{N}_])${escaped}(?![\\p{L}\\p{M}\\p{N}_])`,
+      "giu",
+    );
+    for (const block of blocks.values())
+      for (const match of block.text.matchAll(pattern)) {
+        const start = match.index;
+        const end = start + match[0].length;
+        if (
+          block.spans.some(
+            (span) =>
+              span.start < end &&
+              span.end > start &&
+              (span.start !== start || span.end !== end),
+          )
+        )
+          continue;
+        const range = makeRange(block.parts, start, end);
+        if (!range) continue;
+        block.ranges = block.ranges.filter((old) => {
+          if (
+            old.compareBoundaryPoints(Range.START_TO_START, range) >= 0 &&
+            old.compareBoundaryPoints(Range.END_TO_END, range) <= 0
+          ) {
+            for (const highlight of highlights.values()) highlight.delete(old);
+            return false;
+          }
+          return true;
+        });
+        block.spans = block.spans.filter(
+          (span) => span.start !== start || span.end !== end,
+        );
+        const span = {
+          start,
+          end,
+          term: match[0],
+          ids: candidates.map((candidate) => candidate.id),
+          candidates,
+          state: candidates[0]!.state,
+          range,
+        };
+        updateSpanState(span);
+        block.spans.push(span);
+        block.ranges.push(range);
+        highlights.get(span.state)!.add(range);
+      }
   }
   function collect(element: Element, immediate = false) {
     if (!active || element.closest(excluded)) return;
@@ -256,6 +309,13 @@ export function startReader(
               start: span.start + offset,
               end: span.end + offset,
             };
+            if (
+              block.spans.some(
+                (span) =>
+                  span.start === adjusted.start && span.end === adjusted.end,
+              )
+            )
+              continue;
             const range = makeRange(parts, adjusted.start, adjusted.end);
             if (!range) continue;
             block.spans.push({ ...adjusted, range });
@@ -274,6 +334,14 @@ export function startReader(
               while (spans[matched] && spans[matched]!.end <= segment.index)
                 matched++;
               if (spans[matched] && spans[matched]!.start <= segment.index)
+                continue;
+              if (
+                block.spans.some(
+                  (span) =>
+                    span.start <= offset + segment.index &&
+                    span.end > offset + segment.index,
+                )
+              )
                 continue;
               const range = makeRange(
                 parts,
@@ -374,14 +442,37 @@ export function startReader(
       1,
       Math.min(Math.max(140, requestedHeight), 460, innerHeight - 16),
     );
+    const side =
+      popup.dataset.srsReaderSide ||
+      (settings.popupPlacement === "beside"
+        ? box.right + width + 12 <= innerWidth
+          ? "right"
+          : "left"
+        : settings.popupPlacement === "below" ||
+            (settings.popupPlacement === "auto" &&
+              box.bottom + 140 + 12 <= innerHeight)
+          ? "below"
+          : "above");
+    popup.dataset.srsReaderSide = side;
+    const left =
+      side === "right"
+        ? Math.min(innerWidth - width - 8, box.right + 4)
+        : side === "left"
+          ? Math.max(8, box.left - width - 4)
+          : Math.max(8, Math.min(box.left, innerWidth - width - 8));
     const top =
-      box.bottom + height + 12 <= innerHeight
-        ? box.bottom + 4
-        : Math.max(8, box.top - height - 4);
+      side === "below"
+        ? Math.min(innerHeight - height - 8, box.bottom + 4)
+        : side === "above"
+          ? Math.max(
+              8,
+              Math.min(box.top - height - 4, innerHeight - height - 8),
+            )
+          : Math.max(8, Math.min(box.top, innerHeight - height - 8));
     Object.assign(popup.style, {
       width: `${width}px`,
       height: `${height}px`,
-      left: `${Math.max(8, Math.min(box.left, innerWidth - width - 8))}px`,
+      left: `${left}px`,
       top: `${top}px`,
     });
   }
@@ -420,6 +511,53 @@ export function startReader(
         };
     }
     if (!span) return;
+    if (settings.studyLanguage === "cs") {
+      const segments = [
+        ...new Intl.Segmenter(settings.studyLanguage, {
+          granularity: "word",
+        }).segment(block.text),
+      ].filter((segment) => segment.isWordLike);
+      const current = segments.find(
+        (segment) =>
+          segment.index === span!.start &&
+          segment.index + segment.segment.length === span!.end,
+      );
+      const index = current ? segments.indexOf(current) : -1;
+      const next = index >= 0 ? segments[index + 1] : undefined;
+      const previous = index > 0 ? segments[index - 1] : undefined;
+      const currentIsSe = current && folded(current.segment, "cs") === "se";
+      const adjacent = currentIsSe
+        ? (next &&
+            !block.text
+              .slice(current.index + current.segment.length, next.index)
+              .trim() &&
+            next) ||
+          (previous &&
+            !block.text
+              .slice(previous.index + previous.segment.length, current.index)
+              .trim() &&
+            previous)
+        : (next &&
+            folded(next.segment, "cs") === "se" &&
+            !block.text
+              .slice(current!.index + current!.segment.length, next.index)
+              .trim() &&
+            next) ||
+          (previous &&
+            folded(previous.segment, "cs") === "se" &&
+            !block.text
+              .slice(previous.index + previous.segment.length, current!.index)
+              .trim() &&
+            previous);
+      if (current && adjacent) {
+        const start = Math.min(current.index, adjacent.index);
+        const end = Math.max(
+          current.index + current.segment.length,
+          adjacent.index + adjacent.segment.length,
+        );
+        span = { start, end, term: block.text.slice(start, end) };
+      }
+    }
     const range = makeRange(block.parts, span.start, span.end);
     if (
       !range ||
@@ -806,7 +944,20 @@ export function startReader(
     session?: string;
     height?: number;
     word?: { id: string; state: WordState };
+    language?: string;
+    term?: string;
+    candidates?: ScanSpan["candidates"];
   }) => {
+    if (
+      message.event === "parsed" &&
+      active &&
+      message.language === settings.studyLanguage &&
+      message.term &&
+      message.candidates?.length
+    ) {
+      applyParsedTerm(message.term, message.candidates);
+      return;
+    }
     if (message.event === "closeLookup") closePopup();
     if (
       message.event === "resizeLookup" &&

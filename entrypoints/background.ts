@@ -13,11 +13,16 @@ import { languageCode } from "../src/languages";
 import { wordExamples, exampleCorpusInfo } from "../src/examples";
 import { removeRevision } from "../src/dictionaries";
 import { clearLookupCache, lookupMany, scanText } from "../src/lookup";
-import { lookupNechybujte, mergeNechybujte } from "../src/nechybujte";
+import {
+  lookupNechybujte,
+  mergeNechybujte,
+  normalizeCzechReflexive,
+} from "../src/nechybujte";
 import {
   folded,
   normalize,
   stateOf,
+  meaningTags,
   wordId,
   type LookupWord,
   type LookupResult,
@@ -47,6 +52,12 @@ export default defineBackground(() => {
     "lookup",
     "createSession",
   ]);
+  async function broadcast(message: unknown) {
+    void browser.runtime.sendMessage(message).catch(() => {});
+    for (const tab of await browser.tabs.query({}))
+      if (tab.id)
+        void browser.tabs.sendMessage(tab.id, message).catch(() => {});
+  }
   async function notify(wordId?: string) {
     if (!wordId) clearLookupCache();
     const message = {
@@ -61,10 +72,7 @@ export default defineBackground(() => {
           }
         : undefined,
     };
-    void browser.runtime.sendMessage(message).catch(() => {});
-    for (const tab of await browser.tabs.query({}))
-      if (tab.id)
-        void browser.tabs.sendMessage(tab.id, message).catch(() => {});
+    await broadcast(message);
   }
   async function lookup(
     term: string,
@@ -75,10 +83,16 @@ export default defineBackground(() => {
       normalize(term),
     ) || { words: [], unresolved: [] };
     if (settings.studyLanguage !== "cs" || !settings.nechybujte) return local;
+    if (
+      local.words.some((word) =>
+        word.meanings.some((meaning) => meaning.dictionaryId !== "nechybujte"),
+      )
+    )
+      return local;
     try {
       return mergeNechybujte(
         local,
-        await lookupNechybujte(term, refreshOnline),
+        await lookupNechybujte(normalizeCzechReflexive(term), refreshOnline),
       );
     } catch (error) {
       return {
@@ -269,8 +283,25 @@ export default defineBackground(() => {
           });
         await notify(request.id);
         return;
-      case "lookup":
-        return lookup(request.term, settings);
+      case "lookup": {
+        const result = await lookup(request.term, settings);
+        if (result.words.length) {
+          const saved = await db.vocabulary.bulkGet(
+            result.words.map((word) => word.id),
+          );
+          await broadcast({
+            event: "parsed",
+            term: request.term,
+            language: settings.studyLanguage,
+            candidates: result.words.map((word, index) => ({
+              id: word.id,
+              tags: word.meanings.flatMap(meaningTags),
+              state: stateOf(saved[index], settings.matureIntervalDays),
+            })),
+          });
+        }
+        return result;
+      }
       case "examples":
         return wordExamples(
           request.lemma,
@@ -337,6 +368,19 @@ export default defineBackground(() => {
         await notify(saved.id);
         return saved;
       }
+      case "deleteDefinition":
+        await db.vocabulary
+          .where("id")
+          .equals(request.id)
+          .modify((word) => {
+            word.meanings = word.meanings.filter(
+              (meaning) => meaning.dictionaryId !== "personal",
+            );
+            word.version++;
+            word.updated = Date.now();
+          });
+        await notify(request.id);
+        return;
       case "grade": {
         const word = await snapshot(await resolved(request.term, request.id));
         const result = await grade(

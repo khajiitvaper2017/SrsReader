@@ -1,11 +1,12 @@
 import { db } from "./db";
 import { analyzeWords } from "./morphology";
 import { parsingCandidates, type ParsingCandidate } from "./parsing-rules";
-import { mergeNechybujte } from "./nechybujte";
+import { mergeNechybujte, nechybujteCacheKey } from "./nechybujte";
 import {
   folded,
   normalize,
   stateOf,
+  meaningTags,
   wordId,
   type Dictionary,
   type Entry,
@@ -271,7 +272,7 @@ export async function lookupMany(
     });
   }
   if (language === "cs") {
-    const keys = terms.map((term) => folded(term, language));
+    const keys = terms.map(nechybujteCacheKey);
     const stored = await db.nechybujte.bulkGet(keys);
     for (const [index, record] of stored.entries())
       if (record) {
@@ -358,7 +359,7 @@ export async function scanText(
       ids: words.map((w) => w.id),
       candidates: words.map((word) => ({
         id: word.id,
-        tags: word.meanings.flatMap((meaning) => meaning.tags.split(/\s+/u)),
+        tags: word.meanings.flatMap(meaningTags),
         state: stateOf(vocabulary.get(word.id), matureIntervalDays),
       })),
       state,

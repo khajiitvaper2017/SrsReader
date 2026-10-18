@@ -965,7 +965,7 @@ button.master-action[aria-pressed="true"] {
   padding: 10px;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: scroll;
   scrollbar-gutter: stable;
 }
 .lookup-content .notice {
@@ -1395,6 +1395,7 @@ button.master-action[aria-pressed="true"] {
 }
 .sentence-translation p {
   margin: 6px 0;
+  white-space: pre-line;
 }
 .sentence-translation button {
   font-size: inherit;

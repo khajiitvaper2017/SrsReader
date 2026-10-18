@@ -11,6 +11,14 @@ import {
 
 const baseUrl = "https://www.nechybujte.cz/slovnik-soucasne-cestiny/";
 const cache = new Map<string, Promise<LookupResult>>();
+export const nechybujteCacheKey = (term: string) =>
+  `v2:${folded(term.trim(), "cs")}`;
+export function normalizeCzechReflexive(term: string): string {
+  const words = term.trim().split(/\s+/u);
+  if (words.length === 2 && words.some((word) => folded(word, "cs") === "se"))
+    return `${words.find((word) => folded(word, "cs") !== "se")!} se`;
+  return term.trim();
+}
 
 function text(element: Element | null): string {
   if (!element) return "";
@@ -98,22 +106,19 @@ export function parseNechybujte(html: string): LookupResult {
     words.push(word);
     return word;
   }
-  let current = entry(lemma, document.querySelector("#entry-rest"));
+  const root = entry(lemma, document.querySelector("#entry-rest"));
   const defined = new Set<string>();
   for (const child of body.children) {
-    if (child.localName === "group") {
-      const related = text(child.querySelector(".lex_ful_phrs"));
-      if (!related) throw new Error(t("nechybujte_response_unrecognized"));
-      current = entry(related, child);
-    } else if (child.localName === "sense") {
+    if (child.localName === "group") break;
+    if (child.localName === "sense") {
       const glossElement = child.querySelector(".lex_desc1,.lex_desc2");
       const gloss = content(glossElement);
       const examples = [
         ...child.querySelectorAll(".lex_samp1,.lex_samp2"),
       ].filter((node) => text(node));
       if (!text(glossElement) && !examples.length) continue;
-      defined.add(current.id);
-      current.meanings[0]!.definitions.push({
+      defined.add(root.id);
+      root.meanings[0]!.definitions.push({
         type: "structured-content",
         content: [
           ...(gloss.length ? [{ tag: "div", content: gloss }] : []),
@@ -147,7 +152,8 @@ export function lookupNechybujte(
   term: string,
   refresh = false,
 ): Promise<LookupResult> {
-  const key = folded(term.trim(), "cs");
+  const lookupKey = folded(normalizeCzechReflexive(term), "cs");
+  const key = nechybujteCacheKey(lookupKey);
   const saved = cache.get(key);
   if (saved) return saved;
   const request = (async () => {
@@ -155,7 +161,7 @@ export function lookupNechybujte(
       const stored = await db.nechybujte.get(key);
       if (stored) return stored.result;
     }
-    const response = await fetch(baseUrl + encodeURIComponent(key), {
+    const response = await fetch(baseUrl + encodeURIComponent(lookupKey), {
       credentials: "omit",
       signal: AbortSignal.timeout(12000),
     });
@@ -169,7 +175,7 @@ export function lookupNechybujte(
         : parseNechybujte(await response.text());
     const aliases = new Map<string, LookupResult>(
       result.words.map((word) => [
-        folded(word.lemma, "cs"),
+        nechybujteCacheKey(word.lemma),
         { words: [word], unresolved: [] },
       ]),
     );

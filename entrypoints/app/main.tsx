@@ -1690,6 +1690,28 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
+                  <strong>{t("popup_position")}</strong>
+                  <small>{t("popup_position_help")}</small>
+                </span>
+                <Select
+                  value={settings.popupPlacement}
+                  onValueChange={(value) =>
+                    void update({
+                      popupPlacement: value as Settings["popupPlacement"],
+                    })
+                  }
+                >
+                  <SelectOption value="auto">{t("automatic")}</SelectOption>
+                  <SelectOption value="below">
+                    {t("popup_position_below")}
+                  </SelectOption>
+                  <SelectOption value="beside">
+                    {t("popup_position_beside")}
+                  </SelectOption>
+                </Select>
+              </label>
+              <label className="setting-row">
+                <span>
                   <strong>{t("hide_dictionary_source_links")}</strong>
                   <small>{t("in_lookup_popups")}</small>
                 </span>

@@ -69,6 +69,7 @@ export const requestSchema = z.discriminatedUnion("action", [
     id: z.string().optional(),
     definition: z.string().trim().min(1),
   }),
+  z.object({ action: z.literal("deleteDefinition"), id: z.string() }),
   z.object({
     action: z.literal("grade"),
     ...selection,
@@ -131,6 +132,7 @@ type Responses = {
   word: Vocabulary | undefined;
   mine: Vocabulary;
   defineWord: Vocabulary;
+  deleteDefinition: void;
   grade: { word: Vocabulary; reviewId: string };
   known: Vocabulary;
   suspend: void;

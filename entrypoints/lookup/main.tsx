@@ -1,5 +1,13 @@
 import { Select, SelectOption } from "../../src/Select";
-import { Check, Plus, ArrowLeft, Play, Undo2, Pencil } from "lucide-react";
+import {
+  Check,
+  Plus,
+  ArrowLeft,
+  Play,
+  Undo2,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -148,6 +156,9 @@ function LookupEntry({
           forms: [],
         }
       : undefined);
+  const hasPersonalDefinition =
+    word?.meanings.some((meaning) => meaning.dictionaryId === "personal") ||
+    false;
   useEffect(() => {
     if (!word) return;
     const root = document.querySelector<HTMLElement>(".lookup-reading")!;
@@ -314,7 +325,7 @@ function LookupEntry({
         );
       } else {
         setSaved(await rpc({ action: "mine", id: word.id, term, context }));
-        setNotice(t("saved"));
+        setNotice("");
       }
       reload();
     } catch (error) {
@@ -345,7 +356,22 @@ function LookupEntry({
     setSelected(saved.id);
     setSaved(saved);
     setEditing(false);
-    setNotice(t("saved"));
+    setNotice("");
+  }
+  async function deleteDefinition() {
+    if (!word || !hasPersonalDefinition || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await rpc({ action: "deleteDefinition", id: word.id });
+      setEditing(false);
+      setNotice("");
+      reload();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <div
@@ -419,6 +445,17 @@ function LookupEntry({
                       onClick={() => setEditing((value) => !value)}
                     >
                       <Pencil aria-hidden="true" />
+                    </button>
+                  )}
+                  {hasPersonalDefinition && (
+                    <button
+                      className="quiet icon-button danger"
+                      title={t("delete_custom_definition")}
+                      aria-label={t("delete_custom_definition")}
+                      disabled={busy}
+                      onClick={() => void deleteDefinition()}
+                    >
+                      <Trash2 aria-hidden="true" />
                     </button>
                   )}
                   <AudioButton
@@ -531,20 +568,15 @@ function LookupEntry({
         <section className="lookup-actions">
           <div className="lookup-action-row">
             <div className="row mining-actions">
-              <button
-                className="primary"
-                disabled={busy}
-                onClick={() => void act()}
-              >
-                {saved?.card || saved?.known ? (
-                  <Check aria-hidden="true" />
-                ) : (
-                  <Plus aria-hidden="true" />
-                )}
-                {saved?.card || saved?.known
-                  ? t("save_example")
-                  : t("mine_word")}
-              </button>
+              {!saved?.card && !saved?.known && (
+                <button
+                  className="primary"
+                  disabled={busy}
+                  onClick={() => void act()}
+                >
+                  <Plus aria-hidden="true" /> {t("mine_word")}
+                </button>
+              )}
               <button
                 className="quiet master-action"
                 aria-pressed={!!saved?.known}

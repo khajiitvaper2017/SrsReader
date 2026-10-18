@@ -10,6 +10,7 @@ import { installInputPrevention } from "./input-prevention";
 import { TextTranslation } from "./SentenceTranslation";
 import {
   defaults,
+  meaningTags,
   type Definition,
   type Meaning,
   type ReadingContext,
@@ -440,7 +441,12 @@ export function Meanings({
                 .filter((row) => row !== undefined)
                 .flatMap((row) =>
                   tags
-                    .filter((tag) => tag.revisionId === row.revisionId)
+                    .filter(
+                      (tag) =>
+                        tag.revisionId === row.revisionId &&
+                        tag.description &&
+                        tag.description !== tag.name,
+                    )
                     .map((tag) => [
                       `${row.id}:${tag.name}`,
                       tag.description || tag.name,
@@ -474,55 +480,52 @@ export function Meanings({
                 ? t("personal_definition")
                 : meaning.title}
             </span>
-            {meaning.tags
-              .split(" ")
-              .filter(Boolean)
-              .map((tag, j) =>
-                onIgnoreTag ? (
-                  <DropdownMenu.Root key={j} modal={false}>
-                    <DropdownMenu.Trigger
-                      className="tag tag-action"
-                      data-srs-reader=""
-                      title={
-                        meaning.tagDescriptions?.[tag] ||
-                        tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
-                        tag
-                      }
-                    >
-                      {tag}
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Portal>
-                      <DropdownMenu.Content
-                        className="tag-menu"
-                        sideOffset={4}
-                        collisionPadding={8}
-                        aria-label={tag}
-                        data-srs-reader=""
-                      >
-                        <DropdownMenu.Item
-                          className="select-option"
-                          onSelect={() => onIgnoreTag(tag)}
-                        >
-                          <EyeOff aria-hidden="true" />{" "}
-                          {t("ignore_words_with_tag")}
-                        </DropdownMenu.Item>
-                      </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
-                  </DropdownMenu.Root>
-                ) : (
-                  <span
-                    className="tag"
-                    key={j}
+            {meaningTags(meaning).map((tag, j) =>
+              onIgnoreTag ? (
+                <DropdownMenu.Root key={j} modal={false}>
+                  <DropdownMenu.Trigger
+                    className="tag tag-action"
+                    data-srs-reader=""
                     title={
                       meaning.tagDescriptions?.[tag] ||
                       tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
-                      tag
+                      undefined
                     }
                   >
                     {tag}
-                  </span>
-                ),
-              )}
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      className="tag-menu"
+                      sideOffset={4}
+                      collisionPadding={8}
+                      aria-label={tag}
+                      data-srs-reader=""
+                    >
+                      <DropdownMenu.Item
+                        className="select-option"
+                        onSelect={() => onIgnoreTag(tag)}
+                      >
+                        <EyeOff aria-hidden="true" />{" "}
+                        {t("ignore_words_with_tag")}
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+              ) : (
+                <span
+                  className="tag"
+                  key={j}
+                  title={
+                    meaning.tagDescriptions?.[tag] ||
+                    tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
+                    undefined
+                  }
+                >
+                  {tag}
+                </span>
+              ),
+            )}
           </div>
           <style>
             {scopedStyles(
@@ -570,10 +573,14 @@ export function Meanings({
                 compact
                 key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}`}
                 text={meaning.definitions
-                  .map(definitionText)
-                  .join("; ")
-                  .replace(/\s+/g, " ")
-                  .trim()}
+                  .map((definition, index) => {
+                    const text = definitionText(definition)
+                      .replace(/[ \t]+/g, " ")
+                      .trim();
+                    return text ? `${index + 1}. ${text}` : "";
+                  })
+                  .filter(Boolean)
+                  .join("\n")}
                 language={language}
                 settings={settings}
                 label={t("translate_definition")}

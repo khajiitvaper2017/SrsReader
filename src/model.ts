@@ -31,6 +31,7 @@ export const settingsSchema = z
     paused: z.boolean().default(false),
     disabledHosts: z.array(z.string()).default([]),
     theme: z.enum(["system", "light", "dark"]).default("system"),
+    popupPlacement: z.enum(["auto", "below", "beside"]).default("auto"),
     hideDictionarySources: z.boolean().default(true),
     firstDictionaryOnly: z.boolean().default(true),
     ignoredTags: z.array(z.string()).default([]),
@@ -203,6 +204,11 @@ export const meaningSchema = z.object({
     .optional(),
 });
 export type Meaning = z.infer<typeof meaningSchema>;
+export function meaningTags(meaning: Meaning): string[] {
+  return meaning.dictionaryId === "nechybujte"
+    ? [meaning.tags].filter(Boolean)
+    : meaning.tags.split(/\s+/u).filter(Boolean);
+}
 export type LookupWord = {
   id: string;
   lemma: string;

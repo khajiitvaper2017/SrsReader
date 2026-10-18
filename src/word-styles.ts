@@ -49,7 +49,6 @@ export function wordHighlightCss(settings: Settings) {
         const enabled = settings.wordColorsEnabled;
         return `::highlight(srs-${state}){color:${enabled && mode === "text" ? color : "inherit"};background-color:${enabled && mode === "background" ? color + "30" : "transparent"}}`;
       })
-      .join("\n") +
-    "\n::highlight(srs-focus){background-color:#a78bfa60;color:inherit}"
+      .join("\n") + "\n::highlight(srs-focus){background-color:#a78bfa60}"
   );
 }
