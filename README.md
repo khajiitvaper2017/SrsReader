@@ -54,6 +54,8 @@ Open a website in your selected language and use your lookup control on a highli
 
 Definitions are parsed too. Use the same lookup control on a word in a definition to open it. **Back** or **Escape** returns to the previous entry; the close button closes the popup. Turn this off with **Settings → Reading & appearance → Scan dictionary popups**.
 
+Under **Settings → Reading & appearance → Word colors**, choose **Off**, **Text**, or **Background** and a color for each state. New words are words you have not saved; Saved words have not been reviewed yet. Learning includes relearning, Reviewing means the next review is in the future, and Due means a review is ready. Known and suspended words have their own styles. Unparsed covers words without a dictionary match. The same styles apply on websites and inside definitions. **Color words** switches all colors off without changing parsing or your saved styles; **Reset colors** restores the defaults.
+
 **Settings → Reading & appearance → Hide dictionary source links** hides links such as Wiktionary and Kaikki in lookup popups. It is on by default; turn it off to show them.
 
 Configure lookup in **Settings → Lookup controls**. You can enable several bindings:

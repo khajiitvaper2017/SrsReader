@@ -38,6 +38,8 @@ import type { ImportProgress } from "../../src/dictionaries";
 import "../../src/styles.css";
 import { supportedLanguages, languageName } from "../../src/languages";
 import { LookupControls } from "../../src/LookupControls";
+import { WordColors } from "../../src/WordColors";
+import { wordStates, wordStateLabels } from "../../src/word-styles";
 import {
   FrequencyBrowser,
   frequencyDownloadUrl,
@@ -428,11 +430,9 @@ function WordsPage({ settings }: { settings: Settings }) {
         >
           {[
             ["all", "All words"],
-            ["unknown", "Unknown"],
-            ["due", "Due"],
-            ["learning", "Learning"],
-            ["known", "Known"],
-            ["suspended", "Suspended"],
+            ...wordStates
+              .filter((state) => state !== "unknown")
+              .map((state) => [state, wordStateLabels[state]]),
           ].map(([value, label]) => (
             <option key={value} value={value}>
               {label}
@@ -470,7 +470,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                   </span>
                 </div>
                 <span className={`state state-${stateOf(w)}`}>
-                  {stateOf(w)}
+                  {wordStateLabels[stateOf(w)]}
                 </span>
               </button>
             ))}
@@ -1222,6 +1222,10 @@ function SettingsPage({
                   }
                 />
               </label>
+              <WordColors
+                settings={settings}
+                onChange={(patch) => void update(patch)}
+              />
               <div className="setting-footnote">
                 Disable individual sites from the toolbar.
               </div>

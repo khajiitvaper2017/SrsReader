@@ -22,6 +22,7 @@ import {
 import "../../src/styles.css";
 import { ContentScriptContext } from "wxt/utils/content-script-context";
 import { startReader } from "../../src/reader";
+import { wordStateLabels } from "../../src/word-styles";
 import { readerKeysSchema } from "../../src/controls";
 
 type LookupPage = {
@@ -340,7 +341,7 @@ function LookupEntry({
                 <div>
                   {saved && (
                     <span className={`state state-${stateOf(saved)}`}>
-                      {stateOf(saved)}
+                      {wordStateLabels[stateOf(saved)]}
                     </span>
                   )}
                   <h1 lang={word.language}>

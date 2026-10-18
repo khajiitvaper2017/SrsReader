@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { inputPreventionSchema, lookupBindingSchema } from "./controls";
 import { supportedLanguages } from "./languages";
+import { wordStylesSchema, type WordState } from "./word-styles";
+export type { WordState } from "./word-styles";
 
 export const normalize = (text: string) => text.normalize("NFC");
 export const folded = (text: string, language: string) =>
@@ -23,6 +25,8 @@ export const settingsSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).default("system"),
   hideDictionarySources: z.boolean().default(true),
   scanPopups: z.boolean().default(true),
+  wordColorsEnabled: z.boolean().default(true),
+  wordStyles: wordStylesSchema,
   front: z.enum(["word", "sentence"]).default("word"),
   retention: z.number().min(0.7).max(0.99).default(0.9),
   onlyAgainGood: z.boolean().default(true),
@@ -236,13 +240,13 @@ export const audioInfoSchema = z.object({
 });
 export type AudioInfo = z.infer<typeof audioInfoSchema>;
 export type AudioRecord = AudioInfo & { blob: Blob };
-export type WordState = "unknown" | "learning" | "due" | "known" | "suspended";
 export function stateOf(word?: Vocabulary): WordState {
   if (!word) return "unknown";
   if (word.known) return "known";
   if (word.suspended) return "suspended";
-  if (!word.card) return "unknown";
-  if (word.card && word.card.due <= Date.now()) return "due";
+  if (!word.card || word.card.state === 0) return "new";
+  if (word.card.due <= Date.now()) return "due";
+  if (word.card.state === 2) return "review";
   return "learning";
 }
 

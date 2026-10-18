@@ -238,10 +238,7 @@ export async function scanText(
     if (candidate.start < end) continue;
     const words = matches.get(normalize(candidate.term))?.words || [];
     if (!words.length) continue;
-    const states = words.map((w) => stateOf(vocabulary.get(w.id)));
-    const state = (
-      ["due", "learning", "known", "suspended", "unknown"] as const
-    ).find((s) => states.includes(s))!;
+    const state = stateOf(vocabulary.get(words[0]!.id));
     spans.push({ ...candidate, ids: words.map((w) => w.id), state });
     end = candidate.end;
   }

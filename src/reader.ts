@@ -4,6 +4,7 @@ import { rpc } from "./api";
 import type { ScanSpan } from "./lookup";
 import { matchesModifiers, readerKeysSchema } from "./controls";
 import { installInputPrevention } from "./input-prevention";
+import { wordHighlightCss, wordStyleStates } from "./word-styles";
 import {
   defaults,
   type Settings,
@@ -36,7 +37,7 @@ export function startReader(
   const excluded =
     excludedSelector + (options.onLookup ? ",.meaning-label,.attribution" : "");
   const blocks = new Map<Element, Block>();
-  const highlights = new Map<WordState, Highlight>();
+  const highlights = new Map<WordState | "unparsed", Highlight>();
   const queued = new Set<Element>();
   let settings: Settings = defaults;
   let active = false;
@@ -67,15 +68,9 @@ export function startReader(
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   const style = document.createElement("style");
   style.dataset.srsReader = "";
-  style.textContent = `::highlight(srs-unknown){background-color:#a78bfa30;color:inherit}::highlight(srs-learning){background-color:#60a5fa33;color:inherit}::highlight(srs-due){background-color:#fbbf2445;color:inherit}::highlight(srs-known){color:inherit}::highlight(srs-suspended){background-color:#94a3b826;color:inherit}::highlight(srs-focus){background-color:#a78bfaaa;color:inherit}`;
+  style.textContent = wordHighlightCss(settings);
   document.documentElement.append(style);
-  for (const state of [
-    "unknown",
-    "learning",
-    "due",
-    "known",
-    "suspended",
-  ] as const) {
+  for (const state of wordStyleStates) {
     const highlight = new Highlight();
     highlights.set(state, highlight);
     CSS.highlights.set(`srs-${state}`, highlight);
@@ -232,6 +227,30 @@ export function startReader(
             block.spans.push(adjusted);
             block.ranges.push(range);
             highlights.get(span.state)!.add(range);
+          }
+          if (
+            settings.wordColorsEnabled &&
+            settings.wordStyles.unparsed.mode !== "none"
+          ) {
+            let matched = 0;
+            for (const segment of new Intl.Segmenter(settings.language, {
+              granularity: "word",
+            }).segment(text.slice(offset, end))) {
+              if (!segment.isWordLike) continue;
+              while (spans[matched] && spans[matched]!.end <= segment.index)
+                matched++;
+              if (spans[matched] && spans[matched]!.start <= segment.index)
+                continue;
+              const range = makeRange(
+                parts,
+                offset + segment.index,
+                offset + segment.index + segment.segment.length,
+              );
+              if (range) {
+                block.ranges.push(range);
+                highlights.get("unparsed")!.add(range);
+              }
+            }
           }
           offset = end;
         }
@@ -442,7 +461,7 @@ export function startReader(
   async function configure(preservePopup = false) {
     settings = await rpc({ action: "settings" });
     if (ctx.isInvalid) return;
-    style.textContent = `::highlight(srs-unknown){background-color:#a78bfa30;color:inherit}::highlight(srs-learning){background-color:#60a5fa33;color:inherit}::highlight(srs-due){background-color:#fbbf2445;color:inherit}::highlight(srs-known){color:inherit}::highlight(srs-suspended){background-color:#94a3b826;color:inherit}::highlight(srs-focus){background-color:#a78bfaaa;color:inherit}`;
+    style.textContent = wordHighlightCss(settings);
     clearTimeout(timer);
     generation++;
     const next =

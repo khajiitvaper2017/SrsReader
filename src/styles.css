@@ -290,6 +290,14 @@ mark {
   background: var(--blue-soft);
   color: var(--blue);
 }
+.state-new {
+  color: #c7642d;
+  background: #e57c451a;
+}
+.state-review {
+  color: #299978;
+  background: #2999781a;
+}
 .state-due {
   background: var(--amber-soft);
   color: var(--amber);
@@ -828,6 +836,38 @@ mark {
   min-height: 24px;
   font-size: 11px;
   margin-bottom: 4px;
+}
+.word-colors {
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.word-colors summary {
+  cursor: pointer;
+}
+.word-colors .setting-row {
+  padding: 8px 0;
+}
+.word-color-options {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.word-color-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) 110px 32px;
+  align-items: center;
+  gap: 8px;
+}
+.word-color-row select {
+  font-size: 12px;
+  min-height: 28px;
+}
+.word-color-row input[type="color"] {
+  width: 32px;
+  height: 28px;
+  padding: 2px;
+  cursor: pointer;
 }
 .word-heading {
   display: flex;
