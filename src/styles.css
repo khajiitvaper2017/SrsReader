@@ -321,6 +321,77 @@ button.master-action[aria-pressed="true"] {
   max-width: 1050px;
   margin: 0 auto;
 }
+.docs-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.docs-topics {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 3px;
+}
+.docs-topics a {
+  padding: 6px 10px;
+  border-radius: 5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.docs-topics a:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.docs-topics a[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.docs-content {
+  max-width: 70ch;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.docs-content h1 {
+  margin-bottom: 16px;
+}
+.docs-content h2 {
+  margin: 24px 0 8px;
+  font-size: 16px;
+}
+.docs-content p,
+.docs-content ul,
+.docs-content ol {
+  margin: 0 0 12px;
+}
+.docs-content ul,
+.docs-content ol {
+  padding-left: 22px;
+}
+.docs-content li + li {
+  margin-top: 6px;
+}
+.docs-content code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--hover);
+  font-size: 0.9em;
+}
+@media (max-width: 640px) {
+  .docs-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .docs-topics {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+}
 .app-header {
   height: 48px;
   padding: 0 16px;

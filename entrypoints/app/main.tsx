@@ -66,6 +66,8 @@ import {
   wiktionaryName,
 } from "../../src/WiktionaryBrowser";
 
+const DocsPage = React.lazy(() => import("../../src/DocsPage"));
+
 function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
   const [settings, setSettings, ready] = useSettings();
@@ -83,7 +85,9 @@ function App() {
     addEventListener("hashchange", hash);
     return () => removeEventListener("hashchange", hash);
   }, []);
-  const setup = page === "setup" || !settings.setupComplete;
+  const docs = page === "docs" || page.startsWith("docs/");
+  const inSetup = page === "setup" || !settings.setupComplete;
+  const setup = inSetup && !docs;
   if (!ready) return null;
   return (
     <div className="app-shell">
@@ -92,29 +96,38 @@ function App() {
           <a href="#review" className="brand-link">
             <Logo small />
           </a>
-          {!setup && (
-            <nav aria-label={t("pages")}>
-              {[
-                ["review", t("review")],
-                ["words", t("words")],
-                ["settings", t("settings")],
-              ].map(([id, label]) => (
-                <a
-                  className={page === id ? "active" : ""}
-                  href={`#${id}`}
-                  key={id}
-                >
-                  {label}
-                  {id === "review" && stats.due > 0 && (
-                    <span className="nav-count">{stats.due}</span>
-                  )}
-                </a>
-              ))}
-            </nav>
-          )}
+          <nav aria-label={t("pages")}>
+            {(inSetup
+              ? [
+                  ["setup", t("setup")],
+                  ["docs", t("docs")],
+                ]
+              : [
+                  ["review", t("review")],
+                  ["words", t("words")],
+                  ["settings", t("settings")],
+                  ["docs", t("docs")],
+                ]
+            ).map(([id, label]) => (
+              <a
+                className={page.split("/")[0] === id ? "active" : ""}
+                href={`#${id}`}
+                key={id}
+              >
+                {label}
+                {id === "review" && stats.due > 0 && (
+                  <span className="nav-count">{stats.due}</span>
+                )}
+              </a>
+            ))}
+          </nav>
         </header>
         <div className="page-content">
-          {setup ? (
+          {docs ? (
+            <React.Suspense fallback={null}>
+              <DocsPage topic={page.split("/")[1] || "getting-started"} />
+            </React.Suspense>
+          ) : setup ? (
             <SettingsPage settings={settings} setSettings={setSettings} setup />
           ) : page === "settings" ? (
             <SettingsPage settings={settings} setSettings={setSettings} />

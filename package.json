@@ -25,6 +25,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-i18next": "^17.1.0",
+    "react-markdown": "^10.1.0",
     "ts-fsrs": "5.4.2",
     "xz-decompress": "^0.2.3",
     "zod": "^4.1.0"
