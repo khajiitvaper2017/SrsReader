@@ -415,6 +415,7 @@ function WordsPage({ settings }: { settings: Settings }) {
       <ErrorBox error={error} />
       <div className="word-toolbar">
         <input
+          type="search"
           aria-label="Search saved words"
           placeholder="Search words"
           value={query}
@@ -1060,6 +1061,51 @@ function SettingsPage({
           value={settings.lookupBindings}
           onChange={(lookupBindings) => void update({ lookupBindings })}
         />
+        <details className="input-prevention">
+          <summary>Input action prevention</summary>
+          <p className="muted">
+            Active only for matching mouse lookup bindings. Block opening links
+            in a new tab, autoscroll, or history navigation in these locations.
+          </p>
+          <div className="prevention-groups">
+            {([
+              ["preventMiddleMouse", "Middle mouse button"],
+              ["preventBackForward", "Back/forward mouse buttons"],
+            ] as const).map(([key, label]) => (
+              <fieldset
+                key={key}
+                disabled={!settings.lookupBindings.some(
+                  (binding) => binding.type === "mouse" &&
+                    (key === "preventMiddleMouse"
+                      ? binding.button === 1
+                      : binding.button === 3 || binding.button === 4),
+                )}
+              >
+                <legend>{label}</legend>
+                {([
+                  ["textHover", "Text hover"],
+                  ["webpages", "Webpages"],
+                  ["popups", "Lookup popups"],
+                  ["extensionPages", "Extension pages"],
+                  ["searchFields", "Search fields"],
+                ] as const).map(([scope, name]) => (
+                  <label key={scope}>
+                    <input
+                      type="checkbox"
+                      checked={settings[key][scope]}
+                      onChange={(event) =>
+                        void update({
+                          [key]: { ...settings[key], [scope]: event.target.checked },
+                        })
+                      }
+                    />
+                    {name}
+                  </label>
+                ))}
+              </fieldset>
+            ))}
+          </div>
+        </details>
       </section>
       {setup ? (
         <div className="setup-footer">

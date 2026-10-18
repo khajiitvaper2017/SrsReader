@@ -3,6 +3,7 @@ import { browser } from "wxt/browser";
 import { rpc } from "./api";
 import { db } from "./db";
 import { playBlob, speak } from "./audio";
+import { installInputPrevention } from "./input-prevention";
 import {
   defaults,
   type Definition,
@@ -84,7 +85,7 @@ export function Empty({
     </div>
   );
 }
-export function useSettings() {
+export function useSettings(scope: "extensionPages" | "popups" = "extensionPages") {
   const [settings, setSettings] = useState<Settings>(defaults);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -98,6 +99,7 @@ export function useSettings() {
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
   }, [settings.theme]);
+  useEffect(() => installInputPrevention(() => settings, scope), [settings, scope]);
   return [settings, setSettings, ready] as const;
 }
 export function useChanges(callback: () => void) {

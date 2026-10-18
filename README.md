@@ -61,7 +61,11 @@ Configure lookup in **Settings → Lookup controls**. You can enable several bin
 
 For a custom binding, select **Mouse button**, **Keyboard shortcut**, or **Hold key + hover**, then choose **Record binding** and press the input you want. Modifiers such as Ctrl, Alt, Shift, and Meta are supported. Release modifier keys to finish recording a modifier-only hover binding. Escape cancels recording.
 
-Mouse and keyboard bindings can also look up selected text. Mouse buttons keep their normal browser behavior when no word or selected text is under the pointer. Some shortcuts are reserved by the browser or operating system and cannot be overridden.
+Mouse and keyboard bindings can also look up selected text. Some shortcuts are reserved by the browser or operating system and cannot be overridden.
+
+Open **Settings → Lookup controls → Input action prevention** to block normal middle-click or Back/Forward button actions. Each button group has independent options for **Text hover**, **Webpages**, **Lookup popups**, **Extension pages** (Review, Words, Settings, and the toolbar), and **Search fields**. Text hover covers any text, including words missing from your dictionaries. Selecting a page option blocks actions across that page; selecting only Text hover or Search fields leaves other areas alone.
+
+Prevention activates automatically for matching mouse lookup bindings, including their modifiers. A Middle mouse binding enables middle-click prevention; a Mouse Forward binding enables prevention for Forward alone. Shift + hover does not block mouse buttons. Prevention defaults to all page types and search fields; turn off locations where you want normal browser actions. Successful mouse lookups always block the button's browser action. On paused or disabled websites, mouse buttons keep their normal behavior.
 
 Choose **Mine word** to save all meanings and the current sentence. Saving another example adds it to the same word. Choose **Again**, **Hard**, **Good**, or **Easy** to mine and review in one action, including a word you have never saved before. These buttons also review words before their scheduled due time. Opening a word alone does not count as a review.
 

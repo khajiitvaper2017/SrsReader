@@ -16,6 +16,21 @@ export const lookupBindingSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("hover"), code: z.string(), ...modifiers }),
 ]);
 export type LookupBinding = z.infer<typeof lookupBindingSchema>;
+export const inputPreventionSchema = z
+  .object({
+    textHover: z.boolean(),
+    webpages: z.boolean(),
+    popups: z.boolean(),
+    extensionPages: z.boolean(),
+    searchFields: z.boolean(),
+  })
+  .default({
+    textHover: false,
+    webpages: true,
+    popups: true,
+    extensionPages: true,
+    searchFields: true,
+  });
 const noModifiers = { ctrl: false, alt: false, shift: false, meta: false };
 export const lookupPresets: LookupBinding[] = [
   { type: "mouse", button: 1, ...noModifiers },

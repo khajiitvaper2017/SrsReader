@@ -3,6 +3,7 @@ import { defineContentScript } from "wxt/utils/define-content-script";
 import { rpc } from "../src/api";
 import type { ScanSpan } from "../src/lookup";
 import { matchesModifiers } from "../src/controls";
+import { installInputPrevention } from "../src/input-prevention";
 import {
   defaults,
   type Settings,
@@ -33,6 +34,11 @@ export default defineContentScript({
     const queued = new Set<Element>();
     let settings: Settings = defaults;
     let active = false;
+    const removeInputPrevention = installInputPrevention(
+      () => (active ? settings : undefined),
+      "webpages",
+    );
+    ctx.onInvalidated(removeInputPrevention);
     let scanning = false;
     let generation = 0;
     let pointer:

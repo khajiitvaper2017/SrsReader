@@ -21,7 +21,7 @@ import {
 import "../../src/styles.css";
 
 function Lookup() {
-  const [settings, setSettings] = useSettings();
+  const [settings, setSettings] = useSettings("popups");
   const [result, setResult] = useState<LookupResult>();
   const [term, setTerm] = useState("");
   const [context, setContext] = useState<ReadingContext>();

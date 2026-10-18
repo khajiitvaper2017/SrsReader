@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { lookupBindingSchema } from "./controls";
+import { inputPreventionSchema, lookupBindingSchema } from "./controls";
 import { supportedLanguages } from "./languages";
 
 export const normalize = (text: string) => text.normalize("NFC");
@@ -16,6 +16,8 @@ export const settingsSchema = z.object({
     .default(supportedLanguages[0].code),
   setupComplete: z.boolean().default(false),
   lookupBindings: z.array(lookupBindingSchema).default([]),
+  preventMiddleMouse: inputPreventionSchema,
+  preventBackForward: inputPreventionSchema,
   paused: z.boolean().default(false),
   disabledHosts: z.array(z.string()).default([]),
   theme: z.enum(["system", "light", "dark"]).default("system"),

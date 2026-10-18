@@ -1182,6 +1182,45 @@ mark {
   margin-top: 8px;
   color: var(--muted);
 }
+.input-prevention {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+.input-prevention summary {
+  cursor: pointer;
+}
+.input-prevention p {
+  margin: 10px 0;
+}
+.prevention-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+.prevention-groups fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 160px;
+}
+.prevention-groups legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.prevention-groups fieldset:disabled {
+  opacity: 0.55;
+}
+.prevention-groups label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
+}
+.prevention-groups input {
+  margin: 0;
+}
 .setup-footer {
   display: flex;
   justify-content: flex-end;
