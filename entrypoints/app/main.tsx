@@ -1,3 +1,4 @@
+import { Select, SelectOption } from "../../src/Select";
 import {
   Check,
   X,
@@ -255,12 +256,13 @@ function ReviewPage({
     if (settings.autoplay && word)
       void (async () => {
         const recording = await db.audio.get(word.id);
-        if (recording) await playBlob(recording.blob);
+        if (recording) await playBlob(recording.blob, settings.normalizeAudio);
         else await speak(word.lemma, word.language, settings.voice);
       })().catch((error) => setError(error.message));
   }
   useEffect(() => {
     function key(event: KeyboardEvent) {
+      if ((event.target as HTMLElement).closest('[role="menu"]')) return;
       if (
         ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(
           (event.target as HTMLElement).tagName,
@@ -536,22 +538,20 @@ function WordsPage({ settings }: { settings: Settings }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <select
+        <Select
           aria-label={t("filter_words")}
           value={filter}
-          onChange={(event) => setFilter(event.target.value)}
+          onValueChange={(value) => setFilter(value)}
         >
-          {[
-            ["all", t("all_words")],
-            ...wordStates
-              .filter((state) => state !== "unknown")
-              .map((state) => [state, t(wordStateLabels[state])]),
-          ].map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectOption value="all">{t("all_words")}</SelectOption>
+          {wordStates
+            .filter((state) => state !== "unknown")
+            .map((state) => (
+              <SelectOption key={state} value={state}>
+                {t(wordStateLabels[state])}
+              </SelectOption>
+            ))}
+        </Select>
       </div>
       {!visible.length ? (
         <section className="panel">
@@ -660,7 +660,12 @@ function WordsPage({ settings }: { settings: Settings }) {
                   settings={settings}
                 />
               )}
-              <WordExamples key={word.id} word={word} settings={settings} />
+              <WordExamples
+                key={word.id}
+                word={word}
+                settings={settings}
+                surface={word.contexts[0]?.surface}
+              />
               {word.contexts.map((context, i) => (
                 <div className="sentence-box" key={`${word.id}:${i}`}>
                   <Sentence context={context} language={word.language} />
@@ -1152,25 +1157,26 @@ function SettingsPage({
         </label>
         <label className="setting-row">
           <strong>{t("interface_language_setting")}</strong>
-          <select
+          <Select
             aria-label={t("interface_language_setting")}
             value={settings.interfaceLanguage}
-            onChange={(event) =>
+            onValueChange={(value) =>
               void update({
-                interfaceLanguage: event.target
-                  .value as Settings["interfaceLanguage"],
+                interfaceLanguage: value as Settings["interfaceLanguage"],
               })
             }
           >
-            <option value="auto">{t("same_as_native_language")}</option>
+            <SelectOption value="auto">
+              {t("same_as_native_language")}
+            </SelectOption>
             {interfaceLanguages.map((language) => (
-              <option key={language} value={language}>
+              <SelectOption key={language} value={language}>
                 {new Intl.DisplayNames([language], { type: "language" }).of(
                   language,
                 )}
-              </option>
+              </SelectOption>
             ))}
-          </select>
+          </Select>
         </label>
         <div className="setting-footnote">
           {t("read_and_collect_words_in_your_study_language")}{" "}
@@ -1653,18 +1659,18 @@ function SettingsPage({
                 <span>
                   <strong>{t("appearance")}</strong>
                 </span>
-                <select
+                <Select
                   value={settings.theme}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     void update({
-                      theme: event.target.value as Settings["theme"],
+                      theme: value as Settings["theme"],
                     })
                   }
                 >
-                  <option value="system">{t("system")}</option>
-                  <option value="light">{t("light")}</option>
-                  <option value="dark">{t("dark")}</option>
-                </select>
+                  <SelectOption value="system">{t("system")}</SelectOption>
+                  <SelectOption value="light">{t("light")}</SelectOption>
+                  <SelectOption value="dark">{t("dark")}</SelectOption>
+                </Select>
               </label>
               <label className="setting-row">
                 <span>
@@ -1776,18 +1782,21 @@ function SettingsPage({
                 <span>
                   <strong>{t("words_without_frequency")}</strong>
                 </span>
-                <select
+                <Select
                   value={settings.missingFrequency}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     void update({
-                      missingFrequency: event.target
-                        .value as Settings["missingFrequency"],
+                      missingFrequency: value as Settings["missingFrequency"],
                     })
                   }
                 >
-                  <option value="last">{t("introduce_last")}</option>
-                  <option value="random">{t("assign_random_frequency")}</option>
-                </select>
+                  <SelectOption value="last">
+                    {t("introduce_last")}
+                  </SelectOption>
+                  <SelectOption value="random">
+                    {t("assign_random_frequency")}
+                  </SelectOption>
+                </Select>
               </label>
               <label className="setting-row">
                 <span>
@@ -1847,17 +1856,19 @@ function SettingsPage({
                 <span>
                   <strong>{t("default_card_front")}</strong>
                 </span>
-                <select
+                <Select
                   value={settings.front}
-                  onChange={(event) =>
+                  onValueChange={(value) =>
                     void update({
-                      front: event.target.value as Settings["front"],
+                      front: value as Settings["front"],
                     })
                   }
                 >
-                  <option value="word">{t("word_only")}</option>
-                  <option value="sentence">{t("word_in_sentence")}</option>
-                </select>
+                  <SelectOption value="word">{t("word_only")}</SelectOption>
+                  <SelectOption value="sentence">
+                    {t("word_in_sentence")}
+                  </SelectOption>
+                </Select>
               </label>
               <div className="setting-footnote">
                 {t("new_words_follow_combined_frequency_ranks_from_most")}{" "}
@@ -1898,6 +1909,20 @@ function SettingsPage({
             </label>
             <label className="setting-row">
               <span>
+                <strong>{t("normalize_recording_volume")}</strong>
+                <small>{t("normalize_recording_volume_help")}</small>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={settings.normalizeAudio}
+                onChange={(event) =>
+                  void update({ normalizeAudio: event.target.checked })
+                }
+              />
+            </label>
+            <label className="setting-row">
+              <span>
                 <strong>{t("local_voice")}</strong>
                 <small>
                   {voices.some(
@@ -1909,21 +1934,21 @@ function SettingsPage({
                       })}
                 </small>
               </span>
-              <select
+              <Select
                 value={settings.voice}
-                onChange={(event) => void update({ voice: event.target.value })}
+                onValueChange={(value) => void update({ voice: value })}
               >
-                <option value="">{t("automatic")}</option>
+                <SelectOption value="">{t("automatic")}</SelectOption>
                 {voices
                   .filter(
                     (v) => v.lang.split("-")[0] === settings.studyLanguage,
                   )
                   .map((voice) => (
-                    <option key={voice.voiceURI} value={voice.voiceURI}>
+                    <SelectOption key={voice.voiceURI} value={voice.voiceURI}>
                       {voice.name}
-                    </option>
+                    </SelectOption>
                   ))}
-              </select>
+              </Select>
             </label>
             <label className="setting-row">
               <span>

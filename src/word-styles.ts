@@ -11,7 +11,7 @@ export const wordStates = [
   "suspended",
 ] as const;
 export type WordState = (typeof wordStates)[number];
-export const wordStyleStates = [...wordStates, "unparsed"] as const;
+export const wordStyleStates = [...wordStates, "ignored", "unparsed"] as const;
 export const wordStateLabels = {
   unknown: "new",
   new: "saved",
@@ -20,6 +20,7 @@ export const wordStateLabels = {
   due: "due",
   known: "mastered",
   suspended: "suspended",
+  ignored: "ignored",
   unparsed: "unparsed",
 };
 const styleSchema = z.object({
@@ -27,17 +28,18 @@ const styleSchema = z.object({
   color: z.string().regex(/^#[\da-f]{6}$/i),
 });
 export const wordStylesSchema = z
-  .record(z.enum(wordStyleStates), styleSchema)
-  .default({
-    unknown: { mode: "text", color: "#dc4c4c" },
-    new: { mode: "text", color: "#e57c45" },
-    learning: { mode: "text", color: "#d99a24" },
-    review: { mode: "text", color: "#299978" },
-    due: { mode: "background", color: "#d99a24" },
-    known: { mode: "none", color: "#40975c" },
-    suspended: { mode: "none", color: "#9298a4" },
-    unparsed: { mode: "none", color: "#9298a4" },
-  });
+  .object({
+    unknown: styleSchema.default({ mode: "text", color: "#dc4c4c" }),
+    new: styleSchema.default({ mode: "text", color: "#e57c45" }),
+    learning: styleSchema.default({ mode: "text", color: "#d99a24" }),
+    review: styleSchema.default({ mode: "text", color: "#299978" }),
+    due: styleSchema.default({ mode: "background", color: "#d99a24" }),
+    known: styleSchema.default({ mode: "none", color: "#40975c" }),
+    suspended: styleSchema.default({ mode: "none", color: "#9298a4" }),
+    ignored: styleSchema.default({ mode: "none", color: "#9298a4" }),
+    unparsed: styleSchema.default({ mode: "none", color: "#9298a4" }),
+  })
+  .prefault({});
 
 export function wordHighlightCss(settings: Settings) {
   return (

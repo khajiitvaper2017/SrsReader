@@ -201,7 +201,8 @@ export type ScanSpan = {
   end: number;
   term: string;
   ids: string[];
-  state: WordState;
+  candidates: { id: string; tags: string[]; state: WordState }[];
+  state: WordState | "ignored";
 };
 const escapeRegex = (text: string) =>
   text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -267,7 +268,16 @@ export async function scanText(
     const words = matches.get(normalize(candidate.term))?.words || [];
     if (!words.length) continue;
     const state = stateOf(vocabulary.get(words[0]!.id), matureIntervalDays);
-    spans.push({ ...candidate, ids: words.map((w) => w.id), state });
+    spans.push({
+      ...candidate,
+      ids: words.map((w) => w.id),
+      candidates: words.map((word) => ({
+        id: word.id,
+        tags: word.meanings.flatMap((meaning) => meaning.tags.split(/\s+/u)),
+        state: stateOf(vocabulary.get(word.id), matureIntervalDays),
+      })),
+      state,
+    });
     end = candidate.end;
   }
   return spans;

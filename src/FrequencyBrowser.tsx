@@ -1,3 +1,4 @@
+import { Select, SelectOption } from "./Select";
 import { Download, LoaderCircle } from "lucide-react";
 import { t, i18n, downloadSize } from "./i18n";
 import { languageCode, languageName, supportedLanguages } from "./languages";
@@ -82,15 +83,15 @@ export function FrequencyBrowser({
       <div className="dictionary-filters">
         <label>
           {t("language")}{" "}
-          <select
+          <Select
             aria-label={t("frequency_language")}
             value={selectedLanguage}
-            onChange={(event) => {
-              setLanguage(event.target.value);
+            onValueChange={(value) => {
+              setLanguage(value);
               setType("");
             }}
           >
-            <option value="">{t("all_languages")}</option>
+            <SelectOption value="">{t("all_languages")}</SelectOption>
             {[...languages]
               .filter((code) => languageName(code) !== code)
               .sort((a, b) =>
@@ -100,38 +101,38 @@ export function FrequencyBrowser({
                 ),
               )
               .map((code) => (
-                <option key={code} value={code}>
+                <SelectOption key={code} value={code}>
                   {languageName(code)}
-                </option>
+                </SelectOption>
               ))}
-          </select>
+          </Select>
         </label>
         <label>
           {t("type")}{" "}
-          <select
+          <Select
             aria-label={t("corpus_type")}
             value={type}
-            onChange={(event) => setType(event.target.value)}
+            onValueChange={(value) => setType(value)}
           >
-            <option value="">{t("all_types")}</option>
+            <SelectOption value="">{t("all_types")}</SelectOption>
             {types.map((type) => (
-              <option key={type} value={type}>
+              <SelectOption key={type} value={type}>
                 {t(typeLabels[type]!)}
-              </option>
+              </SelectOption>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           {t("sort_by")}{" "}
-          <select
+          <Select
             aria-label={t("sort_frequency_dictionaries")}
             value={sort}
-            onChange={(event) => setSort(event.target.value)}
+            onValueChange={(value) => setSort(value)}
           >
-            <option value="language">{t("language")}</option>
-            <option value="type">{t("type")}</option>
-            <option value="size">{t("download_size")}</option>
-          </select>
+            <SelectOption value="language">{t("language")}</SelectOption>
+            <SelectOption value="type">{t("type")}</SelectOption>
+            <SelectOption value="size">{t("download_size")}</SelectOption>
+          </Select>
         </label>
         <input
           type="search"

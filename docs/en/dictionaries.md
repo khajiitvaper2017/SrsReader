@@ -16,7 +16,7 @@ Use **↑** and **↓** to set definition priority: higher dictionaries appear f
 
 Choose **Check updates**, then **Update** when a release is available. Checks are manual. Without an update source, import a newer ZIP with the same title and languages.
 
-Under **Settings → Reading & appearance → Dictionary tags**, search the tags from installed dictionaries and uncheck any you want to hide. A hidden tag is hidden across all dictionaries. Hover over a tag to read its explanation. These choices are included when exporting settings.
+Under **Settings → Reading & appearance → Ignore words by tag**, check tags to mark matching words as **Ignored**. In the popup, click a tag and choose **Ignore**. Ignored words have no coloring by default and still open their dictionary entries. Choose a color under **Word colors → Ignored**, or uncheck a tag to restore normal coloring. Tag labels remain visible; hover for the dictionary’s explanation. These choices are included in settings exports.
 
 ## Frequency
 

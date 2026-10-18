@@ -3,7 +3,11 @@ import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
 import type { Grade } from "ts-fsrs";
 import { requestSchema, type Request } from "../src/api";
-import { cachePronunciation } from "../src/audio";
+import {
+  cachePronunciation,
+  findPronunciations,
+  cacheAudioSource,
+} from "../src/audio";
 import { db } from "../src/db";
 import { languageCode } from "../src/languages";
 import { wordExamples, exampleCorpusInfo } from "../src/examples";
@@ -247,7 +251,11 @@ export default defineBackground(() => {
           ) || { words: [], unresolved: [] }
         );
       case "examples":
-        return wordExamples(request.lemma, settings.studyLanguage);
+        return wordExamples(
+          request.lemma,
+          settings.studyLanguage,
+          request.surface,
+        );
       case "exampleCorpus":
         return exampleCorpusInfo(settings.studyLanguage);
       case "createSession": {
@@ -405,7 +413,23 @@ export default defineBackground(() => {
             .count(),
         };
       }
+      case "audioSources": {
+        const [language, lemma, reading] = JSON.parse(request.id) as [
+          string,
+          string,
+          string,
+        ];
+        return findPronunciations(language, lemma, reading);
+      }
       case "audio": {
+        if (request.source) {
+          if (request.source.id !== request.id)
+            throw new Error(t("invalid_audio_source"));
+          const record = await cacheAudioSource(request.source);
+          if (!record) throw new Error(t("audio_source_unavailable"));
+          const { blob, ...info } = record;
+          return info;
+        }
         const saved = await db.audio.get(request.id);
         if (saved) {
           const { blob, ...info } = saved;

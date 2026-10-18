@@ -30,14 +30,12 @@ async function commons(parameters: Record<string, string>) {
     throw new Error(result.error.info || t("pronunciation_lookup_failed"));
   return result.query;
 }
-export async function cachePronunciation(
+async function* pronunciationSources(
   language: string,
   lemma: string,
   reading: string,
 ) {
   const id = wordId(language, lemma, reading);
-  const saved = await db.audio.get(id);
-  if (saved) return saved;
   const iso3 = languageIso3(language);
   const escaped = lemma.replace(/[\\/.*+?^${}()|[\]]/g, "\\$&");
   const searches = [
@@ -90,14 +88,6 @@ export async function cachePronunciation(
       const meta = file.extmetadata || {};
       const license = plain(meta.LicenseShortName?.value || "");
       if (!license) continue;
-      const response = await fetch(url, {
-        credentials: "omit",
-        signal: AbortSignal.timeout(20000),
-      });
-      if (!response.ok) continue;
-      const blob = await response.blob();
-      if (!blob.type.startsWith("audio/") && blob.type !== "application/ogg")
-        continue;
       const info: AudioInfo = {
         id,
         language,
@@ -109,10 +99,51 @@ export async function cachePronunciation(
         licenseUrl: meta.LicenseUrl?.value || "",
         name: page.title.replace(/^File:/, ""),
       };
-      const record = { ...info, blob };
-      await db.audio.put(record);
-      return record;
+      yield info;
     }
+  }
+}
+
+export async function findPronunciations(
+  language: string,
+  lemma: string,
+  reading: string,
+) {
+  const sources = new Map<string, AudioInfo>();
+  for await (const source of pronunciationSources(language, lemma, reading))
+    sources.set(source.url, source);
+  return [...sources.values()];
+}
+
+export async function cacheAudioSource(info: AudioInfo) {
+  const url = httpsUrl(info.url);
+  if (new URL(url).hostname !== "upload.wikimedia.org")
+    throw new Error(t("invalid_audio_source"));
+  const saved = await db.audio.get(info.id);
+  if (saved?.url === url) return saved;
+  const response = await fetch(url, {
+    credentials: "omit",
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) return null;
+  const blob = await response.blob();
+  if (!blob.type.startsWith("audio/") && blob.type !== "application/ogg")
+    return null;
+  const record = { ...info, blob };
+  await db.audio.put(record);
+  return record;
+}
+
+export async function cachePronunciation(
+  language: string,
+  lemma: string,
+  reading: string,
+) {
+  const saved = await db.audio.get(wordId(language, lemma, reading));
+  if (saved) return saved;
+  for await (const source of pronunciationSources(language, lemma, reading)) {
+    const record = await cacheAudioSource(source);
+    if (record) return record;
   }
   return null;
 }
@@ -131,13 +162,20 @@ export async function localVoices(): Promise<SpeechSynthesisVoice[]> {
     speechSynthesis.addEventListener("voiceschanged", finish, { once: true });
   });
 }
-let currentAudio: HTMLAudioElement | undefined;
-let currentUrl: string | undefined;
+let audioContext: AudioContext | undefined;
+let currentSource: AudioBufferSourceNode | undefined;
+let currentGain: GainNode | undefined;
+let playbackVersion = 0;
 export function stopAudio() {
-  currentAudio?.pause();
-  currentAudio = undefined;
-  if (currentUrl) URL.revokeObjectURL(currentUrl);
-  currentUrl = undefined;
+  playbackVersion++;
+  if (currentSource) {
+    currentSource.onended = null;
+    currentSource.stop();
+    currentSource.disconnect();
+  }
+  currentGain?.disconnect();
+  currentSource = undefined;
+  currentGain = undefined;
   if ("speechSynthesis" in globalThis) speechSynthesis.cancel();
 }
 export async function speak(text: string, language: string, voiceName: string) {
@@ -165,13 +203,65 @@ export async function speak(text: string, language: string, voiceName: string) {
     speechSynthesis.speak(utterance);
   });
 }
-export async function playBlob(blob: Blob) {
+function normalizationGain(buffer: AudioBuffer): number {
+  const channels = Array.from(
+    { length: buffer.numberOfChannels },
+    (_, channel) => buffer.getChannelData(channel),
+  );
+  const frameSize = Math.max(1, Math.round(buffer.sampleRate * 0.02));
+  const frames: { energy: number; samples: number }[] = [];
+  let peak = 0;
+  let maxEnergy = 0;
+  for (let start = 0; start < buffer.length; start += frameSize) {
+    const end = Math.min(start + frameSize, buffer.length);
+    let energy = 0;
+    for (const channel of channels) {
+      for (let i = start; i < end; i++) {
+        const sample = channel[i]!;
+        energy += sample * sample;
+        peak = Math.max(peak, Math.abs(sample));
+      }
+    }
+    const samples = (end - start) * channels.length;
+    frames.push({ energy, samples });
+    maxEnergy = Math.max(maxEnergy, energy / samples);
+  }
+  // Ignore silent frames instead of boosting a recording because of long pauses.
+  const gate = Math.max(0.000001, maxEnergy * 0.01);
+  let energy = 0;
+  let samples = 0;
+  for (const frame of frames) {
+    if (frame.energy / frame.samples < gate) continue;
+    energy += frame.energy;
+    samples += frame.samples;
+  }
+  if (!samples) return 1;
+  // Match speech RMS, cap amplification at +12 dB, and keep peaks below half scale.
+  return Math.min(0.0625 / Math.sqrt(energy / samples), 0.475 / peak, 4);
+}
+
+export async function playBlob(blob: Blob, normalize: boolean) {
   stopAudio();
-  currentUrl = URL.createObjectURL(blob);
-  currentAudio = new Audio(currentUrl);
-  currentAudio.onended = () => {
-    if (currentUrl) URL.revokeObjectURL(currentUrl);
-    currentUrl = undefined;
+  const version = playbackVersion;
+  const context = (audioContext ??= new AudioContext());
+  await context.resume();
+  const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+  if (version !== playbackVersion) return;
+  const source = context.createBufferSource();
+  const gain = context.createGain();
+  source.buffer = buffer;
+  gain.gain.value = normalize ? normalizationGain(buffer) : 1;
+  source.connect(gain);
+  gain.connect(context.destination);
+  source.onended = () => {
+    source.disconnect();
+    gain.disconnect();
+    if (currentSource === source) {
+      currentSource = undefined;
+      currentGain = undefined;
+    }
   };
-  await currentAudio.play();
+  source.start();
+  currentSource = source;
+  currentGain = gain;
 }

@@ -3,6 +3,7 @@ import { browser } from "wxt/browser";
 import { z } from "zod";
 import {
   contextSchema,
+  audioInfoSchema,
   settingsSchema,
   translationSchema,
   type AudioInfo,
@@ -41,6 +42,7 @@ export const requestSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("examples"),
     lemma: selection.term,
+    surface: selection.term,
   }),
   z.object({ action: z.literal("exampleCorpus") }),
   z.object({ action: z.literal("createSession"), ...selection }),
@@ -92,10 +94,12 @@ export const requestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("queue") }),
   z.object({ action: z.literal("preview"), id: z.string() }),
   z.object({ action: z.literal("stats") }),
+  z.object({ action: z.literal("audioSources"), id: z.string() }),
   z.object({
     action: z.literal("audio"),
     id: z.string(),
     download: z.boolean(),
+    source: audioInfoSchema.optional(),
   }),
 ]);
 export type Request = z.infer<typeof requestSchema>;
@@ -136,6 +140,7 @@ type Responses = {
   preview: number[];
   stats: { total: number; known: number; due: number; today: number };
   audio: AudioInfo | null;
+  audioSources: AudioInfo[];
 };
 export async function rpc<R extends Request>(
   request: R,
@@ -145,6 +150,8 @@ export async function rpc<R extends Request>(
     throw new Error(
       response?.error || t("the_extension_could_not_respond_reload_this_page"),
     );
+  if (request.action === "settings" || request.action === "setSettings")
+    response.value = settingsSchema.parse(response.value);
   return response.value;
 }
 export async function changed() {

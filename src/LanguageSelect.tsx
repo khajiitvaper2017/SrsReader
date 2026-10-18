@@ -1,3 +1,4 @@
+import { Select, SelectOption } from "./Select";
 import { t, i18n } from "./i18n";
 import { supportedLanguages, languageName } from "./languages";
 
@@ -11,24 +12,24 @@ export function LanguageSelect({
   onChange: (language: string) => void;
 }) {
   return (
-    <select
+    <Select
       aria-label={label}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onValueChange={(value) => onChange(value)}
     >
-      <option value="" disabled>
+      <SelectOption value="" disabled>
         {t("choose_a_language")}{" "}
-      </option>
+      </SelectOption>
       {[...supportedLanguages]
         .filter((language) => languageName(language) !== language)
         .sort((a, b) =>
           languageName(a).localeCompare(languageName(b), i18n.resolvedLanguage),
         )
         .map((language) => (
-          <option key={language} value={language}>
+          <SelectOption key={language} value={language}>
             {languageName(language)}
-          </option>
+          </SelectOption>
         ))}
-    </select>
+    </Select>
   );
 }

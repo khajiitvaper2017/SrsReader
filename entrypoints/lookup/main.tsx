@@ -1,4 +1,5 @@
-import { Check, Plus, X, ArrowLeft, Play, Undo2 } from "lucide-react";
+import { Select, SelectOption } from "../../src/Select";
+import { Check, Plus, ArrowLeft, Play, Undo2 } from "lucide-react";
 import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -121,6 +122,7 @@ function LookupEntry({
   const [result, setResult] = useState<LookupResult>();
   const { term, context } = page;
   const [selected, setSelected] = useState(page.selected || "");
+  const [candidateOpen, setCandidateOpen] = useState(false);
   const [saved, setSaved] = useState<Vocabulary>();
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
@@ -222,6 +224,11 @@ function LookupEntry({
   useChanges(reload);
   useEffect(() => {
     function key(event: KeyboardEvent) {
+      if (
+        candidateOpen ||
+        (event.target as HTMLElement).closest('[role="menu"]')
+      )
+        return;
       if (event.key === "Escape") {
         if (onBack) onBack();
         else void rpc({ action: "closeLookup" });
@@ -251,6 +258,19 @@ function LookupEntry({
     document.addEventListener("keydown", key);
     return () => document.removeEventListener("keydown", key);
   });
+  async function ignoreTag(tag: string) {
+    try {
+      const latest = await rpc({ action: "settings" });
+      setSettings(
+        await rpc({
+          action: "setSettings",
+          value: { ...latest, ignoredTags: [...latest.ignoredTags, tag] },
+        }),
+      );
+    } catch (error) {
+      setError((error as Error).message);
+    }
+  }
   async function act(rating?: number) {
     if (!word) return;
     setBusy(true);
@@ -305,14 +325,6 @@ function LookupEntry({
     <div
       className={`lookup-shell ${settings.hideDictionarySources ? "hide-dictionary-sources" : ""}`}
     >
-      <button
-        className="quiet lookup-close"
-        title={t("close_dictionary")}
-        aria-label={t("close_dictionary")}
-        onClick={() => void rpc({ action: "closeLookup" })}
-      >
-        <X aria-hidden="true" />
-      </button>
       <main className="lookup-content">
         <div className="lookup-body">
           {onBack && (
@@ -342,57 +354,92 @@ function LookupEntry({
           )}
           {word && (
             <>
-              {result!.words.length > 1 && (
-                <label className="candidate">
-                  <select
-                    aria-label={t("word")}
-                    value={selected}
-                    onChange={(event) => {
-                      setSelected(event.target.value);
-                      setNotice("");
-                      setLastReview("");
-                    }}
-                  >
-                    {result!.words.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.lemma}
-                        {w.reading ? ` · ${w.reading}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
               <div className="word-heading">
                 <div>
-                  {saved && (
-                    <span
-                      className={`state state-${stateOf(saved, settings.matureIntervalDays)}`}
-                    >
-                      {t(
-                        wordStateLabels[
-                          stateOf(saved, settings.matureIntervalDays)
-                        ],
-                      )}
-                    </span>
-                  )}
                   <h1 lang={word.language}>
                     {folded(term, word.language) !==
                       folded(word.lemma, word.language) && (
                       <span className="surface-form">{term} → </span>
                     )}
                     {word.lemma}
+                    {result!.words.length > 1 && (
+                      <Select
+                        iconOnly
+                        value={selected}
+                        open={candidateOpen}
+                        onOpenChange={setCandidateOpen}
+                        disabled={busy}
+                        aria-label={`${t("choose_word")}: ${word.lemma}`}
+                        title={t("choose_word")}
+                        onValueChange={(value) => {
+                          setSelected(value);
+                          setNotice("");
+                          setLastReview("");
+                        }}
+                      >
+                        {result!.words.map((candidate) => (
+                          <SelectOption key={candidate.id} value={candidate.id}>
+                            <span lang={candidate.language}>
+                              {candidate.lemma}
+                            </span>
+                            {candidate.reading && (
+                              <small>{candidate.reading}</small>
+                            )}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                    )}
                   </h1>
                   {word.reading && (
                     <span className="muted">{word.reading}</span>
                   )}
                 </div>
-                <AudioButton
-                  word={word}
-                  settings={settings}
-                  onError={setError}
-                />
+                <div className="lookup-heading-actions">
+                  <FrequencyBadge word={word} />
+                  <AudioButton
+                    word={word}
+                    settings={settings}
+                    onError={setError}
+                  />
+                </div>
               </div>
-              <FrequencyBadge word={word} />
+              <div className="lookup-meta">
+                {saved && (
+                  <span
+                    className={`state state-${stateOf(saved, settings.matureIntervalDays)}`}
+                  >
+                    {t(
+                      wordStateLabels[
+                        stateOf(saved, settings.matureIntervalDays)
+                      ],
+                    )}
+                  </span>
+                )}
+                {context && (
+                  <SentenceTranslation
+                    key={`${context.sentence}:${context.start}`}
+                    context={{
+                      ...context,
+                      translation:
+                        context.translation ||
+                        saved?.contexts.find(
+                          (c) =>
+                            c.sentence === context.sentence &&
+                            c.start === context.start,
+                        )?.translation,
+                    }}
+                    language={word.language}
+                    settings={settings}
+                    wordId={word.id}
+                    label={t("translate_current_sentence")}
+                    collapsed
+                    compact
+                    onTranslated={(translation) =>
+                      onContext({ ...context, translation })
+                    }
+                  />
+                )}
+              </div>
               {word.forms.filter((form) => !form.startsWith("redirected from "))
                 .length > 0 && (
                 <div className="muted small-text">
@@ -414,34 +461,14 @@ function LookupEntry({
                   meanings={word.meanings}
                   language={word.language}
                   settings={settings}
+                  onIgnoreTag={(tag) => void ignoreTag(tag)}
                 />
-                <WordExamples word={word} settings={settings} />
+                <WordExamples
+                  word={word}
+                  settings={settings}
+                  surface={context?.surface || term}
+                />
               </div>
-              {context && (
-                <div className="lookup-sentence" data-srs-reader="">
-                  <SentenceTranslation
-                    key={`${context.sentence}:${context.start}`}
-                    context={{
-                      ...context,
-                      translation:
-                        context.translation ||
-                        saved?.contexts.find(
-                          (c) =>
-                            c.sentence === context.sentence &&
-                            c.start === context.start,
-                        )?.translation,
-                    }}
-                    language={word.language}
-                    settings={settings}
-                    wordId={word.id}
-                    label={t("translate_current_sentence")}
-                    collapsed
-                    onTranslated={(translation) =>
-                      onContext({ ...context, translation })
-                    }
-                  />
-                </div>
-              )}
             </>
           )}
         </div>

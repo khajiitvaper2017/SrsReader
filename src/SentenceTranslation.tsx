@@ -1,4 +1,4 @@
-import { Languages } from "lucide-react";
+import { Languages, LoaderCircle } from "lucide-react";
 import { t } from "./i18n";
 import { useEffect, useState } from "react";
 import { rpc } from "./api";
@@ -15,6 +15,7 @@ export function TextTranslation({
   onTranslated,
   label = t("translate"),
   collapsed = false,
+  compact = false,
 }: {
   text: string;
   language: string;
@@ -23,6 +24,7 @@ export function TextTranslation({
   onTranslated?: (translation: Translation) => void | Promise<void>;
   label?: string;
   collapsed?: boolean;
+  compact?: boolean;
 }) {
   const [translation, setTranslation] = useState(initialTranslation);
   const [shown, setShown] = useState(!collapsed);
@@ -61,7 +63,10 @@ export function TextTranslation({
     }
   }
   return (
-    <div className="sentence-translation" data-srs-reader="">
+    <div
+      className={`sentence-translation ${compact ? "compact" : ""}`}
+      data-srs-reader=""
+    >
       {shown && translation && (
         <p lang={translation.language} dir="auto">
           {translation.text}
@@ -71,12 +76,18 @@ export function TextTranslation({
         !translation ||
         translation.language !== settings.nativeLanguage) && (
         <button
-          className="link"
+          className={compact ? "quiet icon-button" : "link"}
+          title={busy ? status || t("translating") : label}
+          aria-label={busy ? status || t("translating") : label}
           disabled={busy}
           onClick={() => void translate()}
         >
-          <Languages aria-hidden="true" />{" "}
-          {busy ? status || t("translating") : label}
+          {busy ? (
+            <LoaderCircle className="spin" aria-hidden="true" />
+          ) : (
+            <Languages aria-hidden="true" />
+          )}
+          {!compact && (busy ? status || t("translating") : label)}
         </button>
       )}
       {error && (
@@ -96,6 +107,7 @@ export function SentenceTranslation({
   onTranslated,
   label = t("translate_sentence"),
   collapsed = false,
+  compact = false,
 }: {
   context: ReadingContext;
   language: string;
@@ -104,6 +116,7 @@ export function SentenceTranslation({
   onTranslated?: (translation: Translation) => void;
   label?: string;
   collapsed?: boolean;
+  compact?: boolean;
 }) {
   return (
     <TextTranslation
@@ -114,6 +127,7 @@ export function SentenceTranslation({
       initialTranslation={context.translation}
       label={label}
       collapsed={collapsed}
+      compact={compact}
       onTranslated={async (translation) => {
         onTranslated?.(translation);
         if (wordId)

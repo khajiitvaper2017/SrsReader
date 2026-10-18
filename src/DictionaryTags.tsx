@@ -65,12 +65,12 @@ export function DictionaryTags({
           <label className="dictionary-tag-row" key={name}>
             <input
               type="checkbox"
-              checked={!settings.hiddenTags.includes(name)}
+              checked={settings.ignoredTags.includes(name)}
               onChange={(event) =>
                 onChange({
-                  hiddenTags: event.target.checked
-                    ? settings.hiddenTags.filter((tag) => tag !== name)
-                    : [...settings.hiddenTags, name],
+                  ignoredTags: event.target.checked
+                    ? [...settings.ignoredTags, name]
+                    : settings.ignoredTags.filter((tag) => tag !== name),
                 })
               }
             />

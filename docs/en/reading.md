@@ -22,7 +22,7 @@ The toolbar pauses parsing or disables the current site. **Only parse the readin
 
 ## Examples and translation
 
-Popups show downloaded Tatoeba examples; **Another example** cycles through them. These are separate from the sentence you mine.
+Popups prioritize downloaded Tatoeba examples containing the form you looked up, then fall back to other forms of the same word; **Another example** cycles through them. These are separate from the sentence you mine.
 
 Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading & appearance → Hide source links**.
 
@@ -36,6 +36,8 @@ Download or update examples under **Settings → Example sentences**, or import 
 
 ## Audio
 
-Use the speaker to hear a word or sentence. Choose an installed local voice under **Settings → Pronunciation**. If none is available, install a system voice for your study language.
+Use the speaker to hear a word or sentence. Right-click, Shift-click, or hold it to open **Audio sources**. Click a recording or system voice to try it. Recording credits are hidden by default. Turn off **Settings → Hide source links** to show them in this menu. Choose an installed local voice under **Settings → Pronunciation**. If none is available, install a system voice for your study language.
 
 **Download natural pronunciations** optionally saves word recordings from Wiktionary/Lingua Libre sources. Sentence audio uses the system voice. **Play audio on reveal** enables automatic playback during review.
+
+**Settings → Pronunciation → Normalize recording volume** is enabled by default. It levels the loudness of recordings during playback, with limited amplification and peak protection. Stored audio is unchanged. System TTS uses device volume.

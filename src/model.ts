@@ -33,7 +33,7 @@ export const settingsSchema = z
     theme: z.enum(["system", "light", "dark"]).default("system"),
     hideDictionarySources: z.boolean().default(true),
     firstDictionaryOnly: z.boolean().default(true),
-    hiddenTags: z.array(z.string()).default([]),
+    ignoredTags: z.array(z.string()).default([]),
     scanPopups: z.boolean().default(true),
     detectPageLanguage: z.boolean().default(true),
     nativeLanguage: languageSchema.default(systemLanguage),
@@ -48,6 +48,7 @@ export const settingsSchema = z
     newLimit: z.number().int().min(0).max(10000).default(20),
     missingFrequency: z.enum(["last", "random"]).default("last"),
     audioDownloads: z.boolean().default(false),
+    normalizeAudio: z.boolean().default(true),
     voice: z.string().default(""),
     autoplay: z.boolean().default(false),
     dictionaryPreferences: z

@@ -1,3 +1,4 @@
+import { Select, SelectOption } from "./Select";
 import { RotateCcw } from "lucide-react";
 import { t } from "./i18n";
 import { defaults, type Settings } from "./model";
@@ -51,18 +52,20 @@ export function WordColors({
               >
                 {label}
               </span>
-              <select
+              <Select
                 aria-label={t("word_style", { label: label })}
                 disabled={!settings.wordColorsEnabled}
                 value={style.mode}
-                onChange={(event) =>
-                  change({ mode: event.target.value as typeof style.mode })
+                onValueChange={(value) =>
+                  change({ mode: value as typeof style.mode })
                 }
               >
-                <option value="none">{t("off")}</option>
-                <option value="text">{t("text")}</option>
-                <option value="background">{t("background")}</option>
-              </select>
+                <SelectOption value="none">{t("off")}</SelectOption>
+                <SelectOption value="text">{t("text")}</SelectOption>
+                <SelectOption value="background">
+                  {t("background")}
+                </SelectOption>
+              </Select>
               <input
                 type="color"
                 aria-label={t("word_color", { label: label })}

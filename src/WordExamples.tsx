@@ -11,9 +11,11 @@ import { browser } from "wxt/browser";
 export function WordExamples({
   word,
   settings,
+  surface = word.lemma,
 }: {
   word: Pick<LookupWord, "lemma" | "language">;
   settings: Settings;
+  surface?: string;
 }) {
   const [examples, setExamples] = useState<Example[]>([]);
   const [index, setIndex] = useState(0);
@@ -25,7 +27,7 @@ export function WordExamples({
     setIndex(0);
     setError("");
     setInstalled(true);
-    void rpc({ action: "examples", lemma: word.lemma })
+    void rpc({ action: "examples", lemma: word.lemma, surface })
       .then((result) => {
         if (alive) {
           setExamples(result.examples);
@@ -38,7 +40,7 @@ export function WordExamples({
     return () => {
       alive = false;
     };
-  }, [word.lemma, word.language]);
+  }, [word.lemma, word.language, surface]);
   const example = examples[index];
   if (error)
     return (
@@ -66,11 +68,22 @@ export function WordExamples({
     >
       <Sentence context={example.context} language={word.language} />
       <SentenceTranslation
+        compact
         key={example.id}
         context={example.context}
         language={word.language}
         settings={settings}
       />
+      {examples.length > 1 && (
+        <button
+          title={t("another_example")}
+          aria-label={t("another_example")}
+          className="quiet icon-button example-next"
+          onClick={() => setIndex((index + 1) % examples.length)}
+        >
+          <ChevronRight aria-hidden="true" />
+        </button>
+      )}
       <div className="example-footer" data-srs-reader="">
         <a
           href={example.context.url}
@@ -80,16 +93,6 @@ export function WordExamples({
         >
           Tatoeba · {example.author}
         </a>
-        {examples.length > 1 && (
-          <button
-            title={t("another_example")}
-            aria-label={t("another_example")}
-            className="quiet icon-button"
-            onClick={() => setIndex((index + 1) % examples.length)}
-          >
-            <ChevronRight aria-hidden="true" />
-          </button>
-        )}
       </div>
     </div>
   );

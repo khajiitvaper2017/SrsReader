@@ -1,17 +1,16 @@
-import { Volume2, ChevronDown, ChevronUp } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { ChevronDown, ChevronUp, EyeOff } from "lucide-react";
 import { t, i18n, setInterfaceLanguage, number } from "./i18n";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState, type ReactNode } from "react";
 import { browser } from "wxt/browser";
 import { rpc } from "./api";
 import { db } from "./db";
-import { playBlob, speak } from "./audio";
 import { installInputPrevention } from "./input-prevention";
 import { TextTranslation } from "./SentenceTranslation";
 import {
   defaults,
   type Definition,
-  type LookupWord,
   type Meaning,
   type ReadingContext,
   type Settings,
@@ -224,6 +223,32 @@ function ImageContent({
     <span className="muted">{alt || t("image_unavailable")}</span>
   );
 }
+function hasSectionContent(value: unknown): boolean {
+  function text(value: unknown): string {
+    if (typeof value === "string" || typeof value === "number")
+      return String(value);
+    if (Array.isArray(value)) return value.map(text).join(" ");
+    if (!value || typeof value !== "object") return "";
+    const node = value as Record<string, unknown>;
+    if (
+      node.tag === "summary" ||
+      (node.data as Record<string, unknown> | undefined)?.content === "backlink"
+    )
+      return "";
+    if (
+      (node.type === "image" || node.tag === "img") &&
+      typeof node.path === "string"
+    )
+      return "\uFFFC";
+    return text(node.content ?? node.text);
+  }
+  const content = text(value).replace(/\s+/gu, " ").trim();
+  return (
+    /[\p{L}\p{N}\uFFFC]/u.test(content) &&
+    !/^(?:[\p{L}\p{M}]+\s+){0,2}\?+[.!]?$/u.test(content)
+  );
+}
+
 function Structured({
   value,
   dictionaryId,
@@ -239,6 +264,7 @@ function Structured({
     ));
   if (!value || typeof value !== "object") return null;
   const node = value as Record<string, unknown>;
+  if (node.tag === "details" && !hasSectionContent(node.content)) return null;
   if (node.type === "structured-content") {
     function preamble(value: unknown): boolean {
       if (!value || typeof value !== "object" || Array.isArray(value))
@@ -359,10 +385,12 @@ export function Meanings({
   meanings,
   language,
   settings,
+  onIgnoreTag,
 }: {
   meanings: Meaning[];
   language: string;
   settings: Settings;
+  onIgnoreTag?: (tag: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const firstDictionary = meanings.find(
@@ -438,18 +466,49 @@ export function Meanings({
             </span>
             {meaning.tags
               .split(" ")
-              .filter((tag) => tag && !settings.hiddenTags.includes(tag))
-              .map((tag, j) => (
-                <span
-                  className="tag"
-                  key={j}
-                  title={
-                    tagDescriptions[`${meaning.dictionaryId}:${tag}`] || tag
-                  }
-                >
-                  {tag}
-                </span>
-              ))}
+              .filter(Boolean)
+              .map((tag, j) =>
+                onIgnoreTag ? (
+                  <DropdownMenu.Root key={j} modal={false}>
+                    <DropdownMenu.Trigger
+                      className="tag tag-action"
+                      data-srs-reader=""
+                      title={
+                        tagDescriptions[`${meaning.dictionaryId}:${tag}`] || tag
+                      }
+                    >
+                      {tag}
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content
+                        className="tag-menu"
+                        sideOffset={4}
+                        collisionPadding={8}
+                        aria-label={tag}
+                        data-srs-reader=""
+                      >
+                        <DropdownMenu.Item
+                          className="select-option"
+                          onSelect={() => onIgnoreTag(tag)}
+                        >
+                          <EyeOff aria-hidden="true" />{" "}
+                          {t("ignore_words_with_tag")}
+                        </DropdownMenu.Item>
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                ) : (
+                  <span
+                    className="tag"
+                    key={j}
+                    title={
+                      tagDescriptions[`${meaning.dictionaryId}:${tag}`] || tag
+                    }
+                  >
+                    {tag}
+                  </span>
+                ),
+              )}
           </div>
           <style>
             {scopedStyles(
@@ -470,6 +529,7 @@ export function Meanings({
           {monolingual.includes(meaning.dictionaryId) &&
             language !== settings.nativeLanguage && (
               <TextTranslation
+                compact
                 key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}`}
                 text={meaning.definitions
                   .map(definitionText)
@@ -502,7 +562,11 @@ export function Meanings({
       ))}
       {settings.firstDictionaryOnly && hasMore && (
         <button
-          className="quiet dictionary-expand"
+          className="quiet icon-button dictionary-expand"
+          title={expanded ? t("fewer_dictionaries") : t("more_dictionaries")}
+          aria-label={
+            expanded ? t("fewer_dictionaries") : t("more_dictionaries")
+          }
           aria-expanded={expanded}
           onClick={() => setExpanded(!expanded)}
         >
@@ -511,7 +575,6 @@ export function Meanings({
           ) : (
             <ChevronDown aria-hidden="true" />
           )}
-          {expanded ? t("fewer_dictionaries") : t("more_dictionaries")}
         </button>
       )}
     </div>
@@ -543,85 +606,7 @@ export function shortDefinition(word: Vocabulary) {
     .replace(/\s+/g, " ")
     .trim();
 }
-export function AudioButton({
-  word,
-  sentence,
-  settings,
-  onError,
-}: {
-  word: Pick<LookupWord, "id" | "lemma" | "language">;
-  sentence?: string;
-  settings: Settings;
-  onError: (message: string) => void;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [attribution, setAttribution] = useState<{
-    creator: string;
-    license: string;
-    page: string;
-  }>();
-  async function play() {
-    setBusy(true);
-    onError("");
-    try {
-      if (sentence) {
-        await speak(sentence, word.language, settings.voice);
-        return;
-      }
-      let record = await db.audio.get(word.id);
-      if (!record && settings.audioDownloads) {
-        try {
-          await rpc({ action: "audio", id: word.id, download: true });
-          record = await db.audio.get(word.id);
-        } catch {
-          /* A local voice can still play when the recording service is offline. */
-        }
-      }
-      if (record) {
-        try {
-          await playBlob(record.blob);
-          setAttribution(record);
-          return;
-        } catch {
-          /* Try the installed voice if this browser cannot decode the recording. */
-        }
-      }
-      await speak(word.lemma, word.language, settings.voice);
-    } catch (error) {
-      onError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <span className="audio-control">
-      <button
-        className={sentence ? "quiet" : "icon-button"}
-        title={
-          sentence ? t("read_sentence_aloud") : t("play_word_pronunciation")
-        }
-        aria-label={
-          sentence ? t("read_sentence_aloud") : t("play_word_pronunciation")
-        }
-        disabled={busy}
-        onClick={() => void play()}
-      >
-        <Volume2 aria-hidden="true" />
-        {sentence && t("sentence")}
-      </button>
-      {attribution && (
-        <a
-          className="audio-credit"
-          href={attribution.page}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {attribution.creator} · {attribution.license}
-        </a>
-      )}
-    </span>
-  );
-}
+export { AudioButton } from "./AudioButton";
 export function intervalLabel(time: number) {
   const minutes = Math.max(1, Math.round((time - Date.now()) / 60000));
   if (minutes < 60) return t("interval_minutes", { count: minutes });
@@ -652,6 +637,7 @@ export function Ratings({
           <button
             key={label}
             className={`rating rating-${i + 1}`}
+            title={times[i] ? intervalLabel(times[i]!) : undefined}
             disabled={disabled}
             onClick={() => onGrade(i + 1)}
           >

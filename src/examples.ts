@@ -39,6 +39,7 @@ export async function exampleCorpusInfo(language: string) {
 export async function wordExamples(
   lemma: string,
   language: string,
+  surface: string,
 ): Promise<ExamplesResult> {
   language = languageCode(language);
   const corpus = await getCorpus(language);
@@ -48,7 +49,32 @@ export async function wordExamples(
     .filter((word) => word.isWordLike)
     .map((word) => folded(word.segment, language));
   const key = folded(lemma, language);
+  const surfaceQuery = [...segmenter.segment(surface)]
+    .filter((word) => word.isWordLike)
+    .map((word) => folded(word.segment, language));
+  const surfaceFirst = surfaceQuery[0] || folded(surface, language);
+  const preferred: number[] = [];
+  for (let position = 0; position < corpus.sentences.length; position++) {
+    const sentence = corpus.sentences[position]![1];
+    if (!folded(sentence, language).includes(surfaceFirst)) continue;
+    const words = [...segmenter.segment(sentence)].filter(
+      (word) => word.isWordLike,
+    );
+    if (
+      words.some(
+        (_, i) =>
+          surfaceQuery.length > 0 &&
+          surfaceQuery.every(
+            (token, j) =>
+              words[i + j] && folded(words[i + j]!.segment, language) === token,
+          ),
+      )
+    )
+      preferred.push(position);
+    if (preferred.length === 8) break;
+  }
   const positions = new Set([
+    ...preferred,
     ...(corpus.index[key] || []),
     ...(corpus.index[query[0] || key] || []),
   ]);
@@ -58,22 +84,37 @@ export async function wordExamples(
     const words = [...segmenter.segment(sentence)].filter(
       (word) => word.isWordLike,
     );
-    const analyses = await analyzeWords(
-      words.map((word) => word.segment),
-      language,
+    const surfaceMatch = words.findIndex(
+      (_, i) =>
+        surfaceQuery.length > 0 &&
+        surfaceQuery.every(
+          (token, j) =>
+            words[i + j] && folded(words[i + j]!.segment, language) === token,
+        ),
     );
-    const match = words.findIndex((word, i) =>
-      query.length > 1
-        ? query.every(
-            (token, j) =>
-              words[i + j] && folded(words[i + j]!.segment, language) === token,
-          )
-        : folded(word.segment, language) === key ||
-          folded(analyses.get(word.segment) || word.segment, language) === key,
-    );
+    let match = surfaceMatch;
+    if (match < 0) {
+      const analyses = await analyzeWords(
+        words.map((word) => word.segment),
+        language,
+      );
+      match = words.findIndex((word, i) =>
+        query.length > 1
+          ? query.every(
+              (token, j) =>
+                words[i + j] &&
+                folded(words[i + j]!.segment, language) === token,
+            )
+          : folded(word.segment, language) === key ||
+            folded(analyses.get(word.segment) || word.segment, language) ===
+              key,
+      );
+    }
     if (match < 0) continue;
     const start = words[match]!.index;
-    const last = words[match + Math.max(1, query.length) - 1]!;
+    const matchLength =
+      surfaceMatch >= 0 ? surfaceQuery.length : Math.max(1, query.length);
+    const last = words[match + matchLength - 1]!;
     const end = last.index + last.segment.length;
     result.push({
       id,
@@ -88,6 +129,7 @@ export async function wordExamples(
         mined: 0,
       },
     });
+    if (result.length === 8) break;
   }
-  return { installed: true, examples: result.slice(0, 8) };
+  return { installed: true, examples: result };
 }

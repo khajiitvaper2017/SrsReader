@@ -39,7 +39,7 @@ export function startReader(
   const excluded =
     excludedSelector + (options.onLookup ? ",.meaning-label,.attribution" : "");
   const blocks = new Map<Element, Block>();
-  const highlights = new Map<WordState | "unparsed", Highlight>();
+  const highlights = new Map<WordState | "ignored" | "unparsed", Highlight>();
   const queued = new Set<Element>();
   const wordStates = new Map<string, WordState>();
   let settings: Settings = defaults;
@@ -120,6 +120,14 @@ export function startReader(
     for (const range of old.ranges)
       for (const highlight of highlights.values()) highlight.delete(range);
     blocks.delete(element);
+  }
+  function updateSpanState(span: ScanSpan) {
+    const candidate = span.candidates[0]!;
+    span.state = candidate.tags.some((tag) =>
+      settings.ignoredTags.includes(tag),
+    )
+      ? "ignored"
+      : (wordStates.get(candidate.id) ?? candidate.state);
   }
   function collect(element: Element, immediate = false) {
     if (!active || element.closest(excluded)) return;
@@ -226,6 +234,7 @@ export function startReader(
           )
             break;
           for (const span of spans) {
+            updateSpanState(span);
             const adjusted = {
               ...span,
               start: span.start + offset,
@@ -233,7 +242,6 @@ export function startReader(
             };
             const range = makeRange(parts, adjusted.start, adjusted.end);
             if (!range) continue;
-            adjusted.state = wordStates.get(adjusted.ids[0]!) ?? adjusted.state;
             block.spans.push({ ...adjusted, range });
             block.ranges.push(range);
             highlights.get(adjusted.state)!.add(range);
@@ -419,6 +427,7 @@ export function startReader(
             end: last.start + range.endOffset,
             term,
             ids: [],
+            candidates: [],
             state: "unknown",
           })
         : {
@@ -479,6 +488,7 @@ export function startReader(
     event.stopImmediatePropagation();
   }
   async function configure(preservePopup = false) {
+    const previous = settings;
     settings = await rpc({ action: "settings" });
     await setInterfaceLanguage(
       settings.interfaceLanguage,
@@ -486,6 +496,21 @@ export function startReader(
     );
     if (ctx.isInvalid) return;
     style.textContent = wordHighlightCss(settings);
+    const { ignoredTags: _oldTags, ...oldSettings } = previous;
+    const { ignoredTags: _newTags, ...newSettings } = settings;
+    if (
+      preservePopup &&
+      JSON.stringify(_oldTags) !== JSON.stringify(_newTags) &&
+      JSON.stringify(oldSettings) === JSON.stringify(newSettings)
+    ) {
+      for (const block of blocks.values())
+        for (const span of block.spans) {
+          highlights.get(span.state)!.delete(span.range);
+          updateSpanState(span);
+          highlights.get(span.state)!.add(span.range);
+        }
+      return;
+    }
     clearTimeout(timer);
     generation++;
     const next =
@@ -748,8 +773,8 @@ export function startReader(
           for (const span of block.spans) {
             if (span.ids[0] !== id || span.state === state) continue;
             highlights.get(span.state)!.delete(span.range);
-            span.state = state;
-            highlights.get(state)!.add(span.range);
+            updateSpanState(span);
+            highlights.get(span.state)!.add(span.range);
           }
         return;
       }

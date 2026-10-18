@@ -1,3 +1,4 @@
+import { Select, SelectOption } from "./Select";
 import { Trash2, Keyboard, X } from "lucide-react";
 import { t } from "./i18n";
 import { useEffect, useState } from "react";
@@ -130,16 +131,16 @@ export function LookupControls({
         </div>
       ))}
       <div className="binding-recorder">
-        <select
+        <Select
           aria-label={t("custom_binding_type")}
           value={type}
           disabled={recording}
-          onChange={(event) => setType(event.target.value as typeof type)}
+          onValueChange={(value) => setType(value as typeof type)}
         >
-          <option value="mouse">{t("mouse_button")}</option>
-          <option value="key">{t("keyboard_shortcut")}</option>
-          <option value="hover">{t("hold_key_hover")}</option>
-        </select>
+          <SelectOption value="mouse">{t("mouse_button")}</SelectOption>
+          <SelectOption value="key">{t("keyboard_shortcut")}</SelectOption>
+          <SelectOption value="hover">{t("hold_key_hover")}</SelectOption>
+        </Select>
         <button disabled={recording} onClick={() => setRecording(true)}>
           <Keyboard aria-hidden="true" /> {t("record_binding")}
         </button>

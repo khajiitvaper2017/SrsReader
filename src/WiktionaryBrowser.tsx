@@ -1,3 +1,4 @@
+import { Select, SelectOption } from "./Select";
 import { Download, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { t, i18n, downloadSize } from "./i18n";
@@ -119,73 +120,73 @@ export function WiktionaryBrowser({
           <div className="dictionary-filters">
             <label>
               {t("study_language")}
-              <select
+              <Select
                 aria-label={t("dictionary_study_language")}
                 value={source}
-                onChange={(event) => {
-                  setSource(event.target.value);
+                onValueChange={(value) => {
+                  setSource(value);
                   setTarget("");
                   setType("");
                 }}
               >
-                <option value="">{t("all_languages")}</option>
+                <SelectOption value="">{t("all_languages")}</SelectOption>
                 {[...languages]
                   .filter((code) => languageName(code) !== code)
                   .sort(compareLanguages)
                   .map((code) => (
-                    <option key={code} value={code}>
+                    <SelectOption key={code} value={code}>
                       {languageName(code)}
-                    </option>
+                    </SelectOption>
                   ))}
-              </select>
+              </Select>
             </label>
             <label>
               {t("definition_language")}
-              <select
+              <Select
                 aria-label={t("definition_language")}
                 value={target}
-                onChange={(event) => {
-                  setTarget(event.target.value);
+                onValueChange={(value) => {
+                  setTarget(value);
                   setType("");
                 }}
               >
-                <option value="">{t("all_languages")}</option>
+                <SelectOption value="">{t("all_languages")}</SelectOption>
                 {targets.sort(compareLanguages).map((code) => (
-                  <option key={code} value={code}>
+                  <SelectOption key={code} value={code}>
                     {languageName(code)}
-                  </option>
+                  </SelectOption>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               {t("type")}
-              <select
+              <Select
                 aria-label={t("dictionary_type")}
                 value={type}
-                onChange={(event) => setType(event.target.value)}
+                onValueChange={(value) => setType(value)}
               >
-                <option value="">{t("all_types")}</option>
+                <SelectOption value="">{t("all_types")}</SelectOption>
                 {types
                   .filter((type) =>
                     matching.some((entry) => entry.type === type),
                   )
                   .map((type) => (
-                    <option key={type} value={type}>
+                    <SelectOption key={type} value={type}>
                       {t(typeLabels[type])}
-                    </option>
+                    </SelectOption>
                   ))}
-              </select>
+              </Select>
             </label>
             <label>
               {t("sort_by")}
-              <select
+              <Select
                 aria-label={t("sort_dictionaries")}
                 value={sort}
-                onChange={(event) => setSort(event.target.value)}
+                onValueChange={(value) => setSort(value)}
               >
-                <option value="language">{t("language")}</option>
-                <option value="size">{t("download_size")}</option>
-              </select>
+                <SelectOption value="language">{t("language")}</SelectOption>
+                <SelectOption value="size">{t("download_size")}</SelectOption>
+              </Select>
             </label>
             <input
               type="search"
