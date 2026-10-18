@@ -110,10 +110,16 @@ async function dictionaryLookup(
     const unresolved = new Set<string>();
     const visited = new Set<string>();
     const visitedEntries = new Set<string>();
-    const todo = [{ term, forms: [] as string[], verbOnly: false }];
+    const todo = [
+      { term, forms: [] as string[], verbOnly: false, perfectiveOnly: false },
+    ];
     while (todo.length) {
       const current = todo.pop()!;
-      const visitKey = JSON.stringify([current.term, current.verbOnly]);
+      const visitKey = JSON.stringify([
+        current.term,
+        current.verbOnly,
+        current.perfectiveOnly,
+      ]);
       if (visited.has(visitKey)) continue;
       visited.add(visitKey);
       const rows = graph.get(current.term) || [];
@@ -125,18 +131,26 @@ async function dictionaryLookup(
             term: candidate.term,
             forms: [...current.forms, ...candidate.forms],
             verbOnly: current.verbOnly || !!candidate.verbOnly,
+            perfectiveOnly:
+              current.perfectiveOnly || !!candidate.perfectiveOnly,
           });
         continue;
       }
       for (const entry of rows) {
-        const entryKey = JSON.stringify([entry.id, current.verbOnly]);
+        const entryKey = JSON.stringify([
+          entry.id,
+          current.verbOnly,
+          current.perfectiveOnly,
+        ]);
         if (visitedEntries.has(entryKey)) continue;
         visitedEntries.add(entryKey);
         const dictionary = dictionaryByRevision.get(entry.revisionId)!;
         const definitions = entry.definitions.filter((d) => !Array.isArray(d));
         if (
           definitions.length &&
-          (!current.verbOnly || /(?:^|\s)(?:v|verb)(?:\s|$)/i.test(entry.tags))
+          (!current.verbOnly ||
+            /(?:^|\s)(?:v|verb)(?:\s|$)/i.test(entry.tags)) &&
+          (!current.perfectiveOnly || /(?:^|\s)pf(?:\s|$)/i.test(entry.tags))
         ) {
           const resolved = current.verbOnly ? prefixWords : words;
           const id = wordId(language, entry.key, entry.reading);
@@ -167,6 +181,7 @@ async function dictionaryLookup(
               term: target,
               forms: [...current.forms, ...definition[1]],
               verbOnly: current.verbOnly,
+              perfectiveOnly: current.perfectiveOnly,
             });
           }
       }

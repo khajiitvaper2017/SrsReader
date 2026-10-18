@@ -29,3 +29,5 @@ New cards start with the most frequent words. Under **Settings → Spaced repeti
 Under **Settings → Word forms**, download additional forms when available. Forms resolve to dictionary headwords and share their cards. Choose the intended entry when a popup offers several candidates.
 
 A form may be recognized while its headword has no definition. More word forms cannot fill that gap: another definition dictionary is needed. Czech `z-` fallback matches show **perfective**; the related base verb’s meaning may differ.
+
+For missing Czech **-čovat** forms, such as **dosvědčoval**, lookup can use the **-čit** perfective counterpart (**dosvědčit**). The label **imperfective** describes the original form: an ongoing or repeated action, rather than a completed one. An existing dictionary entry takes priority.

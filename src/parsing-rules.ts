@@ -1,19 +1,25 @@
 import { folded } from "./model";
+import { czechRules } from "./parsing-rules/cs";
+import type { ParsingCandidate, ParsingRule } from "./parsing-rules/types";
 
-export type ParsingCandidate = {
-  term: string;
-  forms: string[];
-  verbOnly?: boolean;
+export type { ParsingCandidate } from "./parsing-rules/types";
+
+const rulesByLanguage: Record<string, Record<string, ParsingRule>> = {
+  cs: czechRules,
 };
 
 export function parsingCandidates(
   term: string,
   language: string,
 ): ParsingCandidate[] {
-  if (language !== "cs") return [];
+  const rules = rulesByLanguage[language];
+  if (!rules) return [];
   const word = folded(term, language);
 
-  return /^z\p{L}{2,}$/u.test(word)
-    ? [{ term: word.slice(1), forms: ["z-"], verbOnly: true }]
-    : [];
+  return Object.values(rules).flatMap(
+    ({ pattern, replacement, ...candidate }) =>
+      pattern.test(word)
+        ? [{ ...candidate, term: word.replace(pattern, replacement) }]
+        : [],
+  );
 }
