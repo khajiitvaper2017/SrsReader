@@ -284,7 +284,10 @@ export function startReader(
     queued.add(element);
     void drain();
   }
-  function contextFor(block: Block, span: ScanSpan): ReadingContext {
+  function contextFor(
+    block: Block,
+    span: Pick<ScanSpan, "start" | "end">,
+  ): ReadingContext {
     const source = block.parts[0]?.node.parentElement?.closest<HTMLElement>(
       "[data-reading-source-url]",
     );
@@ -380,9 +383,26 @@ export function startReader(
     const part = block.parts.find((part) => part.node === caret.offsetNode);
     if (!part) return;
     const offset = part.start + caret.offset;
-    const span = block.spans.find(
-      (span) => offset >= span.start && offset < span.end,
-    );
+    let span: Pick<ScanSpan, "start" | "end" | "term"> | undefined =
+      block.spans.find((span) => offset >= span.start && offset < span.end);
+    if (!span) {
+      const segment = [
+        ...new Intl.Segmenter(settings.studyLanguage, {
+          granularity: "word",
+        }).segment(block.text),
+      ].find(
+        (segment) =>
+          segment.isWordLike &&
+          offset >= segment.index &&
+          offset < segment.index + segment.segment.length,
+      );
+      if (segment)
+        span = {
+          start: segment.index,
+          end: segment.index + segment.segment.length,
+          term: segment.segment,
+        };
+    }
     if (!span) return;
     const range = makeRange(block.parts, span.start, span.end);
     if (
@@ -425,10 +445,6 @@ export function startReader(
         ? contextFor(block, {
             start: first.start + range.startOffset,
             end: last.start + range.endOffset,
-            term,
-            ids: [],
-            candidates: [],
-            state: "unknown",
           })
         : {
             sentence: term,

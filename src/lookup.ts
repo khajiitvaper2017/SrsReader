@@ -47,7 +47,7 @@ async function fetchTerms(
   );
 }
 
-export async function lookupMany(
+async function dictionaryLookup(
   terms: string[],
   language: string,
 ): Promise<Map<string, LookupResult>> {
@@ -196,6 +196,61 @@ export async function lookupMany(
   return results;
 }
 
+export async function lookupMany(
+  terms: string[],
+  language: string,
+): Promise<Map<string, LookupResult>> {
+  const results = await dictionaryLookup(terms, language);
+  const lemmas = [
+    ...new Set([
+      ...terms.flatMap((term) => [normalize(term), folded(term, language)]),
+      ...[...results.values()].flatMap((result) =>
+        result.words.map((word) => word.lemma),
+      ),
+    ]),
+  ];
+  const personal = await db.vocabulary
+    .where("lemma")
+    .anyOf(lemmas)
+    .filter(
+      (word) =>
+        word.language === language &&
+        word.meanings.some((meaning) => meaning.dictionaryId === "personal"),
+    )
+    .toArray();
+  const byId = new Map(personal.map((word) => [word.id, word]));
+  for (const term of terms.map(normalize)) {
+    const result = results.get(term) || { words: [], unresolved: [] };
+    const words = result.words.map((word) => {
+      const saved = byId.get(word.id);
+      return saved
+        ? {
+            ...word,
+            meanings: [
+              ...saved.meanings.filter(
+                (meaning) => meaning.dictionaryId === "personal",
+              ),
+              ...word.meanings,
+            ],
+          }
+        : word;
+    });
+    for (const word of personal) {
+      if (
+        folded(word.lemma, language) !== folded(term, language) ||
+        words.some((candidate) => candidate.id === word.id)
+      )
+        continue;
+      words.unshift({ ...word, forms: [] });
+    }
+    results.set(term, {
+      words,
+      unresolved: words.length ? [] : result.unresolved,
+    });
+  }
+  return results;
+}
+
 export type ScanSpan = {
   start: number;
   end: number;
@@ -212,7 +267,6 @@ export async function scanText(
   matureIntervalDays: number,
 ): Promise<ScanSpan[]> {
   const dictionaries = await activeDictionaries(language);
-  if (!dictionaries.length) return [];
   const segments = [
     ...new Intl.Segmenter(language, { granularity: "word" }).segment(text),
   ].filter((s) => s.isWordLike);

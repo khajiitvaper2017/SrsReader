@@ -1,5 +1,5 @@
 import { Select, SelectOption } from "../../src/Select";
-import { Check, Plus, ArrowLeft, Play, Undo2 } from "lucide-react";
+import { Check, Plus, ArrowLeft, Play, Undo2, Pencil } from "lucide-react";
 import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -14,7 +14,6 @@ import {
 } from "../../src/model";
 import {
   AudioButton,
-  Empty,
   ErrorBox,
   Meanings,
   Ratings,
@@ -29,6 +28,7 @@ import { wordStateLabels } from "../../src/word-styles";
 import { readerKeysSchema } from "../../src/controls";
 import { SentenceTranslation } from "../../src/SentenceTranslation";
 import { WordExamples } from "../../src/WordExamples";
+import { DefinitionEditor } from "../../src/DefinitionEditor";
 
 type LookupPage = {
   term: string;
@@ -123,6 +123,7 @@ function LookupEntry({
   const { term, context } = page;
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState<Vocabulary>();
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
@@ -321,6 +322,13 @@ function LookupEntry({
       setBusy(false);
     }
   }
+  async function definitionSaved(saved: Vocabulary) {
+    setResult(await rpc({ action: "lookup", term }));
+    setSelected(saved.id);
+    setSaved(saved);
+    setEditing(false);
+    setNotice(t("saved"));
+  }
   return (
     <div
       className={`lookup-shell ${settings.hideDictionarySources ? "hide-dictionary-sources" : ""}`}
@@ -341,16 +349,17 @@ function LookupEntry({
           <ErrorBox error={error} />
           {!result && !error && <p className="muted">{t("looking_up")}</p>}
           {result && !word && (
-            <Empty title={t("no_definition_found")}>
-              <p>
-                {result.unresolved.length
-                  ? t("reference_target_unavailable", {
-                      value1: result.unresolved.join(", "),
-                    })
-                  : t("no_enabled_dictionary_defines", { term: term })}
-              </p>
-              <p>{t("try_another_dictionary_or_check_for_an_update")}</p>
-            </Empty>
+            <>
+              <h1 lang={settings.studyLanguage}>{term}</h1>
+              <DefinitionEditor
+                key={term}
+                term={term}
+                context={context}
+                settings={settings}
+                onSaved={definitionSaved}
+                onError={setError}
+              />
+            </>
           )}
           {word && (
             <>
@@ -396,6 +405,15 @@ function LookupEntry({
                 </div>
                 <div className="lookup-heading-actions">
                   <FrequencyBadge word={word} />
+                  <button
+                    className="quiet icon-button"
+                    title={t("edit_definition")}
+                    aria-label={t("edit_definition")}
+                    disabled={busy}
+                    onClick={() => setEditing((value) => !value)}
+                  >
+                    <Pencil aria-hidden="true" />
+                  </button>
                   <AudioButton
                     word={word}
                     settings={settings}
@@ -457,12 +475,25 @@ function LookupEntry({
                 </div>
               )}
               <div className="lookup-reading">
-                <Meanings
-                  meanings={word.meanings}
-                  language={word.language}
-                  settings={settings}
-                  onIgnoreTag={(tag) => void ignoreTag(tag)}
-                />
+                {editing ? (
+                  <DefinitionEditor
+                    key={word.id}
+                    word={word}
+                    term={term}
+                    context={context}
+                    settings={settings}
+                    onSaved={definitionSaved}
+                    onError={setError}
+                    onCancel={() => setEditing(false)}
+                  />
+                ) : (
+                  <Meanings
+                    meanings={word.meanings}
+                    language={word.language}
+                    settings={settings}
+                    onIgnoreTag={(tag) => void ignoreTag(tag)}
+                  />
+                )}
                 <WordExamples
                   word={word}
                   settings={settings}

@@ -63,6 +63,13 @@ export const requestSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("mine"), ...selection, id: z.string() }),
   z.object({
+    action: z.literal("defineWord"),
+    ...selection,
+    term: selection.term.trim().min(1),
+    id: z.string().optional(),
+    definition: z.string().trim().min(1),
+  }),
+  z.object({
     action: z.literal("grade"),
     ...selection,
     id: z.string(),
@@ -123,6 +130,7 @@ type Responses = {
   session: { term: string; context?: ReadingContext };
   word: Vocabulary | undefined;
   mine: Vocabulary;
+  defineWord: Vocabulary;
   grade: { word: Vocabulary; reviewId: string };
   known: Vocabulary;
   suspend: void;

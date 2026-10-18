@@ -332,6 +332,7 @@
   "translate_current_sentence": "Перекласти поточне речення",
   "translate_definition": "Перекласти визначення",
   "translate_sentence": "Перекласти речення",
+  "translate_word": "Перекласти слово",
   "translating": "Переклад…",
   "translation": "Переклад",
   "translation_failed": "Не вдалося перекласти з мови «{{source}}» мовою «{{target}}» на цьому пристрої.",

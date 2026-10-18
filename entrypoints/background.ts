@@ -17,6 +17,7 @@ import {
   folded,
   normalize,
   stateOf,
+  wordId,
   type LookupWord,
   type ReadingContext,
 } from "../src/model";
@@ -282,6 +283,40 @@ export default defineBackground(() => {
         await notify(word.id);
         return saved;
       }
+      case "defineWord": {
+        const lemma = folded(request.term.trim(), settings.studyLanguage);
+        const word: LookupWord = request.id
+          ? await snapshot(await resolved(request.term, request.id))
+          : {
+              id: wordId(settings.studyLanguage, lemma, ""),
+              lemma,
+              reading: "",
+              language: settings.studyLanguage,
+              meanings: [],
+              forms: [],
+            };
+        const saved = await db.transaction("rw", db.vocabulary, async () => {
+          const saved = await mine(word, request.context);
+          saved.meanings = [
+            {
+              dictionaryId: "personal",
+              title: "",
+              revision: "",
+              attribution: "",
+              sourceUrl: "",
+              tags: "",
+              definitions: [request.definition],
+            },
+            ...saved.meanings.filter(
+              (meaning) => meaning.dictionaryId !== "personal",
+            ),
+          ];
+          await db.vocabulary.put(saved);
+          return saved;
+        });
+        await notify(saved.id);
+        return saved;
+      }
       case "grade": {
         const word = await snapshot(await resolved(request.term, request.id));
         const result = await grade(
@@ -354,11 +389,21 @@ export default defineBackground(() => {
         const result = (await lookupMany([saved.lemma], saved.language))
           .get(saved.lemma)
           ?.words.find((w) => w.id === saved.id);
-        if (!result)
+        if (
+          !result ||
+          !result.meanings.some(
+            (meaning) => meaning.dictionaryId !== "personal",
+          )
+        )
           throw new Error(
             t("no_definition_is_available_in_the_enabled_dictionaries"),
           );
-        const updated = await snapshot(result);
+        const updated = await snapshot({
+          ...result,
+          meanings: result.meanings.filter(
+            (meaning) => meaning.dictionaryId !== "personal",
+          ),
+        });
         await db.vocabulary
           .where("id")
           .equals(saved.id)

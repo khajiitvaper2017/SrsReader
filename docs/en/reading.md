@@ -6,6 +6,12 @@ Use your lookup control on a word. **Mine word** saves its definitions and the s
 
 Definitions and example sentences can be scanned too. **Back** or **Escape** returns from a nested lookup; clicking outside closes the popup. Disable nested lookup under **Settings → Reading & appearance → Scan dictionary popups**.
 
+## Personal definitions
+
+Use your lookup control on an unparsed word to open a definition editor. Enter a definition, or click **Translate word** to translate it into your native language. You can edit the translation before saving.
+
+For a dictionary word, click **Edit definition** (pencil) in the popup to add or change a personal definition. **Save definition** saves the word and reading sentence for SRS. Personal definitions appear first on future lookups and are included in vocabulary exports. You can also edit them on the **Words** page.
+
 ## Controls
 
 Under **Settings → Lookup controls**, enable presets or record a **Mouse button**, **Keyboard shortcut**, or **Hold key + hover** binding. Modifiers are supported; release the keys to finish a modifier-only hover binding. Escape cancels recording.

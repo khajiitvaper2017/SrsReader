@@ -326,6 +326,7 @@
   "translate_current_sentence": "Translate current sentence",
   "translate_definition": "Translate definition",
   "translate_sentence": "Translate sentence",
+  "translate_word": "Translate word",
   "translating": "Translating…",
   "translation": "Translation",
   "translation_failed": "Could not translate from {{source}} to {{target}} on this device.",
