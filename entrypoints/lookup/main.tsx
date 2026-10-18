@@ -396,11 +396,7 @@ function LookupEntry({
                     ),
                   ]
                     .map((form) =>
-                      form === "z-"
-                        ? t("czech_z_prefix_form")
-                        : form === "za-"
-                          ? t("czech_za_prefix_form")
-                          : form,
+                      form === "z-" ? t("czech_z_prefix_form") : form,
                     )
                     .join(" · ")}
                 </div>

@@ -13,14 +13,7 @@ export function parsingCandidates(
   if (language !== "cs") return [];
   const word = folded(term, language);
 
-  const candidates: ParsingCandidate[] = [];
-  if (/^za\p{L}{2,}$/u.test(word))
-    candidates.push({
-      term: word.slice(2),
-      forms: [word, "za-"],
-      verbOnly: true,
-    });
-  if (/^z\p{L}{2,}$/u.test(word))
-    candidates.push({ term: word.slice(1), forms: ["z-"], verbOnly: true });
-  return candidates;
+  return /^z\p{L}{2,}$/u.test(word)
+    ? [{ term: word.slice(1), forms: ["z-"], verbOnly: true }]
+    : [];
 }
