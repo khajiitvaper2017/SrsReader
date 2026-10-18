@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { rpc } from "../../src/api";
 import {
+  folded,
   stateOf,
   type LookupResult,
   type LookupWord,
@@ -225,7 +226,8 @@ function Lookup() {
                     </span>
                   )}
                   <h1 lang={word.language}>
-                    {term !== word.lemma && (
+                    {folded(term, word.language) !==
+                      folded(word.lemma, word.language) && (
                       <span className="surface-form">{term} → </span>
                     )}
                     {word.lemma}

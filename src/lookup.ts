@@ -39,11 +39,10 @@ async function fetchTerms(
     groups.set(entry.folded, group);
   }
   return new Map(
-    terms.map((term) => {
-      const rows = groups.get(folded(term, language)) || [];
-      const exact = rows.filter((r) => r.key === normalize(term));
-      return [normalize(term), exact.length ? exact : rows];
-    }),
+    terms.map((term) => [
+      normalize(term),
+      groups.get(folded(term, language)) || [],
+    ]),
   );
 }
 
@@ -99,6 +98,7 @@ export async function lookupMany(
     const words = new Map<string, LookupWord>();
     const unresolved = new Set<string>();
     const visited = new Set<string>();
+    const visitedEntries = new Set<string>();
     const todo = [{ term: analyses.get(term) || term, forms: [] as string[] }];
     while (todo.length) {
       const current = todo.pop()!;
@@ -110,6 +110,8 @@ export async function lookupMany(
         continue;
       }
       for (const entry of rows) {
+        if (visitedEntries.has(entry.id)) continue;
+        visitedEntries.add(entry.id);
         const dictionary = dictionaryByRevision.get(entry.revisionId)!;
         const definitions = entry.definitions.filter((d) => !Array.isArray(d));
         if (definitions.length) {
@@ -151,7 +153,12 @@ export async function lookupMany(
       );
     const value = {
       words: [...words.values()].sort(
-        (a, b) => Number(b.lemma === term) - Number(a.lemma === term),
+        (a, b) =>
+          Number(a.lemma !== folded(a.lemma, language)) -
+            Number(b.lemma !== folded(b.lemma, language)) ||
+          Number(b.lemma === folded(term, language)) -
+            Number(a.lemma === folded(term, language)) ||
+          Number(b.lemma === term) - Number(a.lemma === term),
       ),
       unresolved: [...unresolved],
     };
