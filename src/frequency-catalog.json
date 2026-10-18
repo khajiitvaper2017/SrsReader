@@ -1,0 +1,7634 @@
+[
+  {
+    "file": "Leipzig.Achinese.Community.Rank.zip",
+    "code": "ace",
+    "language": "Achinese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 131341
+  },
+  {
+    "file": "Leipzig.Acoli.Community.Rank.zip",
+    "code": "ach",
+    "language": "Acoli",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 16687
+  },
+  {
+    "file": "Leipzig.Afar.Community.Rank.zip",
+    "code": "aa",
+    "language": "Afar",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 6743
+  },
+  {
+    "file": "Leipzig.Afrikaans.Mixed.Rank.zip",
+    "code": "af",
+    "language": "Afrikaans",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 6295527
+  },
+  {
+    "file": "Leipzig.Afrikaans.News.Rank.zip",
+    "code": "af",
+    "language": "Afrikaans",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2073372
+  },
+  {
+    "file": "Leipzig.Afrikaans.Newscrawl.Rank.zip",
+    "code": "af",
+    "language": "Afrikaans",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2361830
+  },
+  {
+    "file": "Leipzig.Afrikaans.Web.Rank.zip",
+    "code": "af",
+    "language": "Afrikaans",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 2309116
+  },
+  {
+    "file": "Leipzig.Afrikaans.South.Africa.Web.Rank.zip",
+    "code": "af",
+    "language": "Afrikaans",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 5264185
+  },
+  {
+    "file": "Leipzig.Afrikaans.Wikipedia.Rank.zip",
+    "code": "af",
+    "language": "Afrikaans",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3450634
+  },
+  {
+    "file": "Leipzig.Akan.Wikipedia.Rank.zip",
+    "code": "ak",
+    "language": "Akan",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 45705
+  },
+  {
+    "file": "Leipzig.Albanian.Community.Rank.zip",
+    "code": "sq",
+    "language": "Albanian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 10654791
+  },
+  {
+    "file": "Leipzig.Albanian.News.Rank.zip",
+    "code": "sq",
+    "language": "Albanian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4456901
+  },
+  {
+    "file": "Leipzig.Albanian.Wikipedia.Rank.zip",
+    "code": "sq",
+    "language": "Albanian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3720535
+  },
+  {
+    "file": "Leipzig.Amharic.Community.Rank.zip",
+    "code": "am",
+    "language": "Amharic",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1660763
+  },
+  {
+    "file": "Leipzig.Amharic.Wikipedia.Rank.zip",
+    "code": "am",
+    "language": "Amharic",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1151993
+  },
+  {
+    "file": "Leipzig.Anaang.Community.Rank.zip",
+    "code": "anw",
+    "language": "Anaang",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 701839
+  },
+  {
+    "file": "Leipzig.Arabic.News.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 9098141
+  },
+  {
+    "file": "Leipzig.Arabic.Palestine.Newscrawl.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Palestine",
+    "size": 4054537
+  },
+  {
+    "file": "Leipzig.Arabic.Syria.Newscrawl.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Syria",
+    "size": 4182023
+  },
+  {
+    "file": "Leipzig.Arabic.Tunisia.Newscrawl.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Tunisia",
+    "size": 2191053
+  },
+  {
+    "file": "Leipzig.Arabic.Algeria.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Algeria",
+    "size": 9102792
+  },
+  {
+    "file": "Leipzig.Arabic.Australia.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Australia",
+    "size": 1112259
+  },
+  {
+    "file": "Leipzig.Arabic.Canada.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Canada",
+    "size": 2060708
+  },
+  {
+    "file": "Leipzig.Arabic.Comoros.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Comoros",
+    "size": 3820937
+  },
+  {
+    "file": "Leipzig.Arabic.Egypt.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Egypt",
+    "size": 3642403
+  },
+  {
+    "file": "Leipzig.Arabic.France.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "France",
+    "size": 3313075
+  },
+  {
+    "file": "Leipzig.Arabic.Germany.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Germany",
+    "size": 6722403
+  },
+  {
+    "file": "Leipzig.Arabic.Iran.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Iran",
+    "size": 4191241
+  },
+  {
+    "file": "Leipzig.Arabic.Iraq.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Iraq",
+    "size": 1815853
+  },
+  {
+    "file": "Leipzig.Arabic.Jordan.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Jordan",
+    "size": 2883043
+  },
+  {
+    "file": "Leipzig.Arabic.Morocco.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Morocco",
+    "size": 5305071
+  },
+  {
+    "file": "Leipzig.Arabic.Palestine.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Palestine",
+    "size": 2480615
+  },
+  {
+    "file": "Leipzig.Arabic.Qatar.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Qatar",
+    "size": 1251570
+  },
+  {
+    "file": "Leipzig.Arabic.Russia.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Russia",
+    "size": 1934549
+  },
+  {
+    "file": "Leipzig.Arabic.Saudi.Arabia.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Saudi Arabia",
+    "size": 637792
+  },
+  {
+    "file": "Leipzig.Arabic.Sweden.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Sweden",
+    "size": 2100387
+  },
+  {
+    "file": "Leipzig.Arabic.Syria.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Syria",
+    "size": 1916040
+  },
+  {
+    "file": "Leipzig.Arabic.Tunisia.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Tunisia",
+    "size": 8634519
+  },
+  {
+    "file": "Leipzig.Arabic.Turkiye.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "Turkiye",
+    "size": 2004702
+  },
+  {
+    "file": "Leipzig.Arabic.United.Arab.Emirates.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "United Arab Emirates",
+    "size": 1192980
+  },
+  {
+    "file": "Leipzig.Arabic.United.Kingdom.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "United Kingdom",
+    "size": 2042154
+  },
+  {
+    "file": "Leipzig.Arabic.international.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "international",
+    "size": 7494637
+  },
+  {
+    "file": "Leipzig.Arabic.middleeast.Newscrawl-Osian.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "News",
+    "source": "Newscrawl-Osian",
+    "region": "middleeast",
+    "size": 4394684
+  },
+  {
+    "file": "Leipzig.Arabic.Web.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 1986670
+  },
+  {
+    "file": "Leipzig.Arabic.Bahrain.Web.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bahrain",
+    "size": 1878138
+  },
+  {
+    "file": "Leipzig.Arabic.Egypt.Web.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "Web",
+    "source": "Web",
+    "region": "Egypt",
+    "size": 4267572
+  },
+  {
+    "file": "Leipzig.Arabic.United.Arab.Emirates.Web.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "Web",
+    "source": "Web",
+    "region": "United Arab Emirates",
+    "size": 10235209
+  },
+  {
+    "file": "Leipzig.Arabic.Wikipedia.Rank.zip",
+    "code": "ar",
+    "language": "Arabic",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 11357892
+  },
+  {
+    "file": "Leipzig.Aragonese.Wikipedia.Rank.zip",
+    "code": "an",
+    "language": "Aragonese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 717900
+  },
+  {
+    "file": "Leipzig.Armenian.Community.Rank.zip",
+    "code": "hy",
+    "language": "Armenian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 12856976
+  },
+  {
+    "file": "Leipzig.Armenian.News.Rank.zip",
+    "code": "hy",
+    "language": "Armenian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 788352
+  },
+  {
+    "file": "Leipzig.Armenian.Newscrawl.Rank.zip",
+    "code": "hy",
+    "language": "Armenian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2042098
+  },
+  {
+    "file": "Leipzig.Armenian.Armenia.Web.Rank.zip",
+    "code": "hy",
+    "language": "Armenian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Armenia",
+    "size": 10817534
+  },
+  {
+    "file": "Leipzig.Armenian.Wikipedia.Rank.zip",
+    "code": "hy",
+    "language": "Armenian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 10725566
+  },
+  {
+    "file": "Leipzig.Assamese.Community.Rank.zip",
+    "code": "as",
+    "language": "Assamese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1523730
+  },
+  {
+    "file": "Leipzig.Assamese.Wikipedia.Rank.zip",
+    "code": "as",
+    "language": "Assamese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1941818
+  },
+  {
+    "file": "Leipzig.Asturian.Wikipedia.Rank.zip",
+    "code": "ast",
+    "language": "Asturian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6302664
+  },
+  {
+    "file": "Leipzig.Aymara.Community.Rank.zip",
+    "code": "ay",
+    "language": "Aymara",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 105390
+  },
+  {
+    "file": "Leipzig.Azerbaijani.News.Rank.zip",
+    "code": "az",
+    "language": "Azerbaijani",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 602042
+  },
+  {
+    "file": "Leipzig.Azerbaijani.Newscrawl.Rank.zip",
+    "code": "az",
+    "language": "Azerbaijani",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6096922
+  },
+  {
+    "file": "Leipzig.Azerbaijani.Wikipedia.Rank.zip",
+    "code": "az",
+    "language": "Azerbaijani",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 9389210
+  },
+  {
+    "file": "Leipzig.Balinese.Community.Rank.zip",
+    "code": "ban",
+    "language": "Balinese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 30942
+  },
+  {
+    "file": "Leipzig.Balinese.Indonesia.Web.Rank.zip",
+    "code": "ban",
+    "language": "Balinese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 472703
+  },
+  {
+    "file": "Leipzig.Balinese.Wikipedia.Rank.zip",
+    "code": "ban",
+    "language": "Balinese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 272337
+  },
+  {
+    "file": "Leipzig.Bambara.Community.Rank.zip",
+    "code": "bm",
+    "language": "Bambara",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 147360
+  },
+  {
+    "file": "Leipzig.Banjar.Community.Rank.zip",
+    "code": "bjn",
+    "language": "Banjar",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 227694
+  },
+  {
+    "file": "Leipzig.Banjar.Indonesia.Web.Rank.zip",
+    "code": "bjn",
+    "language": "Banjar",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 253160
+  },
+  {
+    "file": "Leipzig.Banjar.Wikipedia.Rank.zip",
+    "code": "bjn",
+    "language": "Banjar",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 301208
+  },
+  {
+    "file": "Leipzig.Bashkir.Community.Rank.zip",
+    "code": "ba",
+    "language": "Bashkir",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 141325
+  },
+  {
+    "file": "Leipzig.Bashkir.News.Rank.zip",
+    "code": "ba",
+    "language": "Bashkir",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2758029
+  },
+  {
+    "file": "Leipzig.Bashkir.Newscrawl.Rank.zip",
+    "code": "ba",
+    "language": "Bashkir",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1738977
+  },
+  {
+    "file": "Leipzig.Bashkir.Wikipedia.Rank.zip",
+    "code": "ba",
+    "language": "Bashkir",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1972321
+  },
+  {
+    "file": "Leipzig.Basque.News.Rank.zip",
+    "code": "eu",
+    "language": "Basque",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 495366
+  },
+  {
+    "file": "Leipzig.Basque.Newscrawl.Rank.zip",
+    "code": "eu",
+    "language": "Basque",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2837280
+  },
+  {
+    "file": "Leipzig.Basque.Web.Rank.zip",
+    "code": "eu",
+    "language": "Basque",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 3839453
+  },
+  {
+    "file": "Leipzig.Basque.Wikipedia.Rank.zip",
+    "code": "eu",
+    "language": "Basque",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4137717
+  },
+  {
+    "file": "Leipzig.Bavarian.Wikipedia.Rank.zip",
+    "code": "bar",
+    "language": "Bavarian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2612580
+  },
+  {
+    "file": "Leipzig.Belarusian.News.Rank.zip",
+    "code": "be",
+    "language": "Belarusian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2936983
+  },
+  {
+    "file": "Leipzig.Belarusian.Newscrawl.Rank.zip",
+    "code": "be",
+    "language": "Belarusian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6666347
+  },
+  {
+    "file": "Leipzig.Belarusian.Belarus.Web.Rank.zip",
+    "code": "be",
+    "language": "Belarusian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Belarus",
+    "size": 9007210
+  },
+  {
+    "file": "Leipzig.Belarusian.Wikipedia.Rank.zip",
+    "code": "be",
+    "language": "Belarusian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4493338
+  },
+  {
+    "file": "Leipzig.Bemba.Zambia.Community.Rank.zip",
+    "code": "bem",
+    "language": "Bemba (Zambia)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 6771
+  },
+  {
+    "file": "Leipzig.Bengali.Community.Rank.zip",
+    "code": "bn",
+    "language": "Bengali",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3463359
+  },
+  {
+    "file": "Leipzig.Bengali.News.Rank.zip",
+    "code": "bn",
+    "language": "Bengali",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2372573
+  },
+  {
+    "file": "Leipzig.Bengali.Newscrawl.Rank.zip",
+    "code": "bn",
+    "language": "Bengali",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6816795
+  },
+  {
+    "file": "Leipzig.Bengali.Bangladesh.Web.Rank.zip",
+    "code": "bn",
+    "language": "Bengali",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bangladesh",
+    "size": 7578297
+  },
+  {
+    "file": "Leipzig.Bengali.Wikipedia.Rank.zip",
+    "code": "bn",
+    "language": "Bengali",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 9539064
+  },
+  {
+    "file": "Leipzig.bih.Wikipedia.Rank.zip",
+    "code": "ibh",
+    "language": "Bih",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 267321
+  },
+  {
+    "file": "Leipzig.Bikol.Community.Rank.zip",
+    "code": "bik",
+    "language": "Bikol",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 269960
+  },
+  {
+    "file": "Leipzig.Bikol.Wikipedia.Rank.zip",
+    "code": "bik",
+    "language": "Bikol",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 717097
+  },
+  {
+    "file": "Leipzig.Bishnupriya.Wikipedia.Rank.zip",
+    "code": "bpy",
+    "language": "Bishnupriya",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 516024
+  },
+  {
+    "file": "Leipzig.Bosnian.Community.Rank.zip",
+    "code": "bs",
+    "language": "Bosnian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4970706
+  },
+  {
+    "file": "Leipzig.Bosnian.News.Rank.zip",
+    "code": "bs",
+    "language": "Bosnian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2650302
+  },
+  {
+    "file": "Leipzig.Bosnian.Newscrawl.Rank.zip",
+    "code": "bs",
+    "language": "Bosnian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3100727
+  },
+  {
+    "file": "Leipzig.Bosnian.Wikipedia.Rank.zip",
+    "code": "bs",
+    "language": "Bosnian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4119275
+  },
+  {
+    "file": "Leipzig.Breton.Wikipedia.Rank.zip",
+    "code": "br",
+    "language": "Breton",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1436968
+  },
+  {
+    "file": "Leipzig.Buginese.Community.Rank.zip",
+    "code": "bug",
+    "language": "Buginese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 21934
+  },
+  {
+    "file": "Leipzig.Bulgarian.News.Rank.zip",
+    "code": "bg",
+    "language": "Bulgarian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4553969
+  },
+  {
+    "file": "Leipzig.Bulgarian.Newscrawl.Rank.zip",
+    "code": "bg",
+    "language": "Bulgarian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6051906
+  },
+  {
+    "file": "Leipzig.Bulgarian.Wikipedia.Rank.zip",
+    "code": "bg",
+    "language": "Bulgarian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7397439
+  },
+  {
+    "file": "Leipzig.Buriat.Wikipedia.Rank.zip",
+    "code": "bua",
+    "language": "Buriat",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 406188
+  },
+  {
+    "file": "Leipzig.Burmese.Community.Rank.zip",
+    "code": "my",
+    "language": "Burmese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 779360
+  },
+  {
+    "file": "Leipzig.Catalan.News.Rank.zip",
+    "code": "ca",
+    "language": "Catalan",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2097745
+  },
+  {
+    "file": "Leipzig.Catalan.Newscrawl.Rank.zip",
+    "code": "ca",
+    "language": "Catalan",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 4486371
+  },
+  {
+    "file": "Leipzig.Catalan.Web.Rank.zip",
+    "code": "ca",
+    "language": "Catalan",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 4851968
+  },
+  {
+    "file": "Leipzig.Catalan.Andorra.Web.Rank.zip",
+    "code": "ca",
+    "language": "Catalan",
+    "type": "Web",
+    "source": "Web",
+    "region": "Andorra",
+    "size": 4233066
+  },
+  {
+    "file": "Leipzig.Catalan.Comoros.Web.Rank.zip",
+    "code": "ca",
+    "language": "Catalan",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 1150548
+  },
+  {
+    "file": "Leipzig.Catalan.Wikipedia.Rank.zip",
+    "code": "ca",
+    "language": "Catalan",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6874090
+  },
+  {
+    "file": "Leipzig.Cebuano.Community.Rank.zip",
+    "code": "ceb",
+    "language": "Cebuano",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4213961
+  },
+  {
+    "file": "Leipzig.Cebuano.Newscrawl.Rank.zip",
+    "code": "ceb",
+    "language": "Cebuano",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 283193
+  },
+  {
+    "file": "Leipzig.Cebuano.Wikipedia.Rank.zip",
+    "code": "ceb",
+    "language": "Cebuano",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 11655034
+  },
+  {
+    "file": "Leipzig.Central.Bikol.Community.Rank.zip",
+    "code": "bcl",
+    "language": "Central Bikol",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 399573
+  },
+  {
+    "file": "Leipzig.Central.Bikol.Wikipedia.Rank.zip",
+    "code": "bcl",
+    "language": "Central Bikol",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 302502
+  },
+  {
+    "file": "Leipzig.Central.Kurdish.Community.Rank.zip",
+    "code": "ckb",
+    "language": "Central Kurdish",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 194787
+  },
+  {
+    "file": "Leipzig.Central.Kurdish.Wikipedia.Rank.zip",
+    "code": "ckb",
+    "language": "Central Kurdish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2553005
+  },
+  {
+    "file": "Leipzig.Chechen.Community.Rank.zip",
+    "code": "ce",
+    "language": "Chechen",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 798513
+  },
+  {
+    "file": "Leipzig.Chechen.Wikipedia.Rank.zip",
+    "code": "ce",
+    "language": "Chechen",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 894950
+  },
+  {
+    "file": "Leipzig.Nyanja.Community.Rank.zip",
+    "code": "ny",
+    "language": "Chichewa",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 50368
+  },
+  {
+    "file": "Leipzig.Chinese.News.Rank.zip",
+    "code": "zh",
+    "language": "Chinese",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2774581
+  },
+  {
+    "file": "Leipzig.Chinese.trad.Newscrawl.Rank.zip",
+    "code": "zh",
+    "language": "Chinese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "trad",
+    "size": 20259068
+  },
+  {
+    "file": "Leipzig.Chinese.China.Web.Rank.zip",
+    "code": "zh",
+    "language": "Chinese",
+    "type": "Web",
+    "source": "Web",
+    "region": "China",
+    "size": 14085947
+  },
+  {
+    "file": "Leipzig.Chinese.Macau.Web.Rank.zip",
+    "code": "zh",
+    "language": "Chinese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Macau",
+    "size": 14587337
+  },
+  {
+    "file": "Leipzig.Chinese.Taiwan-simp.Web.Rank.zip",
+    "code": "zh",
+    "language": "Chinese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Taiwan-simp",
+    "size": 2584271
+  },
+  {
+    "file": "Leipzig.Chinese.Wikipedia.Rank.zip",
+    "code": "zh",
+    "language": "Chinese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 14947844
+  },
+  {
+    "file": "Leipzig.Chuvash.Community.Rank.zip",
+    "code": "cv",
+    "language": "Chuvash",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1364785
+  },
+  {
+    "file": "Leipzig.Chuvash.Wikipedia.Rank.zip",
+    "code": "cv",
+    "language": "Chuvash",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 783059
+  },
+  {
+    "file": "Leipzig.Corsican.Wikipedia.Rank.zip",
+    "code": "co",
+    "language": "Corsican",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 337057
+  },
+  {
+    "file": "Leipzig.Croatian.News.Rank.zip",
+    "code": "hr",
+    "language": "Croatian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5151412
+  },
+  {
+    "file": "Leipzig.Croatian.Newscrawl.Rank.zip",
+    "code": "hr",
+    "language": "Croatian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7747916
+  },
+  {
+    "file": "Leipzig.Croatian.Croatia.Web.Rank.zip",
+    "code": "hr",
+    "language": "Croatian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Croatia",
+    "size": 8418301
+  },
+  {
+    "file": "Leipzig.Croatian.Wikipedia.Rank.zip",
+    "code": "hr",
+    "language": "Croatian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8482952
+  },
+  {
+    "file": "Leipzig.Czech.News.Rank.zip",
+    "code": "cs",
+    "language": "Czech",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5497695
+  },
+  {
+    "file": "Leipzig.Czech.Newscrawl.Rank.zip",
+    "code": "cs",
+    "language": "Czech",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6103773
+  },
+  {
+    "file": "Leipzig.Czech.Web.Rank.zip",
+    "code": "cs",
+    "language": "Czech",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 7590152
+  },
+  {
+    "file": "Leipzig.Czech.eu.Web.Rank.zip",
+    "code": "cs",
+    "language": "Czech",
+    "type": "Web",
+    "source": "Web",
+    "region": "EU",
+    "size": 7120963
+  },
+  {
+    "file": "Leipzig.Czech.Czechia.Web-Public.Rank.zip",
+    "code": "cs",
+    "language": "Czech",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Czechia",
+    "size": 7600492
+  },
+  {
+    "file": "Leipzig.Czech.Wikipedia.Rank.zip",
+    "code": "cs",
+    "language": "Czech",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8962018
+  },
+  {
+    "file": "Leipzig.Danish.Mixed.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 9147596
+  },
+  {
+    "file": "Leipzig.Danish.News.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4672389
+  },
+  {
+    "file": "Leipzig.Danish.Newscrawl.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5969812
+  },
+  {
+    "file": "Leipzig.Danish.Web.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 8192366
+  },
+  {
+    "file": "Leipzig.Danish.Denmark.Web.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Denmark",
+    "size": 7939914
+  },
+  {
+    "file": "Leipzig.Danish.Faroe.Islands.Web.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Faroe Islands",
+    "size": 1218757
+  },
+  {
+    "file": "Leipzig.Danish.Greenland.Web.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Greenland",
+    "size": 2421764
+  },
+  {
+    "file": "Leipzig.Danish.Denmark.Web-Public.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Denmark",
+    "size": 8731431
+  },
+  {
+    "file": "Leipzig.Danish.Wikipedia.Rank.zip",
+    "code": "da",
+    "language": "Danish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 9436511
+  },
+  {
+    "file": "Leipzig.Dari.Community.Rank.zip",
+    "code": "prs",
+    "language": "Dari",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1467396
+  },
+  {
+    "file": "Leipzig.Dimli.individual.language.Community.Rank.zip",
+    "code": "diq",
+    "language": "Dimli (individual language)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 692657
+  },
+  {
+    "file": "Leipzig.Dimli.individual.language.Wikipedia.Rank.zip",
+    "code": "diq",
+    "language": "Dimli (individual language)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 679000
+  },
+  {
+    "file": "Leipzig.Dhivehi.News.Rank.zip",
+    "code": "dv",
+    "language": "Divehi",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 820772
+  },
+  {
+    "file": "Leipzig.Dhivehi.Newscrawl.Rank.zip",
+    "code": "dv",
+    "language": "Divehi",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3084755
+  },
+  {
+    "file": "Leipzig.Dhivehi.Maldives.Web.Rank.zip",
+    "code": "dv",
+    "language": "Divehi",
+    "type": "Web",
+    "source": "Web",
+    "region": "Maldives",
+    "size": 9246424
+  },
+  {
+    "file": "Leipzig.Dhivehi.Wikipedia.Rank.zip",
+    "code": "dv",
+    "language": "Divehi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 833098
+  },
+  {
+    "file": "Leipzig.Dutch.Mixed.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 7799909
+  },
+  {
+    "file": "Leipzig.Dutch.Mixed-Typical.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Mixed",
+    "source": "Mixed-Typical",
+    "region": "",
+    "size": 4138246
+  },
+  {
+    "file": "Leipzig.Dutch.News.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5253643
+  },
+  {
+    "file": "Leipzig.Dutch.Newscrawl.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5430891
+  },
+  {
+    "file": "Leipzig.Dutch.Aruba.Web.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Web",
+    "source": "Web",
+    "region": "Aruba",
+    "size": 229025
+  },
+  {
+    "file": "Leipzig.Dutch.Suriname.Web.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Web",
+    "source": "Web",
+    "region": "Suriname",
+    "size": 1083488
+  },
+  {
+    "file": "Leipzig.Dutch.an.Web.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Web",
+    "source": "Web",
+    "region": "an",
+    "size": 216172
+  },
+  {
+    "file": "Leipzig.Dutch.Netherlands.Web-Public.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Netherlands",
+    "size": 6690797
+  },
+  {
+    "file": "Leipzig.Dutch.Wikipedia.Rank.zip",
+    "code": "nl",
+    "language": "Dutch",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8638552
+  },
+  {
+    "file": "Leipzig.Dyula.Community.Rank.zip",
+    "code": "dyu",
+    "language": "Dyula",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 546
+  },
+  {
+    "file": "Leipzig.Eastern.Maninkakan.Community.Rank.zip",
+    "code": "emk",
+    "language": "Eastern Maninkakan",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1951
+  },
+  {
+    "file": "Leipzig.Eastern.Mari.Wikipedia.Rank.zip",
+    "code": "mhr",
+    "language": "Eastern Mari",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 623450
+  },
+  {
+    "file": "Leipzig.Eastern.Yiddish.Community.Rank.zip",
+    "code": "ydd",
+    "language": "Eastern Yiddish",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 387748
+  },
+  {
+    "file": "Leipzig.Egyptian.Arabic.Wikipedia.Rank.zip",
+    "code": "arz",
+    "language": "Egyptian Arabic",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1666844
+  },
+  {
+    "file": "Leipzig.eml.Wikipedia.Rank.zip",
+    "code": "eml",
+    "language": "Emilian-Romagnol",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 754453
+  },
+  {
+    "file": "Leipzig.English.News.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 7260492
+  },
+  {
+    "file": "Leipzig.English.News-Typical.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "News",
+    "source": "News-Typical",
+    "region": "",
+    "size": 2525530
+  },
+  {
+    "file": "Leipzig.English.Newscrawl.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7946048
+  },
+  {
+    "file": "Leipzig.English.Newscrawl-Public.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "News",
+    "source": "Newscrawl-Public",
+    "region": "",
+    "size": 6076515
+  },
+  {
+    "file": "Leipzig.English.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 6300638
+  },
+  {
+    "file": "Leipzig.English.American.Samoa.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "American Samoa",
+    "size": 442465
+  },
+  {
+    "file": "Leipzig.English.Anguilla.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Anguilla",
+    "size": 1458539
+  },
+  {
+    "file": "Leipzig.English.Antigua.and.Barbuda.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Antigua and Barbuda",
+    "size": 1501913
+  },
+  {
+    "file": "Leipzig.English.Australia.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Australia",
+    "size": 6994026
+  },
+  {
+    "file": "Leipzig.English.Bahamas.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bahamas",
+    "size": 302846
+  },
+  {
+    "file": "Leipzig.English.Barbados.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Barbados",
+    "size": 367356
+  },
+  {
+    "file": "Leipzig.English.Bermuda.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bermuda",
+    "size": 386178
+  },
+  {
+    "file": "Leipzig.English.Botswana.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Botswana",
+    "size": 2968864
+  },
+  {
+    "file": "Leipzig.English.British.Indian.Ocean.Territory.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "British Indian Ocean Territory",
+    "size": 4754622
+  },
+  {
+    "file": "Leipzig.English.Brunei.Darussalam.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Brunei Darussalam",
+    "size": 425754
+  },
+  {
+    "file": "Leipzig.English.Canada.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Canada",
+    "size": 6526841
+  },
+  {
+    "file": "Leipzig.English.Dominica.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Dominica",
+    "size": 713570
+  },
+  {
+    "file": "Leipzig.English.eu.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "EU",
+    "size": 4381658
+  },
+  {
+    "file": "Leipzig.English.Falkland.Islands.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Falkland Islands",
+    "size": 216887
+  },
+  {
+    "file": "Leipzig.English.Fiji.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Fiji",
+    "size": 3470161
+  },
+  {
+    "file": "Leipzig.English.Gambia.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Gambia",
+    "size": 742990
+  },
+  {
+    "file": "Leipzig.English.Germany.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Germany",
+    "size": 6044370
+  },
+  {
+    "file": "Leipzig.English.Gibraltar.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Gibraltar",
+    "size": 1120351
+  },
+  {
+    "file": "Leipzig.English.Guadeloupe.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Guadeloupe",
+    "size": 1253157
+  },
+  {
+    "file": "Leipzig.English.Guyana.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Guyana",
+    "size": 1328076
+  },
+  {
+    "file": "Leipzig.English.Ireland.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Ireland",
+    "size": 5918488
+  },
+  {
+    "file": "Leipzig.English.Kiribati.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Kiribati",
+    "size": 461036
+  },
+  {
+    "file": "Leipzig.English.Montserrat.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Montserrat",
+    "size": 787840
+  },
+  {
+    "file": "Leipzig.English.Namibia.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Namibia",
+    "size": 1711218
+  },
+  {
+    "file": "Leipzig.English.Nauru.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Nauru",
+    "size": 293394
+  },
+  {
+    "file": "Leipzig.English.New.Zealand.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "New Zealand",
+    "size": 4559325
+  },
+  {
+    "file": "Leipzig.English.Niue.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Niue",
+    "size": 4349255
+  },
+  {
+    "file": "Leipzig.English.Philippines.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Philippines",
+    "size": 4699578
+  },
+  {
+    "file": "Leipzig.English.Puerto.Rico.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Puerto Rico",
+    "size": 332311
+  },
+  {
+    "file": "Leipzig.English.Seychelles.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Seychelles",
+    "size": 715468
+  },
+  {
+    "file": "Leipzig.English.Singapore.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Singapore",
+    "size": 4615927
+  },
+  {
+    "file": "Leipzig.English.South.Africa.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 5688224
+  },
+  {
+    "file": "Leipzig.English.South.Georgia.and.South.Sandwich.Is.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Georgia and South Sandwich Is",
+    "size": 568219
+  },
+  {
+    "file": "Leipzig.English.St.Kitts.and.Nevis.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "St Kitts and Nevis",
+    "size": 333078
+  },
+  {
+    "file": "Leipzig.English.St.Lucia.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "St Lucia",
+    "size": 488549
+  },
+  {
+    "file": "Leipzig.English.St.Pierre.and.Miquelon.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "St Pierre and Miquelon",
+    "size": 464496
+  },
+  {
+    "file": "Leipzig.English.St.Vincent.and.the.Grenadines.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "St Vincent and the Grenadines",
+    "size": 183330
+  },
+  {
+    "file": "Leipzig.English.Thailand.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Thailand",
+    "size": 7044150
+  },
+  {
+    "file": "Leipzig.English.Turks.and.Caicos.Islands.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Turks and Caicos Islands",
+    "size": 1519603
+  },
+  {
+    "file": "Leipzig.English.United.Kingdom.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "United Kingdom",
+    "size": 4311804
+  },
+  {
+    "file": "Leipzig.English.Zambia.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Zambia",
+    "size": 2077198
+  },
+  {
+    "file": "Leipzig.English.Zimbabwe.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "Zimbabwe",
+    "size": 4305164
+  },
+  {
+    "file": "Leipzig.English.ac.Web.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web",
+    "region": "ac",
+    "size": 957541
+  },
+  {
+    "file": "Leipzig.English.Comoros.Web-Public.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Comoros",
+    "size": 5134639
+  },
+  {
+    "file": "Leipzig.English.United.Kingdom.Web-Public.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "United Kingdom",
+    "size": 4703794
+  },
+  {
+    "file": "Leipzig.English.Wikipedia.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7089902
+  },
+  {
+    "file": "Leipzig.English.simple.Wikipedia.Rank.zip",
+    "code": "en",
+    "language": "English",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "simple",
+    "size": 3774454
+  },
+  {
+    "file": "Leipzig.Erzya.Wikipedia.Rank.zip",
+    "code": "myv",
+    "language": "Erzya",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 356838
+  },
+  {
+    "file": "Leipzig.Esperanto.Literature.Rank.zip",
+    "code": "eo",
+    "language": "Esperanto",
+    "type": "Literature",
+    "source": "Literature",
+    "region": "",
+    "size": 2216575
+  },
+  {
+    "file": "Leipzig.Esperanto.Mixed.Rank.zip",
+    "code": "eo",
+    "language": "Esperanto",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 7950897
+  },
+  {
+    "file": "Leipzig.Esperanto.Newscrawl.Rank.zip",
+    "code": "eo",
+    "language": "Esperanto",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 11134389
+  },
+  {
+    "file": "Leipzig.Esperanto.Web.Rank.zip",
+    "code": "eo",
+    "language": "Esperanto",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 6748967
+  },
+  {
+    "file": "Leipzig.Esperanto.Wikipedia.Rank.zip",
+    "code": "eo",
+    "language": "Esperanto",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4388292
+  },
+  {
+    "file": "Leipzig.Estonian.News.Rank.zip",
+    "code": "et",
+    "language": "Estonian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 3797438
+  },
+  {
+    "file": "Leipzig.Estonian.Newscrawl.Rank.zip",
+    "code": "et",
+    "language": "Estonian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 10236100
+  },
+  {
+    "file": "Leipzig.Estonian.Estonia.Web.Rank.zip",
+    "code": "et",
+    "language": "Estonian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Estonia",
+    "size": 11041940
+  },
+  {
+    "file": "Leipzig.Estonian.Wikipedia.Rank.zip",
+    "code": "et",
+    "language": "Estonian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6065086
+  },
+  {
+    "file": "Leipzig.Ewe.Community.Rank.zip",
+    "code": "ee",
+    "language": "Ewe",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 154311
+  },
+  {
+    "file": "Leipzig.Extremaduran.Wikipedia.Rank.zip",
+    "code": "ext",
+    "language": "Extremaduran",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 386588
+  },
+  {
+    "file": "Leipzig.Faroese.Mixed.Rank.zip",
+    "code": "fo",
+    "language": "Faroese",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 2664799
+  },
+  {
+    "file": "Leipzig.Faroese.News.Rank.zip",
+    "code": "fo",
+    "language": "Faroese",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 438206
+  },
+  {
+    "file": "Leipzig.Faroese.Web.Rank.zip",
+    "code": "fo",
+    "language": "Faroese",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 2267327
+  },
+  {
+    "file": "Leipzig.Faroese.Faroe.Islands.Web.Rank.zip",
+    "code": "fo",
+    "language": "Faroese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Faroe Islands",
+    "size": 6313503
+  },
+  {
+    "file": "Leipzig.Faroese.Wikipedia.Rank.zip",
+    "code": "fo",
+    "language": "Faroese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 739404
+  },
+  {
+    "file": "Leipzig.Fiji.Hindi.Wikipedia.Rank.zip",
+    "code": "hif",
+    "language": "Fiji Hindi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 228948
+  },
+  {
+    "file": "Leipzig.Finnish.News.Rank.zip",
+    "code": "fi",
+    "language": "Finnish",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 10301259
+  },
+  {
+    "file": "Leipzig.Finnish.Newscrawl.Rank.zip",
+    "code": "fi",
+    "language": "Finnish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 12554630
+  },
+  {
+    "file": "Leipzig.Finnish.Web.Rank.zip",
+    "code": "fi",
+    "language": "Finnish",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 14486097
+  },
+  {
+    "file": "Leipzig.Finnish.Sweden.Web.Rank.zip",
+    "code": "fi",
+    "language": "Finnish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Sweden",
+    "size": 944688
+  },
+  {
+    "file": "Leipzig.Finnish.Wikipedia.Rank.zip",
+    "code": "fi",
+    "language": "Finnish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 14548616
+  },
+  {
+    "file": "Leipzig.Fon.Community.Rank.zip",
+    "code": "fon",
+    "language": "Fon",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2054
+  },
+  {
+    "file": "Leipzig.French.Mixed.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 5926485
+  },
+  {
+    "file": "Leipzig.French.Mixed-Typical.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Mixed",
+    "source": "Mixed-Typical",
+    "region": "",
+    "size": 3140817
+  },
+  {
+    "file": "Leipzig.French.News.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4659893
+  },
+  {
+    "file": "Leipzig.French.Newscrawl.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5588905
+  },
+  {
+    "file": "Leipzig.French.Newscrawl-Public.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "News",
+    "source": "Newscrawl-Public",
+    "region": "",
+    "size": 4806612
+  },
+  {
+    "file": "Leipzig.French.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 5012916
+  },
+  {
+    "file": "Leipzig.French.Belgium.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Belgium",
+    "size": 4654247
+  },
+  {
+    "file": "Leipzig.French.Benin.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Benin",
+    "size": 441626
+  },
+  {
+    "file": "Leipzig.French.Burkina.Faso.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Burkina Faso",
+    "size": 1519146
+  },
+  {
+    "file": "Leipzig.French.Cameroon.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Cameroon",
+    "size": 853292
+  },
+  {
+    "file": "Leipzig.French.Canada.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Canada",
+    "size": 4626576
+  },
+  {
+    "file": "Leipzig.French.Cote.d.Ivoire.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Cote d Ivoire",
+    "size": 1636297
+  },
+  {
+    "file": "Leipzig.French.DR.Congo.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "DR Congo",
+    "size": 1673146
+  },
+  {
+    "file": "Leipzig.French.eu.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "EU",
+    "size": 4948712
+  },
+  {
+    "file": "Leipzig.French.France.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "France",
+    "size": 5492179
+  },
+  {
+    "file": "Leipzig.French.French.Polynesia.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "French Polynesia",
+    "size": 1885953
+  },
+  {
+    "file": "Leipzig.French.Gabon.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Gabon",
+    "size": 464482
+  },
+  {
+    "file": "Leipzig.French.Guadeloupe.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Guadeloupe",
+    "size": 350237
+  },
+  {
+    "file": "Leipzig.French.Haiti.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Haiti",
+    "size": 903320
+  },
+  {
+    "file": "Leipzig.French.Luxembourg.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Luxembourg",
+    "size": 4594440
+  },
+  {
+    "file": "Leipzig.French.Madagascar.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Madagascar",
+    "size": 2033817
+  },
+  {
+    "file": "Leipzig.French.Mali.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Mali",
+    "size": 820306
+  },
+  {
+    "file": "Leipzig.French.Martinique.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Martinique",
+    "size": 284981
+  },
+  {
+    "file": "Leipzig.French.Monaco.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Monaco",
+    "size": 1924431
+  },
+  {
+    "file": "Leipzig.French.New.Caledonia.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "New Caledonia",
+    "size": 2291774
+  },
+  {
+    "file": "Leipzig.French.Niger.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Niger",
+    "size": 224505
+  },
+  {
+    "file": "Leipzig.French.Reunion.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Reunion",
+    "size": 3902477
+  },
+  {
+    "file": "Leipzig.French.Rwanda.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Rwanda",
+    "size": 465288
+  },
+  {
+    "file": "Leipzig.French.Senegal.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Senegal",
+    "size": 1779091
+  },
+  {
+    "file": "Leipzig.French.Switzerland.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Switzerland",
+    "size": 5435397
+  },
+  {
+    "file": "Leipzig.French.Togo.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Togo",
+    "size": 249905
+  },
+  {
+    "file": "Leipzig.French.Tuvalu.Web.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Web",
+    "source": "Web",
+    "region": "Tuvalu",
+    "size": 2267237
+  },
+  {
+    "file": "Leipzig.French.Wikipedia.Rank.zip",
+    "code": "fr",
+    "language": "French",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6933972
+  },
+  {
+    "file": "Leipzig.Fulah.Community.Rank.zip",
+    "code": "ff",
+    "language": "Fulah",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 55774
+  },
+  {
+    "file": "Leipzig.Galician.Community.Rank.zip",
+    "code": "gl",
+    "language": "Galician",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2844583
+  },
+  {
+    "file": "Leipzig.Galician.Newscrawl.Rank.zip",
+    "code": "gl",
+    "language": "Galician",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1172378
+  },
+  {
+    "file": "Leipzig.Galician.Wikipedia.Rank.zip",
+    "code": "gl",
+    "language": "Galician",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3014264
+  },
+  {
+    "file": "Leipzig.Gan.Chinese.Community.Rank.zip",
+    "code": "gan",
+    "language": "Gan Chinese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 228615
+  },
+  {
+    "file": "Leipzig.Ganda.Community.Rank.zip",
+    "code": "lg",
+    "language": "Ganda",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1844702
+  },
+  {
+    "file": "Leipzig.Ganda.Newscrawl.Rank.zip",
+    "code": "lg",
+    "language": "Ganda",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3909329
+  },
+  {
+    "file": "Leipzig.Ganda.Wikipedia.Rank.zip",
+    "code": "lg",
+    "language": "Ganda",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 404902
+  },
+  {
+    "file": "Leipzig.Georgian.News.Rank.zip",
+    "code": "ka",
+    "language": "Georgian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1596714
+  },
+  {
+    "file": "Leipzig.Georgian.Newscrawl.Rank.zip",
+    "code": "ka",
+    "language": "Georgian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7663101
+  },
+  {
+    "file": "Leipzig.Georgian.Georgia.Web.Rank.zip",
+    "code": "ka",
+    "language": "Georgian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Georgia",
+    "size": 9494771
+  },
+  {
+    "file": "Leipzig.Georgian.Wikipedia.Rank.zip",
+    "code": "ka",
+    "language": "Georgian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4625558
+  },
+  {
+    "file": "Leipzig.German.Mixed-Typical.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Mixed",
+    "source": "Mixed-Typical",
+    "region": "",
+    "size": 6520876
+  },
+  {
+    "file": "Leipzig.German.News.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 9759735
+  },
+  {
+    "file": "Leipzig.German.Newscrawl.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 10798422
+  },
+  {
+    "file": "Leipzig.German.Austria.Newscrawl.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Austria",
+    "size": 9342559
+  },
+  {
+    "file": "Leipzig.German.Namibia.Newscrawl.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Namibia",
+    "size": 3432783
+  },
+  {
+    "file": "Leipzig.German.Switzerland.Newscrawl.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Switzerland",
+    "size": 8255112
+  },
+  {
+    "file": "Leipzig.German.Newscrawl-Public.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "News",
+    "source": "Newscrawl-Public",
+    "region": "",
+    "size": 10129264
+  },
+  {
+    "file": "Leipzig.German.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 11720766
+  },
+  {
+    "file": "Leipzig.German.Austria.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Austria",
+    "size": 11201471
+  },
+  {
+    "file": "Leipzig.German.Belgium.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Belgium",
+    "size": 352113
+  },
+  {
+    "file": "Leipzig.German.Comoros.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 9848290
+  },
+  {
+    "file": "Leipzig.German.eu.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "EU",
+    "size": 10456394
+  },
+  {
+    "file": "Leipzig.German.Germany.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Germany",
+    "size": 9080431
+  },
+  {
+    "file": "Leipzig.German.Hungary.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Hungary",
+    "size": 8418586
+  },
+  {
+    "file": "Leipzig.German.Liechtenstein.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Liechtenstein",
+    "size": 8451744
+  },
+  {
+    "file": "Leipzig.German.Luxembourg.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Luxembourg",
+    "size": 9773964
+  },
+  {
+    "file": "Leipzig.German.Namibia.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Namibia",
+    "size": 1797113
+  },
+  {
+    "file": "Leipzig.German.Poland.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Poland",
+    "size": 8889059
+  },
+  {
+    "file": "Leipzig.German.Switzerland.Web.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Switzerland",
+    "size": 10427908
+  },
+  {
+    "file": "Leipzig.German.Austria.Web-Public.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Austria",
+    "size": 11501072
+  },
+  {
+    "file": "Leipzig.German.Germany.Web-Public.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Germany",
+    "size": 11062368
+  },
+  {
+    "file": "Leipzig.German.Switzerland.Web-Public.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Switzerland",
+    "size": 10600161
+  },
+  {
+    "file": "Leipzig.German.Wikipedia.Rank.zip",
+    "code": "de",
+    "language": "German",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 13219812
+  },
+  {
+    "file": "Leipzig.Gilaki.Community.Rank.zip",
+    "code": "glk",
+    "language": "Gilaki",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 7140259
+  },
+  {
+    "file": "Leipzig.Gilaki.Wikipedia.Rank.zip",
+    "code": "glk",
+    "language": "Gilaki",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 376979
+  },
+  {
+    "file": "Leipzig.Goan.Konkani.Community.Rank.zip",
+    "code": "gom",
+    "language": "Goan Konkani",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 717291
+  },
+  {
+    "file": "Leipzig.Goan.Konkani.Newscrawl.Rank.zip",
+    "code": "gom",
+    "language": "Goan Konkani",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 596143
+  },
+  {
+    "file": "Leipzig.Goan.Konkani.Wikipedia.Rank.zip",
+    "code": "gom",
+    "language": "Goan Konkani",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 409420
+  },
+  {
+    "file": "Leipzig.Guarani.Community.Rank.zip",
+    "code": "gn",
+    "language": "Guarani",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 429808
+  },
+  {
+    "file": "Leipzig.Guarani.Wikipedia.Rank.zip",
+    "code": "gn",
+    "language": "Guarani",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 346109
+  },
+  {
+    "file": "Leipzig.Gujarati.News.Rank.zip",
+    "code": "gu",
+    "language": "Gujarati",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 593745
+  },
+  {
+    "file": "Leipzig.Gujarati.Newscrawl.Rank.zip",
+    "code": "gu",
+    "language": "Gujarati",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3664097
+  },
+  {
+    "file": "Leipzig.Gujarati.Wikipedia.Rank.zip",
+    "code": "gu",
+    "language": "Gujarati",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2282235
+  },
+  {
+    "file": "Leipzig.Haitian.Community.Rank.zip",
+    "code": "ht",
+    "language": "Haitian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 323113
+  },
+  {
+    "file": "Leipzig.Haitian.Haiti.Web.Rank.zip",
+    "code": "ht",
+    "language": "Haitian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Haiti",
+    "size": 263127
+  },
+  {
+    "file": "Leipzig.Haitian.Wikipedia.Rank.zip",
+    "code": "ht",
+    "language": "Haitian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 446876
+  },
+  {
+    "file": "Leipzig.Halh.Mongolian.Community.Rank.zip",
+    "code": "khk",
+    "language": "Halh Mongolian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 471346
+  },
+  {
+    "file": "Leipzig.Hausa.Community.Rank.zip",
+    "code": "ha",
+    "language": "Hausa",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 387928
+  },
+  {
+    "file": "Leipzig.Hausa.Wikipedia.Rank.zip",
+    "code": "ha",
+    "language": "Hausa",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 445161
+  },
+  {
+    "file": "Leipzig.Hebrew.News.Rank.zip",
+    "code": "he",
+    "language": "Hebrew",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5478858
+  },
+  {
+    "file": "Leipzig.Hebrew.Newscrawl.Rank.zip",
+    "code": "he",
+    "language": "Hebrew",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5977284
+  },
+  {
+    "file": "Leipzig.Hebrew.Wikipedia.Rank.zip",
+    "code": "he",
+    "language": "Hebrew",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7974534
+  },
+  {
+    "file": "Leipzig.Hiligaynon.Community.Rank.zip",
+    "code": "hil",
+    "language": "Hiligaynon",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4413
+  },
+  {
+    "file": "Leipzig.Hindi.Mixed.Rank.zip",
+    "code": "hi",
+    "language": "Hindi",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 5547403
+  },
+  {
+    "file": "Leipzig.Hindi.News.Rank.zip",
+    "code": "hi",
+    "language": "Hindi",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2962458
+  },
+  {
+    "file": "Leipzig.Hindi.Newscrawl.Rank.zip",
+    "code": "hi",
+    "language": "Hindi",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 4596159
+  },
+  {
+    "file": "Leipzig.Hindi.India.Web.Rank.zip",
+    "code": "hi",
+    "language": "Hindi",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 5551956
+  },
+  {
+    "file": "Leipzig.Hindi.Wikipedia.Rank.zip",
+    "code": "hi",
+    "language": "Hindi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7734021
+  },
+  {
+    "file": "Leipzig.Hungarian.Mixed.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 12232736
+  },
+  {
+    "file": "Leipzig.Hungarian.News.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 9791942
+  },
+  {
+    "file": "Leipzig.Hungarian.Newscrawl.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 12601637
+  },
+  {
+    "file": "Leipzig.Hungarian.Comoros.Web.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 2395028
+  },
+  {
+    "file": "Leipzig.Hungarian.Hungary.Web.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Hungary",
+    "size": 13449568
+  },
+  {
+    "file": "Leipzig.Hungarian.Romania.Web.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Romania",
+    "size": 12437935
+  },
+  {
+    "file": "Leipzig.Hungarian.Slovakia.Web.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Slovakia",
+    "size": 2377510
+  },
+  {
+    "file": "Leipzig.Hungarian.Wikipedia.Rank.zip",
+    "code": "hu",
+    "language": "Hungarian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 13435799
+  },
+  {
+    "file": "Leipzig.Ibibio.Community.Rank.zip",
+    "code": "ibb",
+    "language": "Ibibio",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2971
+  },
+  {
+    "file": "Leipzig.Icelandic.News.Rank.zip",
+    "code": "is",
+    "language": "Icelandic",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 741526
+  },
+  {
+    "file": "Leipzig.Icelandic.Newscrawl.Rank.zip",
+    "code": "is",
+    "language": "Icelandic",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6040679
+  },
+  {
+    "file": "Leipzig.Icelandic.Iceland.Web.Rank.zip",
+    "code": "is",
+    "language": "Icelandic",
+    "type": "Web",
+    "source": "Web",
+    "region": "Iceland",
+    "size": 8528526
+  },
+  {
+    "file": "Leipzig.Icelandic.Iceland.Web-Public.Rank.zip",
+    "code": "is",
+    "language": "Icelandic",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Iceland",
+    "size": 8184189
+  },
+  {
+    "file": "Leipzig.Icelandic.Wikipedia.Rank.zip",
+    "code": "is",
+    "language": "Icelandic",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2124946
+  },
+  {
+    "file": "Leipzig.Ido.Wikipedia.Rank.zip",
+    "code": "io",
+    "language": "Ido",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1154959
+  },
+  {
+    "file": "Leipzig.Igbo.Community.Rank.zip",
+    "code": "ig",
+    "language": "Igbo",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 150752
+  },
+  {
+    "file": "Leipzig.Igbo.Wikipedia.Rank.zip",
+    "code": "ig",
+    "language": "Igbo",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 245846
+  },
+  {
+    "file": "Leipzig.Iloko.Community.Rank.zip",
+    "code": "ilo",
+    "language": "Iloko",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 466137
+  },
+  {
+    "file": "Leipzig.Iloko.Wikipedia.Rank.zip",
+    "code": "ilo",
+    "language": "Iloko",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 311038
+  },
+  {
+    "file": "Leipzig.Indonesian.Mixed.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 5505084
+  },
+  {
+    "file": "Leipzig.Indonesian.Mixed-Tufs4.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Mixed",
+    "source": "Mixed-Tufs4",
+    "region": "",
+    "size": 4928086
+  },
+  {
+    "file": "Leipzig.Indonesian.News.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 3603575
+  },
+  {
+    "file": "Leipzig.Indonesian.News-Tufs10.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "News-Tufs10",
+    "region": "",
+    "size": 1664202
+  },
+  {
+    "file": "Leipzig.Indonesian.News-Tufs11.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "News-Tufs11",
+    "region": "",
+    "size": 1700206
+  },
+  {
+    "file": "Leipzig.Indonesian.News-Tufs7.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "News-Tufs7",
+    "region": "",
+    "size": 1610402
+  },
+  {
+    "file": "Leipzig.Indonesian.News-Tufs8.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "News-Tufs8",
+    "region": "",
+    "size": 1555135
+  },
+  {
+    "file": "Leipzig.Indonesian.News-Tufs9.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "News-Tufs9",
+    "region": "",
+    "size": 1661699
+  },
+  {
+    "file": "Leipzig.Indonesian.Newscrawl.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3904655
+  },
+  {
+    "file": "Leipzig.Indonesian.Newscrawl-Tufs5.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "Newscrawl-Tufs5",
+    "region": "",
+    "size": 6969830
+  },
+  {
+    "file": "Leipzig.Indonesian.Newscrawl-Tufs6.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "News",
+    "source": "Newscrawl-Tufs6",
+    "region": "",
+    "size": 6907076
+  },
+  {
+    "file": "Leipzig.Indonesian.Web.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 4834540
+  },
+  {
+    "file": "Leipzig.Indonesian.Brunei.Darussalam.Web.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Brunei Darussalam",
+    "size": 169316
+  },
+  {
+    "file": "Leipzig.Indonesian.Comoros.Web.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 4024197
+  },
+  {
+    "file": "Leipzig.Indonesian.India.Web.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 4939095
+  },
+  {
+    "file": "Leipzig.Indonesian.Indonesia.Web.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 4718168
+  },
+  {
+    "file": "Leipzig.Indonesian.Indonesia.Web-Public.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Indonesia",
+    "size": 4651029
+  },
+  {
+    "file": "Leipzig.Indonesian.Web-Tufs12.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web-Tufs12",
+    "region": "",
+    "size": 1622713
+  },
+  {
+    "file": "Leipzig.Indonesian.Web-Tufs13.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web-Tufs13",
+    "region": "",
+    "size": 10196840
+  },
+  {
+    "file": "Leipzig.Indonesian.Web-Tufs2.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web-Tufs2",
+    "region": "",
+    "size": 4511665
+  },
+  {
+    "file": "Leipzig.Indonesian.Web-Tufs3.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Web",
+    "source": "Web-Tufs3",
+    "region": "",
+    "size": 9893221
+  },
+  {
+    "file": "Leipzig.Indonesian.Wikipedia.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6766916
+  },
+  {
+    "file": "Leipzig.Indonesian.Wikipedia-Tufs14.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Wikipedia",
+    "source": "Wikipedia-Tufs14",
+    "region": "",
+    "size": 5989040
+  },
+  {
+    "file": "Leipzig.Indonesian.Wikipedia-Tufs16.Rank.zip",
+    "code": "id",
+    "language": "Indonesian",
+    "type": "Wikipedia",
+    "source": "Wikipedia-Tufs16",
+    "region": "",
+    "size": 521218
+  },
+  {
+    "file": "Leipzig.Interlingua.International.Auxiliary.Language.Association.Wikipedia.Rank.zip",
+    "code": "ia",
+    "language": "Interlingua (International Auxiliary Language Association)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 557751
+  },
+  {
+    "file": "Leipzig.Interlingue.Wikipedia.Rank.zip",
+    "code": "ie",
+    "language": "Interlingue",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 231551
+  },
+  {
+    "file": "Leipzig.Iranian.Persian.Community.Rank.zip",
+    "code": "pes",
+    "language": "Iranian Persian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 24137569
+  },
+  {
+    "file": "Leipzig.Iranian.Persian.Iran.Web.Public.Rank.zip",
+    "code": "pes",
+    "language": "Iranian Persian",
+    "type": "Public",
+    "source": "Public",
+    "region": "Iran Web",
+    "size": 6462179
+  },
+  {
+    "file": "Leipzig.Iranian.Persian.Iran.Web.Rank.zip",
+    "code": "pes",
+    "language": "Iranian Persian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Iran",
+    "size": 6742904
+  },
+  {
+    "file": "Leipzig.Iranian.Persian.Iran.Web-Public.Rank.zip",
+    "code": "pes",
+    "language": "Iranian Persian",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Iran",
+    "size": 6465721
+  },
+  {
+    "file": "Leipzig.Iranian.Persian.Wikipedia.Rank.zip",
+    "code": "pes",
+    "language": "Iranian Persian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6178977
+  },
+  {
+    "file": "Leipzig.Irish.Newscrawl.Rank.zip",
+    "code": "ga",
+    "language": "Irish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2239947
+  },
+  {
+    "file": "Leipzig.Irish.Wikipedia.Rank.zip",
+    "code": "ga",
+    "language": "Irish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 719234
+  },
+  {
+    "file": "Leipzig.Italian.Mixed-Typical.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "Mixed",
+    "source": "Mixed-Typical",
+    "region": "",
+    "size": 2507793
+  },
+  {
+    "file": "Leipzig.Italian.News.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4740805
+  },
+  {
+    "file": "Leipzig.Italian.Newscrawl.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5119879
+  },
+  {
+    "file": "Leipzig.Italian.Web.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 5913798
+  },
+  {
+    "file": "Leipzig.Italian.San.Marino.Web.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "Web",
+    "source": "Web",
+    "region": "San Marino",
+    "size": 1960671
+  },
+  {
+    "file": "Leipzig.Italian.Switzerland.Web.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Switzerland",
+    "size": 4988250
+  },
+  {
+    "file": "Leipzig.Italian.Italy.Web-Public.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Italy",
+    "size": 6181779
+  },
+  {
+    "file": "Leipzig.Italian.Wikipedia.Rank.zip",
+    "code": "it",
+    "language": "Italian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7146173
+  },
+  {
+    "file": "Leipzig.Japanese.News.Rank.zip",
+    "code": "ja",
+    "language": "Japanese",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2707158
+  },
+  {
+    "file": "Leipzig.Japanese.Newscrawl.Rank.zip",
+    "code": "ja",
+    "language": "Japanese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2637922
+  },
+  {
+    "file": "Leipzig.Japanese.Comoros.Web.Rank.zip",
+    "code": "ja",
+    "language": "Japanese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 3408582
+  },
+  {
+    "file": "Leipzig.Japanese.Japan.Web.Rank.zip",
+    "code": "ja",
+    "language": "Japanese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Japan",
+    "size": 3414987
+  },
+  {
+    "file": "Leipzig.Japanese.Japan.Web-Public.Rank.zip",
+    "code": "ja",
+    "language": "Japanese",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Japan",
+    "size": 3263918
+  },
+  {
+    "file": "Leipzig.Japanese.Wikipedia.Rank.zip",
+    "code": "ja",
+    "language": "Japanese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 5111217
+  },
+  {
+    "file": "Leipzig.Javanese.Community.Rank.zip",
+    "code": "jv",
+    "language": "Javanese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1355304
+  },
+  {
+    "file": "Leipzig.Javanese.Indonesia.Web.Rank.zip",
+    "code": "jv",
+    "language": "Javanese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 648852
+  },
+  {
+    "file": "Leipzig.Javanese.Wikipedia.Rank.zip",
+    "code": "jv",
+    "language": "Javanese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1515801
+  },
+  {
+    "file": "Leipzig.Javanese.bms.Wikipedia.Rank.zip",
+    "code": "jv",
+    "language": "Javanese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "bms",
+    "size": 282263
+  },
+  {
+    "file": "Leipzig.Kabardian.Community.Rank.zip",
+    "code": "kbd",
+    "language": "Kabardian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 398641
+  },
+  {
+    "file": "Leipzig.Kabiye.Wikipedia.Rank.zip",
+    "code": "kbp",
+    "language": "Kabiyè",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 273185
+  },
+  {
+    "file": "Leipzig.Kabuverdianu.Community.Rank.zip",
+    "code": "kea",
+    "language": "Kabuverdianu",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 13315
+  },
+  {
+    "file": "Leipzig.Kabyle.Community.Rank.zip",
+    "code": "kab",
+    "language": "Kabyle",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 224264
+  },
+  {
+    "file": "Leipzig.Kalaallisut.Newscrawl.Rank.zip",
+    "code": "kl",
+    "language": "Kalaallisut",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1027150
+  },
+  {
+    "file": "Leipzig.Kalaallisut.Greenland.Web.Rank.zip",
+    "code": "kl",
+    "language": "Kalaallisut",
+    "type": "Web",
+    "source": "Web",
+    "region": "Greenland",
+    "size": 1281581
+  },
+  {
+    "file": "Leipzig.Kannada.Community.Rank.zip",
+    "code": "kn",
+    "language": "Kannada",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3551038
+  },
+  {
+    "file": "Leipzig.Kannada.Newscrawl.Rank.zip",
+    "code": "kn",
+    "language": "Kannada",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2513899
+  },
+  {
+    "file": "Leipzig.Kannada.Wikipedia.Rank.zip",
+    "code": "kn",
+    "language": "Kannada",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7449558
+  },
+  {
+    "file": "Leipzig.Karachay-Balkar.Wikipedia.Rank.zip",
+    "code": "krc",
+    "language": "Karachay-Balkar",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 382037
+  },
+  {
+    "file": "Leipzig.Kashmiri.Community.Rank.zip",
+    "code": "ks",
+    "language": "Kashmiri",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 31837
+  },
+  {
+    "file": "Leipzig.Kashubian.Wikipedia.Rank.zip",
+    "code": "csb",
+    "language": "Kashubian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 435914
+  },
+  {
+    "file": "Leipzig.Kazakh.News.Rank.zip",
+    "code": "kk",
+    "language": "Kazakh",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 619604
+  },
+  {
+    "file": "Leipzig.Kazakh.Newscrawl.Rank.zip",
+    "code": "kk",
+    "language": "Kazakh",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7690125
+  },
+  {
+    "file": "Leipzig.Kazakh.Wikipedia.Rank.zip",
+    "code": "kk",
+    "language": "Kazakh",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4737988
+  },
+  {
+    "file": "Leipzig.Central.Khmer.Community.Rank.zip",
+    "code": "km",
+    "language": "Khmer",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 218518
+  },
+  {
+    "file": "Leipzig.Kikuyu.Community.Rank.zip",
+    "code": "ki",
+    "language": "Kikuyu",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 38332
+  },
+  {
+    "file": "Leipzig.Kinyarwanda.Community.Rank.zip",
+    "code": "rw",
+    "language": "Kinyarwanda",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 898269
+  },
+  {
+    "file": "Leipzig.Kirghiz.Community.Rank.zip",
+    "code": "ky",
+    "language": "Kirghiz",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3194198
+  },
+  {
+    "file": "Leipzig.Kirghiz.Newscrawl.Rank.zip",
+    "code": "ky",
+    "language": "Kirghiz",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5485379
+  },
+  {
+    "file": "Leipzig.Kirghiz.Wikipedia.Rank.zip",
+    "code": "ky",
+    "language": "Kirghiz",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4230468
+  },
+  {
+    "file": "Leipzig.Kituba.Congo.Community.Rank.zip",
+    "code": "mkw",
+    "language": "Kituba (Congo)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2379109
+  },
+  {
+    "file": "Leipzig.Komi.Wikipedia.Rank.zip",
+    "code": "kv",
+    "language": "Komi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 321747
+  },
+  {
+    "file": "Leipzig.Komi-Permyak.Wikipedia.Rank.zip",
+    "code": "koi",
+    "language": "Komi-Permyak",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 294954
+  },
+  {
+    "file": "Leipzig.Kongo.Community.Rank.zip",
+    "code": "kg",
+    "language": "Kongo",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 16436
+  },
+  {
+    "file": "Leipzig.Konkani.individual.language.Community.Rank.zip",
+    "code": "knn",
+    "language": "Konkani (individual language)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 522364
+  },
+  {
+    "file": "Leipzig.Konkani.individual.language.India.Web.Rank.zip",
+    "code": "knn",
+    "language": "Konkani (individual language)",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 370297
+  },
+  {
+    "file": "Leipzig.Koongo.Community.Rank.zip",
+    "code": "kng",
+    "language": "Koongo",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3140
+  },
+  {
+    "file": "Leipzig.Korean.News.Rank.zip",
+    "code": "ko",
+    "language": "Korean",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 17005720
+  },
+  {
+    "file": "Leipzig.Korean.Newscrawl.Rank.zip",
+    "code": "ko",
+    "language": "Korean",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 29995081
+  },
+  {
+    "file": "Leipzig.Korean.South.Korea.Web.Rank.zip",
+    "code": "ko",
+    "language": "Korean",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Korea",
+    "size": 26215007
+  },
+  {
+    "file": "Leipzig.Korean.Wikipedia.Rank.zip",
+    "code": "ko",
+    "language": "Korean",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 22870662
+  },
+  {
+    "file": "Leipzig.Kurdish.Community.Rank.zip",
+    "code": "ku",
+    "language": "Kurdish",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1647717
+  },
+  {
+    "file": "Leipzig.Kurdish.Newscrawl.Rank.zip",
+    "code": "ku",
+    "language": "Kurdish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 924058
+  },
+  {
+    "file": "Leipzig.Kolsch.Wikipedia.Rank.zip",
+    "code": "ksh",
+    "language": "Kölsch",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 329987
+  },
+  {
+    "file": "Leipzig.Ladino.Wikipedia.Rank.zip",
+    "code": "lad",
+    "language": "Ladino",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 318838
+  },
+  {
+    "file": "Leipzig.Lao.Community.Rank.zip",
+    "code": "lo",
+    "language": "Lao",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 699905
+  },
+  {
+    "file": "Leipzig.Latin.Wikipedia.Rank.zip",
+    "code": "la",
+    "language": "Latin",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2014530
+  },
+  {
+    "file": "Leipzig.Latvian.News.Rank.zip",
+    "code": "lv",
+    "language": "Latvian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2478450
+  },
+  {
+    "file": "Leipzig.Latvian.Newscrawl.Rank.zip",
+    "code": "lv",
+    "language": "Latvian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6987957
+  },
+  {
+    "file": "Leipzig.Latvian.Latvia.Web.Rank.zip",
+    "code": "lv",
+    "language": "Latvian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Latvia",
+    "size": 6461287
+  },
+  {
+    "file": "Leipzig.Latvian.Wikipedia.Rank.zip",
+    "code": "lv",
+    "language": "Latvian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3703246
+  },
+  {
+    "file": "Leipzig.Ligurian.Wikipedia.Rank.zip",
+    "code": "lij",
+    "language": "Ligurian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 431886
+  },
+  {
+    "file": "Leipzig.Limburgan.Netherlands.Web.Rank.zip",
+    "code": "li",
+    "language": "Limburgan",
+    "type": "Web",
+    "source": "Web",
+    "region": "Netherlands",
+    "size": 3709494
+  },
+  {
+    "file": "Leipzig.Limburgan.Wiki.Rank.zip",
+    "code": "li",
+    "language": "Limburgan",
+    "type": "Wikipedia",
+    "source": "Wiki",
+    "region": "",
+    "size": 852181
+  },
+  {
+    "file": "Leipzig.Limburgan.Wikipedia.Rank.zip",
+    "code": "li",
+    "language": "Limburgan",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1818719
+  },
+  {
+    "file": "Leipzig.Lingala.Community.Rank.zip",
+    "code": "ln",
+    "language": "Lingala",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 51416
+  },
+  {
+    "file": "Leipzig.Lithuanian.News.Rank.zip",
+    "code": "lt",
+    "language": "Lithuanian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5567373
+  },
+  {
+    "file": "Leipzig.Lithuanian.lit.News.Rank.zip",
+    "code": "lt",
+    "language": "Lithuanian",
+    "type": "News",
+    "source": "News",
+    "region": "lit",
+    "size": 1855573
+  },
+  {
+    "file": "Leipzig.Lithuanian.Newscrawl.Rank.zip",
+    "code": "lt",
+    "language": "Lithuanian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 8877356
+  },
+  {
+    "file": "Leipzig.Lithuanian.Lithuania.Web.Rank.zip",
+    "code": "lt",
+    "language": "Lithuanian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Lithuania",
+    "size": 8992892
+  },
+  {
+    "file": "Leipzig.Lithuanian.Wikipedia.Rank.zip",
+    "code": "lt",
+    "language": "Lithuanian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3997057
+  },
+  {
+    "file": "Leipzig.Lombard.Wikipedia.Rank.zip",
+    "code": "lmo",
+    "language": "Lombard",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 778176
+  },
+  {
+    "file": "Leipzig.Lomwe.Community.Rank.zip",
+    "code": "ngl",
+    "language": "Lomwe",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3810
+  },
+  {
+    "file": "Leipzig.Low.German.Wikipedia.Rank.zip",
+    "code": "nds",
+    "language": "Low German",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1837230
+  },
+  {
+    "file": "Leipzig.Low.German.Netherlands.Wikipedia.Rank.zip",
+    "code": "nds",
+    "language": "Low German",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "Netherlands",
+    "size": 399781
+  },
+  {
+    "file": "Leipzig.Lower.Sorbian.Wikipedia.Rank.zip",
+    "code": "dsb",
+    "language": "Lower Sorbian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 367813
+  },
+  {
+    "file": "Leipzig.Lugbara.Community.Rank.zip",
+    "code": "lgg",
+    "language": "Lugbara",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 5364
+  },
+  {
+    "file": "Leipzig.Lumbu.Community.Rank.zip",
+    "code": "lup",
+    "language": "Lumbu",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 155575
+  },
+  {
+    "file": "Leipzig.Lushai.News.Rank.zip",
+    "code": "lus",
+    "language": "Lushai",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 421278
+  },
+  {
+    "file": "Leipzig.Lushai.Newscrawl.Rank.zip",
+    "code": "lus",
+    "language": "Lushai",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 434578
+  },
+  {
+    "file": "Leipzig.Lushai.India.Web.Rank.zip",
+    "code": "lus",
+    "language": "Lushai",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 450087
+  },
+  {
+    "file": "Leipzig.Luxembourgish.Newscrawl.Rank.zip",
+    "code": "lb",
+    "language": "Luxembourgish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3261243
+  },
+  {
+    "file": "Leipzig.Luxembourgish.Luxembourg.Web.Rank.zip",
+    "code": "lb",
+    "language": "Luxembourgish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Luxembourg",
+    "size": 6352769
+  },
+  {
+    "file": "Leipzig.Luxembourgish.Wikipedia.Rank.zip",
+    "code": "lb",
+    "language": "Luxembourgish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1875171
+  },
+  {
+    "file": "Leipzig.Macedonian.Community.Rank.zip",
+    "code": "mk",
+    "language": "Macedonian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 9630318
+  },
+  {
+    "file": "Leipzig.Macedonian.News.Rank.zip",
+    "code": "mk",
+    "language": "Macedonian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1228352
+  },
+  {
+    "file": "Leipzig.Macedonian.Newscrawl.Rank.zip",
+    "code": "mk",
+    "language": "Macedonian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2510138
+  },
+  {
+    "file": "Leipzig.Macedonian.Newscrwal.Rank.zip",
+    "code": "mk",
+    "language": "Macedonian",
+    "type": "News",
+    "source": "Newscrwal",
+    "region": "",
+    "size": 2510138
+  },
+  {
+    "file": "Leipzig.Macedonian.North.Macedonia.Web.Rank.zip",
+    "code": "mk",
+    "language": "Macedonian",
+    "type": "Web",
+    "source": "Web",
+    "region": "North Macedonia",
+    "size": 6516563
+  },
+  {
+    "file": "Leipzig.Macedonian.Wikipedia.Rank.zip",
+    "code": "mk",
+    "language": "Macedonian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3856346
+  },
+  {
+    "file": "Leipzig.Madurese.Community.Rank.zip",
+    "code": "mad",
+    "language": "Madurese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1340
+  },
+  {
+    "file": "Leipzig.Madurese.Indonesia.Web.Rank.zip",
+    "code": "mad",
+    "language": "Madurese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 234033
+  },
+  {
+    "file": "Leipzig.Makonde.Community.Rank.zip",
+    "code": "kde",
+    "language": "Makonde",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 5903
+  },
+  {
+    "file": "Leipzig.Malagasy.Community.Rank.zip",
+    "code": "mg",
+    "language": "Malagasy",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1305101
+  },
+  {
+    "file": "Leipzig.Malagasy.Web.Rank.zip",
+    "code": "mg",
+    "language": "Malagasy",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 548059
+  },
+  {
+    "file": "Leipzig.Malagasy.Wikipedia.Rank.zip",
+    "code": "mg",
+    "language": "Malagasy",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 525009
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Community.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3337492
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Mixed-Tufs4.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Mixed",
+    "source": "Mixed-Tufs4",
+    "region": "",
+    "size": 515879
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.News.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 690238
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Newscrawl.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1449677
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Newscrawl-Tufs5.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "News",
+    "source": "Newscrawl-Tufs5",
+    "region": "",
+    "size": 263958
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Newscrawl-Tufs6.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "News",
+    "source": "Newscrawl-Tufs6",
+    "region": "",
+    "size": 227011
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.India.Web.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 601941
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Malaysia.Web.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Web",
+    "source": "Web",
+    "region": "Malaysia",
+    "size": 3967988
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Web-Tufs13.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Web",
+    "source": "Web-Tufs13",
+    "region": "",
+    "size": 459420
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Wikipedia.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2801426
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Wikipedia-Tufs14.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Wikipedia",
+    "source": "Wikipedia-Tufs14",
+    "region": "",
+    "size": 609434
+  },
+  {
+    "file": "Leipzig.Malay.macrolanguage.Wikipedia-Tufs16.Rank.zip",
+    "code": "ms",
+    "language": "Malay (macrolanguage)",
+    "type": "Wikipedia",
+    "source": "Wikipedia-Tufs16",
+    "region": "",
+    "size": 543762
+  },
+  {
+    "file": "Leipzig.Malayalam.Community.Rank.zip",
+    "code": "ml",
+    "language": "Malayalam",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 13527636
+  },
+  {
+    "file": "Leipzig.Malayalam.Newscrawl.Rank.zip",
+    "code": "ml",
+    "language": "Malayalam",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3030202
+  },
+  {
+    "file": "Leipzig.Malayalam.Wikipedia.Rank.zip",
+    "code": "ml",
+    "language": "Malayalam",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8207323
+  },
+  {
+    "file": "Leipzig.Maltese.News.Rank.zip",
+    "code": "mt",
+    "language": "Maltese",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 649580
+  },
+  {
+    "file": "Leipzig.Maltese.Newscrawl.Rank.zip",
+    "code": "mt",
+    "language": "Maltese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1191458
+  },
+  {
+    "file": "Leipzig.Maltese.Web.Rank.zip",
+    "code": "mt",
+    "language": "Maltese",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 2909296
+  },
+  {
+    "file": "Leipzig.Maltese.Wikipedia.Rank.zip",
+    "code": "mt",
+    "language": "Maltese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 869381
+  },
+  {
+    "file": "Leipzig.Mandarin.Chinese.Taiwan.Web.Rank.zip",
+    "code": "cmn",
+    "language": "Mandarin Chinese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Taiwan",
+    "size": 7145020
+  },
+  {
+    "file": "Leipzig.Mandarin.Chinese.Wikipedia.Rank.zip",
+    "code": "cmn",
+    "language": "Mandarin Chinese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 17140357
+  },
+  {
+    "file": "Leipzig.Manx.Wikipedia.Rank.zip",
+    "code": "gv",
+    "language": "Manx",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 238870
+  },
+  {
+    "file": "Leipzig.Maori.Web.Rank.zip",
+    "code": "mi",
+    "language": "Maori",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 572763
+  },
+  {
+    "file": "Leipzig.Maori.New.Zealand.Web.Rank.zip",
+    "code": "mi",
+    "language": "Maori",
+    "type": "Web",
+    "source": "Web",
+    "region": "New Zealand",
+    "size": 552965
+  },
+  {
+    "file": "Leipzig.Marathi.News.Rank.zip",
+    "code": "mr",
+    "language": "Marathi",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 3338686
+  },
+  {
+    "file": "Leipzig.Marathi.Newscrawl.Rank.zip",
+    "code": "mr",
+    "language": "Marathi",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 8241577
+  },
+  {
+    "file": "Leipzig.Marathi.India.Web.Rank.zip",
+    "code": "mr",
+    "language": "Marathi",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 4492583
+  },
+  {
+    "file": "Leipzig.Marathi.Wikipedia.Rank.zip",
+    "code": "mr",
+    "language": "Marathi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4478206
+  },
+  {
+    "file": "Leipzig.Mazanderani.Community.Rank.zip",
+    "code": "mzn",
+    "language": "Mazanderani",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 540173
+  },
+  {
+    "file": "Leipzig.Mazanderani.Wikipedia.Rank.zip",
+    "code": "mzn",
+    "language": "Mazanderani",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 597903
+  },
+  {
+    "file": "Leipzig.Min.Dong.Chinese.Community.Rank.zip",
+    "code": "cdo",
+    "language": "Min Dong Chinese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 145182
+  },
+  {
+    "file": "Leipzig.Min.Nan.Chinese.Community.Rank.zip",
+    "code": "nan",
+    "language": "Min Nan Chinese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1587338
+  },
+  {
+    "file": "Leipzig.Min.Nan.Chinese.Wikipedia.Rank.zip",
+    "code": "nan",
+    "language": "Min Nan Chinese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1266971
+  },
+  {
+    "file": "Leipzig.Minangkabau.Community.Rank.zip",
+    "code": "min",
+    "language": "Minangkabau",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1049070
+  },
+  {
+    "file": "Leipzig.Minangkabau.Indonesia.Web.Rank.zip",
+    "code": "min",
+    "language": "Minangkabau",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 249188
+  },
+  {
+    "file": "Leipzig.Minangkabau.Wikipedia.Rank.zip",
+    "code": "min",
+    "language": "Minangkabau",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1793786
+  },
+  {
+    "file": "Leipzig.Mingrelian.Wikipedia.Rank.zip",
+    "code": "xmf",
+    "language": "Mingrelian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 942069
+  },
+  {
+    "file": "Leipzig.Mirandese.Wikipedia.Rank.zip",
+    "code": "mwl",
+    "language": "Mirandese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 693741
+  },
+  {
+    "file": "Leipzig.Modern.Greek.1453-.News.Rank.zip",
+    "code": "el",
+    "language": "Modern Greek (1453-)",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4971194
+  },
+  {
+    "file": "Leipzig.Modern.Greek.1453-.Newscrawl.Rank.zip",
+    "code": "el",
+    "language": "Modern Greek (1453-)",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7788854
+  },
+  {
+    "file": "Leipzig.Modern.Greek.1453-.Web.Rank.zip",
+    "code": "el",
+    "language": "Modern Greek (1453-)",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 7099182
+  },
+  {
+    "file": "Leipzig.Modern.Greek.1453-.Greece.Web.Rank.zip",
+    "code": "el",
+    "language": "Modern Greek (1453-)",
+    "type": "Web",
+    "source": "Web",
+    "region": "Greece",
+    "size": 8776502
+  },
+  {
+    "file": "Leipzig.Modern.Greek.1453-.Wikipedia.Rank.zip",
+    "code": "el",
+    "language": "Modern Greek (1453-)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8531368
+  },
+  {
+    "file": "Leipzig.Mongolian.News.Rank.zip",
+    "code": "mn",
+    "language": "Mongolian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1046983
+  },
+  {
+    "file": "Leipzig.Mongolian.Wikipedia.Rank.zip",
+    "code": "mn",
+    "language": "Mongolian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1816847
+  },
+  {
+    "file": "Leipzig.Mossi.Community.Rank.zip",
+    "code": "mos",
+    "language": "Mossi",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 6815
+  },
+  {
+    "file": "Leipzig.Navajo.Wikipedia.Rank.zip",
+    "code": "nv",
+    "language": "Navajo",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 126974
+  },
+  {
+    "file": "Leipzig.Ndonga.Community.Rank.zip",
+    "code": "ng",
+    "language": "Ndonga",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 388425
+  },
+  {
+    "file": "Leipzig.Neapolitan.tara.Wikipedia.Rank.zip",
+    "code": "nap",
+    "language": "Neapolitan",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "tara",
+    "size": 332492
+  },
+  {
+    "file": "Leipzig.Newari.Wikipedia.Rank.zip",
+    "code": "new",
+    "language": "Nepal Bhasa",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 744676
+  },
+  {
+    "file": "Leipzig.Nepali.macrolanguage.Community.Rank.zip",
+    "code": "ne",
+    "language": "Nepali (macrolanguage)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 13353633
+  },
+  {
+    "file": "Leipzig.Nepali.macrolanguage.News.Rank.zip",
+    "code": "ne",
+    "language": "Nepali (macrolanguage)",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 3159176
+  },
+  {
+    "file": "Leipzig.Nepali.macrolanguage.Newscrawl.Rank.zip",
+    "code": "ne",
+    "language": "Nepali (macrolanguage)",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 3681128
+  },
+  {
+    "file": "Leipzig.Nepali.macrolanguage.Nepal.Web.Rank.zip",
+    "code": "ne",
+    "language": "Nepali (macrolanguage)",
+    "type": "Web",
+    "source": "Web",
+    "region": "Nepal",
+    "size": 7760520
+  },
+  {
+    "file": "Leipzig.Nepali.macrolanguage.Wikipedia.Rank.zip",
+    "code": "ne",
+    "language": "Nepali (macrolanguage)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2169279
+  },
+  {
+    "file": "Leipzig.Nigerian.Pidgin.Community.Rank.zip",
+    "code": "pcm",
+    "language": "Nigerian Pidgin",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 108991
+  },
+  {
+    "file": "Leipzig.North.Azerbaijani.Azerbaijan.Web.Rank.zip",
+    "code": "azj",
+    "language": "North Azerbaijani",
+    "type": "Web",
+    "source": "Web",
+    "region": "Azerbaijan",
+    "size": 8039561
+  },
+  {
+    "file": "Leipzig.North.Azerbaijani.Wikipedia.Rank.zip",
+    "code": "azj",
+    "language": "North Azerbaijani",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 372739
+  },
+  {
+    "file": "Leipzig.Northern.Frisian.Wikipedia.Rank.zip",
+    "code": "frr",
+    "language": "Northern Frisian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 259453
+  },
+  {
+    "file": "Leipzig.Northern.Sami.Norway.News.Rank.zip",
+    "code": "se",
+    "language": "Northern Sami",
+    "type": "News",
+    "source": "News",
+    "region": "Norway",
+    "size": 407318
+  },
+  {
+    "file": "Leipzig.Northern.Sami.Norway.Web.Rank.zip",
+    "code": "se",
+    "language": "Northern Sami",
+    "type": "Web",
+    "source": "Web",
+    "region": "Norway",
+    "size": 373889
+  },
+  {
+    "file": "Leipzig.Northern.Sami.Wikipedia.Rank.zip",
+    "code": "se",
+    "language": "Northern Sami",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 339327
+  },
+  {
+    "file": "Leipzig.Northern.Uzbek.Uzbekistan.Web.Rank.zip",
+    "code": "uzn",
+    "language": "Northern Uzbek",
+    "type": "Web",
+    "source": "Web",
+    "region": "Uzbekistan",
+    "size": 9654330
+  },
+  {
+    "file": "Leipzig.Norwegian.Community.Rank.zip",
+    "code": "no",
+    "language": "Norwegian",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1019458
+  },
+  {
+    "file": "Leipzig.Norwegian.News.Rank.zip",
+    "code": "no",
+    "language": "Norwegian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2554479
+  },
+  {
+    "file": "Leipzig.Norwegian.Wikipedia.Rank.zip",
+    "code": "no",
+    "language": "Norwegian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8870128
+  },
+  {
+    "file": "Leipzig.Norwegian.Bokmal.News.Rank.zip",
+    "code": "nb",
+    "language": "Norwegian Bokmål",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5611115
+  },
+  {
+    "file": "Leipzig.Norwegian.Bokmal.Newscrawl.Rank.zip",
+    "code": "nb",
+    "language": "Norwegian Bokmål",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5567563
+  },
+  {
+    "file": "Leipzig.Norwegian.Bokmal.Web.Rank.zip",
+    "code": "nb",
+    "language": "Norwegian Bokmål",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 8368162
+  },
+  {
+    "file": "Leipzig.Norwegian.Bokmal.Comoros.Web.Rank.zip",
+    "code": "nb",
+    "language": "Norwegian Bokmål",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 3054361
+  },
+  {
+    "file": "Leipzig.Norwegian.Bokmal.Norway.Web.Rank.zip",
+    "code": "nb",
+    "language": "Norwegian Bokmål",
+    "type": "Web",
+    "source": "Web",
+    "region": "Norway",
+    "size": 7889368
+  },
+  {
+    "file": "Leipzig.Norwegian.Bokmal.Wikipedia.Rank.zip",
+    "code": "nb",
+    "language": "Norwegian Bokmål",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 9603656
+  },
+  {
+    "file": "Leipzig.Norwegian.Nynorsk.Norway.Web.Rank.zip",
+    "code": "nn",
+    "language": "Norwegian Nynorsk",
+    "type": "Web",
+    "source": "Web",
+    "region": "Norway",
+    "size": 7594750
+  },
+  {
+    "file": "Leipzig.Norwegian.Nynorsk.Wikipedia.Rank.zip",
+    "code": "nn",
+    "language": "Norwegian Nynorsk",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3975959
+  },
+  {
+    "file": "Leipzig.Nyankole.Community.Rank.zip",
+    "code": "nyn",
+    "language": "Nyankole",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 537
+  },
+  {
+    "file": "Leipzig.Occitan.post.1500.Community.Rank.zip",
+    "code": "oc",
+    "language": "Occitan (post 1500)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2697572
+  },
+  {
+    "file": "Leipzig.Occitan.post.1500.France.Web.Rank.zip",
+    "code": "oc",
+    "language": "Occitan (post 1500)",
+    "type": "Web",
+    "source": "Web",
+    "region": "France",
+    "size": 268785
+  },
+  {
+    "file": "Leipzig.Occitan.post.1500.Wikipedia.Rank.zip",
+    "code": "oc",
+    "language": "Occitan (post 1500)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1689692
+  },
+  {
+    "file": "Leipzig.Oriya.macrolanguage.Community.Rank.zip",
+    "code": "or",
+    "language": "Oriya (macrolanguage)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 908405
+  },
+  {
+    "file": "Leipzig.Oriya.macrolanguage.Wikipedia.Rank.zip",
+    "code": "or",
+    "language": "Oriya (macrolanguage)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1772907
+  },
+  {
+    "file": "Leipzig.Oromo.Community.Rank.zip",
+    "code": "om",
+    "language": "Oromo",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 131813
+  },
+  {
+    "file": "Leipzig.Oromo.Wikipedia.Rank.zip",
+    "code": "om",
+    "language": "Oromo",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 332563
+  },
+  {
+    "file": "Leipzig.Ossetian.Wikipedia.Rank.zip",
+    "code": "os",
+    "language": "Ossetian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 338495
+  },
+  {
+    "file": "Leipzig.Pampanga.Community.Rank.zip",
+    "code": "pam",
+    "language": "Pampanga",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 430240
+  },
+  {
+    "file": "Leipzig.Pampanga.Wikipedia.Rank.zip",
+    "code": "pam",
+    "language": "Pampanga",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 307455
+  },
+  {
+    "file": "Leipzig.Pangasinan.Community.Rank.zip",
+    "code": "pag",
+    "language": "Pangasinan",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 123501
+  },
+  {
+    "file": "Leipzig.Panjabi.India.Web.Rank.zip",
+    "code": "pa",
+    "language": "Panjabi",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 1089967
+  },
+  {
+    "file": "Leipzig.Panjabi.Wikipedia.Rank.zip",
+    "code": "pa",
+    "language": "Panjabi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3140834
+  },
+  {
+    "file": "Leipzig.Papiamento.News.Rank.zip",
+    "code": "pap",
+    "language": "Papiamento",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 495020
+  },
+  {
+    "file": "Leipzig.Papiamento.Newscrawl.Rank.zip",
+    "code": "pap",
+    "language": "Papiamento",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 341546
+  },
+  {
+    "file": "Leipzig.Pedi.Community.Rank.zip",
+    "code": "nso",
+    "language": "Pedi",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 128929
+  },
+  {
+    "file": "Leipzig.Pedi.Mixed.Rank.zip",
+    "code": "nso",
+    "language": "Pedi",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 156377
+  },
+  {
+    "file": "Leipzig.Pedi.South.Africa.Web.Rank.zip",
+    "code": "nso",
+    "language": "Pedi",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 194137
+  },
+  {
+    "file": "Leipzig.Persian.News.Rank.zip",
+    "code": "fa",
+    "language": "Persian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 2183798
+  },
+  {
+    "file": "Leipzig.Persian.Newscrawl.Rank.zip",
+    "code": "fa",
+    "language": "Persian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 4592239
+  },
+  {
+    "file": "Leipzig.Persian.Iran.Web-Public.Rank.zip",
+    "code": "fa",
+    "language": "Persian",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Iran",
+    "size": 6108316
+  },
+  {
+    "file": "Leipzig.Persian.Wikipedia.Rank.zip",
+    "code": "fa",
+    "language": "Persian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 10676710
+  },
+  {
+    "file": "Leipzig.Pfaelzisch.Wikipedia.Rank.zip",
+    "code": "pfl",
+    "language": "Pfaelzisch",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 442898
+  },
+  {
+    "file": "Leipzig.Piemontese.Wikipedia.Rank.zip",
+    "code": "pms",
+    "language": "Piemontese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 558010
+  },
+  {
+    "file": "Leipzig.Plateau.Malagasy.Wikipedia.Rank.zip",
+    "code": "plt",
+    "language": "Plateau Malagasy",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1292899
+  },
+  {
+    "file": "Leipzig.Polish.News.Rank.zip",
+    "code": "pl",
+    "language": "Polish",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5569421
+  },
+  {
+    "file": "Leipzig.Polish.Newscrawl.Rank.zip",
+    "code": "pl",
+    "language": "Polish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7483368
+  },
+  {
+    "file": "Leipzig.Polish.Comoros.Web.Rank.zip",
+    "code": "pl",
+    "language": "Polish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Comoros",
+    "size": 6292639
+  },
+  {
+    "file": "Leipzig.Polish.Poland.Web-Part1.Rank.zip",
+    "code": "pl",
+    "language": "Polish",
+    "type": "Web",
+    "source": "Web-Part1",
+    "region": "Poland",
+    "size": 9814727
+  },
+  {
+    "file": "Leipzig.Polish.Wikipedia.Rank.zip",
+    "code": "pl",
+    "language": "Polish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8906456
+  },
+  {
+    "file": "Leipzig.Pontic.Community.Rank.zip",
+    "code": "pnt",
+    "language": "Pontic",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 76877
+  },
+  {
+    "file": "Leipzig.Portuguese.News.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4057457
+  },
+  {
+    "file": "Leipzig.Portuguese.Newscrawl.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 4573606
+  },
+  {
+    "file": "Leipzig.Portuguese.Brazil.Newscrawl.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Brazil",
+    "size": 3328629
+  },
+  {
+    "file": "Leipzig.Portuguese.Macau.Newscrawl.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Macau",
+    "size": 1562408
+  },
+  {
+    "file": "Leipzig.Portuguese.Portugal.Newscrawl.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Portugal",
+    "size": 3375734
+  },
+  {
+    "file": "Leipzig.Portuguese.Cabo.Verde.Web.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Cabo Verde",
+    "size": 3819266
+  },
+  {
+    "file": "Leipzig.Portuguese.Luxembourg.Web.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Luxembourg",
+    "size": 1087925
+  },
+  {
+    "file": "Leipzig.Portuguese.Macau.Web.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Macau",
+    "size": 1555583
+  },
+  {
+    "file": "Leipzig.Portuguese.Mozambique.Web.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Mozambique",
+    "size": 1014096
+  },
+  {
+    "file": "Leipzig.Portuguese.Portugal.Web.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Portugal",
+    "size": 4720481
+  },
+  {
+    "file": "Leipzig.Portuguese.an.Web.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Web",
+    "source": "Web",
+    "region": "an",
+    "size": 1825194
+  },
+  {
+    "file": "Leipzig.Portuguese.Wikipedia.Rank.zip",
+    "code": "pt",
+    "language": "Portuguese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 6946652
+  },
+  {
+    "file": "Leipzig.Pulaar.Community.Rank.zip",
+    "code": "fuc",
+    "language": "Pulaar",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 11416
+  },
+  {
+    "file": "Leipzig.Pushto.News.Rank.zip",
+    "code": "ps",
+    "language": "Pushto",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 988560
+  },
+  {
+    "file": "Leipzig.Pushto.Newscrawl.Rank.zip",
+    "code": "ps",
+    "language": "Pushto",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2041995
+  },
+  {
+    "file": "Leipzig.Pushto.Wikipedia.Rank.zip",
+    "code": "ps",
+    "language": "Pushto",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 907269
+  },
+  {
+    "file": "Leipzig.Quechua.Community.Rank.zip",
+    "code": "qu",
+    "language": "Quechua",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 410864
+  },
+  {
+    "file": "Leipzig.Quechua.Wikipedia.Rank.zip",
+    "code": "qu",
+    "language": "Quechua",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 235965
+  },
+  {
+    "file": "Leipzig.Romanian.News.Rank.zip",
+    "code": "ro",
+    "language": "Romanian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4797994
+  },
+  {
+    "file": "Leipzig.Romanian.Newscrawl.Rank.zip",
+    "code": "ro",
+    "language": "Romanian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5578229
+  },
+  {
+    "file": "Leipzig.Romanian.Web.Rank.zip",
+    "code": "ro",
+    "language": "Romanian",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 5777644
+  },
+  {
+    "file": "Leipzig.Romanian.Moldova.Web.Rank.zip",
+    "code": "ro",
+    "language": "Romanian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Moldova",
+    "size": 5743467
+  },
+  {
+    "file": "Leipzig.Romanian.Romania.Web.Rank.zip",
+    "code": "ro",
+    "language": "Romanian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Romania",
+    "size": 7063682
+  },
+  {
+    "file": "Leipzig.Romanian.Wikipedia.Rank.zip",
+    "code": "ro",
+    "language": "Romanian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7303824
+  },
+  {
+    "file": "Leipzig.Romansh.Newscrawl.Rank.zip",
+    "code": "rm",
+    "language": "Romansh",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 455928
+  },
+  {
+    "file": "Leipzig.Romansh.Switzerland.Web.Rank.zip",
+    "code": "rm",
+    "language": "Romansh",
+    "type": "Web",
+    "source": "Web",
+    "region": "Switzerland",
+    "size": 1146278
+  },
+  {
+    "file": "Leipzig.Romansh.Wikipedia.Rank.zip",
+    "code": "rm",
+    "language": "Romansh",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 564037
+  },
+  {
+    "file": "Leipzig.Romany.Community.Rank.zip",
+    "code": "rom",
+    "language": "Romany",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 71432
+  },
+  {
+    "file": "Leipzig.Rundi.Community.Rank.zip",
+    "code": "rn",
+    "language": "Rundi",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 595400
+  },
+  {
+    "file": "Leipzig.Russian.News.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 6373309
+  },
+  {
+    "file": "Leipzig.Russian.Newscrawl-Public.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "News",
+    "source": "Newscrawl-Public",
+    "region": "",
+    "size": 7593393
+  },
+  {
+    "file": "Leipzig.Russian.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 6213570
+  },
+  {
+    "file": "Leipzig.Russian.Azerbaijan.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Azerbaijan",
+    "size": 8802017
+  },
+  {
+    "file": "Leipzig.Russian.Estonia.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Estonia",
+    "size": 8956026
+  },
+  {
+    "file": "Leipzig.Russian.Georgia.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Georgia",
+    "size": 8256078
+  },
+  {
+    "file": "Leipzig.Russian.Kazakhstan.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Kazakhstan",
+    "size": 9868065
+  },
+  {
+    "file": "Leipzig.Russian.Latvia.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Latvia",
+    "size": 9365784
+  },
+  {
+    "file": "Leipzig.Russian.Lithuania.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Lithuania",
+    "size": 4175408
+  },
+  {
+    "file": "Leipzig.Russian.Moldova.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Moldova",
+    "size": 9323162
+  },
+  {
+    "file": "Leipzig.Russian.Tajikistan.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Tajikistan",
+    "size": 7822338
+  },
+  {
+    "file": "Leipzig.Russian.Tuvalu.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Tuvalu",
+    "size": 946385
+  },
+  {
+    "file": "Leipzig.Russian.Ukraine.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Ukraine",
+    "size": 10156799
+  },
+  {
+    "file": "Leipzig.Russian.Uzbekistan.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Uzbekistan",
+    "size": 9618919
+  },
+  {
+    "file": "Leipzig.Russian.su.Web.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web",
+    "region": "su",
+    "size": 10347965
+  },
+  {
+    "file": "Leipzig.Russian.Russia.Web-Public.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Russia",
+    "size": 8329791
+  },
+  {
+    "file": "Leipzig.Russian.Wikipedia.Rank.zip",
+    "code": "ru",
+    "language": "Russian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 10735763
+  },
+  {
+    "file": "Leipzig.Rusyn.Ukraine.Web.Rank.zip",
+    "code": "rue",
+    "language": "Rusyn",
+    "type": "Web",
+    "source": "Web",
+    "region": "Ukraine",
+    "size": 276933
+  },
+  {
+    "file": "Leipzig.Rusyn.Wikipedia.Rank.zip",
+    "code": "rue",
+    "language": "Rusyn",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 511361
+  },
+  {
+    "file": "Leipzig.S.gaw.Karen.Community.Rank.zip",
+    "code": "ksw",
+    "language": "S'gaw Karen",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 31442
+  },
+  {
+    "file": "Leipzig.smi.News.Rank.zip",
+    "code": "smi",
+    "language": "Sami languages",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 296210
+  },
+  {
+    "file": "Leipzig.Samogitian.Wikipedia.Rank.zip",
+    "code": "sgs",
+    "language": "Samogitian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 376601
+  },
+  {
+    "file": "Leipzig.Sanskrit.Wikipedia.Rank.zip",
+    "code": "sa",
+    "language": "Sanskrit",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3214104
+  },
+  {
+    "file": "Leipzig.Saraiki.Community.Rank.zip",
+    "code": "skr",
+    "language": "Saraiki",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 10642
+  },
+  {
+    "file": "Leipzig.Sardinian.Wikipedia.Rank.zip",
+    "code": "sc",
+    "language": "Sardinian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 423733
+  },
+  {
+    "file": "Leipzig.Scots.Wikipedia.Rank.zip",
+    "code": "sco",
+    "language": "Scots",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1460651
+  },
+  {
+    "file": "Leipzig.Sena.Community.Rank.zip",
+    "code": "seh",
+    "language": "Sena",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1763
+  },
+  {
+    "file": "Leipzig.Serbian.News.Rank.zip",
+    "code": "sr",
+    "language": "Serbian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 778857
+  },
+  {
+    "file": "Leipzig.Serbian.Bosnia.and.Herzegovina.Web.Rank.zip",
+    "code": "sr",
+    "language": "Serbian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bosnia and Herzegovina",
+    "size": 1699896
+  },
+  {
+    "file": "Leipzig.Serbian.Montenegro.Web.Rank.zip",
+    "code": "sr",
+    "language": "Serbian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Montenegro",
+    "size": 3105874
+  },
+  {
+    "file": "Leipzig.Serbian.Serbia.Web.Rank.zip",
+    "code": "sr",
+    "language": "Serbian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Serbia",
+    "size": 8282925
+  },
+  {
+    "file": "Leipzig.Serbian.Wikipedia.Rank.zip",
+    "code": "sr",
+    "language": "Serbian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 8674170
+  },
+  {
+    "file": "Leipzig.Serbo-Croatian.Mixed.Rank.zip",
+    "code": "sh",
+    "language": "Serbo-Croatian",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 10182160
+  },
+  {
+    "file": "Leipzig.Serbo-Croatian.Serbia.News.Rank.zip",
+    "code": "sh",
+    "language": "Serbo-Croatian",
+    "type": "News",
+    "source": "News",
+    "region": "Serbia",
+    "size": 365449
+  },
+  {
+    "file": "Leipzig.Serbo-Croatian.Wikipedia.Rank.zip",
+    "code": "sh",
+    "language": "Serbo-Croatian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 9588602
+  },
+  {
+    "file": "Leipzig.Shona.Community.Rank.zip",
+    "code": "sn",
+    "language": "Shona",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1273835
+  },
+  {
+    "file": "Leipzig.Shona.Zimbabwe.Newscrawl.Rank.zip",
+    "code": "sn",
+    "language": "Shona",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Zimbabwe",
+    "size": 888038
+  },
+  {
+    "file": "Leipzig.Shona.Web.Rank.zip",
+    "code": "sn",
+    "language": "Shona",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 542783
+  },
+  {
+    "file": "Leipzig.Shona.Zimbabwe.Web.Rank.zip",
+    "code": "sn",
+    "language": "Shona",
+    "type": "Web",
+    "source": "Web",
+    "region": "Zimbabwe",
+    "size": 1919839
+  },
+  {
+    "file": "Leipzig.Sicilian.Wikipedia.Rank.zip",
+    "code": "scn",
+    "language": "Sicilian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 815142
+  },
+  {
+    "file": "Leipzig.Silesian.Wikipedia.Rank.zip",
+    "code": "szl",
+    "language": "Silesian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 924895
+  },
+  {
+    "file": "Leipzig.Sindhi.Community.Rank.zip",
+    "code": "sd",
+    "language": "Sindhi",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 249883
+  },
+  {
+    "file": "Leipzig.Sindhi.Wikipedia.Rank.zip",
+    "code": "sd",
+    "language": "Sindhi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1162677
+  },
+  {
+    "file": "Leipzig.Sinhala.Community.Rank.zip",
+    "code": "si",
+    "language": "Sinhala",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4639013
+  },
+  {
+    "file": "Leipzig.Sinhala.Wikipedia.Rank.zip",
+    "code": "si",
+    "language": "Sinhala",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2243924
+  },
+  {
+    "file": "Leipzig.Slovak.News.Rank.zip",
+    "code": "sk",
+    "language": "Slovak",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1498666
+  },
+  {
+    "file": "Leipzig.Slovak.Newscrawl.Rank.zip",
+    "code": "sk",
+    "language": "Slovak",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7660346
+  },
+  {
+    "file": "Leipzig.Slovak.Slovakia.Web.Rank.zip",
+    "code": "sk",
+    "language": "Slovak",
+    "type": "Web",
+    "source": "Web",
+    "region": "Slovakia",
+    "size": 9139050
+  },
+  {
+    "file": "Leipzig.Slovak.Wikipedia.Rank.zip",
+    "code": "sk",
+    "language": "Slovak",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 4256325
+  },
+  {
+    "file": "Leipzig.Slovenian.News.Rank.zip",
+    "code": "sl",
+    "language": "Slovenian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4355067
+  },
+  {
+    "file": "Leipzig.Slovenian.Newscrawl.Rank.zip",
+    "code": "sl",
+    "language": "Slovenian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6438287
+  },
+  {
+    "file": "Leipzig.Slovenian.Slovenia.Web.Rank.zip",
+    "code": "sl",
+    "language": "Slovenian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Slovenia",
+    "size": 7841017
+  },
+  {
+    "file": "Leipzig.Slovenian.Wikipedia.Rank.zip",
+    "code": "sl",
+    "language": "Slovenian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7953465
+  },
+  {
+    "file": "Leipzig.Somali.Community.Rank.zip",
+    "code": "so",
+    "language": "Somali",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2114951
+  },
+  {
+    "file": "Leipzig.Somali.News.Rank.zip",
+    "code": "so",
+    "language": "Somali",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 296823
+  },
+  {
+    "file": "Leipzig.Somali.Newscrawl.Rank.zip",
+    "code": "so",
+    "language": "Somali",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1585575
+  },
+  {
+    "file": "Leipzig.Somali.Wikipedia.Rank.zip",
+    "code": "so",
+    "language": "Somali",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 365472
+  },
+  {
+    "file": "Leipzig.Soninke.Community.Rank.zip",
+    "code": "snk",
+    "language": "Soninke",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 6266
+  },
+  {
+    "file": "Leipzig.South.Ndebele.Community.Rank.zip",
+    "code": "nr",
+    "language": "South Ndebele",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 29552
+  },
+  {
+    "file": "Leipzig.Southern.Sotho.Community.Rank.zip",
+    "code": "st",
+    "language": "Southern Sotho",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 170068
+  },
+  {
+    "file": "Leipzig.Southern.Sotho.South.Africa.Web.Rank.zip",
+    "code": "st",
+    "language": "Southern Sotho",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 191886
+  },
+  {
+    "file": "Leipzig.Spanish.News.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 3870261
+  },
+  {
+    "file": "Leipzig.Spanish.Newscrawl.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 4172226
+  },
+  {
+    "file": "Leipzig.Spanish.Newscrawl-Public.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "News",
+    "source": "Newscrawl-Public",
+    "region": "",
+    "size": 3517654
+  },
+  {
+    "file": "Leipzig.Spanish.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 2999976
+  },
+  {
+    "file": "Leipzig.Spanish.Andorra.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Andorra",
+    "size": 912828
+  },
+  {
+    "file": "Leipzig.Spanish.Argentina.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Argentina",
+    "size": 3213818
+  },
+  {
+    "file": "Leipzig.Spanish.Bolivia.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bolivia",
+    "size": 237107
+  },
+  {
+    "file": "Leipzig.Spanish.Colombia.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Colombia",
+    "size": 2864348
+  },
+  {
+    "file": "Leipzig.Spanish.Costa.Rica.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Costa Rica",
+    "size": 2560279
+  },
+  {
+    "file": "Leipzig.Spanish.Cuba.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Cuba",
+    "size": 2918386
+  },
+  {
+    "file": "Leipzig.Spanish.Dominican.Republic.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Dominican Republic",
+    "size": 3142937
+  },
+  {
+    "file": "Leipzig.Spanish.Ecuador.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Ecuador",
+    "size": 2462922
+  },
+  {
+    "file": "Leipzig.Spanish.El.Salvador.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "El Salvador",
+    "size": 2798309
+  },
+  {
+    "file": "Leipzig.Spanish.Guatemala.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Guatemala",
+    "size": 2592975
+  },
+  {
+    "file": "Leipzig.Spanish.Honduras.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Honduras",
+    "size": 2464268
+  },
+  {
+    "file": "Leipzig.Spanish.Mexico.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Mexico",
+    "size": 3575451
+  },
+  {
+    "file": "Leipzig.Spanish.Nicaragua.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Nicaragua",
+    "size": 3144184
+  },
+  {
+    "file": "Leipzig.Spanish.Panama.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Panama",
+    "size": 2826982
+  },
+  {
+    "file": "Leipzig.Spanish.Paraguay.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Paraguay",
+    "size": 2898155
+  },
+  {
+    "file": "Leipzig.Spanish.Peru.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Peru",
+    "size": 3437754
+  },
+  {
+    "file": "Leipzig.Spanish.Puerto.Rico.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Puerto Rico",
+    "size": 1420386
+  },
+  {
+    "file": "Leipzig.Spanish.United.States.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "United States",
+    "size": 3537200
+  },
+  {
+    "file": "Leipzig.Spanish.Uruguay.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Uruguay",
+    "size": 3184449
+  },
+  {
+    "file": "Leipzig.Spanish.Venezuela.Web.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Venezuela",
+    "size": 3206102
+  },
+  {
+    "file": "Leipzig.Spanish.Argentina.Web-Public.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Web",
+    "source": "Web-Public",
+    "region": "Argentina",
+    "size": 3360617
+  },
+  {
+    "file": "Leipzig.Spanish.Wikipedia.Rank.zip",
+    "code": "es",
+    "language": "Spanish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 5965001
+  },
+  {
+    "file": "Leipzig.Standard.Estonian.Web.Rank.zip",
+    "code": "ekk",
+    "language": "Standard Estonian",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 374826
+  },
+  {
+    "file": "Leipzig.Standard.Estonian.Wikipedia.Rank.zip",
+    "code": "ekk",
+    "language": "Standard Estonian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 5489658
+  },
+  {
+    "file": "Leipzig.Standard.Latvian.Wikipedia.Rank.zip",
+    "code": "lvs",
+    "language": "Standard Latvian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3329236
+  },
+  {
+    "file": "Leipzig.Standard.Malay.Mixed-Tufs4.Rank.zip",
+    "code": "zsm",
+    "language": "Standard Malay",
+    "type": "Mixed",
+    "source": "Mixed-Tufs4",
+    "region": "",
+    "size": 1480826
+  },
+  {
+    "file": "Leipzig.Standard.Malay.Newscrawl-Tufs15.Rank.zip",
+    "code": "zsm",
+    "language": "Standard Malay",
+    "type": "News",
+    "source": "Newscrawl-Tufs15",
+    "region": "",
+    "size": 690997
+  },
+  {
+    "file": "Leipzig.Standard.Malay.Web-Tufs1.Rank.zip",
+    "code": "zsm",
+    "language": "Standard Malay",
+    "type": "Web",
+    "source": "Web-Tufs1",
+    "region": "",
+    "size": 172033
+  },
+  {
+    "file": "Leipzig.Standard.Malay.Web-Tufs13.Rank.zip",
+    "code": "zsm",
+    "language": "Standard Malay",
+    "type": "Web",
+    "source": "Web-Tufs13",
+    "region": "",
+    "size": 1479021
+  },
+  {
+    "file": "Leipzig.Standard.Malay.Web-Tufs3.Rank.zip",
+    "code": "zsm",
+    "language": "Standard Malay",
+    "type": "Web",
+    "source": "Web-Tufs3",
+    "region": "",
+    "size": 281972
+  },
+  {
+    "file": "Leipzig.Standard.Malay.Wikipedia-Tufs16.Rank.zip",
+    "code": "zsm",
+    "language": "Standard Malay",
+    "type": "Wikipedia",
+    "source": "Wikipedia-Tufs16",
+    "region": "",
+    "size": 2429934
+  },
+  {
+    "file": "Leipzig.Sukuma.Community.Rank.zip",
+    "code": "suk",
+    "language": "Sukuma",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 2692
+  },
+  {
+    "file": "Leipzig.Sundanese.Community.Rank.zip",
+    "code": "su",
+    "language": "Sundanese",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 851274
+  },
+  {
+    "file": "Leipzig.Sundanese.Indonesia.Web.Rank.zip",
+    "code": "su",
+    "language": "Sundanese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Indonesia",
+    "size": 2063595
+  },
+  {
+    "file": "Leipzig.Sundanese.Wikipedia.Rank.zip",
+    "code": "su",
+    "language": "Sundanese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 673386
+  },
+  {
+    "file": "Leipzig.Susu.Community.Rank.zip",
+    "code": "sus",
+    "language": "Susu",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1248
+  },
+  {
+    "file": "Leipzig.Swahili.individual.language.Wikipedia.Rank.zip",
+    "code": "swh",
+    "language": "Swahili (individual language)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 664973
+  },
+  {
+    "file": "Leipzig.Swahili.macrolanguage.Community.Rank.zip",
+    "code": "sw",
+    "language": "Swahili (macrolanguage)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 959166
+  },
+  {
+    "file": "Leipzig.Swahili.macrolanguage.News.Rank.zip",
+    "code": "sw",
+    "language": "Swahili (macrolanguage)",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 630077
+  },
+  {
+    "file": "Leipzig.Swahili.macrolanguage.Newscrawl.Rank.zip",
+    "code": "sw",
+    "language": "Swahili (macrolanguage)",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 301927
+  },
+  {
+    "file": "Leipzig.Swahili.macrolanguage.Wikipedia.Rank.zip",
+    "code": "sw",
+    "language": "Swahili (macrolanguage)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1418761
+  },
+  {
+    "file": "Leipzig.Swati.Community.Rank.zip",
+    "code": "ss",
+    "language": "Swati",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 35291
+  },
+  {
+    "file": "Leipzig.Swati.South.Africa.Web.Rank.zip",
+    "code": "ss",
+    "language": "Swati",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 464539
+  },
+  {
+    "file": "Leipzig.Swedish.News.Rank.zip",
+    "code": "sv",
+    "language": "Swedish",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 5960973
+  },
+  {
+    "file": "Leipzig.Swedish.Newscrawl.Rank.zip",
+    "code": "sv",
+    "language": "Swedish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6677218
+  },
+  {
+    "file": "Leipzig.Swedish.Web.Rank.zip",
+    "code": "sv",
+    "language": "Swedish",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 8738820
+  },
+  {
+    "file": "Leipzig.Swedish.Sweden.Web.Rank.zip",
+    "code": "sv",
+    "language": "Swedish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Sweden",
+    "size": 8255800
+  },
+  {
+    "file": "Leipzig.Swedish.Wikipedia.Rank.zip",
+    "code": "sv",
+    "language": "Swedish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 12524418
+  },
+  {
+    "file": "Leipzig.Swiss.German.Switzerland.Web.Rank.zip",
+    "code": "gsw",
+    "language": "Swiss German",
+    "type": "Web",
+    "source": "Web",
+    "region": "Switzerland",
+    "size": 2208066
+  },
+  {
+    "file": "Leipzig.Swiss.German.Wikipedia.Rank.zip",
+    "code": "gsw",
+    "language": "Swiss German",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2722361
+  },
+  {
+    "file": "Leipzig.Tagalog.Community.Rank.zip",
+    "code": "tl",
+    "language": "Tagalog",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4784854
+  },
+  {
+    "file": "Leipzig.Tagalog.News.Rank.zip",
+    "code": "tl",
+    "language": "Tagalog",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 560647
+  },
+  {
+    "file": "Leipzig.Tagalog.Newscrwal.Rank.zip",
+    "code": "tl",
+    "language": "Tagalog",
+    "type": "News",
+    "source": "Newscrwal",
+    "region": "",
+    "size": 2058280
+  },
+  {
+    "file": "Leipzig.Tagalog.Wikipedia.Rank.zip",
+    "code": "tl",
+    "language": "Tagalog",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1597144
+  },
+  {
+    "file": "Leipzig.Tajik.Community.Rank.zip",
+    "code": "tg",
+    "language": "Tajik",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 6534764
+  },
+  {
+    "file": "Leipzig.Tajik.Newscrawl.Rank.zip",
+    "code": "tg",
+    "language": "Tajik",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 1630999
+  },
+  {
+    "file": "Leipzig.Tajik.Tajikistan.Web.Rank.zip",
+    "code": "tg",
+    "language": "Tajik",
+    "type": "Web",
+    "source": "Web",
+    "region": "Tajikistan",
+    "size": 6750007
+  },
+  {
+    "file": "Leipzig.Tajik.Uzbekistan.Web.Rank.zip",
+    "code": "tg",
+    "language": "Tajik",
+    "type": "Web",
+    "source": "Web",
+    "region": "Uzbekistan",
+    "size": 338330
+  },
+  {
+    "file": "Leipzig.Tajik.Wikipedia.Rank.zip",
+    "code": "tg",
+    "language": "Tajik",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1813044
+  },
+  {
+    "file": "Leipzig.Tamil.Community.Rank.zip",
+    "code": "ta",
+    "language": "Tamil",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 17840645
+  },
+  {
+    "file": "Leipzig.Tamil.News.Rank.zip",
+    "code": "ta",
+    "language": "Tamil",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1792878
+  },
+  {
+    "file": "Leipzig.Tamil.Newscrawl.Rank.zip",
+    "code": "ta",
+    "language": "Tamil",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 12834863
+  },
+  {
+    "file": "Leipzig.Tamil.Sri.Lanka.Web.Rank.zip",
+    "code": "ta",
+    "language": "Tamil",
+    "type": "Web",
+    "source": "Web",
+    "region": "Sri Lanka",
+    "size": 10469393
+  },
+  {
+    "file": "Leipzig.Tamil.Wikipedia.Rank.zip",
+    "code": "ta",
+    "language": "Tamil",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 13679945
+  },
+  {
+    "file": "Leipzig.Tatar.Community.Rank.zip",
+    "code": "tt",
+    "language": "Tatar",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 7758369
+  },
+  {
+    "file": "Leipzig.Tatar.Mixed.Rank.zip",
+    "code": "tt",
+    "language": "Tatar",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 5519222
+  },
+  {
+    "file": "Leipzig.Tatar.News.Rank.zip",
+    "code": "tt",
+    "language": "Tatar",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4680565
+  },
+  {
+    "file": "Leipzig.Tatar.Web.Rank.zip",
+    "code": "tt",
+    "language": "Tatar",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 5975013
+  },
+  {
+    "file": "Leipzig.Tatar.Wikipedia.Rank.zip",
+    "code": "tt",
+    "language": "Tatar",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1851586
+  },
+  {
+    "file": "Leipzig.Telugu.Community.Rank.zip",
+    "code": "te",
+    "language": "Telugu",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 14949563
+  },
+  {
+    "file": "Leipzig.Telugu.News.Rank.zip",
+    "code": "te",
+    "language": "Telugu",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1784300
+  },
+  {
+    "file": "Leipzig.Telugu.Newscrawl.Rank.zip",
+    "code": "te",
+    "language": "Telugu",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5534811
+  },
+  {
+    "file": "Leipzig.Telugu.Wikipedia.Rank.zip",
+    "code": "te",
+    "language": "Telugu",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 5346147
+  },
+  {
+    "file": "Leipzig.Thai.Community.Rank.zip",
+    "code": "th",
+    "language": "Thai",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4355163
+  },
+  {
+    "file": "Leipzig.Thai.News.Rank.zip",
+    "code": "th",
+    "language": "Thai",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1096370
+  },
+  {
+    "file": "Leipzig.Thai.Newscrawl.Rank.zip",
+    "code": "th",
+    "language": "Thai",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 6439867
+  },
+  {
+    "file": "Leipzig.Thai.Thailand.Web.Rank.zip",
+    "code": "th",
+    "language": "Thai",
+    "type": "Web",
+    "source": "Web",
+    "region": "Thailand",
+    "size": 15232435
+  },
+  {
+    "file": "Leipzig.Thai.Wikipedia.Rank.zip",
+    "code": "th",
+    "language": "Thai",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 818852
+  },
+  {
+    "file": "Leipzig.Tibetan.Community.Rank.zip",
+    "code": "bo",
+    "language": "Tibetan",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 594632
+  },
+  {
+    "file": "Leipzig.Tigrinya.Community.Rank.zip",
+    "code": "ti",
+    "language": "Tigrinya",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 71418
+  },
+  {
+    "file": "Leipzig.Timne.Community.Rank.zip",
+    "code": "tem",
+    "language": "Timne",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 535
+  },
+  {
+    "file": "Leipzig.Tiv.Community.Rank.zip",
+    "code": "tiv",
+    "language": "Tiv",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 580
+  },
+  {
+    "file": "Leipzig.Tosk.Albanian.sqi.News.Rank.zip",
+    "code": "als",
+    "language": "Tosk Albanian",
+    "type": "News",
+    "source": "News",
+    "region": "sqi",
+    "size": 2618709
+  },
+  {
+    "file": "Leipzig.Tosk.Albanian.Albania.Web.Rank.zip",
+    "code": "als",
+    "language": "Tosk Albanian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Albania",
+    "size": 6157270
+  },
+  {
+    "file": "Leipzig.Tosk.Albanian.Wikipedia.Rank.zip",
+    "code": "als",
+    "language": "Tosk Albanian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 732310
+  },
+  {
+    "file": "Leipzig.Tsonga.Community.Rank.zip",
+    "code": "ts",
+    "language": "Tsonga",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 175727
+  },
+  {
+    "file": "Leipzig.Tsonga.South.Africa.Web.Rank.zip",
+    "code": "ts",
+    "language": "Tsonga",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 224245
+  },
+  {
+    "file": "Leipzig.Tswana.Community.Rank.zip",
+    "code": "tn",
+    "language": "Tswana",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 349359
+  },
+  {
+    "file": "Leipzig.Tswana.Botswana.Web.Rank.zip",
+    "code": "tn",
+    "language": "Tswana",
+    "type": "Web",
+    "source": "Web",
+    "region": "Botswana",
+    "size": 167199
+  },
+  {
+    "file": "Leipzig.Tswana.South.Africa.Web.Rank.zip",
+    "code": "tn",
+    "language": "Tswana",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 217245
+  },
+  {
+    "file": "Leipzig.Tulu.Wikipedia.Rank.zip",
+    "code": "tcy",
+    "language": "Tulu",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 428073
+  },
+  {
+    "file": "Leipzig.Tumbuka.Community.Rank.zip",
+    "code": "tum",
+    "language": "Tumbuka",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 17931
+  },
+  {
+    "file": "Leipzig.Turkish.Mixed.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 9921346
+  },
+  {
+    "file": "Leipzig.Turkish.News.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 6388145
+  },
+  {
+    "file": "Leipzig.Turkish.Newscrawl.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7949139
+  },
+  {
+    "file": "Leipzig.Turkish.Bulgaria.Web.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Bulgaria",
+    "size": 857427
+  },
+  {
+    "file": "Leipzig.Turkish.Cyprus.Web.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Cyprus",
+    "size": 1736054
+  },
+  {
+    "file": "Leipzig.Turkish.Turkiye.Web.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "Web",
+    "source": "Web",
+    "region": "Turkiye",
+    "size": 9231196
+  },
+  {
+    "file": "Leipzig.Turkish.Wikipedia.Rank.zip",
+    "code": "tr",
+    "language": "Turkish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 9739533
+  },
+  {
+    "file": "Leipzig.Turkmen.Community.Rank.zip",
+    "code": "tk",
+    "language": "Turkmen",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 17662
+  },
+  {
+    "file": "Leipzig.Turkmen.Turkmenistan.Web.Rank.zip",
+    "code": "tk",
+    "language": "Turkmen",
+    "type": "Web",
+    "source": "Web",
+    "region": "Turkmenistan",
+    "size": 1051797
+  },
+  {
+    "file": "Leipzig.Turkmen.Wikipedia.Rank.zip",
+    "code": "tk",
+    "language": "Turkmen",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 866886
+  },
+  {
+    "file": "Leipzig.Tuvinian.Wikipedia.Rank.zip",
+    "code": "tyv",
+    "language": "Tuvinian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 389797
+  },
+  {
+    "file": "Leipzig.Udmurt.Wikipedia.Rank.zip",
+    "code": "udm",
+    "language": "Udmurt",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 319991
+  },
+  {
+    "file": "Leipzig.Uighur.Community.Rank.zip",
+    "code": "ug",
+    "language": "Uighur",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 1715588
+  },
+  {
+    "file": "Leipzig.Uighur.Wikipedia.Rank.zip",
+    "code": "ug",
+    "language": "Uighur",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1041449
+  },
+  {
+    "file": "Leipzig.Ukrainian.Mixed.Rank.zip",
+    "code": "uk",
+    "language": "Ukrainian",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 9437552
+  },
+  {
+    "file": "Leipzig.Ukrainian.News.Rank.zip",
+    "code": "uk",
+    "language": "Ukrainian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 4907328
+  },
+  {
+    "file": "Leipzig.Ukrainian.Newscrawl.Rank.zip",
+    "code": "uk",
+    "language": "Ukrainian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 7117794
+  },
+  {
+    "file": "Leipzig.Ukrainian.Web.Rank.zip",
+    "code": "uk",
+    "language": "Ukrainian",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 9393384
+  },
+  {
+    "file": "Leipzig.Ukrainian.Ukraine.Web.Rank.zip",
+    "code": "uk",
+    "language": "Ukrainian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Ukraine",
+    "size": 8933662
+  },
+  {
+    "file": "Leipzig.Ukrainian.Wikipedia.Rank.zip",
+    "code": "uk",
+    "language": "Ukrainian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 10753461
+  },
+  {
+    "file": "Leipzig.Upper.Sorbian.Wikipedia.Rank.zip",
+    "code": "hsb",
+    "language": "Upper Sorbian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 726606
+  },
+  {
+    "file": "Leipzig.Urdu.News.Rank.zip",
+    "code": "ur",
+    "language": "Urdu",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 402537
+  },
+  {
+    "file": "Leipzig.Urdu.Newscrawl.Rank.zip",
+    "code": "ur",
+    "language": "Urdu",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 5017878
+  },
+  {
+    "file": "Leipzig.Urdu.Pakistan.Newscrawl.Rank.zip",
+    "code": "ur",
+    "language": "Urdu",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "Pakistan",
+    "size": 214025
+  },
+  {
+    "file": "Leipzig.Urdu.Newscrwal.Rank.zip",
+    "code": "ur",
+    "language": "Urdu",
+    "type": "News",
+    "source": "Newscrwal",
+    "region": "",
+    "size": 2415010
+  },
+  {
+    "file": "Leipzig.Urdu.India.Web.Rank.zip",
+    "code": "ur",
+    "language": "Urdu",
+    "type": "Web",
+    "source": "Web",
+    "region": "India",
+    "size": 1164431
+  },
+  {
+    "file": "Leipzig.Urdu.Wikipedia.Rank.zip",
+    "code": "ur",
+    "language": "Urdu",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 3048158
+  },
+  {
+    "file": "Leipzig.Uzbek.Community.Rank.zip",
+    "code": "uz",
+    "language": "Uzbek",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 7614311
+  },
+  {
+    "file": "Leipzig.Uzbek.News.Rank.zip",
+    "code": "uz",
+    "language": "Uzbek",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 666329
+  },
+  {
+    "file": "Leipzig.Uzbek.Newscrawl.Rank.zip",
+    "code": "uz",
+    "language": "Uzbek",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 2038673
+  },
+  {
+    "file": "Leipzig.Uzbek.Wikipedia.Rank.zip",
+    "code": "uz",
+    "language": "Uzbek",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2035202
+  },
+  {
+    "file": "Leipzig.Venda.Community.Rank.zip",
+    "code": "ve",
+    "language": "Venda",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 142349
+  },
+  {
+    "file": "Leipzig.Venda.South.Africa.Web.Rank.zip",
+    "code": "ve",
+    "language": "Venda",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 156076
+  },
+  {
+    "file": "Leipzig.Venetian.Brazil.Web.Rank.zip",
+    "code": "vec",
+    "language": "Venetian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Brazil",
+    "size": 646549
+  },
+  {
+    "file": "Leipzig.Venetian.Croatia.Web.Rank.zip",
+    "code": "vec",
+    "language": "Venetian",
+    "type": "Web",
+    "source": "Web",
+    "region": "Croatia",
+    "size": 1183817
+  },
+  {
+    "file": "Leipzig.Venetian.Wikipedia.Rank.zip",
+    "code": "vec",
+    "language": "Venetian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 868730
+  },
+  {
+    "file": "Leipzig.Vietnamese.Mixed.Rank.zip",
+    "code": "vi",
+    "language": "Vietnamese",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 2162601
+  },
+  {
+    "file": "Leipzig.Vietnamese.News.Rank.zip",
+    "code": "vi",
+    "language": "Vietnamese",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 3743237
+  },
+  {
+    "file": "Leipzig.Vietnamese.Newscrwal.Rank.zip",
+    "code": "vi",
+    "language": "Vietnamese",
+    "type": "News",
+    "source": "Newscrwal",
+    "region": "",
+    "size": 1713914
+  },
+  {
+    "file": "Leipzig.Vietnamese.Cambodia.Web.Rank.zip",
+    "code": "vi",
+    "language": "Vietnamese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Cambodia",
+    "size": 164221
+  },
+  {
+    "file": "Leipzig.Vietnamese.Vietnam.Web.Rank.zip",
+    "code": "vi",
+    "language": "Vietnamese",
+    "type": "Web",
+    "source": "Web",
+    "region": "Vietnam",
+    "size": 5017356
+  },
+  {
+    "file": "Leipzig.Vietnamese.Wikipedia.Rank.zip",
+    "code": "vi",
+    "language": "Vietnamese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 7738409
+  },
+  {
+    "file": "Leipzig.Vlaams.Community.Rank.zip",
+    "code": "vls",
+    "language": "Vlaams",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 823613
+  },
+  {
+    "file": "Leipzig.Vlaams.Wikipedia.Rank.zip",
+    "code": "vls",
+    "language": "Vlaams",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 747821
+  },
+  {
+    "file": "Leipzig.Volapuk.Wikipedia.Rank.zip",
+    "code": "vo",
+    "language": "Volapük",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 776012
+  },
+  {
+    "file": "Leipzig.Voro.Wikipedia.Rank.zip",
+    "code": "vro",
+    "language": "Võro",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 378658
+  },
+  {
+    "file": "Leipzig.Walloon.Wikipedia.Rank.zip",
+    "code": "wa",
+    "language": "Walloon",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 486588
+  },
+  {
+    "file": "Leipzig.Waray.Philippines.Community.Rank.zip",
+    "code": "war",
+    "language": "Waray (Philippines)",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 4381290
+  },
+  {
+    "file": "Leipzig.Waray.Philippines.Wikipedia.Rank.zip",
+    "code": "war",
+    "language": "Waray (Philippines)",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2313691
+  },
+  {
+    "file": "Leipzig.Welsh.Wikipedia.Rank.zip",
+    "code": "cy",
+    "language": "Welsh",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1403258
+  },
+  {
+    "file": "Leipzig.Western.Frisian.News.Rank.zip",
+    "code": "fy",
+    "language": "Western Frisian",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 810362
+  },
+  {
+    "file": "Leipzig.Western.Frisian.Newscrawl.Rank.zip",
+    "code": "fy",
+    "language": "Western Frisian",
+    "type": "News",
+    "source": "Newscrawl",
+    "region": "",
+    "size": 873782
+  },
+  {
+    "file": "Leipzig.Western.Frisian.Wikipedia.Rank.zip",
+    "code": "fy",
+    "language": "Western Frisian",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1633966
+  },
+  {
+    "file": "Leipzig.Western.Mari.Wikipedia.Rank.zip",
+    "code": "mrj",
+    "language": "Western Mari",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 313974
+  },
+  {
+    "file": "Leipzig.Western.Panjabi.Community.Rank.zip",
+    "code": "pnb",
+    "language": "Western Panjabi",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 735759
+  },
+  {
+    "file": "Leipzig.Western.Panjabi.Wikipedia.Rank.zip",
+    "code": "pnb",
+    "language": "Western Panjabi",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2713832
+  },
+  {
+    "file": "Leipzig.Wolof.Community.Rank.zip",
+    "code": "wo",
+    "language": "Wolof",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 222990
+  },
+  {
+    "file": "Leipzig.Wu.Chinese.Wikipedia.Rank.zip",
+    "code": "wuu",
+    "language": "Wu Chinese",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 2455003
+  },
+  {
+    "file": "Leipzig.Xhosa.Community.Rank.zip",
+    "code": "xh",
+    "language": "Xhosa",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 939001
+  },
+  {
+    "file": "Leipzig.Xhosa.Mixed.Rank.zip",
+    "code": "xh",
+    "language": "Xhosa",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 1131088
+  },
+  {
+    "file": "Leipzig.Xhosa.South.Africa.Web.Rank.zip",
+    "code": "xh",
+    "language": "Xhosa",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 1140792
+  },
+  {
+    "file": "Leipzig.Yakut.Wikipedia.Rank.zip",
+    "code": "sah",
+    "language": "Yakut",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 1706574
+  },
+  {
+    "file": "Leipzig.Yiddish.Wikipedia.Rank.zip",
+    "code": "yi",
+    "language": "Yiddish",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 599789
+  },
+  {
+    "file": "Leipzig.Yoruba.Community.Rank.zip",
+    "code": "yo",
+    "language": "Yoruba",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 303315
+  },
+  {
+    "file": "Leipzig.Yoruba.Wikipedia.Rank.zip",
+    "code": "yo",
+    "language": "Yoruba",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 309718
+  },
+  {
+    "file": "Leipzig.Zeeuws.Wikipedia.Rank.zip",
+    "code": "zea",
+    "language": "Zeeuws",
+    "type": "Wikipedia",
+    "source": "Wikipedia",
+    "region": "",
+    "size": 334939
+  },
+  {
+    "file": "Leipzig.Zhuang.Community.Rank.zip",
+    "code": "za",
+    "language": "Zhuang",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 138849
+  },
+  {
+    "file": "Leipzig.Zulu.Community.Rank.zip",
+    "code": "zu",
+    "language": "Zulu",
+    "type": "Community",
+    "source": "Community",
+    "region": "",
+    "size": 3834813
+  },
+  {
+    "file": "Leipzig.Zulu.Mixed.Rank.zip",
+    "code": "zu",
+    "language": "Zulu",
+    "type": "Mixed",
+    "source": "Mixed",
+    "region": "",
+    "size": 2682720
+  },
+  {
+    "file": "Leipzig.Zulu.News.Rank.zip",
+    "code": "zu",
+    "language": "Zulu",
+    "type": "News",
+    "source": "News",
+    "region": "",
+    "size": 1129322
+  },
+  {
+    "file": "Leipzig.Zulu.Web.Rank.zip",
+    "code": "zu",
+    "language": "Zulu",
+    "type": "Web",
+    "source": "Web",
+    "region": "",
+    "size": 2699321
+  },
+  {
+    "file": "Leipzig.Zulu.South.Africa.Web.Rank.zip",
+    "code": "zu",
+    "language": "Zulu",
+    "type": "Web",
+    "source": "Web",
+    "region": "South Africa",
+    "size": 2846374
+  }
+]

@@ -1,0 +1,120 @@
+import React, { useCallback, useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { browser } from "wxt/browser";
+import { rpc } from "../../src/api";
+import { ErrorBox, Logo, useChanges, useSettings } from "../../src/ui";
+import "../../src/styles.css";
+
+function Popup() {
+  const [settings, setSettings] = useSettings();
+  const [host, setHost] = useState("");
+  const [stats, setStats] = useState({ total: 0, due: 0, known: 0, today: 0 });
+  const [error, setError] = useState("");
+  const [dictionaryCount, setDictionaryCount] = useState(0);
+  const load = useCallback(() => {
+    void Promise.all([
+      rpc({ action: "stats" }),
+      rpc({ action: "dictionaries" }),
+    ])
+      .then(([stats, dictionaries]) => {
+        setStats(stats);
+        setDictionaryCount(
+          dictionaries.filter((d) => d.enabled && d.count > 0).length,
+        );
+      })
+      .catch((error) => setError(error.message));
+  }, []);
+  useEffect(load, [load]);
+  useChanges(load);
+  useEffect(() => {
+    void browser.tabs
+      .query({ active: true, currentWindow: true })
+      .then(([tab]) => {
+        if (tab?.url?.startsWith("http")) setHost(new URL(tab.url).hostname);
+      });
+  }, []);
+  function open(page: string) {
+    void browser.tabs.create({
+      url: browser.runtime.getURL("/app.html") + `#${page}`,
+    });
+    window.close();
+  }
+  async function toggle(site: boolean) {
+    try {
+      const next = site
+        ? {
+            ...settings,
+            disabledHosts: settings.disabledHosts.includes(host)
+              ? settings.disabledHosts.filter((h) => h !== host)
+              : [...settings.disabledHosts, host],
+          }
+        : { ...settings, paused: !settings.paused };
+      setSettings(next);
+      setSettings(await rpc({ action: "setSettings", value: next }));
+    } catch (error) {
+      setSettings(settings);
+      setError((error as Error).message);
+    }
+  }
+  return (
+    <div className="toolbar-shell">
+      <header className="row between">
+        <Logo small />
+      </header>
+      <ErrorBox error={error} />
+      {!settings.setupComplete ? (
+        <button
+          className="primary toolbar-review"
+          onClick={() => open("setup")}
+        >
+          Setup
+        </button>
+      ) : !dictionaryCount ? (
+        <div className="toolbar-setup">
+          <p>No dictionary installed.</p>
+          <button className="primary" onClick={() => open("settings")}>
+            Import dictionary
+          </button>
+        </div>
+      ) : (
+        <button
+          className="primary toolbar-review"
+          onClick={() => open("review")}
+        >
+          Review <span>{stats.due}</span>
+        </button>
+      )}
+      <div className="toolbar-controls">
+        <label className="toggle-row">
+          <span>Parse websites</span>
+          <input
+            type="checkbox"
+            role="switch"
+            checked={!settings.paused}
+            onChange={() => void toggle(false)}
+          />
+        </label>
+        {host && (
+          <label className="toggle-row">
+            <span className="truncate">Enabled on {host}</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={!settings.disabledHosts.includes(host)}
+              onChange={() => void toggle(true)}
+            />
+          </label>
+        )}
+      </div>
+      <footer className="row between">
+        <button className="quiet" onClick={() => open("words")}>
+          Words
+        </button>
+        <button className="quiet" onClick={() => open("settings")}>
+          Settings
+        </button>
+      </footer>
+    </div>
+  );
+}
+createRoot(document.getElementById("root")!).render(<Popup />);
