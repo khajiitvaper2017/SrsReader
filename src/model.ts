@@ -22,6 +22,7 @@ export const settingsSchema = z.object({
   disabledHosts: z.array(z.string()).default([]),
   theme: z.enum(["system", "light", "dark"]).default("system"),
   hideDictionarySources: z.boolean().default(true),
+  scanPopups: z.boolean().default(true),
   front: z.enum(["word", "sentence"]).default("word"),
   retention: z.number().min(0.7).max(0.99).default(0.9),
   onlyAgainGood: z.boolean().default(true),

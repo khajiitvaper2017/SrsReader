@@ -1211,6 +1211,17 @@ function SettingsPage({
                   ))}
                 </div>
               )}
+              <label className="setting-row">
+                <strong>Scan dictionary popups</strong>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={settings.scanPopups}
+                  onChange={(event) =>
+                    void update({ scanPopups: event.target.checked })
+                  }
+                />
+              </label>
               <div className="setting-footnote">
                 Disable individual sites from the toolbar.
               </div>

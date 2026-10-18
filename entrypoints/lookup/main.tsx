@@ -20,13 +20,90 @@ import {
   useSettings,
 } from "../../src/ui";
 import "../../src/styles.css";
+import { ContentScriptContext } from "wxt/utils/content-script-context";
+import { startReader } from "../../src/reader";
+import { readerKeysSchema } from "../../src/controls";
+
+type LookupPage = {
+  term: string;
+  context?: ReadingContext;
+  selected?: string;
+  scroll?: number;
+  openDetails?: number[];
+};
 
 function Lookup() {
+  const [pages, setPages] = useState<LookupPage[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const session = new URLSearchParams(location.search).get("session");
+    if (!session) {
+      setError("Use your lookup control on a word on a website.");
+      return;
+    }
+    void rpc({ action: "session", id: session })
+      .then((page) => setPages([page]))
+      .catch((error) => setError(error.message));
+  }, []);
+  useEffect(() => {
+    const session = new URLSearchParams(location.search).get("session");
+    const listener = (event: MessageEvent) => {
+      if (event.source !== window.parent) return;
+      const parsed = readerKeysSchema.safeParse(event.data);
+      if (
+        !parsed.success ||
+        parsed.data.session !== session ||
+        !parsed.data.pressed ||
+        parsed.data.code !== "Escape"
+      )
+        return;
+      if (pages.length > 1) setPages((pages) => pages.slice(0, -1));
+      else void rpc({ action: "closeLookup" });
+    };
+    window.addEventListener("message", listener);
+    window.parent.postMessage({ type: "srs-reader-ready", session }, "*");
+    return () => window.removeEventListener("message", listener);
+  }, [pages.length]);
+  if (!pages.length) return <ErrorBox error={error} />;
+  return (
+    <LookupEntry
+      key={pages.length}
+      page={pages[pages.length - 1]!}
+      onLookup={(term, context, selected, scroll, openDetails) =>
+        setPages((pages) => [
+          ...pages.slice(0, -1),
+          { ...pages[pages.length - 1]!, selected, scroll, openDetails },
+          { term, context },
+        ])
+      }
+      onBack={
+        pages.length > 1
+          ? () => setPages((pages) => pages.slice(0, -1))
+          : undefined
+      }
+    />
+  );
+}
+
+function LookupEntry({
+  page,
+  onLookup,
+  onBack,
+}: {
+  page: LookupPage;
+  onLookup: (
+    term: string,
+    context: ReadingContext,
+    selected: string,
+    scroll: number,
+    openDetails: number[],
+  ) => void;
+  onBack?: () => void;
+}) {
   const [settings, setSettings] = useSettings("popups");
   const [result, setResult] = useState<LookupResult>();
-  const [term, setTerm] = useState("");
-  const [context, setContext] = useState<ReadingContext>();
-  const [selected, setSelected] = useState("");
+  const { term, context } = page;
+  const [selected, setSelected] = useState(page.selected || "");
   const [saved, setSaved] = useState<Vocabulary>();
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
@@ -36,6 +113,35 @@ function Lookup() {
   const word: LookupWord | undefined = result?.words.find(
     (w) => w.id === selected,
   );
+  useEffect(() => {
+    if (!word) return;
+    const root = document.querySelector<HTMLElement>(".meanings")!;
+    const content = document.querySelector<HTMLElement>(".lookup-content")!;
+    if (page.selected === selected && page.openDetails)
+      [...root.querySelectorAll("details")].forEach((details, index) => {
+        details.open = page.openDetails!.includes(index);
+      });
+    content.scrollTop = page.scroll || 0;
+    const ctx = new ContentScriptContext("popup-reader");
+    startReader(ctx, {
+      root,
+      source: {
+        url: word.meanings[0]?.sourceUrl || location.href,
+        title: word.meanings[0]?.title || document.title,
+      },
+      onLookup: (term, context) =>
+        onLookup(
+          term,
+          context,
+          selected,
+          content.scrollTop,
+          [...root.querySelectorAll("details")].flatMap((details, index) =>
+            details.open ? [index] : [],
+          ),
+        ),
+    });
+    return () => ctx.abort();
+  }, [word?.id]);
   useEffect(() => {
     const session = new URLSearchParams(location.search).get("session");
     if (!session) return;
@@ -63,21 +169,22 @@ function Lookup() {
     return () => observer.disconnect();
   }, [word?.id]);
   useEffect(() => {
-    const session = new URLSearchParams(location.search).get("session");
-    if (!session) {
-      setError("Use your lookup control on a word on a website.");
-      return;
-    }
-    void rpc({ action: "session", id: session })
-      .then(async (value) => {
-        setTerm(value.term);
-        setContext(value.context);
-        const lookup = await rpc({ action: "lookup", term: value.term });
+    let alive = true;
+    void rpc({ action: "lookup", term })
+      .then((lookup) => {
+        if (!alive) return;
         setResult(lookup);
-        setSelected(lookup.words[0]?.id || "");
+        setSelected(
+          lookup.words.some((word) => word.id === page.selected)
+            ? page.selected!
+            : lookup.words[0]?.id || "",
+        );
       })
       .catch((error) => setError(error.message));
-  }, []);
+    return () => {
+      alive = false;
+    };
+  }, [term]);
   const reload = useCallback(() => {
     if (!selected || !term) return;
     void Promise.all([
@@ -99,7 +206,8 @@ function Lookup() {
   useEffect(() => {
     function key(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        void rpc({ action: "closeLookup" });
+        if (onBack) onBack();
+        else void rpc({ action: "closeLookup" });
         return;
       }
       if (
@@ -184,6 +292,16 @@ function Lookup() {
       </button>
       <main className="lookup-content">
         <div className="lookup-body">
+          {onBack && (
+            <button
+              className="quiet lookup-back"
+              onClick={onBack}
+              disabled={busy}
+              aria-label="Back to previous word"
+            >
+              ← Back
+            </button>
+          )}
           <ErrorBox error={error} />
           {!result && !error && <p className="muted">Looking up…</p>}
           {result && !word && (

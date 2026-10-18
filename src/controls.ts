@@ -16,6 +16,17 @@ export const lookupBindingSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("hover"), code: z.string(), ...modifiers }),
 ]);
 export type LookupBinding = z.infer<typeof lookupBindingSchema>;
+export const readerKeysSchema = z.object({
+  type: z.literal("srs-reader-keys"),
+  session: z.string(),
+  keys: z.array(z.string().max(64)).max(256),
+  code: z.string().max(64),
+  pressed: z.boolean(),
+  ctrlKey: z.boolean(),
+  altKey: z.boolean(),
+  shiftKey: z.boolean(),
+  metaKey: z.boolean(),
+});
 export const inputPreventionSchema = z
   .object({
     textHover: z.boolean(),

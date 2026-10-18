@@ -52,6 +52,8 @@ Under **Settings → Spaced repetition → Words without frequency**, choose **I
 
 Open a website in your selected language and use your lookup control on a highlighted word. Press **Escape** or click outside the popup to close it.
 
+Definitions are parsed too. Use the same lookup control on a word in a definition to open it. **Back** or **Escape** returns to the previous entry; the close button closes the popup. Turn this off with **Settings → Reading & appearance → Scan dictionary popups**.
+
 **Settings → Reading & appearance → Hide dictionary source links** hides links such as Wiktionary and Kaikki in lookup popups. It is on by default; turn it off to show them.
 
 Configure lookup in **Settings → Lookup controls**. You can enable several bindings:
