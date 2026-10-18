@@ -59,7 +59,7 @@ export function FrequencyBrowser({
     .sort(
       (a, b) =>
         (sort === "size"
-          ? a.size - b.size
+          ? b.size - a.size
           : sort === "type"
             ? t(typeLabels[a.type]!).localeCompare(
                 t(typeLabels[b.type]!),

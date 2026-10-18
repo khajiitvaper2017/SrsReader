@@ -598,22 +598,70 @@ button.master-action[aria-pressed="true"] {
 }
 .import-zone > div {
   flex: 1;
+  min-width: 0;
 }
 .import-zone strong {
   font-size: 12px;
   font-weight: 400;
   color: var(--muted);
 }
-.import-zone p {
-  font-size: 11px;
+.import-zone[aria-busy="true"] {
+  border-color: var(--accent);
+  border-style: solid;
 }
-.import-zone p:empty {
-  display: none;
+.setting-progress {
+  padding: 0 12px 10px;
 }
-.import-zone progress {
-  width: 100%;
-  margin-top: 6px;
-  accent-color: var(--accent);
+.task-progress {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+}
+.task-progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.task-progress-label > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-progress-label > span:last-child {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.task-progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--line);
+}
+.task-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 150ms ease;
+}
+.task-progress-track.indeterminate > span {
+  width: 30%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-progress-track > span {
+    transition: none;
+    animation: none;
+  }
 }
 .starter-note {
   display: flex;

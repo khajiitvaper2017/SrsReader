@@ -1,4 +1,10 @@
-import { t, i18n, number, interfaceLanguages } from "../../src/i18n";
+import {
+  t,
+  i18n,
+  number,
+  downloadSize,
+  interfaceLanguages,
+} from "../../src/i18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { rpc } from "../../src/api";
@@ -36,6 +42,7 @@ import {
   useSettings,
 } from "../../src/ui";
 import type { ImportProgress } from "../../src/dictionaries";
+import { readDownload } from "../../src/download";
 import "../../src/styles.css";
 import {
   languageIso3,
@@ -746,6 +753,44 @@ function WordsPage({ settings }: { settings: Settings }) {
   );
 }
 
+function TaskProgress({ progress }: { progress: ImportProgress }) {
+  const { phase, done, total, unit } = progress;
+  const percent = total ? Math.min(100, (done / total) * 100) : undefined;
+  const detail =
+    unit === "bytes"
+      ? `${downloadSize(done)}${total ? ` / ${downloadSize(total)}` : ""}`
+      : total
+        ? `${number(Math.floor(done))} / ${number(total)}`
+        : done
+          ? number(done)
+          : "";
+  return (
+    <div className="task-progress">
+      <div className="task-progress-label">
+        <span>{phase}</span>
+        <span>
+          {detail}
+          {percent !== undefined &&
+            ` · ${number(percent / 100, { style: "percent", maximumFractionDigits: 0 })}`}
+        </span>
+      </div>
+      <div
+        className={`task-progress-track ${percent === undefined ? "indeterminate" : ""}`}
+        role="progressbar"
+        aria-label={phase}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-valuetext={detail || undefined}
+      >
+        <span
+          style={percent === undefined ? undefined : { width: `${percent}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function SettingsPage({
   settings,
   setSettings,
@@ -760,6 +805,9 @@ function SettingsPage({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<ImportProgress>();
+  const [progressTarget, setProgressTarget] = useState<
+    "dictionary" | "examples" | "morphology"
+  >("dictionary");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [updates, setUpdates] = useState<
     Record<string, { revision: string; url: string } | null>
@@ -815,6 +863,7 @@ function SettingsPage({
   }
   async function task(operation: () => Promise<void>) {
     setBusy(true);
+    setProgress(undefined);
     setError("");
     setNotice("");
     try {
@@ -831,6 +880,8 @@ function SettingsPage({
     expectedId?: string,
     language: string = settings.studyLanguage,
   ) {
+    setProgressTarget("dictionary");
+    setProgress({ phase: t("importing"), done: 0, total: 0 });
     await new Promise<void>((resolve, reject) => {
       const current = new ImportWorker();
       worker.current = current;
@@ -865,6 +916,7 @@ function SettingsPage({
     title: string,
   ) {
     await task(async () => {
+      setProgressTarget("dictionary");
       setProgress({
         phase: t("downloading_dictionary", { title }),
         done: 0,
@@ -875,13 +927,20 @@ function SettingsPage({
         throw new Error(
           t("dictionary_download_failed", { status: response.status }),
         );
-      await importZip(await response.blob(), undefined, language);
+      const blob = await readDownload(
+        response,
+        t("downloading_dictionary", { title }),
+        setProgress,
+      );
+      await importZip(blob, undefined, language);
     });
   }
   async function installLanguageData(
     type: "examples" | "morphology",
     blob?: Blob,
   ) {
+    setProgressTarget(type);
+    setProgress(undefined);
     if (!settings.studyLanguage)
       throw new Error(t("choose_a_study_language_first"));
     await new Promise<void>((resolve, reject) => {
@@ -977,6 +1036,7 @@ function SettingsPage({
       setError((error as Error).message);
     } finally {
       setBusy(false);
+      setProgress(undefined);
     }
   }
   return (
@@ -1065,6 +1125,11 @@ function SettingsPage({
             {morphology.count ? t("download_again") : t("download_word_forms")}
           </button>
         </div>
+        {busy && progressTarget === "morphology" && progress && (
+          <div className="setting-progress">
+            <TaskProgress progress={progress} />
+          </div>
+        )}
         <div className="setting-footnote">
           {morphologyLanguage(settings.studyLanguage)
             ? t("extra_word_forms_from_simplemma_help_find_dictionary")
@@ -1116,13 +1181,10 @@ function SettingsPage({
             </label>
           </div>
         </div>
-        {progress && busy && (
-          <p role="status">
-            {progress.phase}
-            {progress.total
-              ? ` · ${number(progress.done)} / ${number(progress.total)}`
-              : "…"}
-          </p>
+        {busy && progressTarget === "examples" && progress && (
+          <div className="setting-progress">
+            <TaskProgress progress={progress} />
+          </div>
         )}
         <div className="setting-footnote">
           {t("tatoeba_examples_for_your_study_language_are_stored")}{" "}
@@ -1138,7 +1200,8 @@ function SettingsPage({
           </span>
         </div>
         <div
-          className={`import-zone ${busy ? "disabled" : ""}`}
+          className="import-zone"
+          aria-busy={busy && progressTarget === "dictionary"}
           onDragOver={(event) => {
             event.preventDefault();
           }}
@@ -1148,19 +1211,10 @@ function SettingsPage({
           }}
         >
           <div>
-            <strong>
-              {progress ? progress.phase : t("drop_a_yomitan_format_3_zip")}
-            </strong>
-            <p>
-              {progress
-                ? t("keep_this_page_open_until_the_import_finishes")
-                : ""}
-            </p>
-            {progress && (
-              <progress
-                max={Math.max(1, progress.total)}
-                value={progress.done}
-              />
+            {busy && progressTarget === "dictionary" && progress ? (
+              <TaskProgress progress={progress} />
+            ) : (
+              <strong>{t("drop_a_yomitan_format_3_zip")}</strong>
             )}
           </div>
           <button
@@ -1304,6 +1358,11 @@ function SettingsPage({
                     disabled={busy}
                     onClick={() =>
                       void task(async () => {
+                        setProgressTarget("dictionary");
+                        const phase = t("downloading_dictionary", {
+                          title: dictionary.index.title,
+                        });
+                        setProgress({ phase, done: 0, total: 0 });
                         const response = await fetch(
                           updates[dictionary.id]!.url,
                           { credentials: "omit" },
@@ -1314,7 +1373,12 @@ function SettingsPage({
                               status: response.status,
                             }),
                           );
-                        await importZip(await response.blob(), dictionary.id);
+                        const blob = await readDownload(
+                          response,
+                          phase,
+                          setProgress,
+                        );
+                        await importZip(blob, dictionary.id);
                         setUpdates((u) => ({ ...u, [dictionary.id]: null }));
                       })
                     }

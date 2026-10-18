@@ -17,7 +17,12 @@ import {
   type Frequency,
 } from "./model";
 
-export type ImportProgress = { phase: string; done: number; total: number };
+export type ImportProgress = {
+  phase: string;
+  done: number;
+  total: number;
+  unit?: "bytes";
+};
 const tagSchema = z.tuple([
   z.string(),
   z.string(),
@@ -158,6 +163,11 @@ async function importRevision(
             : [];
         });
         await db.phrases.bulkPut(phrases);
+        progress({
+          phase: t("reading", { filename: file.filename }),
+          done: bankNumber + Math.min(offset + 1000, rows.length) / rows.length,
+          total: totalBanks,
+        });
       }
     }
     for (const [bankNumber, file] of metaBanks.entries()) {
@@ -217,6 +227,14 @@ async function importRevision(
             ];
           });
         await db.frequencies.bulkAdd(batch);
+        progress({
+          phase: t("reading", { filename: file.filename }),
+          done:
+            banks.length +
+            bankNumber +
+            Math.min(offset + 1000, rows.length) / rows.length,
+          total: totalBanks,
+        });
       }
     }
     if (!count && !frequencyCount)
@@ -276,8 +294,8 @@ async function importRevision(
     };
     progress({
       phase: t("activating_dictionary"),
-      done: totalBanks,
-      total: totalBanks,
+      done: 0,
+      total: 0,
     });
     await db.transaction("rw", [db.dictionaries, db.archives], async () => {
       await db.archives.put({ id: revisionId, blob });

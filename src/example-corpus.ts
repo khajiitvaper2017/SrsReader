@@ -4,12 +4,14 @@ import { db } from "./db";
 import { folded } from "./model";
 import { languageCode, languageIso3, languageName } from "./languages";
 import { analyzeWords } from "./morphology";
+import { readDownload } from "./download";
+import type { ImportProgress } from "./dictionaries";
 
 export type Corpus = {
   sentences: [number, string, string][];
   index: Record<string, number[]>;
 };
-export type ExampleProgress = { phase: string; done: number; total: number };
+export type ExampleProgress = ImportProgress;
 
 export async function installExampleCorpus(
   language: string,
@@ -34,7 +36,7 @@ export async function installExampleCorpus(
       throw new Error(
         t("example_download_failed", { status: response.status }),
       );
-    blob = await response.blob();
+    blob = await readDownload(response, t("downloading_examples"), progress);
   }
   progress({ phase: t("reading_examples"), done: 0, total: 0 });
   const corpus: Corpus = { sentences: [], index: Object.create(null) };

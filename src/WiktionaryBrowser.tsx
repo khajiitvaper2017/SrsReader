@@ -93,7 +93,7 @@ export function WiktionaryBrowser({
     )
     .sort(
       (a, b) =>
-        (sort === "size" ? a.size - b.size : 0) ||
+        (sort === "size" ? b.size - a.size : 0) ||
         compareLanguages(languageCode(a.source), languageCode(b.source)) ||
         compareLanguages(languageCode(a.target), languageCode(b.target)) ||
         types.indexOf(a.type) - types.indexOf(b.type) ||

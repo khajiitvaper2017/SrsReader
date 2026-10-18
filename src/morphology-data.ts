@@ -4,6 +4,7 @@ import { db } from "./db";
 import { morphologyLanguage } from "./languages";
 import { normalize } from "./model";
 import type { ExampleProgress } from "./example-corpus";
+import { readDownload } from "./download";
 
 // Simplemma's SMFC1 data format is pinned together with its decoder.
 const revision = "4a5d20a8428bbc8b4cd1faacfaf3b178b0f84257";
@@ -72,9 +73,14 @@ export async function installMorphology(
     throw new Error(
       t("word_form_download_failed", { status: response.status }),
     );
+  const blob = await readDownload(
+    response,
+    t("downloading_word_forms"),
+    progress,
+  );
   progress({ phase: t("reading_word_forms"), done: 0, total: 0 });
   const data = new Uint8Array(
-    await new Response(new XzReadableStream(response.body!)).arrayBuffer(),
+    await new Response(new XzReadableStream(blob.stream())).arrayBuffer(),
   );
   const rows = decodeForms(data);
   const compressed = new Blob([JSON.stringify(rows)])
