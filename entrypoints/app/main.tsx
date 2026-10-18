@@ -1313,24 +1313,37 @@ function SettingsPage({
                   className="quiet"
                   disabled={busy || i === 0}
                   title={t("move_dictionary_up")}
+                  aria-label={t("move_dictionary_up")}
                   onClick={() =>
                     void task(async () => {
-                      const previous = dictionaries[i - 1]!;
                       await rpc({
-                        action: "setDictionary",
+                        action: "moveDictionary",
                         id: dictionary.id,
-                        order: previous.order,
-                      });
-                      await rpc({
-                        action: "setDictionary",
-                        id: previous.id,
-                        order: dictionary.order,
+                        direction: "up",
                       });
                       load();
                     })
                   }
                 >
                   ↑
+                </button>
+                <button
+                  className="quiet"
+                  disabled={busy || i === dictionaries.length - 1}
+                  title={t("move_dictionary_down")}
+                  aria-label={t("move_dictionary_down")}
+                  onClick={() =>
+                    void task(async () => {
+                      await rpc({
+                        action: "moveDictionary",
+                        id: dictionary.id,
+                        direction: "down",
+                      });
+                      load();
+                    })
+                  }
+                >
+                  ↓
                 </button>
                 {dictionary.index.isUpdatable && (
                   <button

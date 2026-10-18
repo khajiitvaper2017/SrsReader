@@ -137,14 +137,44 @@ export default defineBackground(() => {
         const dictionary = await db.dictionaries.get(request.id);
         if (!dictionary) throw new Error(t("dictionary_not_found"));
         await db.dictionaries.update(request.id, {
-          enabled: request.enabled ?? dictionary.enabled,
-          order: request.order ?? dictionary.order,
+          enabled: request.enabled,
         });
         settings.dictionaryPreferences[dictionary.id] = {
-          enabled: request.enabled ?? dictionary.enabled,
-          order: request.order ?? dictionary.order,
+          enabled: request.enabled,
+          order: dictionary.order,
         };
         await db.settings.put({ id: "main", value: settings });
+        await notify();
+        return;
+      }
+      case "moveDictionary": {
+        await navigator.locks.request("srs-reader-dictionary-write", () =>
+          db.transaction("rw", [db.dictionaries, db.settings], async () => {
+            const dictionaries = await db.dictionaries
+              .orderBy("order")
+              .toArray();
+            const index = dictionaries.findIndex(
+              (dictionary) => dictionary.id === request.id,
+            );
+            if (index < 0) throw new Error(t("dictionary_not_found"));
+            const target = index + (request.direction === "up" ? -1 : 1);
+            if (target < 0 || target >= dictionaries.length) return;
+            [dictionaries[index], dictionaries[target]] = [
+              dictionaries[target]!,
+              dictionaries[index]!,
+            ];
+            const currentSettings =
+              (await db.settings.get("main"))?.value || settings;
+            for (const [order, dictionary] of dictionaries.entries()) {
+              await db.dictionaries.update(dictionary.id, { order });
+              currentSettings.dictionaryPreferences[dictionary.id] = {
+                enabled: dictionary.enabled,
+                order,
+              };
+            }
+            await db.settings.put({ id: "main", value: currentSettings });
+          }),
+        );
         await notify();
         return;
       }

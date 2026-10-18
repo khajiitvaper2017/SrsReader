@@ -178,6 +178,7 @@
   "mouse_button": "Mouse button",
   "mouse_forward": "Mouse Forward",
   "move_dictionary_up": "Move dictionary up",
+  "move_dictionary_down": "Move dictionary down",
   "native_language": "Native language",
   "new": "New",
   "new_words_follow_combined_frequency_ranks_from_most": "New words follow combined frequency ranks, from most common to least common. Retention changes apply to future reviews.",

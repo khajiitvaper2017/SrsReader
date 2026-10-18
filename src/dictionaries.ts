@@ -285,7 +285,9 @@ async function importRevision(
       target,
       enabled: existing?.enabled ?? preference?.enabled ?? true,
       order:
-        existing?.order ?? preference?.order ?? (await db.dictionaries.count()),
+        existing?.order ??
+        preference?.order ??
+        ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1,
       count,
       frequencyCount,
       maxFrequency,

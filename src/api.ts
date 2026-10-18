@@ -26,8 +26,12 @@ export const requestSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("setDictionary"),
     id: z.string(),
-    enabled: z.boolean().optional(),
-    order: z.number().int().optional(),
+    enabled: z.boolean(),
+  }),
+  z.object({
+    action: z.literal("moveDictionary"),
+    id: z.string(),
+    direction: z.enum(["up", "down"]),
   }),
   z.object({ action: z.literal("deleteDictionary"), id: z.string() }),
   z.object({ action: z.literal("invalidate") }),
@@ -100,6 +104,7 @@ type Responses = {
   setSettings: Settings;
   dictionaries: Dictionary[];
   setDictionary: void;
+  moveDictionary: void;
   deleteDictionary: void;
   invalidate: void;
   scan: ScanSpan[];
