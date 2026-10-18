@@ -81,6 +81,18 @@ Choose **Master** in a lookup popup, Review, or Words to keep a word out of SRS.
 
 The toolbar lets you pause all parsing or disable the current website. Browser-protected pages, image/canvas text, PDF viewers, and editable fields are not parsed.
 
+**Settings → Reading & appearance → Only parse the reading language** is on by default. The reader skips text confidently detected as another language and still parses matching paragraphs on mixed-language pages. Short or uncertain text uses the surrounding page as a hint; uncertain pages remain readable. Turn this off to parse without language filtering. Chrome uses its Language Detector API when its model is ready, with the browser’s extension language detector as a fallback. Firefox uses its extension language detector. Detection runs locally.
+
+## Sentence translation
+
+Click **Translate sentence** in a dictionary popup to translate the sentence you opened it from. Expand **Sentence** to see the original. **Mine word**, **Save example**, and the grading buttons keep the translation with that example. You can also translate an example already saved in Words or shown on a Review answer.
+
+Choose the translation language under **Settings → Translation → Translate into**. Chrome uses its Translator API when available. If it cannot translate the pair, or you use Firefox, SrsReader uses bundled [Bergamot](https://github.com/browsermt/bergamot-translator). Its supported languages are Bulgarian, Czech, English, Estonian, French, German, Italian, Portuguese, Russian, Spanish, and Ukrainian; pairs without a direct model translate through English. Firefox’s language menu shows these languages.
+
+Translation models download on first use and are kept locally for offline use. Sentences are not sent to a translation service. Czech-to-English Bergamot model files take about 23 MB after download. Saved translations remain available without a model, retain their own language, and are included in learning exports. Editing an original sentence removes its old translation.
+
+**Settings → Spaced repetition → Show sentence translations** is on by default. Translations appear with the original on the answer side, after **Show answer**. Turning it off hides translations during review without deleting them.
+
 ## Review
 
 Open **Review** from the toolbar. Choose **Word** or **In context** to change the front of the card. **Show answer** or **Space** reveals the meanings and saved sentence. Grade with **Again** (key **1**) or **Good** (key **3**).
@@ -122,3 +134,5 @@ Export learning data before removing the extension, clearing browser storage, or
 The supplied Czech dictionary is published by [wty](https://github.com/yomidevs/wiktionary-to-yomitan) from Wiktionary/Kaikki data. Preserve its source and attribution when sharing dictionary files or definitions. Pronunciation files retain the individual licenses shown on their Wikimedia Commons pages.
 
 The offline Czech word-form table comes from [Simplemma](https://github.com/adbar/simplemma), whose sources include Wiktionary/Kaikki and Michal Měchura’s lemmatization lists. Source and license notices are included in `public/licenses/morphology.txt`.
+
+The bundled Bergamot runtime and model registry come from [browsermt/bergamot-translator](https://github.com/browsermt/bergamot-translator) and its model repository. Source and license information is included in `public/licenses/bergamot.txt`.

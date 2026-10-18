@@ -41,13 +41,12 @@ export function freshWord(word: LookupWord): Vocabulary {
   };
 }
 function addContext(word: Vocabulary, context?: ReadingContext) {
-  if (
-    context &&
-    !word.contexts.some(
-      (c) => c.sentence === context.sentence && c.start === context.start,
-    )
-  )
-    word.contexts.push(context);
+  if (!context) return;
+  const existing = word.contexts.find(
+    (c) => c.sentence === context.sentence && c.start === context.start,
+  );
+  if (!existing) word.contexts.push(context);
+  else if (context.translation) existing.translation = context.translation;
 }
 export async function mine(word: LookupWord, context?: ReadingContext) {
   return db.transaction("rw", db.vocabulary, async () => {

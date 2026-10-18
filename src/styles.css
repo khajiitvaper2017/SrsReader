@@ -1023,6 +1023,28 @@ button.master-action[aria-pressed="true"] {
   font-size: 12px;
   line-height: 1.6;
 }
+.lookup-sentence {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+.lookup-sentence details > span {
+  display: block;
+  margin: 6px 0;
+}
+.sentence-translation {
+  color: var(--muted);
+}
+.sentence-translation p {
+  margin: 6px 0;
+}
+.sentence-translation button {
+  font-size: inherit;
+}
+.translation-error {
+  color: var(--red);
+}
 .sentence-footer {
   display: flex;
   justify-content: space-between;

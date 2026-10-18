@@ -5,6 +5,7 @@ import type { ScanSpan } from "./lookup";
 import { matchesModifiers, readerKeysSchema } from "./controls";
 import { installInputPrevention } from "./input-prevention";
 import { wordHighlightCss, wordStyleStates } from "./word-styles";
+import { detectLanguage } from "./browser-ai";
 import {
   defaults,
   type Settings,
@@ -47,6 +48,7 @@ export function startReader(
   ctx.onInvalidated(removeInputPrevention);
   let scanning = false;
   let generation = 0;
+  let pageLanguage: Promise<string | null> = Promise.resolve(null);
   let pointer:
     | { clientX: number; clientY: number; target: EventTarget | null }
     | undefined;
@@ -191,6 +193,11 @@ export function startReader(
         deleteBlock(element);
         if (!text.trim()) continue;
         const version = generation;
+        if (!options.onLookup && settings.detectPageLanguage) {
+          const detected = (await detectLanguage(text)) || (await pageLanguage);
+          if (generation !== version || !active) continue;
+          if (detected && detected !== settings.language) continue;
+        }
         const block: Block = {
           text,
           parts,
@@ -303,6 +310,7 @@ export function startReader(
     popup = document.createElement("iframe");
     popup.dataset.srsReader = "";
     popup.title = "SrsReader dictionary";
+    popup.allow = "translator; language-detector";
     popup.src =
       browser.runtime.getURL("/lookup.html") +
       `?session=${encodeURIComponent(session)}`;
@@ -477,6 +485,10 @@ export function startReader(
     if (!next || !preservePopup) closePopup();
     active = next;
     if (!active) return;
+    pageLanguage =
+      !options.onLookup && settings.detectPageLanguage
+        ? detectLanguage(root.innerText)
+        : Promise.resolve(null);
     intersection = new IntersectionObserver(
       (entries) => {
         for (const entry of entries)

@@ -32,6 +32,7 @@ export default defineBackground(() => {
     "settings",
     "dictionaries",
     "scan",
+    "detectLanguage",
     "lookup",
     "createSession",
   ]);
@@ -162,6 +163,34 @@ export default defineBackground(() => {
         return;
       case "scan":
         return settings.paused ? [] : scanText(request.text, settings.language);
+      case "detectLanguage": {
+        const result = await browser.i18n.detectLanguage(request.text);
+        const top = [...result.languages].sort(
+          (a, b) => b.percentage - a.percentage,
+        )[0];
+        return result.isReliable &&
+          top &&
+          top.percentage >= 80 &&
+          top.language !== "und"
+          ? top.language.split("-")[0]!
+          : null;
+      }
+      case "saveTranslation":
+        await db.vocabulary
+          .where("id")
+          .equals(request.id)
+          .modify((word) => {
+            const context = word.contexts.find(
+              (c) =>
+                c.sentence === request.sentence && c.start === request.start,
+            );
+            if (!context) return;
+            context.translation = request.translation;
+            word.version++;
+            word.updated = Date.now();
+          });
+        await notify();
+        return;
       case "lookup":
         return (
           (await lookupMany([request.term], settings.language)).get(

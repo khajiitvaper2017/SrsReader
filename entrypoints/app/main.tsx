@@ -39,6 +39,8 @@ import "../../src/styles.css";
 import { supportedLanguages, languageName } from "../../src/languages";
 import { LookupControls } from "../../src/LookupControls";
 import { WordColors } from "../../src/WordColors";
+import { SentenceTranslation } from "../../src/SentenceTranslation";
+import { translationLanguages } from "../../src/browser-ai";
 import { wordStates, wordStateLabels } from "../../src/word-styles";
 import {
   FrequencyBrowser,
@@ -146,7 +148,7 @@ function ReviewPage({
       void rpc({ action: "preview", id: word.id })
         .then(setTimes)
         .catch((error) => setError(error.message));
-  }, [word?.id, word?.version]);
+  }, [word?.id, word?.card?.reps]);
   useEffect(() => {
     if (!queue?.waiting) return;
     const timer = setTimeout(
@@ -285,6 +287,15 @@ function ReviewPage({
                   {context && (
                     <div className="sentence-box">
                       <Sentence context={context} language={word.language} />
+                      {settings.showSentenceTranslation && (
+                        <SentenceTranslation
+                          key={`${word.id}:${example}`}
+                          context={context}
+                          language={word.language}
+                          settings={settings}
+                          wordId={word.id}
+                        />
+                      )}
                       <div className="sentence-footer">
                         {context.url.startsWith("http") ? (
                           <a
@@ -553,8 +564,14 @@ function WordsPage({ settings }: { settings: Settings }) {
                 <Meanings meanings={word.meanings} />
               )}
               {word.contexts.map((context, i) => (
-                <div className="sentence-box" key={i}>
+                <div className="sentence-box" key={`${word.id}:${i}`}>
                   <Sentence context={context} language={word.language} />
+                  <SentenceTranslation
+                    context={context}
+                    language={word.language}
+                    settings={settings}
+                    wordId={word.id}
+                  />
                   <div className="sentence-footer">
                     <span className="truncate">{context.title}</span>
                     <button
@@ -577,6 +594,10 @@ function WordsPage({ settings }: { settings: Settings }) {
                             ? {
                                 ...c,
                                 sentence,
+                                translation:
+                                  sentence === c.sentence
+                                    ? c.translation
+                                    : undefined,
                                 start,
                                 end: start + c.surface.length,
                               }
@@ -1182,6 +1203,20 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
+                  <strong>Only parse the reading language</strong>
+                  <small>Skips text detected as another language.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={settings.detectPageLanguage}
+                  onChange={(event) =>
+                    void update({ detectPageLanguage: event.target.checked })
+                  }
+                />
+              </label>
+              <label className="setting-row">
+                <span>
                   <strong>Appearance</strong>
                 </span>
                 <select
@@ -1326,6 +1361,19 @@ function SettingsPage({
                 </div>
               </label>
               <label className="setting-row">
+                <strong>Show sentence translations</strong>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={settings.showSentenceTranslation}
+                  onChange={(event) =>
+                    void update({
+                      showSentenceTranslation: event.target.checked,
+                    })
+                  }
+                />
+              </label>
+              <label className="setting-row">
                 <span>
                   <strong>Default card front</strong>
                 </span>
@@ -1347,6 +1395,33 @@ function SettingsPage({
               </div>
             </section>
           </div>
+          <section className="settings-section">
+            <div className="section-heading">
+              <h2>Translation</h2>
+            </div>
+            <label className="setting-row">
+              <strong>Translate into</strong>
+              <select
+                value={settings.translationLanguage}
+                onChange={(event) =>
+                  void update({ translationLanguage: event.target.value })
+                }
+              >
+                {translationLanguages.map((code) => (
+                  <option key={code} value={code}>
+                    {new Intl.DisplayNames(["en"], { type: "language" }).of(
+                      code,
+                    )}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="setting-footnote">
+              Translation stays on your device. Models download on first use.
+              Chrome uses its built-in translator when available; Firefox uses
+              Bergamot. Bergamot supports fewer languages.
+            </div>
+          </section>
           <section className="settings-section">
             <div className="section-heading">
               <div>

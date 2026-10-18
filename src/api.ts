@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   contextSchema,
   settingsSchema,
+  translationSchema,
   type AudioInfo,
   type Dictionary,
   type LookupResult,
@@ -29,6 +30,7 @@ export const requestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("deleteDictionary"), id: z.string() }),
   z.object({ action: z.literal("invalidate") }),
   z.object({ action: z.literal("scan"), text: z.string().max(30000) }),
+  z.object({ action: z.literal("detectLanguage"), text: z.string().max(6000) }),
   z.object({ action: z.literal("lookup"), term: selection.term }),
   z.object({ action: z.literal("createSession"), ...selection }),
   z.object({ action: z.literal("session"), id: z.string() }),
@@ -39,6 +41,13 @@ export const requestSchema = z.discriminatedUnion("action", [
     height: z.number().int().min(1).max(460),
   }),
   z.object({ action: z.literal("word"), id: z.string() }),
+  z.object({
+    action: z.literal("saveTranslation"),
+    id: z.string(),
+    sentence: z.string(),
+    start: z.number().int().nonnegative(),
+    translation: translationSchema,
+  }),
   z.object({ action: z.literal("mine"), ...selection, id: z.string() }),
   z.object({
     action: z.literal("grade"),
@@ -87,6 +96,8 @@ type Responses = {
   deleteDictionary: void;
   invalidate: void;
   scan: ScanSpan[];
+  detectLanguage: string | null;
+  saveTranslation: void;
   lookup: LookupResult;
   createSession: string;
   closeLookup: void;

@@ -16,6 +16,7 @@ import {
   Icon,
   Meanings,
   Ratings,
+  Sentence,
   useChanges,
   useSettings,
 } from "../../src/ui";
@@ -25,6 +26,7 @@ import { startReader } from "../../src/reader";
 import { FrequencyBadge } from "../../src/FrequencyBadge";
 import { wordStateLabels } from "../../src/word-styles";
 import { readerKeysSchema } from "../../src/controls";
+import { SentenceTranslation } from "../../src/SentenceTranslation";
 
 type LookupPage = {
   term: string;
@@ -71,6 +73,16 @@ function Lookup() {
     <LookupEntry
       key={pages.length}
       page={pages[pages.length - 1]!}
+      onContext={(context) =>
+        setPages((current) =>
+          current.map((page, index) =>
+            index === pages.length - 1 &&
+            page.term === pages[pages.length - 1]!.term
+              ? { ...page, context }
+              : page,
+          ),
+        )
+      }
       onLookup={(term, context, selected, scroll, openDetails) =>
         setPages((pages) => [
           ...pages.slice(0, -1),
@@ -91,6 +103,7 @@ function LookupEntry({
   page,
   onLookup,
   onBack,
+  onContext,
 }: {
   page: LookupPage;
   onLookup: (
@@ -101,6 +114,7 @@ function LookupEntry({
     openDetails: number[],
   ) => void;
   onBack?: () => void;
+  onContext: (context: ReadingContext) => void;
 }) {
   const [settings, setSettings] = useSettings("popups");
   const [result, setResult] = useState<LookupResult>();
@@ -379,6 +393,33 @@ function LookupEntry({
                 </div>
               )}
               <Meanings meanings={word.meanings} />
+              {context && (
+                <div className="lookup-sentence" data-srs-reader="">
+                  <details>
+                    <summary>Sentence</summary>
+                    <Sentence context={context} language={word.language} />
+                  </details>
+                  <SentenceTranslation
+                    key={`${context.sentence}:${context.start}`}
+                    context={{
+                      ...context,
+                      translation:
+                        context.translation ||
+                        saved?.contexts.find(
+                          (c) =>
+                            c.sentence === context.sentence &&
+                            c.start === context.start,
+                        )?.translation,
+                    }}
+                    language={word.language}
+                    settings={settings}
+                    wordId={word.id}
+                    onTranslated={(translation) =>
+                      onContext({ ...context, translation })
+                    }
+                  />
+                </div>
+              )}
             </>
           )}
         </div>

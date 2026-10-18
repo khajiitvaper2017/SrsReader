@@ -17,6 +17,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@browsermt/bergamot-translator": "^0.4.9",
     "@zip.js/zip.js": "^2.8.0",
     "dexie": "^4.0.11",
     "react": "^19.2.0",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@wxt-dev/module-react": "^1.1.3",

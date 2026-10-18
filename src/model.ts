@@ -25,6 +25,12 @@ export const settingsSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).default("system"),
   hideDictionarySources: z.boolean().default(true),
   scanPopups: z.boolean().default(true),
+  detectPageLanguage: z.boolean().default(true),
+  translationLanguage: z
+    .string()
+    .regex(/^[a-z]{2,3}$/)
+    .default("en"),
+  showSentenceTranslation: z.boolean().default(true),
   wordColorsEnabled: z.boolean().default(true),
   wordStyles: wordStylesSchema,
   front: z.enum(["word", "sentence"]).default("word"),
@@ -145,6 +151,10 @@ export type Phrase = {
   text: string;
 };
 
+export const translationSchema = z.object({
+  text: z.string().min(1).max(30000),
+  language: z.string().regex(/^[a-z]{2,3}$/),
+});
 export const contextSchema = z
   .object({
     sentence: z.string(),
@@ -154,6 +164,7 @@ export const contextSchema = z
     url: z.string(),
     title: z.string(),
     mined: z.number().finite(),
+    translation: translationSchema.optional(),
   })
   .refine(
     (c) =>
