@@ -44,9 +44,9 @@ Open **Settings → Dictionaries → Frequency dictionaries** to browse [Leipzig
 
 You can also import a frequency ZIP with **Choose ZIP**. Select the correct **Language** first if the ZIP has no language metadata. A frequency dictionary supplies ranks, not definitions; keep a term dictionary installed for reading.
 
-New cards use the first enabled frequency dictionary for the selected language. Use **↑** to change which list comes first. The base word’s numeric rank determines its position, from most common to least common. Already introduced cards keep their review schedule.
+New cards use the harmonic mean of the base word’s ranks across all enabled frequency dictionaries for the selected language, from most common to least common. Dictionaries without a matching rank are left out. Dictionary order does not affect this combined rank. Already introduced cards keep their review schedule.
 
-Under **Settings → Spaced repetition → Words without frequency**, choose **Introduce last** to place unranked words after ranked words, or **Assign random frequency** to mix them into the dictionary’s rank range. Random positions stay stable between reviews and exports. Without an enabled frequency dictionary, these options use the order words were saved or a stable random order, respectively.
+Under **Settings → Spaced repetition → Words without frequency**, choose **Introduce last** to place unranked words after ranked words, or **Assign random frequency** to mix them into the enabled dictionaries’ rank range. Random positions stay stable between reviews and exports. Without an enabled frequency dictionary, these options use the order words were saved or a stable random order, respectively.
 
 ## Read and save words
 
@@ -56,7 +56,7 @@ Definitions are parsed too. Use the same lookup control on a word in a definitio
 
 Under **Settings → Reading & appearance → Word colors**, choose **Off**, **Text**, or **Background** and a color for each state. New words are words you have not saved; Saved words have not been reviewed yet. Learning includes relearning, Reviewing means the next review is in the future, and Due means a review is ready. Mastered words are green by default; suspended words have their own style. Unparsed covers words without a dictionary match. The same styles apply on websites and inside definitions. **Color words** switches all colors off without changing parsing or your saved styles; **Reset colors** restores the defaults.
 
-The popup’s **Freq.** badge combines ranks from enabled frequency dictionaries for the word’s language. Hover for each dictionary’s rank, or click to expand the list. With several dictionaries, the badge shows their harmonic mean, rounded to a whole rank. Missing ranks are left out; without a matching rank, no badge appears. New-card ordering still follows the first enabled frequency dictionary.
+The popup’s **Freq.** badge combines ranks from enabled frequency dictionaries for the word’s language. Hover for each dictionary’s rank, or click to expand the list. With several dictionaries, the badge shows their harmonic mean, rounded to a whole rank. Missing ranks are left out; without a matching rank, no badge appears. New-card ordering uses the same combined rank.
 
 **Settings → Reading & appearance → Hide dictionary source links** hides links such as Wiktionary and Kaikki in lookup popups. It is on by default; turn it off to show them.
 

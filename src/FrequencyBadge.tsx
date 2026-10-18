@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { wordFrequencies } from "./frequency";
+import { harmonicRank, wordFrequencies } from "./frequency";
 import type { LookupWord } from "./model";
 import { useChanges } from "./ui";
 
@@ -22,11 +22,7 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
     };
   }, [word.lemma, word.reading, word.language, revision]);
   if (!rows.length) return null;
-  const rank = rows.some((row) => row.rank === 0)
-    ? 0
-    : Math.round(
-        rows.length / rows.reduce((sum, row) => sum + 1 / row.rank, 0),
-      );
+  const rank = Math.round(harmonicRank(rows.map((row) => row.rank)));
   const details = rows
     .map((row) => `${row.title}: ${row.rank.toLocaleString()}`)
     .join("\n");

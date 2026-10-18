@@ -1342,9 +1342,8 @@ function SettingsPage({
                 </select>
               </label>
               <div className="setting-footnote">
-                New words follow the first enabled frequency dictionary, from
-                most common to least common. Retention changes apply to future
-                reviews.
+                New words follow combined frequency ranks, from most common to
+                least common. Retention changes apply to future reviews.
               </div>
             </section>
           </div>

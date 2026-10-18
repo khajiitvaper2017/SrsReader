@@ -8,6 +8,13 @@ import {
   type Vocabulary,
 } from "./model";
 
+export function harmonicRank(ranks: number[]) {
+  if (!ranks.length) return Infinity;
+  return ranks.includes(0)
+    ? 0
+    : ranks.length / ranks.reduce((sum, rank) => sum + 1 / rank, 0);
+}
+
 function frequencyRank(rows: Frequency[], lemma: string, reading: string) {
   const matching = rows.filter(
     (row) => row.reading === null || row.reading === normalize(reading),
@@ -52,16 +59,21 @@ export async function wordFrequencies(
 }
 
 export async function orderNewWords(words: Vocabulary[], settings: Settings) {
-  const dictionary = (await db.dictionaries.orderBy("order").toArray()).find(
+  const dictionaries = (
+    await db.dictionaries.orderBy("order").toArray()
+  ).filter(
     (d) =>
       d.enabled && d.language === settings.language && d.frequencyCount > 0,
   );
-  const rows = dictionary
+  const keys = [
+    ...new Set(words.map((word) => folded(word.lemma, word.language))),
+  ];
+  const rows = dictionaries.length
     ? await db.frequencies
         .where("[revisionId+folded]")
         .anyOf(
-          [...new Set(words.map((w) => folded(w.lemma, w.language)))].map(
-            (key) => [dictionary.revisionId, key],
+          dictionaries.flatMap((dictionary) =>
+            keys.map((key) => [dictionary.revisionId, key]),
           ),
         )
         .toArray()
@@ -73,12 +85,24 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
     byKey.set(row.folded, group);
   }
   const ranks = new Map<string, number>();
+  const maxFrequency = dictionaries.length
+    ? Math.max(...dictionaries.map((dictionary) => dictionary.maxFrequency))
+    : words.length;
   await Promise.all(
     words.map(async (word) => {
-      const rank = frequencyRank(
-        byKey.get(folded(word.lemma, word.language)) || [],
-        word.lemma,
-        word.reading,
+      const matching = byKey.get(folded(word.lemma, word.language)) || [];
+      const rank = harmonicRank(
+        dictionaries
+          .map((dictionary) =>
+            frequencyRank(
+              matching.filter(
+                (row) => row.revisionId === dictionary.revisionId,
+              ),
+              word.lemma,
+              word.reading,
+            ),
+          )
+          .filter(Number.isFinite),
       );
       if (Number.isFinite(rank)) ranks.set(word.id, rank);
       else if (settings.missingFrequency === "random") {
@@ -91,9 +115,7 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
         ).getUint32(0);
         ranks.set(
           word.id,
-          1 +
-            (hash / 2 ** 32) *
-              Math.max(0, (dictionary?.maxFrequency ?? words.length) - 1),
+          1 + (hash / 2 ** 32) * Math.max(0, maxFrequency - 1),
         );
       }
     }),
