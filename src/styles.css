@@ -2,6 +2,9 @@
 * {
   box-sizing: border-box;
 }
+html:has(.app-shell) {
+  scrollbar-gutter: stable;
+}
 body {
   margin: 0;
   font:
@@ -117,6 +120,24 @@ p {
 }
 svg {
   flex-shrink: 0;
+}
+.lucide {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.7;
+}
+.spin {
+  animation: icon-spin 1s linear infinite;
+}
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
 }
 input,
 select,
@@ -606,6 +627,11 @@ button.master-action[aria-pressed="true"] {
   background: var(--accent-soft);
 }
 .word-detail {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   padding: 12px;
 }
 .word-detail > .row:first-child {
@@ -622,7 +648,7 @@ button.master-action[aria-pressed="true"] {
   border-top: 1px solid var(--line);
   padding-top: 6px;
 }
-.detail-actions button {
+.detail-actions button:not(.icon-button) {
   font-size: 11px;
   padding: 4px 6px;
 }
@@ -841,7 +867,7 @@ button.master-action[aria-pressed="true"] {
   align-items: center;
   flex-wrap: wrap;
 }
-.dictionary-actions button {
+.dictionary-actions button:not(.icon-button) {
   font-size: 11px;
   min-height: 26px;
   padding: 3px 6px;
@@ -1130,8 +1156,10 @@ button.master-action[aria-pressed="true"] {
   color: var(--muted);
   margin-top: 5px;
 }
-.lookup-shell.hide-dictionary-sources [data-sc-content="backlink"],
-.lookup-shell.hide-dictionary-sources .attribution:has(a) {
+.hide-dictionary-sources [data-sc-content="backlink"],
+.hide-dictionary-sources .attribution:has(a),
+.hide-dictionary-sources .example-footer a,
+.hide-dictionary-sources .example-footer:not(:has(button)) {
   display: none;
 }
 .attribution a {
@@ -1152,6 +1180,11 @@ button.master-action[aria-pressed="true"] {
   border-top: 1px solid var(--line);
   font-size: 0.875rem;
 }
+.example-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .word-examples {
   margin-top: 10px;
   border-top: 1px solid var(--line);
@@ -1171,6 +1204,7 @@ button.master-action[aria-pressed="true"] {
   color: inherit;
 }
 .example-footer button {
+  margin-inline-start: auto;
   font-size: inherit;
   padding: 0;
 }
@@ -1350,6 +1384,7 @@ button.master-action[aria-pressed="true"] {
     grid-template-columns: 1fr;
   }
   .word-detail {
+    position: static;
     order: -1;
   }
   .app-header {
@@ -1366,6 +1401,9 @@ button.master-action[aria-pressed="true"] {
   }
 }
 @media (max-width: 400px) {
+  .app-header nav a > .lucide {
+    display: none;
+  }
   .app-header {
     padding: 0 10px;
     gap: 6px;

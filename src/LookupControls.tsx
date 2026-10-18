@@ -1,3 +1,4 @@
+import { Trash2, Keyboard, X } from "lucide-react";
 import { t } from "./i18n";
 import { useEffect, useState } from "react";
 import {
@@ -115,7 +116,8 @@ export function LookupControls({
         <div className="binding-row" key={bindingKey(binding)}>
           <span>{bindingLabel(binding)}</span>
           <button
-            className="quiet"
+            className="quiet icon-button"
+            title={t("remove_2", { value1: bindingLabel(binding) })}
             aria-label={t("remove_2", { value1: bindingLabel(binding) })}
             onClick={() =>
               onChange(
@@ -123,7 +125,7 @@ export function LookupControls({
               )
             }
           >
-            {t("remove")}{" "}
+            <Trash2 aria-hidden="true" />
           </button>
         </div>
       ))}
@@ -139,15 +141,17 @@ export function LookupControls({
           <option value="hover">{t("hold_key_hover")}</option>
         </select>
         <button disabled={recording} onClick={() => setRecording(true)}>
-          {t("record_binding")}{" "}
+          <Keyboard aria-hidden="true" /> {t("record_binding")}
         </button>
         {recording && (
           <button
-            className="quiet"
+            title={t("cancel")}
+            aria-label={t("cancel")}
+            className="quiet icon-button"
             data-binding-cancel
             onClick={() => setRecording(false)}
           >
-            {t("cancel")}{" "}
+            <X aria-hidden="true" />
           </button>
         )}
       </div>

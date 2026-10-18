@@ -40,6 +40,7 @@ export const settingsSchema = z
     wordColorsEnabled: z.boolean().default(true),
     wordStyles: wordStylesSchema,
     front: z.enum(["word", "sentence"]).default("word"),
+    matureIntervalDays: z.number().int().min(1).default(28),
     retention: z.number().min(0.7).max(0.99).default(0.9),
     onlyAgainGood: z.boolean().default(true),
     newLimit: z.number().int().min(0).max(10000).default(20),
@@ -261,14 +262,16 @@ export const audioInfoSchema = z.object({
 });
 export type AudioInfo = z.infer<typeof audioInfoSchema>;
 export type AudioRecord = AudioInfo & { blob: Blob };
-export function stateOf(word?: Vocabulary): WordState {
+export function stateOf(
+  word: Vocabulary | undefined,
+  matureIntervalDays: number,
+): WordState {
   if (!word) return "unknown";
   if (word.known) return "known";
   if (word.suspended) return "suspended";
   if (!word.card || word.card.state === 0) return "new";
   if (word.card.due <= Date.now()) return "due";
-  if (word.card.state === 2) return "review";
-  return "learning";
+  return word.card.scheduled_days >= matureIntervalDays ? "review" : "learning";
 }
 
 export function httpsUrl(value: string): string {

@@ -15,8 +15,8 @@ export const wordStyleStates = [...wordStates, "unparsed"] as const;
 export const wordStateLabels = {
   unknown: "new",
   new: "saved",
-  learning: "learning",
-  review: "reviewing",
+  learning: "young",
+  review: "mature",
   due: "due",
   known: "mastered",
   suspended: "suspended",

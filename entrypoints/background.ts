@@ -44,7 +44,13 @@ export default defineBackground(() => {
     const message = {
       event: "changed",
       word: wordId
-        ? { id: wordId, state: stateOf(await db.vocabulary.get(wordId)) }
+        ? {
+            id: wordId,
+            state: stateOf(
+              await db.vocabulary.get(wordId),
+              (await getSettings()).matureIntervalDays,
+            ),
+          }
         : undefined,
     };
     void browser.runtime.sendMessage(message).catch(() => {});
@@ -201,7 +207,11 @@ export default defineBackground(() => {
       case "scan":
         return settings.paused
           ? []
-          : scanText(request.text, settings.studyLanguage);
+          : scanText(
+              request.text,
+              settings.studyLanguage,
+              settings.matureIntervalDays,
+            );
       case "detectLanguage": {
         const result = await browser.i18n.detectLanguage(request.text);
         const top = [...result.languages].sort(
@@ -382,7 +392,9 @@ export default defineBackground(() => {
         return {
           total: words.length,
           known: words.filter((w) => w.known).length,
-          due: words.filter((w) => stateOf(w) === "due").length,
+          due: words.filter(
+            (w) => stateOf(w, settings.matureIntervalDays) === "due",
+          ).length,
           today: await db.reviews
             .where("time")
             .aboveOrEqual(midnight.getTime())

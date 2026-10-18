@@ -1,3 +1,4 @@
+import { Check, Plus, X, ArrowLeft, Play, Undo2 } from "lucide-react";
 import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -14,7 +15,6 @@ import {
   AudioButton,
   Empty,
   ErrorBox,
-  Icon,
   Meanings,
   Ratings,
   useChanges,
@@ -307,10 +307,11 @@ function LookupEntry({
     >
       <button
         className="quiet lookup-close"
+        title={t("close_dictionary")}
         aria-label={t("close_dictionary")}
         onClick={() => void rpc({ action: "closeLookup" })}
       >
-        <Icon name="close" />
+        <X aria-hidden="true" />
       </button>
       <main className="lookup-content">
         <div className="lookup-body">
@@ -319,9 +320,10 @@ function LookupEntry({
               className="quiet lookup-back"
               onClick={onBack}
               disabled={busy}
+              title={t("back_to_previous_word")}
               aria-label={t("back_to_previous_word")}
             >
-              {t("back")}{" "}
+              <ArrowLeft aria-hidden="true" />
             </button>
           )}
           <ErrorBox error={error} />
@@ -363,8 +365,14 @@ function LookupEntry({
               <div className="word-heading">
                 <div>
                   {saved && (
-                    <span className={`state state-${stateOf(saved)}`}>
-                      {t(wordStateLabels[stateOf(saved)])}
+                    <span
+                      className={`state state-${stateOf(saved, settings.matureIntervalDays)}`}
+                    >
+                      {t(
+                        wordStateLabels[
+                          stateOf(saved, settings.matureIntervalDays)
+                        ],
+                      )}
                     </span>
                   )}
                   <h1 lang={word.language}>
@@ -447,7 +455,11 @@ function LookupEntry({
                 disabled={busy}
                 onClick={() => void act()}
               >
-                <Icon name={saved?.card || saved?.known ? "check" : "plus"} />
+                {saved?.card || saved?.known ? (
+                  <Check aria-hidden="true" />
+                ) : (
+                  <Plus aria-hidden="true" />
+                )}
                 {saved?.card || saved?.known
                   ? t("save_example")
                   : t("mine_word")}
@@ -458,7 +470,7 @@ function LookupEntry({
                 disabled={busy}
                 onClick={() => void toggleMastery()}
               >
-                <Icon name="check" />
+                <Check aria-hidden="true" />
                 {saved?.known ? t("unmaster") : t("master")}
               </button>
             </div>
@@ -473,7 +485,7 @@ function LookupEntry({
                   }).then(reload)
                 }
               >
-                {t("resume")}{" "}
+                <Play aria-hidden="true" /> {t("resume")}
               </button>
             ) : (
               <>
@@ -491,7 +503,9 @@ function LookupEntry({
               {notice}
               {lastReview && (
                 <button
-                  className="link"
+                  title={t("undo")}
+                  aria-label={t("undo")}
+                  className="quiet icon-button"
                   disabled={busy}
                   onClick={() =>
                     void rpc({ action: "undo", id: lastReview })
@@ -503,7 +517,7 @@ function LookupEntry({
                       .catch((error) => setError(error.message))
                   }
                 >
-                  {t("undo")}{" "}
+                  <Undo2 aria-hidden="true" />
                 </button>
               )}
             </div>

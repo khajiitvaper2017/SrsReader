@@ -1,3 +1,4 @@
+import { Volume2 } from "lucide-react";
 import { t, i18n, setInterfaceLanguage, number } from "./i18n";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState, type ReactNode } from "react";
@@ -27,44 +28,6 @@ export function Logo({ small = false }: { small?: boolean }) {
         Srs<span className="muted">Reader</span>
       </span>
     </span>
-  );
-}
-export function Icon({
-  name,
-}: {
-  name: "sound" | "plus" | "arrow" | "check" | "close" | "book";
-}) {
-  const paths = {
-    sound: (
-      <>
-        <path d="M11 5 6 9H3v6h3l5 4Z" />
-        <path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" />
-      </>
-    ),
-    plus: <path d="M12 5v14M5 12h14" />,
-    arrow: <path d="m9 5 7 7-7 7" />,
-    check: <path d="m5 12 4 4L19 6" />,
-    close: <path d="m6 6 12 12M6 18 18 6" />,
-    book: (
-      <>
-        <path d="M12 6v15M3 3c4 0 7 0 9 3 2-3 5-3 9-3v15c-4 0-7 0-9 3-2-3-5-3-9-3Z" />
-      </>
-    ),
-  };
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {paths[name]}
-    </svg>
   );
 }
 export function ErrorBox({ error }: { error: string }) {
@@ -585,7 +548,7 @@ export function AudioButton({
         disabled={busy}
         onClick={() => void play()}
       >
-        <Icon name="sound" />
+        <Volume2 aria-hidden="true" />
         {sentence && t("sentence")}
       </button>
       {attribution && (

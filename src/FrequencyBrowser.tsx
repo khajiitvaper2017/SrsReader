@@ -1,3 +1,4 @@
+import { Download, LoaderCircle } from "lucide-react";
 import { t, i18n, downloadSize } from "./i18n";
 import { languageCode, languageName, supportedLanguages } from "./languages";
 import { useState } from "react";
@@ -156,15 +157,25 @@ export function FrequencyBrowser({
               </small>
             </div>
             <button
+              className="icon-button"
               disabled={busy}
               onClick={() => void install(entry)}
+              title={t("import_2", {
+                language: languageName(entry.code),
+                region: entry.region,
+                source: entry.source,
+              }).replace(/\s+/g, " ")}
               aria-label={t("import_2", {
                 language: languageName(entry.code),
                 region: entry.region,
                 source: entry.source,
               }).replace(/\s+/g, " ")}
             >
-              {installing === entry.file ? t("importing") : t("import")}
+              {installing === entry.file ? (
+                <LoaderCircle className="spin" aria-hidden="true" />
+              ) : (
+                <Download aria-hidden="true" />
+              )}
             </button>
           </div>
         ))}

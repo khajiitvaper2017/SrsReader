@@ -18,7 +18,9 @@ const topics = [
 export default function DocsPage({ topic }: { topic: string }) {
   const selected = topics.find((item) => item.id === topic) || topics[0]!;
   const language = i18n.resolvedLanguage === "uk" ? "uk" : "en";
-  useEffect(() => window.scrollTo(0, 0), [selected.id]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selected.id]);
   return (
     <div className="docs-layout">
       <nav className="docs-topics" aria-label={t("docs_topics")}>

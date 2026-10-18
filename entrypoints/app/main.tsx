@@ -1,4 +1,24 @@
 import {
+  Check,
+  X,
+  ArrowUp,
+  ArrowDown,
+  Pencil,
+  RefreshCw,
+  Download,
+  Upload,
+  Trash2,
+  Undo2,
+  Pause,
+  Play,
+  Eye,
+  Save,
+  BookOpen,
+  BookMarked,
+  Settings as SettingsIcon,
+  SlidersHorizontal,
+} from "lucide-react";
+import {
   t,
   i18n,
   number,
@@ -31,7 +51,6 @@ import {
   AudioButton,
   Empty,
   ErrorBox,
-  Icon,
   Logo,
   Meanings,
   Ratings,
@@ -51,6 +70,7 @@ import {
   systemLanguage,
 } from "../../src/languages";
 import { LookupControls } from "../../src/LookupControls";
+import { WordExamples } from "../../src/WordExamples";
 import { WordColors } from "../../src/WordColors";
 import { SentenceTranslation } from "../../src/SentenceTranslation";
 import { LanguageSelect } from "../../src/LanguageSelect";
@@ -90,7 +110,9 @@ function App() {
   const setup = inSetup && !docs;
   if (!ready) return null;
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell ${settings.hideDictionarySources ? "hide-dictionary-sources" : ""}`}
+    >
       <main className="app-main">
         <header className="app-header">
           <a href="#review" className="brand-link">
@@ -114,6 +136,17 @@ function App() {
                 href={`#${id}`}
                 key={id}
               >
+                {id === "review" ? (
+                  <BookOpen aria-hidden="true" />
+                ) : id === "words" ? (
+                  <BookMarked aria-hidden="true" />
+                ) : id === "settings" ? (
+                  <SettingsIcon aria-hidden="true" />
+                ) : id === "docs" ? (
+                  <BookOpen aria-hidden="true" />
+                ) : (
+                  <SlidersHorizontal aria-hidden="true" />
+                )}
                 {label}
                 {id === "review" && stats.due > 0 && (
                   <span className="nav-count">{stats.due}</span>
@@ -377,7 +410,7 @@ function ReviewPage({
               ) : (
                 <div className="reveal-area">
                   <button className="primary reveal" onClick={reveal}>
-                    {t("show_answer")}{" "}
+                    <Eye aria-hidden="true" /> {t("show_answer")}{" "}
                     <span className="keycap">{t("space")}</span>
                   </button>
                 </div>
@@ -404,18 +437,20 @@ function ReviewPage({
               </p>
               {!stats.total && (
                 <a className="button primary" href="#settings">
-                  {t("import_dictionary")}{" "}
+                  <Upload aria-hidden="true" /> {t("import_dictionary")}
                 </a>
               )}
             </Empty>
           )}
           <footer className="review-bottom">
             <button
-              className="quiet"
+              title={t("undo_last_review")}
+              aria-label={t("undo_last_review")}
+              className="quiet icon-button"
               disabled={!last || busy}
               onClick={() => void undo()}
             >
-              {t("undo_last_review")}{" "}
+              <Undo2 aria-hidden="true" />
             </button>
             {word && (
               <button
@@ -432,7 +467,7 @@ function ReviewPage({
                     .catch((error) => setError(error.message))
                 }
               >
-                <Icon name="check" /> {t("master")}{" "}
+                <Check aria-hidden="true" /> {t("master")}{" "}
               </button>
             )}
             {word && (
@@ -445,7 +480,7 @@ function ReviewPage({
                     .catch((error) => setError(error.message))
                 }
               >
-                {t("suspend_word")}{" "}
+                <Pause aria-hidden="true" /> {t("suspend_word")}{" "}
               </button>
             )}
           </footer>
@@ -463,6 +498,11 @@ function WordsPage({ settings }: { settings: Settings }) {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
   const [definition, setDefinition] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    detailRef.current?.scrollTo(0, 0);
+    detailRef.current?.scrollIntoView({ block: "nearest" });
+  }, [selected]);
   const load = useCallback(() => {
     void rpc({ action: "words", query })
       .then(setWords)
@@ -472,7 +512,8 @@ function WordsPage({ settings }: { settings: Settings }) {
   useChanges(load);
   const word = words.find((w) => w.id === selected);
   const visible = words.filter(
-    (w) => filter === "all" || stateOf(w) === filter,
+    (w) =>
+      filter === "all" || stateOf(w, settings.matureIntervalDays) === filter,
   );
   async function action(task: () => Promise<unknown>) {
     try {
@@ -540,21 +581,24 @@ function WordsPage({ settings }: { settings: Settings }) {
                       t("open_to_see_definitions")}
                   </span>
                 </div>
-                <span className={`state state-${stateOf(w)}`}>
-                  {t(wordStateLabels[stateOf(w)])}
+                <span
+                  className={`state state-${stateOf(w, settings.matureIntervalDays)}`}
+                >
+                  {t(wordStateLabels[stateOf(w, settings.matureIntervalDays)])}
                 </span>
               </button>
             ))}
           </section>
           {word && (
-            <section className="word-detail panel">
+            <section className="word-detail panel" ref={detailRef}>
               <div className="row between">
                 <button
                   className="icon-button"
+                  title={t("close_word_details")}
                   aria-label={t("close_word_details")}
                   onClick={() => setSelected("")}
                 >
-                  <Icon name="close" />
+                  <X aria-hidden="true" />
                 </button>
               </div>
               <div className="word-heading">
@@ -596,10 +640,15 @@ function WordsPage({ settings }: { settings: Settings }) {
                         })
                       }
                     >
-                      {t("save_definition")}{" "}
+                      <Save aria-hidden="true" /> {t("save_definition")}
                     </button>
-                    <button className="quiet" onClick={() => setEditing(false)}>
-                      {t("cancel")}{" "}
+                    <button
+                      className="quiet icon-button"
+                      title={t("cancel")}
+                      aria-label={t("cancel")}
+                      onClick={() => setEditing(false)}
+                    >
+                      <X aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -610,6 +659,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                   settings={settings}
                 />
               )}
+              <WordExamples key={word.id} word={word} settings={settings} />
               {word.contexts.map((context, i) => (
                 <div className="sentence-box" key={`${word.id}:${i}`}>
                   <Sentence context={context} language={word.language} />
@@ -622,7 +672,9 @@ function WordsPage({ settings }: { settings: Settings }) {
                   <div className="sentence-footer">
                     <span className="truncate">{context.title}</span>
                     <button
-                      className="link"
+                      title={t("edit_sentence")}
+                      aria-label={t("edit_sentence")}
+                      className="quiet icon-button"
                       onClick={() => {
                         const sentence = prompt(
                           t(
@@ -659,7 +711,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                         );
                       }}
                     >
-                      {t("edit_sentence")}{" "}
+                      <Pencil aria-hidden="true" />
                     </button>
                     <AudioButton
                       word={word}
@@ -688,23 +740,27 @@ function WordsPage({ settings }: { settings: Settings }) {
               )}
               <div className="detail-actions">
                 <button
-                  className="quiet"
+                  title={t("edit_definition")}
+                  aria-label={t("edit_definition")}
+                  className="quiet icon-button"
                   onClick={() => {
                     setDefinition(shortDefinition(word));
                     setEditing(true);
                   }}
                 >
-                  {t("edit_definition")}{" "}
+                  <Pencil aria-hidden="true" />
                 </button>
                 <button
-                  className="quiet"
+                  title={t("refresh_from_dictionary")}
+                  aria-label={t("refresh_from_dictionary")}
+                  className="quiet icon-button"
                   onClick={() =>
                     void action(() =>
                       rpc({ action: "refreshWord", id: word.id }),
                     )
                   }
                 >
-                  {t("refresh_from_dictionary")}{" "}
+                  <RefreshCw aria-hidden="true" />
                 </button>
                 <button
                   className="quiet master-action"
@@ -720,7 +776,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                     )
                   }
                 >
-                  <Icon name="check" />
+                  <Check aria-hidden="true" />
                   {word.known ? t("unmaster") : t("master")}
                 </button>
                 {!word.known && (
@@ -736,11 +792,18 @@ function WordsPage({ settings }: { settings: Settings }) {
                       )
                     }
                   >
+                    {word.suspended ? (
+                      <Play aria-hidden="true" />
+                    ) : (
+                      <Pause aria-hidden="true" />
+                    )}{" "}
                     {word.suspended ? t("resume") : t("suspend")}
                   </button>
                 )}
                 <button
-                  className="danger quiet"
+                  title={t("delete_word")}
+                  aria-label={t("delete_word")}
+                  className="danger quiet icon-button"
                   onClick={() => {
                     if (
                       confirm(
@@ -755,7 +818,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                       });
                   }}
                 >
-                  {t("delete_word")}{" "}
+                  <Trash2 aria-hidden="true" />
                 </button>
               </div>
             </section>
@@ -1135,6 +1198,7 @@ function SettingsPage({
             disabled={busy || !morphologyLanguage(settings.studyLanguage)}
             onClick={() => void task(() => installLanguageData("morphology"))}
           >
+            <Download aria-hidden="true" />{" "}
             {morphology.count ? t("download_again") : t("download_word_forms")}
           </button>
         </div>
@@ -1171,6 +1235,7 @@ function SettingsPage({
               }
               onClick={() => void task(() => installLanguageData("examples"))}
             >
+              <Download aria-hidden="true" />
               {exampleCorpus.installed
                 ? t("update_examples")
                 : t("download_examples")}
@@ -1178,7 +1243,7 @@ function SettingsPage({
             <label
               className={`button ${busy || !settings.studyLanguage ? "disabled" : ""}`}
             >
-              {t("import_tsv")}{" "}
+              <Upload aria-hidden="true" /> {t("import_tsv")}{" "}
               <input
                 type="file"
                 accept=".tsv,.bz2"
@@ -1235,6 +1300,7 @@ function SettingsPage({
             disabled={busy}
             onClick={() => fileInput.current?.click()}
           >
+            <Upload aria-hidden="true" />{" "}
             {busy ? t("working") : t("choose_zip")}
           </button>
           <input
@@ -1323,7 +1389,7 @@ function SettingsPage({
               </label>
               <div className="dictionary-actions">
                 <button
-                  className="quiet"
+                  className="quiet icon-button"
                   disabled={busy || i === 0}
                   title={t("move_dictionary_up")}
                   aria-label={t("move_dictionary_up")}
@@ -1338,10 +1404,10 @@ function SettingsPage({
                     })
                   }
                 >
-                  ↑
+                  <ArrowUp aria-hidden="true" />
                 </button>
                 <button
-                  className="quiet"
+                  className="quiet icon-button"
                   disabled={busy || i === dictionaries.length - 1}
                   title={t("move_dictionary_down")}
                   aria-label={t("move_dictionary_down")}
@@ -1356,11 +1422,13 @@ function SettingsPage({
                     })
                   }
                 >
-                  ↓
+                  <ArrowDown aria-hidden="true" />
                 </button>
                 {dictionary.index.isUpdatable && (
                   <button
-                    className="quiet"
+                    title={t("check_updates")}
+                    aria-label={t("check_updates")}
+                    className="quiet icon-button"
                     disabled={busy}
                     onClick={() =>
                       void task(async () => {
@@ -1375,7 +1443,7 @@ function SettingsPage({
                       })
                     }
                   >
-                    {t("check_updates")}{" "}
+                    <RefreshCw aria-hidden="true" />
                   </button>
                 )}
                 {updates[dictionary.id] && (
@@ -1409,13 +1477,16 @@ function SettingsPage({
                       })
                     }
                   >
+                    <Download aria-hidden="true" />{" "}
                     {t("update_dictionary_revision", {
                       revision: updates[dictionary.id]!.revision,
                     })}
                   </button>
                 )}
                 <button
-                  className="quiet"
+                  title={t("export_zip")}
+                  aria-label={t("export_zip")}
+                  className="quiet icon-button"
                   disabled={busy}
                   onClick={() =>
                     void task(async () => {
@@ -1428,10 +1499,12 @@ function SettingsPage({
                     })
                   }
                 >
-                  {t("export_zip")}{" "}
+                  <Download aria-hidden="true" />
                 </button>
                 <button
-                  className="quiet danger"
+                  title={t("remove")}
+                  aria-label={t("remove")}
+                  className="quiet danger icon-button"
                   disabled={busy}
                   onClick={() => {
                     if (
@@ -1450,7 +1523,7 @@ function SettingsPage({
                       });
                   }}
                 >
-                  {t("remove")}{" "}
+                  <Trash2 aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -1536,7 +1609,7 @@ function SettingsPage({
             }
             onClick={() => void finishSetup()}
           >
-            {t("finish_setup")}{" "}
+            <Check aria-hidden="true" /> {t("finish_setup")}{" "}
           </button>
         </div>
       ) : (
@@ -1701,6 +1774,26 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
+                  <strong>{t("mature_interval_days")}</strong>
+                  <small>{t("mature_interval_help")}</small>
+                </span>
+                <div className="input-suffix">
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={settings.matureIntervalDays}
+                    onChange={(event) => {
+                      if (event.target.value !== "")
+                        void update({
+                          matureIntervalDays: Number(event.target.value),
+                        });
+                    }}
+                  />
+                </div>
+              </label>
+              <label className="setting-row">
+                <span>
                   <strong>{t("desired_retention")}</strong>
                   <small>{t("70_99_higher_values_mean_more_reviews")}</small>
                 </span>
@@ -1843,10 +1936,10 @@ function SettingsPage({
                     disabled={busy}
                     onClick={() => void task(exportSettings)}
                   >
-                    {t("export_json")}{" "}
+                    <Download aria-hidden="true" /> {t("export_json")}{" "}
                   </button>
                   <label className={`button ${busy ? "disabled" : ""}`}>
-                    {t("import_json")}{" "}
+                    <Upload aria-hidden="true" /> {t("import_json")}{" "}
                     <input
                       type="file"
                       accept=".json"
@@ -1868,10 +1961,10 @@ function SettingsPage({
                     disabled={busy}
                     onClick={() => void task(exportLearning)}
                   >
-                    {t("export_zip")}{" "}
+                    <Download aria-hidden="true" /> {t("export_zip")}{" "}
                   </button>
                   <label className={`button ${busy ? "disabled" : ""}`}>
-                    {t("import_zip")}{" "}
+                    <Upload aria-hidden="true" /> {t("import_zip")}{" "}
                     <input
                       type="file"
                       accept=".zip"

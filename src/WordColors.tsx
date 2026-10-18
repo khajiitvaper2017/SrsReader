@@ -1,3 +1,4 @@
+import { RotateCcw } from "lucide-react";
 import { t } from "./i18n";
 import { defaults, type Settings } from "./model";
 import { wordStyleStates, wordStateLabels } from "./word-styles";
@@ -77,7 +78,7 @@ export function WordColors({
         className="quiet"
         onClick={() => onChange({ wordStyles: defaults.wordStyles })}
       >
-        {t("reset_colors")}{" "}
+        <RotateCcw aria-hidden="true" /> {t("reset_colors")}
       </button>
     </details>
   );

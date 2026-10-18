@@ -1,3 +1,4 @@
+import { Download, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { t, i18n, downloadSize } from "./i18n";
 import { languageCode, languageName } from "./languages";
@@ -211,15 +212,21 @@ export function WiktionaryBrowser({
                   </small>
                 </div>
                 <button
+                  className="icon-button"
                   disabled={busy}
                   onClick={() => void install(entry)}
+                  title={t("import_dictionary_named", {
+                    title: wiktionaryName(entry),
+                  })}
                   aria-label={t("import_dictionary_named", {
                     title: wiktionaryName(entry),
                   })}
                 >
-                  {installing === wiktionaryName(entry)
-                    ? t("importing")
-                    : t("import")}
+                  {installing === wiktionaryName(entry) ? (
+                    <LoaderCircle className="spin" aria-hidden="true" />
+                  ) : (
+                    <Download aria-hidden="true" />
+                  )}
                 </button>
               </div>
             ))}

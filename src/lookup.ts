@@ -208,6 +208,7 @@ const escapeRegex = (text: string) =>
 export async function scanText(
   text: string,
   language: string,
+  matureIntervalDays: number,
 ): Promise<ScanSpan[]> {
   const dictionaries = await activeDictionaries(language);
   if (!dictionaries.length) return [];
@@ -265,7 +266,7 @@ export async function scanText(
     if (candidate.start < end) continue;
     const words = matches.get(normalize(candidate.term))?.words || [];
     if (!words.length) continue;
-    const state = stateOf(vocabulary.get(words[0]!.id));
+    const state = stateOf(vocabulary.get(words[0]!.id), matureIntervalDays);
     spans.push({ ...candidate, ids: words.map((w) => w.id), state });
     end = candidate.end;
   }

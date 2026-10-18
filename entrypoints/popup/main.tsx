@@ -1,3 +1,10 @@
+import {
+  Settings,
+  BookMarked,
+  BookOpen,
+  Upload,
+  SlidersHorizontal,
+} from "lucide-react";
 import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -68,13 +75,13 @@ function Popup() {
           className="primary toolbar-review"
           onClick={() => open("setup")}
         >
-          {t("setup")}{" "}
+          <SlidersHorizontal aria-hidden="true" /> {t("setup")}{" "}
         </button>
       ) : !dictionaryCount ? (
         <div className="toolbar-setup">
           <p>{t("no_dictionary_installed")}</p>
           <button className="primary" onClick={() => open("settings")}>
-            {t("import_dictionary")}{" "}
+            <Upload aria-hidden="true" /> {t("import_dictionary")}{" "}
           </button>
         </div>
       ) : (
@@ -82,7 +89,7 @@ function Popup() {
           className="primary toolbar-review"
           onClick={() => open("review")}
         >
-          {t("review")} <span>{stats.due}</span>
+          <BookOpen aria-hidden="true" /> {t("review")} <span>{stats.due}</span>
         </button>
       )}
       <div className="toolbar-controls">
@@ -109,10 +116,15 @@ function Popup() {
       </div>
       <footer className="row between">
         <button className="quiet" onClick={() => open("words")}>
-          {t("words")}{" "}
+          <BookMarked aria-hidden="true" /> {t("words")}{" "}
         </button>
-        <button className="quiet" onClick={() => open("settings")}>
-          {t("settings")}{" "}
+        <button
+          title={t("settings")}
+          aria-label={t("settings")}
+          className="quiet icon-button"
+          onClick={() => open("settings")}
+        >
+          <Settings aria-hidden="true" />
         </button>
       </footer>
     </div>

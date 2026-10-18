@@ -16,13 +16,15 @@ Mouse and keyboard bindings can look up selected text. Some system and browser s
 
 ## Colors and parsing
 
-Under **Settings → Reading & appearance → Word colors**, choose text or background colors for unsaved, saved, learning, reviewing, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
+Under **Settings → Reading & appearance → Word colors**, choose text or background colors for unsaved, saved, young, mature, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
 
 The toolbar pauses parsing or disables the current site. **Only parse the reading language** skips confidently detected foreign-language text. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
 
 ## Examples and translation
 
 Popups show downloaded Tatoeba examples; **Another example** cycles through them. These are separate from the sentence you mine.
+
+Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading & appearance → Hide source links**.
 
 - **Translate sentence:** translate a displayed example.
 - **Translate current sentence:** translate your reading sentence. Mining keeps that translation with the original.

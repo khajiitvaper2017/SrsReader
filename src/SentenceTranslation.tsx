@@ -1,3 +1,4 @@
+import { Languages } from "lucide-react";
 import { t } from "./i18n";
 import { useEffect, useState } from "react";
 import { rpc } from "./api";
@@ -74,6 +75,7 @@ export function TextTranslation({
           disabled={busy}
           onClick={() => void translate()}
         >
+          <Languages aria-hidden="true" />{" "}
           {busy ? status || t("translating") : label}
         </button>
       )}

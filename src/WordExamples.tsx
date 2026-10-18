@@ -1,3 +1,4 @@
+import { ChevronRight, Download } from "lucide-react";
 import { t } from "./i18n";
 import { useEffect, useState } from "react";
 import { rpc } from "./api";
@@ -11,7 +12,7 @@ export function WordExamples({
   word,
   settings,
 }: {
-  word: LookupWord;
+  word: Pick<LookupWord, "lemma" | "language">;
   settings: Settings;
 }) {
   const [examples, setExamples] = useState<Example[]>([]);
@@ -54,7 +55,7 @@ export function WordExamples({
         target="_blank"
         rel="noopener noreferrer"
       >
-        {t("download_example_sentences")}{" "}
+        <Download aria-hidden="true" /> {t("download_example_sentences")}
       </a>
     );
   return (
@@ -81,10 +82,12 @@ export function WordExamples({
         </a>
         {examples.length > 1 && (
           <button
-            className="link"
+            title={t("another_example")}
+            aria-label={t("another_example")}
+            className="quiet icon-button"
             onClick={() => setIndex((index + 1) % examples.length)}
           >
-            {t("another_example")}{" "}
+            <ChevronRight aria-hidden="true" />
           </button>
         )}
       </div>

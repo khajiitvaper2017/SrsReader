@@ -6,6 +6,7 @@ Under **Settings → Spaced repetition**:
 
 - **Use only Again and Good:** enabled by default. Turn it off to include **Hard** and **Easy**, using keys **1–4**.
 - **New words per day:** default 20; accepts 0–10,000. Due reviews are unlimited. You can still grade words while reading after reaching this limit.
+- **Mature interval (days):** default 28; accepts positive whole numbers. Reviewed words are **Young** below this scheduled interval and **Mature** at or above it. This uses the time between reviews, not the age of the word. Due words use the **Due** status.
 - **Desired retention:** default 90%; accepts 70–99%. Higher values usually mean more reviews.
 - **Default card front:** show the word alone or in its sentence.
 - **Show sentence translations:** enabled by default; translations appear after revealing the answer.
