@@ -53,6 +53,11 @@ import {
   FrequencyBrowser,
   frequencyDownloadUrl,
 } from "../../src/FrequencyBrowser";
+import {
+  WiktionaryBrowser,
+  wiktionaryDownloadUrl,
+  wiktionaryName,
+} from "../../src/WiktionaryBrowser";
 
 function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
@@ -1185,6 +1190,19 @@ function SettingsPage({
             {t("find_dictionaries")}{" "}
           </a>
         </div>
+        <WiktionaryBrowser
+          key={`${settings.studyLanguage}:${settings.nativeLanguage}`}
+          language={settings.studyLanguage}
+          nativeLanguage={settings.nativeLanguage}
+          busy={busy}
+          onImport={(entry) =>
+            downloadDictionary(
+              wiktionaryDownloadUrl(entry),
+              entry.source,
+              wiktionaryName(entry),
+            )
+          }
+        />
         <FrequencyBrowser
           language={settings.studyLanguage}
           busy={busy}

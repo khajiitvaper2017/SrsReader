@@ -505,7 +505,7 @@ function definitionText(value: unknown): string {
     if (
       node.data &&
       typeof node.data === "object" &&
-      !["glosses"].includes(
+      !["glosses", "glossary"].includes(
         String((node.data as Record<string, unknown>).content),
       )
     )

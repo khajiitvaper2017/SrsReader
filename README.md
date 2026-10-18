@@ -40,6 +40,12 @@ If a form has no dictionary entry, the reader also checks the study language’s
 
 Choose **Check updates** beside an installed dictionary to check its publisher’s update source. If an update is available, choose **Update** to install it. No update checks happen automatically. Dictionaries without update metadata can be replaced by importing a newer ZIP with the same title and languages.
 
+### Wiktionary dictionaries
+
+Open **Settings → Dictionaries → Wiktionary dictionaries** to browse [wty](https://yomidevs.github.io/wiktionary-to-yomitan/download/). Choose the **Study language** and **Definition language**, or use **All languages**. **Definitions** lists full dictionaries; **Translations** lists shorter translation dictionaries and can offer language pairs without a full dictionary. You can search languages and dictionary names, or sort by language and download size.
+
+**Import** downloads the selected Yomitan ZIP from its publisher and installs it locally. Matching study and definition languages gives a monolingual dictionary, such as Czech → Czech; different languages give a bilingual dictionary, such as Czech → English. The menu initially uses your study and native languages when that pair is available. Browsing works offline; downloading requires a connection. Use **Check updates** in the installed dictionary list for later releases. ZIP exports keep the original dictionary file.
+
 ### Frequency dictionaries
 
 Open **Settings → Dictionaries → Frequency dictionaries** to browse [Leipzig to Yomitan](https://github.com/StefanVukovic99/leipzig-to-yomitan/releases/tag/v2024-08-31-18-57-16-00-00). Filter by language and corpus type, search for a corpus or region, and sort by language, type, or download size. **Import** downloads and installs the selected dictionary. The menu uses the Rank edition and assigns its language automatically. Browsing the catalog works offline; importing needs a connection.
