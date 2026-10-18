@@ -1,9 +1,12 @@
+import { t } from "../src/i18n";
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
 import type { Grade } from "ts-fsrs";
 import { requestSchema, type Request } from "../src/api";
 import { cachePronunciation } from "../src/audio";
 import { db } from "../src/db";
+import { languageCode } from "../src/languages";
+import { wordExamples, exampleCorpusInfo } from "../src/examples";
 import { removeRevision } from "../src/dictionaries";
 import { clearLookupCache, lookupMany, scanText } from "../src/lookup";
 import {
@@ -47,7 +50,7 @@ export default defineBackground(() => {
   }
   async function resolved(term: string, id: string): Promise<LookupWord> {
     const settings = await getSettings();
-    const match = (await lookupMany([term], settings.language))
+    const match = (await lookupMany([term], settings.studyLanguage))
       .get(normalize(term))
       ?.words.find((w) => w.id === id);
     if (match) return match;
@@ -61,7 +64,7 @@ export default defineBackground(() => {
         meanings: saved.meanings,
         forms: [],
       };
-    throw new Error("This word has no dictionary definition.");
+    throw new Error(t("this_word_has_no_dictionary_definition"));
   }
   async function snapshot(word: LookupWord) {
     const copy = structuredClone(word);
@@ -132,7 +135,7 @@ export default defineBackground(() => {
         return db.dictionaries.orderBy("order").toArray();
       case "setDictionary": {
         const dictionary = await db.dictionaries.get(request.id);
-        if (!dictionary) throw new Error("Dictionary not found.");
+        if (!dictionary) throw new Error(t("dictionary_not_found"));
         await db.dictionaries.update(request.id, {
           enabled: request.enabled ?? dictionary.enabled,
           order: request.order ?? dictionary.order,
@@ -162,7 +165,9 @@ export default defineBackground(() => {
         await notify();
         return;
       case "scan":
-        return settings.paused ? [] : scanText(request.text, settings.language);
+        return settings.paused
+          ? []
+          : scanText(request.text, settings.studyLanguage);
       case "detectLanguage": {
         const result = await browser.i18n.detectLanguage(request.text);
         const top = [...result.languages].sort(
@@ -172,7 +177,7 @@ export default defineBackground(() => {
           top &&
           top.percentage >= 80 &&
           top.language !== "und"
-          ? top.language.split("-")[0]!
+          ? languageCode(top.language)
           : null;
       }
       case "saveTranslation":
@@ -193,10 +198,14 @@ export default defineBackground(() => {
         return;
       case "lookup":
         return (
-          (await lookupMany([request.term], settings.language)).get(
+          (await lookupMany([request.term], settings.studyLanguage)).get(
             normalize(request.term),
           ) || { words: [], unresolved: [] }
         );
+      case "examples":
+        return wordExamples(request.lemma, settings.studyLanguage);
+      case "exampleCorpus":
+        return exampleCorpusInfo(settings.studyLanguage);
       case "createSession": {
         const id = crypto.randomUUID();
         if (sessions.size > 100) sessions.delete(sessions.keys().next().value!);
@@ -206,7 +215,7 @@ export default defineBackground(() => {
       case "session": {
         const session = sessions.get(request.id);
         if (!session)
-          throw new Error("This lookup expired. Hover over the word again.");
+          throw new Error(t("this_lookup_expired_hover_over_the_word_again"));
         return session;
       }
       case "word":
@@ -272,7 +281,7 @@ export default defineBackground(() => {
               w.meanings = [
                 {
                   dictionaryId: "personal",
-                  title: "Personal definition",
+                  title: "",
                   revision: "",
                   attribution: "",
                   sourceUrl: "",
@@ -288,14 +297,14 @@ export default defineBackground(() => {
         return;
       case "refreshWord": {
         const saved = await db.vocabulary.get(request.id);
-        if (!saved) throw new Error("Word not found.");
+        if (!saved) throw new Error(t("word_not_found"));
         clearLookupCache();
         const result = (await lookupMany([saved.lemma], saved.language))
           .get(saved.lemma)
           ?.words.find((w) => w.id === saved.id);
         if (!result)
           throw new Error(
-            "No definition is available in the enabled dictionaries.",
+            t("no_definition_is_available_in_the_enabled_dictionaries"),
           );
         const updated = await snapshot(result);
         await db.vocabulary
@@ -317,12 +326,12 @@ export default defineBackground(() => {
         return (
           await db.vocabulary
             .where("language")
-            .equals(settings.language)
+            .equals(settings.studyLanguage)
             .toArray()
         )
           .filter((w) =>
-            folded(w.lemma, settings.language).includes(
-              folded(request.query, settings.language),
+            folded(w.lemma, settings.studyLanguage).includes(
+              folded(request.query, settings.studyLanguage),
             ),
           )
           .sort((a, b) => b.updated - a.updated);
@@ -333,7 +342,7 @@ export default defineBackground(() => {
       case "stats": {
         const words = await db.vocabulary
           .where("language")
-          .equals(settings.language)
+          .equals(settings.studyLanguage)
           .toArray();
         const midnight = new Date();
         midnight.setHours(0, 0, 0, 0);
@@ -344,6 +353,10 @@ export default defineBackground(() => {
           today: await db.reviews
             .where("time")
             .aboveOrEqual(midnight.getTime())
+            .filter(
+              (review) =>
+                JSON.parse(review.wordId)[0] === settings.studyLanguage,
+            )
             .count(),
         };
       }
@@ -375,7 +388,7 @@ export default defineBackground(() => {
       !!sender.url?.startsWith(browser.runtime.getURL("/"));
     if (!fromExtensionPage && !reads.has(parsed.data.action))
       return Promise.resolve({
-        error: "This action is only available inside SrsReader.",
+        error: t("this_action_is_only_available_inside_srsreader"),
       });
     if (parsed.data.action === "closeLookup" && sender.tab?.id)
       void browser.tabs.sendMessage(sender.tab.id, { event: "closeLookup" });

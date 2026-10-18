@@ -1,8 +1,15 @@
+import { setInterfaceLanguage } from "./i18n";
 import { importDictionary } from "./dictionaries";
 
 self.onmessage = async (
-  event: MessageEvent<{ blob: Blob; language: string; expectedId?: string }>,
+  event: MessageEvent<{
+    locale: string;
+    blob: Blob;
+    language: string;
+    expectedId?: string;
+  }>,
 ) => {
+  await setInterfaceLanguage(event.data.locale);
   try {
     const dictionary = await importDictionary(
       event.data.blob,

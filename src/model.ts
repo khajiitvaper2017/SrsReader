@@ -1,6 +1,7 @@
+import { t, interfaceLanguages } from "./i18n";
 import { z } from "zod";
 import { inputPreventionSchema, lookupBindingSchema } from "./controls";
-import { supportedLanguages } from "./languages";
+import { languageCode, systemLanguage } from "./languages";
 import { wordStylesSchema, type WordState } from "./word-styles";
 export type { WordState } from "./word-styles";
 
@@ -12,42 +13,51 @@ export const wordId = (language: string, lemma: string, reading: string) =>
 export const dictionaryId = (title: string, language: string, target: string) =>
   JSON.stringify([title, language, target]);
 
-export const settingsSchema = z.object({
-  language: z
-    .enum(supportedLanguages.map((language) => language.code))
-    .default(supportedLanguages[0].code),
-  setupComplete: z.boolean().default(false),
-  lookupBindings: z.array(lookupBindingSchema).default([]),
-  preventMiddleMouse: inputPreventionSchema,
-  preventBackForward: inputPreventionSchema,
-  paused: z.boolean().default(false),
-  disabledHosts: z.array(z.string()).default([]),
-  theme: z.enum(["system", "light", "dark"]).default("system"),
-  hideDictionarySources: z.boolean().default(true),
-  scanPopups: z.boolean().default(true),
-  detectPageLanguage: z.boolean().default(true),
-  translationLanguage: z
-    .string()
-    .regex(/^[a-z]{2,3}$/)
-    .default("en"),
-  showSentenceTranslation: z.boolean().default(true),
-  wordColorsEnabled: z.boolean().default(true),
-  wordStyles: wordStylesSchema,
-  front: z.enum(["word", "sentence"]).default("word"),
-  retention: z.number().min(0.7).max(0.99).default(0.9),
-  onlyAgainGood: z.boolean().default(true),
-  newLimit: z.number().int().min(0).max(10000).default(20),
-  missingFrequency: z.enum(["last", "random"]).default("last"),
-  audioDownloads: z.boolean().default(false),
-  voice: z.string().default(""),
-  autoplay: z.boolean().default(false),
-  dictionaryPreferences: z
-    .record(
-      z.string(),
-      z.object({ enabled: z.boolean(), order: z.number().int() }),
-    )
-    .default({}),
+export const languageSchema = z.string().transform((value, ctx) => {
+  try {
+    return languageCode(value);
+  } catch {
+    ctx.addIssue({ code: "custom", message: t("enter_a_valid_language_code") });
+    return z.NEVER;
+  }
 });
+export const settingsSchema = z
+  .object({
+    studyLanguage: z.union([z.literal(""), languageSchema]).default(""),
+    setupComplete: z.boolean().default(false),
+    lookupBindings: z.array(lookupBindingSchema).default([]),
+    preventMiddleMouse: inputPreventionSchema,
+    preventBackForward: inputPreventionSchema,
+    paused: z.boolean().default(false),
+    disabledHosts: z.array(z.string()).default([]),
+    theme: z.enum(["system", "light", "dark"]).default("system"),
+    hideDictionarySources: z.boolean().default(true),
+    scanPopups: z.boolean().default(true),
+    detectPageLanguage: z.boolean().default(true),
+    nativeLanguage: languageSchema.default(systemLanguage),
+    interfaceLanguage: z.enum(["auto", ...interfaceLanguages]).default("auto"),
+    showSentenceTranslation: z.boolean().default(true),
+    wordColorsEnabled: z.boolean().default(true),
+    wordStyles: wordStylesSchema,
+    front: z.enum(["word", "sentence"]).default("word"),
+    retention: z.number().min(0.7).max(0.99).default(0.9),
+    onlyAgainGood: z.boolean().default(true),
+    newLimit: z.number().int().min(0).max(10000).default(20),
+    missingFrequency: z.enum(["last", "random"]).default("last"),
+    audioDownloads: z.boolean().default(false),
+    voice: z.string().default(""),
+    autoplay: z.boolean().default(false),
+    dictionaryPreferences: z
+      .record(
+        z.string(),
+        z.object({ enabled: z.boolean(), order: z.number().int() }),
+      )
+      .default({}),
+  })
+  .transform((settings) => ({
+    ...settings,
+    setupComplete: settings.setupComplete && !!settings.studyLanguage,
+  }));
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaults = settingsSchema.parse({});
 
@@ -153,7 +163,7 @@ export type Phrase = {
 
 export const translationSchema = z.object({
   text: z.string().min(1).max(30000),
-  language: z.string().regex(/^[a-z]{2,3}$/),
+  language: languageSchema,
 });
 export const contextSchema = z
   .object({
@@ -171,7 +181,7 @@ export const contextSchema = z
       c.end >= c.start &&
       c.end <= c.sentence.length &&
       c.sentence.slice(c.start, c.end) === c.surface,
-    "Invalid sentence offsets",
+    { error: () => t("invalid_sentence_offsets") },
   );
 export type ReadingContext = z.infer<typeof contextSchema>;
 export const meaningSchema = z.object({
@@ -263,7 +273,6 @@ export function stateOf(word?: Vocabulary): WordState {
 
 export function httpsUrl(value: string): string {
   const url = new URL(value);
-  if (url.protocol !== "https:")
-    throw new Error("A secure HTTPS URL is required.");
+  if (url.protocol !== "https:") throw new Error(t("secure_url_required"));
   return url.href;
 }

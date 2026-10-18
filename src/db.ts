@@ -24,6 +24,10 @@ class ReaderDatabase extends Dexie {
   reviews!: Table<Review, string>;
   audio!: Table<AudioRecord, string>;
   settings!: Table<{ id: string; value: Settings }, string>;
+  exampleCorpora!: Table<
+    { language: string; corpus: Blob; count: number; updated: number },
+    string
+  >;
 
   constructor() {
     super("srs-reader");
@@ -42,6 +46,7 @@ class ReaderDatabase extends Dexie {
     this.version(2).stores({
       frequencies: "id, revisionId, [revisionId+folded]",
     });
+    this.version(3).stores({ exampleCorpora: "language" });
   }
 }
 export const db = new ReaderDatabase();

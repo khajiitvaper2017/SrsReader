@@ -625,42 +625,42 @@ button.master-action[aria-pressed="true"] {
 .starter-note:empty {
   display: none;
 }
-.frequency-browser {
+.dictionary-browser {
   border-top: 1px solid var(--line);
   font-size: 12px;
 }
-.frequency-browser summary {
+.dictionary-browser summary {
   cursor: pointer;
   padding: 9px 12px;
   color: var(--accent);
 }
-.frequency-filters {
+.dictionary-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
   gap: 8px;
   padding: 0 12px 10px;
 }
-.frequency-filters label {
+.dictionary-filters label {
   display: grid;
   gap: 4px;
   font-size: 11px;
 }
-.frequency-filters select {
-  max-width: 190px;
+.dictionary-filters select {
+  width: 160px;
   font-size: 12px;
 }
-.frequency-filters input {
+.dictionary-filters input {
   min-width: 160px;
   flex: 1;
   font-size: 12px;
 }
-.frequency-results {
+.dictionary-results {
   max-height: 280px;
   overflow-y: auto;
   border-top: 1px solid var(--line);
 }
-.frequency-option {
+.dictionary-download {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -668,18 +668,18 @@ button.master-action[aria-pressed="true"] {
   padding: 7px 12px;
   border-bottom: 1px solid var(--line);
 }
-.frequency-option:last-child {
+.dictionary-download:last-child {
   border-bottom: 0;
 }
-.frequency-option strong {
+.dictionary-download strong {
   display: block;
   font-weight: 500;
 }
-.frequency-option small {
+.dictionary-download small {
   color: var(--muted);
   font-size: 10px;
 }
-.frequency-empty {
+.dictionary-empty {
   padding: 12px;
   color: var(--muted);
 }
@@ -754,8 +754,12 @@ button.master-action[aria-pressed="true"] {
 }
 .setting-row select {
   font-size: 12px;
-  max-width: 190px;
+  width: 190px;
   flex-shrink: 0;
+}
+.setting-row > .row {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .setting-row input[type="number"] {
   width: 68px;
@@ -1029,9 +1033,27 @@ button.master-action[aria-pressed="true"] {
   border-top: 1px solid var(--line);
   font-size: 0.875rem;
 }
-.lookup-sentence details > span {
-  display: block;
-  margin: 6px 0;
+.word-examples {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.example-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.example-footer a {
+  color: inherit;
+}
+.example-footer button {
+  font-size: inherit;
+  padding: 0;
 }
 .sentence-translation {
   color: var(--muted);
@@ -1239,7 +1261,7 @@ button.master-action[aria-pressed="true"] {
     gap: 8px;
   }
   .setting-row select {
-    max-width: 140px;
+    width: 140px;
   }
 }
 

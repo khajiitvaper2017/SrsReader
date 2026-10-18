@@ -1,5 +1,7 @@
+import { t } from "./i18n";
 import { browser } from "wxt/browser";
 import { rpc } from "./api";
+import { languageCode, languageName } from "./languages";
 
 type Availability =
   "unavailable" | "downloadable" | "downloading" | "available";
@@ -33,51 +35,6 @@ const ai = globalThis as typeof globalThis & {
   };
 };
 
-export const translationLanguages = ai.Translator
-  ? [
-      "ar",
-      "bg",
-      "bn",
-      "cs",
-      "da",
-      "de",
-      "el",
-      "en",
-      "es",
-      "et",
-      "fa",
-      "fi",
-      "fr",
-      "he",
-      "hi",
-      "hr",
-      "hu",
-      "id",
-      "it",
-      "ja",
-      "ko",
-      "lt",
-      "mr",
-      "ms",
-      "nl",
-      "no",
-      "pl",
-      "pt",
-      "ro",
-      "ru",
-      "sk",
-      "sl",
-      "sv",
-      "ta",
-      "te",
-      "th",
-      "tr",
-      "uk",
-      "vi",
-      "zh",
-    ]
-  : ["bg", "cs", "de", "en", "es", "et", "fr", "it", "pt", "ru", "uk"];
-
 let detector: Promise<Detector> | undefined;
 export async function detectLanguage(text: string): Promise<string | null> {
   const sample = text.trim().slice(0, 6000);
@@ -89,7 +46,7 @@ export async function detectLanguage(text: string): Promise<string | null> {
         detector ??= ai.LanguageDetector.create();
         const [top] = await (await detector).detect(sample);
         if (top && top.confidence >= 0.8 && top.detectedLanguage !== "und")
-          return top.detectedLanguage.split("-")[0]!;
+          return languageCode(top.detectedLanguage);
       }
     } catch {
       detector = undefined;
@@ -132,10 +89,9 @@ export async function translateSentence(
   targetLanguage: string,
   progress: (message: string) => void,
 ): Promise<string> {
-  if (sourceLanguage === targetLanguage)
-    throw new Error("Choose a different translation language in Settings.");
+  if (sourceLanguage === targetLanguage) return text;
   if (text.length > 30000)
-    throw new Error("This sentence is too long to translate.");
+    throw new Error(t("this_sentence_is_too_long_to_translate"));
   const options = { sourceLanguage, targetLanguage };
   let availability: Availability = "unavailable";
   if (ai.Translator) {
@@ -148,8 +104,8 @@ export async function translateSentence(
   if (ai.Translator && availability !== "unavailable") {
     progress(
       availability === "available"
-        ? "Translating…"
-        : "Downloading translation model…",
+        ? t("translating")
+        : t("downloading_translation_model"),
     );
     let translator:
       Awaited<ReturnType<typeof ai.Translator.create>> | undefined;
@@ -159,12 +115,14 @@ export async function translateSentence(
         monitor(monitor) {
           monitor.addEventListener("downloadprogress", (event) => {
             progress(
-              `Downloading translation model… ${Math.round(event.loaded * 100)}%`,
+              t("downloading_translation_model_2", {
+                value1: Math.round(event.loaded * 100),
+              }),
             );
           });
         },
       });
-      progress("Translating…");
+      progress(t("translating"));
       return await translator.translate(text);
     } catch {
       // Chrome can report a downloadable pair that it cannot create on this device.
@@ -172,7 +130,7 @@ export async function translateSentence(
       translator?.destroy();
     }
   }
-  progress("Loading local translator…");
+  progress(t("loading_local_translator"));
   const { BatchTranslator, TranslatorBacking } = (await import(
     /* @vite-ignore */ browser.runtime.getURL("/") + "bergamot/translator.js"
   )) as BergamotModule;
@@ -186,10 +144,10 @@ export async function translateSentence(
       const key = `${url}?sha256=${checksum}`;
       const saved = await cache.match(key);
       if (saved) return saved.arrayBuffer();
-      progress("Downloading translation model…");
+      progress(t("downloading_translation_model"));
       const buffer = await super.fetch(url, checksum, options);
       await cache.put(key, new Response(buffer));
-      progress("Translating…");
+      progress(t("translating"));
       return buffer;
     }
   }
@@ -209,6 +167,13 @@ export async function translateSentence(
         html: false,
       })
     ).target.text;
+  } catch {
+    throw new Error(
+      t("translation_failed", {
+        source: languageName(sourceLanguage),
+        target: languageName(targetLanguage),
+      }),
+    );
   } finally {
     await translator.delete();
   }

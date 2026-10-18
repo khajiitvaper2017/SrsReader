@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { useEffect, useState } from "react";
 import {
   bindingKey,
@@ -115,30 +116,30 @@ export function LookupControls({
           <span>{bindingLabel(binding)}</span>
           <button
             className="quiet"
-            aria-label={`Remove ${bindingLabel(binding)}`}
+            aria-label={t("remove_2", { value1: bindingLabel(binding) })}
             onClick={() =>
               onChange(
                 value.filter((b) => bindingKey(b) !== bindingKey(binding)),
               )
             }
           >
-            Remove
+            {t("remove")}{" "}
           </button>
         </div>
       ))}
       <div className="binding-recorder">
         <select
-          aria-label="Custom binding type"
+          aria-label={t("custom_binding_type")}
           value={type}
           disabled={recording}
           onChange={(event) => setType(event.target.value as typeof type)}
         >
-          <option value="mouse">Mouse button</option>
-          <option value="key">Keyboard shortcut</option>
-          <option value="hover">Hold key + hover</option>
+          <option value="mouse">{t("mouse_button")}</option>
+          <option value="key">{t("keyboard_shortcut")}</option>
+          <option value="hover">{t("hold_key_hover")}</option>
         </select>
         <button disabled={recording} onClick={() => setRecording(true)}>
-          Record binding
+          {t("record_binding")}{" "}
         </button>
         {recording && (
           <button
@@ -146,16 +147,16 @@ export function LookupControls({
             data-binding-cancel
             onClick={() => setRecording(false)}
           >
-            Cancel
+            {t("cancel")}{" "}
           </button>
         )}
       </div>
       {recording && (
         <p role="status" className="binding-status">
           {type === "mouse"
-            ? "Press a mouse button."
-            : "Press a key or key combination."}{" "}
-          Escape cancels.
+            ? t("press_a_mouse_button")
+            : t("press_a_key_or_key_combination")}{" "}
+          {t("escape_cancels")}{" "}
         </p>
       )}
     </div>

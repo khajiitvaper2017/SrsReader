@@ -19,9 +19,12 @@
   "dependencies": {
     "@browsermt/bergamot-translator": "^0.4.9",
     "@zip.js/zip.js": "^2.8.0",
+    "bzip2": "^0.1.1",
     "dexie": "^4.0.11",
+    "i18next": "^26.5.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-i18next": "^17.1.0",
     "ts-fsrs": "5.4.2",
     "zod": "^4.1.0"
   },

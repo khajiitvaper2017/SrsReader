@@ -1,6 +1,6 @@
 # SrsReader
 
-A local dictionary and spaced-repetition reader for desktop Chromium browsers and Firefox. Czech is currently supported.
+A local dictionary and spaced-repetition reader for desktop Chromium browsers and Firefox. Choose a study language and a native language; parsing, dictionaries, examples, pronunciation, and SRS use those choices.
 
 ## Install
 
@@ -22,7 +22,9 @@ Run `npm run fix` to apply ESLint fixes and format the project with Prettier. Li
 
 ## First setup
 
-On first installation, a setup window opens. Choose a language, import a dictionary, and choose one or more lookup controls. Nothing is selected for lookup by default. **Finish setup** is available once a dictionary and a lookup control are selected.
+On first installation, a setup window opens. Choose your **Study language**, then confirm your **Native language**, suggested from your system/browser language. It is used for translations and, by default, the interface. Under **Settings → Languages → Interface language**, choose **English**, **українська**, or **Same as native language** (default). This selector is also available during setup. Other native languages use the English interface. Language names, dates, and numbers follow the interface language. Import a dictionary for your study language and choose one or more lookup controls. Nothing is selected for lookup by default. **Finish setup** is available once a dictionary and a lookup control are selected.
+
+Finishing setup downloads Tatoeba examples for your study language when available and not already installed. You can import a detailed TSV or `.bz2` export under **Example sentences** before finishing setup instead.
 
 Setup saves your choices as you go. You can return to it with **Settings → Open setup**.
 
@@ -30,7 +32,7 @@ Setup saves your choices as you go. You can return to it with **Settings → Ope
 
 Open **Settings → Dictionaries → Choose ZIP** and import a Yomitan format-3 term or frequency dictionary. You can also drag the ZIP into the import area. Keep Settings open until the import finishes.
 
-The Czech dictionary in `dicts/wty-cs-cs.zip` contains Czech definitions. A download link is available in Settings before your first import. You can install multiple dictionaries, change their order, and disable them individually.
+Use **Settings → Languages** to choose your study and native languages. **Find dictionaries** opens a multilingual dictionary directory. The ZIPs in `dicts/` are test dictionaries and do not restrict which language you can study. You can install multiple dictionaries, change their order, and disable them individually.
 
 Word forms follow dictionary references to their base words. Forms and their base word share a card and review history. When several base words are possible, choose the intended word in the dictionary popup. References whose targets have no definition remain unavailable until a dictionary supplies them.
 
@@ -85,11 +87,15 @@ The toolbar lets you pause all parsing or disable the current website. Browser-p
 
 ## Sentence translation
 
-Click **Translate sentence** in a dictionary popup to translate the sentence you opened it from. Expand **Sentence** to see the original. **Mine word**, **Save example**, and the grading buttons keep the translation with that example. You can also translate an example already saved in Words or shown on a Review answer.
+Dictionary popups show a local [Tatoeba](https://tatoeba.org/en/downloads) example for the word when one is available. **Another example** cycles through matching sentences, including inflected forms. Click **Translate sentence** below an example for a local machine translation. Contributor credits link to the original Tatoeba sentence. These example sentences are separate from the sentence you are mining.
 
-Choose the translation language under **Settings → Translation → Translate into**. Chrome uses its Translator API when available. If it cannot translate the pair, or you use Firefox, SrsReader uses bundled [Bergamot](https://github.com/browsermt/bergamot-translator). Its supported languages are Bulgarian, Czech, English, Estonian, French, German, Italian, Portuguese, Russian, Spanish, and Ukrainian; pairs without a direct model translate through English. Firefox’s language menu shows these languages.
+Click **Translate current sentence** to show a translation of the sentence you opened the popup from. It stays hidden until requested. **Mine word**, **Save example**, and the grading buttons save that original sentence and its translation, without replacing it with a Tatoeba example. You can also translate an example already saved in Words or shown on a Review answer.
 
-Translation models download on first use and are kept locally for offline use. Sentences are not sent to a translation service. Czech-to-English Bergamot model files take about 23 MB after download. Saved translations remain available without a model, retain their own language, and are included in learning exports. Editing an original sentence removes its old translation.
+Choose **Study language** and **Native language** under **Settings → Languages** or during first setup. Both lists show languages with localized names. Examples and parsing use the study language; sentence and definition translations use the native language. Chrome uses its Translator API when available. If it cannot translate the pair, or you use Firefox, SrsReader uses bundled [Bergamot](https://github.com/browsermt/bergamot-translator). Its supported languages are Bulgarian, Czech, English, Estonian, French, German, Italian, Portuguese, Russian, Spanish, and Ukrainian; pairs without a direct model translate through English. Language selection is independent of translation-model availability. A translation can only run when the browser or the local engine provides that language pair.
+
+**Translate definition** appears below definitions in dictionaries whose source and definition languages match, such as `wty-cs-cs`. It translates the definition into your native language and leaves the original visible. Definitions already in another language do not have this button.
+
+Translation models download on first use and are kept locally for offline use. Sentences are not sent to a translation service. Saved translations remain available without a model, retain their own language, and are included in learning exports. Editing an original sentence removes its old translation.
 
 **Settings → Spaced repetition → Show sentence translations** is on by default. Translations appear with the original on the answer side, after **Show answer**. Turning it off hides translations during review without deleting them.
 
@@ -136,3 +142,9 @@ The supplied Czech dictionary is published by [wty](https://github.com/yomidevs/
 The offline Czech word-form table comes from [Simplemma](https://github.com/adbar/simplemma), whose sources include Wiktionary/Kaikki and Michal Měchura’s lemmatization lists. Source and license notices are included in `public/licenses/morphology.txt`.
 
 The bundled Bergamot runtime and model registry come from [browsermt/bergamot-translator](https://github.com/browsermt/bergamot-translator) and its model repository. Source and license information is included in `public/licenses/bergamot.txt`.
+
+Examples come from [Tatoeba](https://tatoeba.org/en/downloads), under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/). Under **Settings → Example sentences**, download or update the selected study language’s corpus, or import a detailed TSV export (plain `.tsv` or `.bz2`). The corpus is indexed locally with language-aware word segmentation, including languages that do not separate words with spaces, and remains available offline. Each example retains its contributor and source link. Examples are not manually proofread; their translations are generated locally in your native language on request. Source information is in `public/licenses/tatoeba.txt`.
+
+## Interface translations
+
+Interface messages are in `src/locales/en.json` and `src/locales/uk.json` and use i18next. To add an interface language, translate the complete English catalog into a file named with its language code, register it in `src/i18n.ts` and its `interfaceLanguages` list, and include its extension description in the locale list in `wxt.config.ts`. Preserve interpolation names inside `{{…}}` and provide the plural forms required by the language. Language names come from `Intl.DisplayNames`; do not add translated names to `src/language-catalog.json`.

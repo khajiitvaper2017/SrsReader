@@ -1,11 +1,29 @@
 import { defineConfig } from "wxt";
 import { resolve } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
+import en from "./src/locales/en.json";
+import uk from "./src/locales/uk.json";
 
 export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   zip: { excludeSources: ["dicts/**", "graft/**"] },
   hooks: {
-    "build:publicAssets"(_wxt, files) {
+    async "build:publicAssets"(_wxt, files) {
+      for (const [locale, messages] of Object.entries({ en, uk })) {
+        const folder = resolve(".wxt/locales", locale);
+        await mkdir(folder, { recursive: true });
+        const path = resolve(folder, "messages.json");
+        await writeFile(
+          path,
+          JSON.stringify({
+            extensionDescription: { message: messages.extension_description },
+          }),
+        );
+        files.push({
+          absoluteSrc: path,
+          relativeDest: `_locales/${locale}/messages.json`,
+        });
+      }
       for (const file of [
         "translator.js",
         "worker/translator-worker.js",
@@ -23,8 +41,8 @@ export default defineConfig({
   },
   manifest: ({ browser }) => ({
     name: "SrsReader",
-    description:
-      "Read with local dictionaries, save words, and review them with spaced repetition.",
+    default_locale: "en",
+    description: "__MSG_extensionDescription__",
     permissions: ["storage", "unlimitedStorage"],
     content_security_policy: {
       extension_pages:

@@ -1,3 +1,4 @@
+import { t, setInterfaceLanguage } from "./i18n";
 import { createEmptyCard, fsrs, type Card, type Grade } from "ts-fsrs";
 import { db } from "./db";
 import { orderNewWords } from "./frequency";
@@ -12,9 +13,14 @@ import {
 } from "./model";
 
 export async function getSettings(): Promise<Settings> {
-  return settingsSchema.parse(
+  const settings = settingsSchema.parse(
     (await db.settings.get("main"))?.value || defaults,
   );
+  await setInterfaceLanguage(
+    settings.interfaceLanguage,
+    settings.nativeLanguage,
+  );
+  return settings;
 }
 const toCard = (card: Schedule): Card => ({
   ...card,
@@ -82,13 +88,11 @@ export async function grade(
   return db.transaction("rw", [db.vocabulary, db.reviews], async () => {
     const before = await db.vocabulary.get(word.id);
     if ((before?.version ?? 0) !== expectedVersion)
-      throw new Error(
-        "This word changed in another tab. Reopen it before grading.",
-      );
+      throw new Error(t("this_word_changed_in_another_tab_reopen_it"));
     if (before?.known)
-      throw new Error("Unmaster this word before reviewing it.");
+      throw new Error(t("unmaster_this_word_before_reviewing_it"));
     if (before?.suspended)
-      throw new Error("Resume this word before grading it.");
+      throw new Error(t("resume_this_word_before_grading_it"));
     const saved = structuredClone(before || freshWord(word));
     addContext(saved, context);
     const now = new Date();
@@ -125,12 +129,11 @@ export async function grade(
 export async function undoReview(id: string) {
   await db.transaction("rw", [db.vocabulary, db.reviews], async () => {
     const review = await db.reviews.get(id);
-    if (!review) throw new Error("This review is no longer available to undo.");
+    if (!review)
+      throw new Error(t("this_review_is_no_longer_available_to_undo"));
     const current = await db.vocabulary.get(review.wordId);
     if (current?.version !== review.afterVersion)
-      throw new Error(
-        "This word changed after that review and cannot be undone.",
-      );
+      throw new Error(t("this_word_changed_after_that_review_and_cannot"));
     if (review.before)
       await db.vocabulary.put({
         ...review.before,
@@ -153,14 +156,21 @@ export async function preview(word?: Vocabulary) {
 export async function reviewQueue() {
   const settings = await getSettings();
   const words = (
-    await db.vocabulary.where("language").equals(settings.language).toArray()
+    await db.vocabulary
+      .where("language")
+      .equals(settings.studyLanguage)
+      .toArray()
   ).filter((w) => w.card && !w.known && !w.suspended);
   const now = Date.now();
   const midnight = new Date();
   midnight.setHours(0, 0, 0, 0);
   const introduced = new Set(
     (await db.reviews.where("time").aboveOrEqual(midnight.getTime()).toArray())
-      .filter((r) => !r.before?.card || r.before.card.reps === 0)
+      .filter(
+        (r) =>
+          JSON.parse(r.wordId)[0] === settings.studyLanguage &&
+          (!r.before?.card || r.before.card.reps === 0),
+      )
       .map((r) => r.wordId),
   );
   const due = words

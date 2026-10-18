@@ -1,3 +1,4 @@
+import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { browser } from "wxt/browser";
@@ -67,13 +68,13 @@ function Popup() {
           className="primary toolbar-review"
           onClick={() => open("setup")}
         >
-          Setup
+          {t("setup")}{" "}
         </button>
       ) : !dictionaryCount ? (
         <div className="toolbar-setup">
-          <p>No dictionary installed.</p>
+          <p>{t("no_dictionary_installed")}</p>
           <button className="primary" onClick={() => open("settings")}>
-            Import dictionary
+            {t("import_dictionary")}{" "}
           </button>
         </div>
       ) : (
@@ -81,12 +82,12 @@ function Popup() {
           className="primary toolbar-review"
           onClick={() => open("review")}
         >
-          Review <span>{stats.due}</span>
+          {t("review")} <span>{stats.due}</span>
         </button>
       )}
       <div className="toolbar-controls">
         <label className="toggle-row">
-          <span>Parse websites</span>
+          <span>{t("parse_websites")}</span>
           <input
             type="checkbox"
             role="switch"
@@ -96,7 +97,7 @@ function Popup() {
         </label>
         {host && (
           <label className="toggle-row">
-            <span className="truncate">Enabled on {host}</span>
+            <span className="truncate">{t("enabled_on_host", { host })}</span>
             <input
               type="checkbox"
               role="switch"
@@ -108,10 +109,10 @@ function Popup() {
       </div>
       <footer className="row between">
         <button className="quiet" onClick={() => open("words")}>
-          Words
+          {t("words")}{" "}
         </button>
         <button className="quiet" onClick={() => open("settings")}>
-          Settings
+          {t("settings")}{" "}
         </button>
       </footer>
     </div>

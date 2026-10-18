@@ -1,3 +1,4 @@
+import { t, number } from "./i18n";
 import { useCallback, useEffect, useState } from "react";
 import { harmonicRank, wordFrequencies } from "./frequency";
 import type { LookupWord } from "./model";
@@ -24,24 +25,26 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
   if (!rows.length) return null;
   const rank = Math.round(harmonicRank(rows.map((row) => row.rank)));
   const details = rows
-    .map((row) => `${row.title}: ${row.rank.toLocaleString()}`)
+    .map((row) => `${row.title}: ${number(row.rank)}`)
     .join("\n");
   return (
     <details className="frequency-badge" data-srs-reader>
       <summary
-        title={`${rows.length > 1 ? "Combined rank (harmonic mean)\n" : ""}${details}`}
+        title={`${rows.length > 1 ? t("combined_rank_harmonic_mean") : ""}${details}`}
       >
-        Freq. {rank.toLocaleString()}
+        {t("freq")} {number(rank)}
       </summary>
       <div className="frequency-ranks">
         {rows.map((row) => (
           <div key={row.title}>
             <span title={row.title}>{row.title}</span>
-            <strong>{row.rank.toLocaleString()}</strong>
+            <strong>{number(row.rank)}</strong>
           </div>
         ))}
         {rows.length > 1 && (
-          <small className="muted">Combined using the harmonic mean.</small>
+          <small className="muted">
+            {t("combined_using_the_harmonic_mean")}
+          </small>
         )}
       </div>
     </details>

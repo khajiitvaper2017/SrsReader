@@ -1,3 +1,4 @@
+import { t } from "../../src/i18n";
 import React, { useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { rpc } from "../../src/api";
@@ -16,7 +17,6 @@ import {
   Icon,
   Meanings,
   Ratings,
-  Sentence,
   useChanges,
   useSettings,
 } from "../../src/ui";
@@ -27,6 +27,7 @@ import { FrequencyBadge } from "../../src/FrequencyBadge";
 import { wordStateLabels } from "../../src/word-styles";
 import { readerKeysSchema } from "../../src/controls";
 import { SentenceTranslation } from "../../src/SentenceTranslation";
+import { WordExamples } from "../../src/WordExamples";
 
 type LookupPage = {
   term: string;
@@ -42,7 +43,7 @@ function Lookup() {
   useEffect(() => {
     const session = new URLSearchParams(location.search).get("session");
     if (!session) {
-      setError("Use your lookup control on a word on a website.");
+      setError(t("use_your_lookup_control_on_a_word_on"));
       return;
     }
     void rpc({ action: "session", id: session })
@@ -131,7 +132,7 @@ function LookupEntry({
   );
   useEffect(() => {
     if (!word) return;
-    const root = document.querySelector<HTMLElement>(".meanings")!;
+    const root = document.querySelector<HTMLElement>(".lookup-reading")!;
     const content = document.querySelector<HTMLElement>(".lookup-content")!;
     if (page.selected === selected && page.openDetails)
       [...root.querySelectorAll("details")].forEach((details, index) => {
@@ -268,11 +269,13 @@ function LookupEntry({
         setSaved(result.word);
         setLastReview(result.reviewId);
         setNotice(
-          `Reviewed · ${["Again", "Hard", "Good", "Easy"][rating - 1]}`,
+          t("reviewed", {
+            value1: [t("again"), t("hard"), t("good"), t("easy")][rating - 1],
+          }),
         );
       } else {
         setSaved(await rpc({ action: "mine", id: word.id, term, context }));
-        setNotice("Saved");
+        setNotice(t("saved"));
       }
       reload();
     } catch (error) {
@@ -304,7 +307,7 @@ function LookupEntry({
     >
       <button
         className="quiet lookup-close"
-        aria-label="Close dictionary"
+        aria-label={t("close_dictionary")}
         onClick={() => void rpc({ action: "closeLookup" })}
       >
         <Icon name="close" />
@@ -316,21 +319,23 @@ function LookupEntry({
               className="quiet lookup-back"
               onClick={onBack}
               disabled={busy}
-              aria-label="Back to previous word"
+              aria-label={t("back_to_previous_word")}
             >
-              ← Back
+              {t("back")}{" "}
             </button>
           )}
           <ErrorBox error={error} />
-          {!result && !error && <p className="muted">Looking up…</p>}
+          {!result && !error && <p className="muted">{t("looking_up")}</p>}
           {result && !word && (
-            <Empty title="No definition found">
+            <Empty title={t("no_definition_found")}>
               <p>
                 {result.unresolved.length
-                  ? `Reference target unavailable: ${result.unresolved.join(", ")}`
-                  : `No enabled dictionary defines “${term}”.`}
+                  ? t("reference_target_unavailable", {
+                      value1: result.unresolved.join(", "),
+                    })
+                  : t("no_enabled_dictionary_defines", { term: term })}
               </p>
-              <p>Try another dictionary or check for an update.</p>
+              <p>{t("try_another_dictionary_or_check_for_an_update")}</p>
             </Empty>
           )}
           {word && (
@@ -338,7 +343,7 @@ function LookupEntry({
               {result!.words.length > 1 && (
                 <label className="candidate">
                   <select
-                    aria-label="Word"
+                    aria-label={t("word")}
                     value={selected}
                     onChange={(event) => {
                       setSelected(event.target.value);
@@ -359,7 +364,7 @@ function LookupEntry({
                 <div>
                   {saved && (
                     <span className={`state state-${stateOf(saved)}`}>
-                      {wordStateLabels[stateOf(saved)]}
+                      {t(wordStateLabels[stateOf(saved)])}
                     </span>
                   )}
                   <h1 lang={word.language}>
@@ -392,13 +397,16 @@ function LookupEntry({
                   ].join(" · ")}
                 </div>
               )}
-              <Meanings meanings={word.meanings} />
+              <div className="lookup-reading">
+                <Meanings
+                  meanings={word.meanings}
+                  language={word.language}
+                  settings={settings}
+                />
+                <WordExamples word={word} settings={settings} />
+              </div>
               {context && (
                 <div className="lookup-sentence" data-srs-reader="">
-                  <details>
-                    <summary>Sentence</summary>
-                    <Sentence context={context} language={word.language} />
-                  </details>
                   <SentenceTranslation
                     key={`${context.sentence}:${context.start}`}
                     context={{
@@ -414,6 +422,8 @@ function LookupEntry({
                     language={word.language}
                     settings={settings}
                     wordId={word.id}
+                    label={t("translate_current_sentence")}
+                    collapsed
                     onTranslated={(translation) =>
                       onContext({ ...context, translation })
                     }
@@ -434,7 +444,9 @@ function LookupEntry({
                 onClick={() => void act()}
               >
                 <Icon name={saved?.card || saved?.known ? "check" : "plus"} />
-                {saved?.card || saved?.known ? "Save example" : "Mine word"}
+                {saved?.card || saved?.known
+                  ? t("save_example")
+                  : t("mine_word")}
               </button>
               <button
                 className="quiet master-action"
@@ -443,7 +455,7 @@ function LookupEntry({
                 onClick={() => void toggleMastery()}
               >
                 <Icon name="check" />
-                {saved?.known ? "Unmaster" : "Master"}
+                {saved?.known ? t("unmaster") : t("master")}
               </button>
             </div>
             {saved?.known ? null : saved?.suspended ? (
@@ -457,7 +469,7 @@ function LookupEntry({
                   }).then(reload)
                 }
               >
-                Resume
+                {t("resume")}{" "}
               </button>
             ) : (
               <>
@@ -481,13 +493,13 @@ function LookupEntry({
                     void rpc({ action: "undo", id: lastReview })
                       .then(() => {
                         setLastReview("");
-                        setNotice("Review undone");
+                        setNotice(t("review_undone"));
                         reload();
                       })
                       .catch((error) => setError(error.message))
                   }
                 >
-                  Undo
+                  {t("undo")}{" "}
                 </button>
               )}
             </div>

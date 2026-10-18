@@ -1,53 +1,57 @@
+import { t } from "./i18n";
 import { useEffect, useState } from "react";
 import { rpc } from "./api";
 import { translateSentence } from "./browser-ai";
 import type { ReadingContext, Settings } from "./model";
 
-export function SentenceTranslation({
-  context,
+type Translation = NonNullable<ReadingContext["translation"]>;
+
+export function TextTranslation({
+  text,
   language,
   settings,
-  wordId,
+  initialTranslation,
   onTranslated,
+  label = t("translate"),
+  collapsed = false,
 }: {
-  context: ReadingContext;
+  text: string;
   language: string;
   settings: Settings;
-  wordId: string;
-  onTranslated?: (
-    translation: NonNullable<ReadingContext["translation"]>,
-  ) => void;
+  initialTranslation?: Translation;
+  onTranslated?: (translation: Translation) => void | Promise<void>;
+  label?: string;
+  collapsed?: boolean;
 }) {
-  const [translation, setTranslation] = useState(context.translation);
+  const [translation, setTranslation] = useState(initialTranslation);
+  const [shown, setShown] = useState(!collapsed);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    setTranslation(context.translation);
+    setTranslation(initialTranslation);
     setError("");
-  }, [context.sentence, context.start, context.translation]);
+  }, [text, initialTranslation]);
   async function translate() {
+    if (translation?.language === settings.nativeLanguage) {
+      setShown(true);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       const value = {
         text: await translateSentence(
-          context.sentence,
+          text,
           language,
-          settings.translationLanguage,
+          settings.nativeLanguage,
           setStatus,
         ),
-        language: settings.translationLanguage,
+        language: settings.nativeLanguage,
       };
-      onTranslated?.(value);
       setTranslation(value);
-      await rpc({
-        action: "saveTranslation",
-        id: wordId,
-        sentence: context.sentence,
-        start: context.start,
-        translation: value,
-      });
+      setShown(true);
+      await onTranslated?.(value);
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -57,15 +61,20 @@ export function SentenceTranslation({
   }
   return (
     <div className="sentence-translation" data-srs-reader="">
-      {translation && <p lang={translation.language}>{translation.text}</p>}
-      {(!translation ||
-        translation.language !== settings.translationLanguage) && (
+      {shown && translation && (
+        <p lang={translation.language} dir="auto">
+          {translation.text}
+        </p>
+      )}
+      {(!shown ||
+        !translation ||
+        translation.language !== settings.nativeLanguage) && (
         <button
           className="link"
           disabled={busy}
           onClick={() => void translate()}
         >
-          {busy ? status || "Translating…" : "Translate sentence"}
+          {busy ? status || t("translating") : label}
         </button>
       )}
       {error && (
@@ -74,5 +83,46 @@ export function SentenceTranslation({
         </p>
       )}
     </div>
+  );
+}
+
+export function SentenceTranslation({
+  context,
+  language,
+  settings,
+  wordId,
+  onTranslated,
+  label = t("translate_sentence"),
+  collapsed = false,
+}: {
+  context: ReadingContext;
+  language: string;
+  settings: Settings;
+  wordId?: string;
+  onTranslated?: (translation: Translation) => void;
+  label?: string;
+  collapsed?: boolean;
+}) {
+  return (
+    <TextTranslation
+      key={`${context.sentence}:${context.start}:${settings.nativeLanguage}`}
+      text={context.sentence}
+      language={language}
+      settings={settings}
+      initialTranslation={context.translation}
+      label={label}
+      collapsed={collapsed}
+      onTranslated={async (translation) => {
+        onTranslated?.(translation);
+        if (wordId)
+          await rpc({
+            action: "saveTranslation",
+            id: wordId,
+            sentence: context.sentence,
+            start: context.start,
+            translation,
+          });
+      }}
+    />
   );
 }

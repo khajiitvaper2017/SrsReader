@@ -1,6 +1,7 @@
+import { t } from "./i18n";
 import { db } from "./db";
 import { httpsUrl, wordId, type AudioInfo } from "./model";
-import { languageName, supportedLanguages } from "./languages";
+import { languageName, languageIso3 } from "./languages";
 
 function plain(text: string) {
   return text
@@ -21,10 +22,12 @@ async function commons(parameters: Record<string, string>) {
     signal: AbortSignal.timeout(12000),
   });
   if (!response.ok)
-    throw new Error(`Pronunciation lookup failed (${response.status}).`);
+    throw new Error(
+      t("pronunciation_lookup_failed_2", { status: response.status }),
+    );
   const result = await response.json();
   if (result.error)
-    throw new Error(result.error.info || "Pronunciation lookup failed.");
+    throw new Error(result.error.info || t("pronunciation_lookup_failed"));
   return result.query;
 }
 export async function cachePronunciation(
@@ -35,7 +38,7 @@ export async function cachePronunciation(
   const id = wordId(language, lemma, reading);
   const saved = await db.audio.get(id);
   if (saved) return saved;
-  const iso3 = supportedLanguages.find((item) => item.code === language)?.iso3;
+  const iso3 = languageIso3(language);
   const escaped = lemma.replace(/[\\/.*+?^${}()|[\]]/g, "\\$&");
   const searches = [
     `intitle:/^${language}(-[a-zA-Z]{2})?-${escaped}[0-9]*\\.ogg$/i`,
@@ -145,7 +148,9 @@ export async function speak(text: string, language: string, voiceName: string) {
     ) || voices.find((v) => v.lang.split("-")[0] === language);
   if (!voice)
     throw new Error(
-      `No local ${languageName(language)} voice is installed. Install a system voice or enable pronunciation downloads.`,
+      t("no_local_voice_is_installed_install_a_system", {
+        value1: languageName(language),
+      }),
     );
   stopAudio();
   const utterance = new SpeechSynthesisUtterance(text);
@@ -156,7 +161,7 @@ export async function speak(text: string, language: string, voiceName: string) {
     utterance.onerror = (event) =>
       event.error === "canceled" || event.error === "interrupted"
         ? resolve()
-        : reject(new Error("The system voice could not play this text."));
+        : reject(new Error(t("the_system_voice_could_not_play_this_text")));
     speechSynthesis.speak(utterance);
   });
 }

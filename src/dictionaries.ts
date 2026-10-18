@@ -1,6 +1,8 @@
+import { t } from "./i18n";
 import { BlobReader, BlobWriter, TextWriter, ZipReader } from "@zip.js/zip.js";
 import { z } from "zod";
 import { db } from "./db";
+import { languageCode } from "./languages";
 import {
   dictionaryId,
   folded,
@@ -78,20 +80,20 @@ async function importRevision(
     const files = (await zip.getEntries()).filter((f) => !f.directory);
     const indexFile = files.find((f) => f.filename === "index.json");
     if (!indexFile?.getData)
-      throw new Error(
-        "This ZIP has no index.json. Choose a Yomitan format-3 dictionary.",
-      );
+      throw new Error(t("this_zip_has_no_index_json_choose_a"));
     const index = indexSchema.parse(
       JSON.parse(await indexFile.getData(new TextWriter())),
     );
-    language = index.sourceLanguage || language;
-    const target = index.targetLanguage || "";
+    language = languageCode(index.sourceLanguage || language);
+    const target = index.targetLanguage
+      ? languageCode(index.targetLanguage)
+      : "";
     // Validate the locale before deriving search keys from imported headwords.
     folded("A", language);
     const id = dictionaryId(index.title, language, target);
     if (expectedId && id !== expectedId)
       throw new Error(
-        "The downloaded dictionary does not match the installed dictionary.",
+        t("the_downloaded_dictionary_does_not_match_the_installed"),
       );
     const existing = await db.dictionaries.get(id);
     const preference = (await db.settings.get("main"))?.value
@@ -107,13 +109,13 @@ async function importRevision(
     const segmenter = new Intl.Segmenter(language, { granularity: "word" });
     for (const [bankNumber, file] of banks.entries()) {
       progress({
-        phase: `Reading ${file.filename}`,
+        phase: t("reading", { filename: file.filename }),
         done: bankNumber,
         total: totalBanks,
       });
       const rows: unknown = JSON.parse(await file.getData!(new TextWriter()));
       if (!Array.isArray(rows))
-        throw new Error(`Invalid term bank: ${file.filename}`);
+        throw new Error(t("invalid_term_bank", { filename: file.filename }));
       for (let offset = 0; offset < rows.length; offset += 1000) {
         const batch: Entry[] = rows
           .slice(offset, offset + 1000)
@@ -121,7 +123,10 @@ async function importRevision(
             const parsed = termSchema.safeParse(row);
             if (!parsed.success)
               throw new Error(
-                `Invalid entry ${offset + i + 1} in ${file.filename}. Choose a valid Yomitan format-3 dictionary.`,
+                t("invalid_entry_in_choose_a_valid_yomitan_format", {
+                  value1: offset + i + 1,
+                  filename: file.filename,
+                }),
               );
             const [lemma, reading, tags, , , definitions, sequence, termTags] =
               parsed.data;
@@ -157,13 +162,15 @@ async function importRevision(
     }
     for (const [bankNumber, file] of metaBanks.entries()) {
       progress({
-        phase: `Reading ${file.filename}`,
+        phase: t("reading", { filename: file.filename }),
         done: banks.length + bankNumber,
         total: totalBanks,
       });
       const rows: unknown = JSON.parse(await file.getData!(new TextWriter()));
       if (!Array.isArray(rows))
-        throw new Error(`Invalid term metadata bank: ${file.filename}`);
+        throw new Error(
+          t("invalid_term_metadata_bank", { filename: file.filename }),
+        );
       for (let offset = 0; offset < rows.length; offset += 1000) {
         const batch: Frequency[] = rows
           .slice(offset, offset + 1000)
@@ -171,14 +178,20 @@ async function importRevision(
             const parsed = termMetaSchema.safeParse(row);
             if (!parsed.success)
               throw new Error(
-                `Invalid metadata entry ${offset + i + 1} in ${file.filename}.`,
+                t("invalid_metadata_entry_in", {
+                  value1: offset + i + 1,
+                  filename: file.filename,
+                }),
               );
             const [term, mode, data] = parsed.data;
             if (mode !== "freq") return [];
             const frequency = frequencyDataSchema.safeParse(data);
             if (!frequency.success)
               throw new Error(
-                `Invalid frequency entry ${offset + i + 1} in ${file.filename}.`,
+                t("invalid_frequency_entry_in", {
+                  value1: offset + i + 1,
+                  filename: file.filename,
+                }),
               );
             const payload = frequency.data;
             const hasReading =
@@ -207,7 +220,7 @@ async function importRevision(
       }
     }
     if (!count && !frequencyCount)
-      throw new Error("This ZIP contains no terms or numeric frequencies.");
+      throw new Error(t("this_zip_contains_no_terms_or_numeric_frequencies"));
     for (const file of files.filter((f) =>
       /^tag_bank_\d+\.json$/.test(f.filename),
     )) {
@@ -233,12 +246,12 @@ async function importRevision(
     );
     for (const [i, file] of media.entries()) {
       progress({
-        phase: "Saving dictionary media",
+        phase: t("saving_dictionary_media"),
         done: i,
         total: media.length,
       });
       if (file.filename.split("/").includes(".."))
-        throw new Error("Invalid dictionary media path.");
+        throw new Error(t("invalid_dictionary_media_path"));
       await db.dictionaryMedia.put({
         id: `${revisionId}:${file.filename}`,
         revisionId,
@@ -262,7 +275,7 @@ async function importRevision(
       styles,
     };
     progress({
-      phase: "Activating dictionary",
+      phase: t("activating_dictionary"),
       done: totalBanks,
       total: totalBanks,
     });
@@ -282,22 +295,22 @@ async function importRevision(
 
 export async function checkUpdate(dictionary: Dictionary) {
   if (!dictionary.index.isUpdatable || !dictionary.index.indexUrl)
-    throw new Error("This dictionary has no update source.");
+    throw new Error(t("this_dictionary_has_no_update_source"));
   const response = await fetch(httpsUrl(dictionary.index.indexUrl), {
     credentials: "omit",
     cache: "no-store",
   });
   if (!response.ok)
-    throw new Error(`Update check failed (${response.status}).`);
+    throw new Error(t("update_check_failed", { status: response.status }));
   const index = indexSchema.parse(await response.json());
   if (
     dictionaryId(
       index.title,
-      index.sourceLanguage || dictionary.language,
-      index.targetLanguage || "",
+      languageCode(index.sourceLanguage || dictionary.language),
+      index.targetLanguage ? languageCode(index.targetLanguage) : "",
     ) !== dictionary.id
   )
-    throw new Error("The update index identifies a different dictionary.");
+    throw new Error(t("the_update_index_identifies_a_different_dictionary"));
   return new Intl.Collator("en", { numeric: true }).compare(
     index.revision,
     dictionary.index.revision,

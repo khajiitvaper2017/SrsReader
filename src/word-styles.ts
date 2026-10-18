@@ -13,14 +13,14 @@ export const wordStates = [
 export type WordState = (typeof wordStates)[number];
 export const wordStyleStates = [...wordStates, "unparsed"] as const;
 export const wordStateLabels = {
-  unknown: "New",
-  new: "Saved",
-  learning: "Learning",
-  review: "Reviewing",
-  due: "Due",
-  known: "Mastered",
-  suspended: "Suspended",
-  unparsed: "Unparsed",
+  unknown: "new",
+  new: "saved",
+  learning: "learning",
+  review: "reviewing",
+  due: "due",
+  known: "mastered",
+  suspended: "suspended",
+  unparsed: "unparsed",
 };
 const styleSchema = z.object({
   mode: z.enum(["none", "text", "background"]),

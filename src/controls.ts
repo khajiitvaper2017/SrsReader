@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { z } from "zod";
 
 const modifiers = {
@@ -51,27 +52,35 @@ export const lookupPresets: LookupBinding[] = [
 ];
 export function bindingLabel(binding: LookupBinding) {
   const keys = [
-    binding.ctrl && "Ctrl",
-    binding.alt && "Alt",
-    binding.shift && "Shift",
-    binding.meta && "Meta",
+    binding.ctrl && t("ctrl"),
+    binding.alt && t("key_alt"),
+    binding.shift && t("key_shift"),
+    binding.meta && t("key_meta"),
   ].filter(Boolean);
   if (binding.type === "mouse")
     keys.push(
       [
-        "Left mouse",
-        "Middle mouse",
-        "Right mouse",
-        "Mouse Back",
-        "Mouse Forward",
+        t("left_mouse"),
+        t("middle_mouse"),
+        t("right_mouse"),
+        t("mouse_back"),
+        t("mouse_forward"),
       ][binding.button]!,
     );
-  else if (binding.code)
+  else if (binding.code) {
+    const keyNames: Record<string, string> = {
+      Space: t("space"),
+      ArrowUp: t("key_arrow_up"),
+      ArrowDown: t("key_arrow_down"),
+      ArrowLeft: t("key_arrow_left"),
+      ArrowRight: t("key_arrow_right"),
+    };
     keys.push(
-      binding.code.replace(/^(Key|Digit)/, "").replace(/^Arrow/, "Arrow "),
+      keyNames[binding.code] || binding.code.replace(/^(Key|Digit)/, ""),
     );
-  if (binding.type === "hover") keys.push("hover");
-  return keys.join(" + ").replace(/^hover$/, "Hover");
+  }
+  if (binding.type === "hover") keys.push(t("hover"));
+  return keys.join(" + ");
 }
 export const bindingKey = (binding: LookupBinding) =>
   JSON.stringify([

@@ -1,9 +1,12 @@
+import { t, i18n, setInterfaceLanguage, number } from "./i18n";
+import { useTranslation } from "react-i18next";
 import { useEffect, useState, type ReactNode } from "react";
 import { browser } from "wxt/browser";
 import { rpc } from "./api";
 import { db } from "./db";
 import { playBlob, speak } from "./audio";
 import { installInputPrevention } from "./input-prevention";
+import { TextTranslation } from "./SentenceTranslation";
 import {
   defaults,
   type Definition,
@@ -88,16 +91,37 @@ export function Empty({
 export function useSettings(
   scope: "extensionPages" | "popups" = "extensionPages",
 ) {
+  useTranslation(undefined, { i18n });
   const [settings, setSettings] = useState<Settings>(defaults);
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    void rpc({ action: "settings" })
-      .then((value) => {
-        setSettings(value);
-        setReady(true);
-      })
-      .catch(console.error);
+    const load = () => {
+      void rpc({ action: "settings" })
+        .then((value) => {
+          setSettings(value);
+          setReady(true);
+        })
+        .catch(console.error);
+    };
+    const changed = (message: { event?: string }) => {
+      if (message.event === "changed") load();
+    };
+    load();
+    browser.runtime.onMessage.addListener(changed);
+    return () => browser.runtime.onMessage.removeListener(changed);
   }, []);
+  useEffect(() => {
+    void setInterfaceLanguage(
+      settings.interfaceLanguage,
+      settings.nativeLanguage,
+    );
+  }, [settings.interfaceLanguage, settings.nativeLanguage]);
+  useEffect(() => {
+    document.documentElement.lang = i18n.resolvedLanguage || "en";
+    document.documentElement.dir = i18n.dir();
+    document.title =
+      scope === "popups" ? t("dictionary_page_title") : "SrsReader";
+  }, [settings.nativeLanguage, i18n.resolvedLanguage, scope]);
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
   }, [settings.theme]);
@@ -124,7 +148,7 @@ export function Sentence({
   language: string;
 }) {
   return (
-    <span lang={language}>
+    <span lang={language} dir="auto">
       {context.sentence.slice(0, context.start)}
       <mark>{context.sentence.slice(context.start, context.end)}</mark>
       {context.sentence.slice(context.end)}
@@ -234,7 +258,7 @@ function ImageContent({
       loading="lazy"
     />
   ) : (
-    <span className="muted">{alt || "[Image unavailable]"}</span>
+    <span className="muted">{alt || t("image_unavailable")}</span>
   );
 }
 function Structured({
@@ -368,30 +392,49 @@ function scopedStyles(css: string, scope: string) {
     return "";
   }
 }
-export function Meanings({ meanings }: { meanings: Meaning[] }) {
+export function Meanings({
+  meanings,
+  language,
+  settings,
+}: {
+  meanings: Meaning[];
+  language: string;
+  settings: Settings;
+}) {
   const [styles, setStyles] = useState<Record<string, string>>({});
+  const [monolingual, setMonolingual] = useState<string[]>([]);
   useEffect(() => {
     let alive = true;
     void db.dictionaries
       .bulkGet(meanings.map((m) => m.dictionaryId))
       .then((rows) => {
-        if (alive)
+        if (alive) {
           setStyles(
             Object.fromEntries(
               rows.filter((d) => d !== undefined).map((d) => [d.id, d.styles]),
             ),
           );
+          setMonolingual(
+            rows
+              .filter((d) => d?.language === language && d.target === language)
+              .map((d) => d!.id),
+          );
+        }
       });
     return () => {
       alive = false;
     };
-  }, [meanings]);
+  }, [meanings, language]);
   return (
     <div className="meanings">
       {meanings.map((meaning, i) => (
         <section className="meaning" key={`${meaning.dictionaryId}:${i}`}>
           <div className="meaning-label">
-            <span className="dictionary-name">{meaning.title}</span>
+            <span className="dictionary-name">
+              {meaning.dictionaryId === "personal"
+                ? t("personal_definition")
+                : meaning.title}
+            </span>
             {meaning.tags
               .split(" ")
               .filter(Boolean)
@@ -417,6 +460,20 @@ export function Meanings({ meanings }: { meanings: Meaning[] }) {
               </div>
             ))}
           </div>
+          {monolingual.includes(meaning.dictionaryId) &&
+            language !== settings.nativeLanguage && (
+              <TextTranslation
+                key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}`}
+                text={meaning.definitions
+                  .map(definitionText)
+                  .join("; ")
+                  .replace(/\s+/g, " ")
+                  .trim()}
+                language={language}
+                settings={settings}
+                label={t("translate_definition")}
+              />
+            )}
           {meaning.attribution && (
             <div className="attribution">
               {safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl) ? (
@@ -439,27 +496,28 @@ export function Meanings({ meanings }: { meanings: Meaning[] }) {
     </div>
   );
 }
-export function shortDefinition(word: Vocabulary) {
-  function text(value: unknown): string {
-    if (typeof value === "string") return value;
-    if (Array.isArray(value)) return value.map(text).join(" ");
-    if (value && typeof value === "object") {
-      const node = value as Record<string, unknown>;
-      if (["details", "summary", "a"].includes(String(node.tag))) return "";
-      if (
-        node.data &&
-        typeof node.data === "object" &&
-        !["glosses"].includes(
-          String((node.data as Record<string, unknown>).content),
-        )
+function definitionText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(definitionText).join(" ");
+  if (value && typeof value === "object") {
+    const node = value as Record<string, unknown>;
+    if (["details", "summary", "a"].includes(String(node.tag))) return "";
+    if (
+      node.data &&
+      typeof node.data === "object" &&
+      !["glosses"].includes(
+        String((node.data as Record<string, unknown>).content),
       )
-        return "";
-      return text(node.content || node.text);
-    }
-    return "";
+    )
+      return "";
+    const text = definitionText(node.content || node.text);
+    return node.tag === "li" ? `${text}; ` : text;
   }
+  return "";
+}
+export function shortDefinition(word: Vocabulary) {
   return word.meanings
-    .map((m) => m.definitions.map(text).join("; "))
+    .map((m) => m.definitions.map(definitionText).join("; "))
     .join("; ")
     .replace(/\s+/g, " ")
     .trim();
@@ -518,15 +576,17 @@ export function AudioButton({
     <span className="audio-control">
       <button
         className={sentence ? "quiet" : "icon-button"}
-        title={sentence ? "Read sentence aloud" : "Play word pronunciation"}
+        title={
+          sentence ? t("read_sentence_aloud") : t("play_word_pronunciation")
+        }
         aria-label={
-          sentence ? "Read sentence aloud" : "Play word pronunciation"
+          sentence ? t("read_sentence_aloud") : t("play_word_pronunciation")
         }
         disabled={busy}
         onClick={() => void play()}
       >
         <Icon name="sound" />
-        {sentence && "Sentence"}
+        {sentence && t("sentence")}
       </button>
       {attribution && (
         <a
@@ -543,11 +603,15 @@ export function AudioButton({
 }
 export function intervalLabel(time: number) {
   const minutes = Math.max(1, Math.round((time - Date.now()) / 60000));
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return t("interval_minutes", { count: minutes });
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return t("interval_hours", { count: hours });
   const days = Math.round(hours / 24);
-  return days < 365 ? `${days}d` : `${(days / 365).toFixed(1)}y`;
+  return days < 365
+    ? t("interval_days", { count: days })
+    : t("interval_years", {
+        value: number(days / 365, { maximumFractionDigits: 1 }),
+      });
 }
 export function Ratings({
   times,
@@ -562,7 +626,7 @@ export function Ratings({
 }) {
   return (
     <div className="ratings">
-      {["Again", "Hard", "Good", "Easy"].map((label, i) =>
+      {[t("again"), t("hard"), t("good"), t("easy")].map((label, i) =>
         onlyAgainGood && i !== 0 && i !== 2 ? null : (
           <button
             key={label}

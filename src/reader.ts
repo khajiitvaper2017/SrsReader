@@ -1,3 +1,4 @@
+import { t, setInterfaceLanguage } from "./i18n";
 import { browser } from "wxt/browser";
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { rpc } from "./api";
@@ -196,7 +197,7 @@ export function startReader(
         if (!options.onLookup && settings.detectPageLanguage) {
           const detected = (await detectLanguage(text)) || (await pageLanguage);
           if (generation !== version || !active) continue;
-          if (detected && detected !== settings.language) continue;
+          if (detected && detected !== settings.studyLanguage) continue;
         }
         const block: Block = {
           text,
@@ -240,7 +241,7 @@ export function startReader(
             settings.wordStyles.unparsed.mode !== "none"
           ) {
             let matched = 0;
-            for (const segment of new Intl.Segmenter(settings.language, {
+            for (const segment of new Intl.Segmenter(settings.studyLanguage, {
               granularity: "word",
             }).segment(text.slice(offset, end))) {
               if (!segment.isWordLike) continue;
@@ -274,7 +275,10 @@ export function startReader(
     void drain();
   }
   function contextFor(block: Block, span: ScanSpan): ReadingContext {
-    const segments = new Intl.Segmenter(settings.language, {
+    const source = block.parts[0]?.node.parentElement?.closest<HTMLElement>(
+      "[data-reading-source-url]",
+    );
+    const segments = new Intl.Segmenter(settings.studyLanguage, {
       granularity: "sentence",
     }).segment(block.text);
     const segment = [...segments].find(
@@ -287,8 +291,14 @@ export function startReader(
       surface: block.text.slice(span.start, span.end),
       start: span.start - start,
       end: span.end - start,
-      url: options.source?.url || location.href,
-      title: options.source?.title || document.title,
+      url:
+        source?.dataset.readingSourceUrl ||
+        options.source?.url ||
+        location.href,
+      title:
+        source?.dataset.readingSourceTitle ||
+        options.source?.title ||
+        document.title,
       mined: Date.now(),
     };
   }
@@ -309,7 +319,7 @@ export function startReader(
     popupSession = session;
     popup = document.createElement("iframe");
     popup.dataset.srsReader = "";
-    popup.title = "SrsReader dictionary";
+    popup.title = t("srsreader_dictionary");
     popup.allow = "translator; language-detector";
     popup.src =
       browser.runtime.getURL("/lookup.html") +
@@ -468,6 +478,10 @@ export function startReader(
   }
   async function configure(preservePopup = false) {
     settings = await rpc({ action: "settings" });
+    await setInterfaceLanguage(
+      settings.interfaceLanguage,
+      settings.nativeLanguage,
+    );
     if (ctx.isInvalid) return;
     style.textContent = wordHighlightCss(settings);
     clearTimeout(timer);

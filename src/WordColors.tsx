@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { defaults, type Settings } from "./model";
 import { wordStyleStates, wordStateLabels } from "./word-styles";
 
@@ -10,9 +11,9 @@ export function WordColors({
 }) {
   return (
     <details className="word-colors">
-      <summary>Word colors</summary>
+      <summary>{t("word_colors")}</summary>
       <label className="setting-row">
-        <strong>Color words</strong>
+        <strong>{t("color_words")}</strong>
         <input
           type="checkbox"
           role="switch"
@@ -25,7 +26,7 @@ export function WordColors({
       <div className="word-color-options">
         {wordStyleStates.map((state) => {
           const style = settings.wordStyles[state];
-          const label = wordStateLabels[state];
+          const label = t(wordStateLabels[state]);
           const change = (patch: Partial<typeof style>) =>
             onChange({
               wordStyles: {
@@ -50,20 +51,20 @@ export function WordColors({
                 {label}
               </span>
               <select
-                aria-label={`${label} word style`}
+                aria-label={t("word_style", { label: label })}
                 disabled={!settings.wordColorsEnabled}
                 value={style.mode}
                 onChange={(event) =>
                   change({ mode: event.target.value as typeof style.mode })
                 }
               >
-                <option value="none">Off</option>
-                <option value="text">Text</option>
-                <option value="background">Background</option>
+                <option value="none">{t("off")}</option>
+                <option value="text">{t("text")}</option>
+                <option value="background">{t("background")}</option>
               </select>
               <input
                 type="color"
-                aria-label={`${label} word color`}
+                aria-label={t("word_color", { label: label })}
                 value={style.color}
                 disabled={!settings.wordColorsEnabled || style.mode === "none"}
                 onChange={(event) => change({ color: event.target.value })}
@@ -76,7 +77,7 @@ export function WordColors({
         className="quiet"
         onClick={() => onChange({ wordStyles: defaults.wordStyles })}
       >
-        Reset colors
+        {t("reset_colors")}{" "}
       </button>
     </details>
   );

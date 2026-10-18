@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import {
   BlobReader,
   BlobWriter,
@@ -115,7 +116,8 @@ export async function readLearning(file: File) {
   try {
     const files = (await zip.getEntries()).filter((f) => !f.directory);
     const json = files.find((f) => f.filename === "learning.json");
-    if (!json?.getData) throw new Error("Choose a SrsReader learning archive.");
+    if (!json?.getData)
+      throw new Error(t("choose_a_srsreader_learning_archive"));
     const data = learningSchema.parse(
       JSON.parse(await json.getData(new TextWriter())),
     );
@@ -126,26 +128,26 @@ export async function readLearning(file: File) {
         (w) => w.id !== wordId(w.language, w.lemma, w.reading),
       )
     )
-      throw new Error("Invalid word identities in learning archive.");
+      throw new Error(t("invalid_word_identities_in_learning_archive"));
     if (
       new Set(data.reviews.map((r) => r.id)).size !== data.reviews.length ||
       data.reviews.some(
         (r) => !ids.has(r.wordId) || (r.before && r.before.id !== r.wordId),
       )
     )
-      throw new Error("Invalid review references in learning archive.");
+      throw new Error(t("invalid_review_references_in_learning_archive"));
     if (
       new Set(data.audio.map((a) => a.id)).size !== data.audio.length ||
       data.audio.some(
         (a) => a.id !== wordId(a.language, a.lemma, JSON.parse(a.id)[2] || ""),
       )
     )
-      throw new Error("Invalid audio identities in learning archive.");
+      throw new Error(t("invalid_audio_identities_in_learning_archive"));
     const audio = [];
     for (const item of data.audio) {
       const entry = files.find((f) => f.filename === item.path);
       if (!entry?.getData || !/^audio\/\d+$/.test(item.path))
-        throw new Error("A recording is missing from the archive.");
+        throw new Error(t("recording_missing"));
       const { path, mime, ...info } = item;
       audio.push({ ...info, blob: await entry.getData(new BlobWriter(mime)) });
     }

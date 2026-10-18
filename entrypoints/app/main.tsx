@@ -1,3 +1,4 @@
+import { t, i18n, number, interfaceLanguages } from "../../src/i18n";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { rpc } from "../../src/api";
@@ -36,11 +37,16 @@ import {
 } from "../../src/ui";
 import type { ImportProgress } from "../../src/dictionaries";
 import "../../src/styles.css";
-import { supportedLanguages, languageName } from "../../src/languages";
+import {
+  languageIso3,
+  languageName,
+  systemLanguage,
+} from "../../src/languages";
 import { LookupControls } from "../../src/LookupControls";
 import { WordColors } from "../../src/WordColors";
 import { SentenceTranslation } from "../../src/SentenceTranslation";
-import { translationLanguages } from "../../src/browser-ai";
+import { LanguageSelect } from "../../src/LanguageSelect";
+import LanguageDataWorker from "../../src/language-data.worker?worker";
 import { wordStates, wordStateLabels } from "../../src/word-styles";
 import {
   FrequencyBrowser,
@@ -74,11 +80,11 @@ function App() {
             <Logo small />
           </a>
           {!setup && (
-            <nav aria-label="Pages">
+            <nav aria-label={t("pages")}>
               {[
-                ["review", "Review"],
-                ["words", "Words"],
-                ["settings", "Settings"],
+                ["review", t("review")],
+                ["words", t("words")],
+                ["settings", t("settings")],
               ].map(([id, label]) => (
                 <a
                   className={page === id ? "active" : ""}
@@ -234,13 +240,13 @@ function ReviewPage({
     <>
       <div className="review-stats">
         <span>
-          Due <strong>{queue?.due ?? "—"}</strong>
+          {t("due")} <strong>{queue?.due ?? "—"}</strong>
         </span>
         <span>
-          New <strong>{queue?.fresh ?? "—"}</strong>
+          {t("new")} <strong>{queue?.fresh ?? "—"}</strong>
         </span>
         <span>
-          Reviewed today <strong>{stats.today}</strong>
+          {t("reviewed_today")} <strong>{stats.today}</strong>
         </span>
       </div>
       <ErrorBox error={error} />
@@ -252,13 +258,13 @@ function ReviewPage({
                 className={front === "word" ? "selected" : ""}
                 onClick={() => setFront("word")}
               >
-                Word
+                {t("word")}{" "}
               </button>
               <button
                 className={front === "sentence" ? "selected" : ""}
                 onClick={() => setFront("sentence")}
               >
-                In context
+                {t("in_context")}{" "}
               </button>
             </div>
           </div>
@@ -283,7 +289,11 @@ function ReviewPage({
                       onError={setError}
                     />
                   </div>
-                  <Meanings meanings={word.meanings} />
+                  <Meanings
+                    meanings={word.meanings}
+                    language={word.language}
+                    settings={settings}
+                  />
                   {context && (
                     <div className="sentence-box">
                       <Sentence context={context} language={word.language} />
@@ -323,7 +333,10 @@ function ReviewPage({
                             setExample((example + 1) % word.contexts.length)
                           }
                         >
-                          Another example ({example + 1}/{word.contexts.length})
+                          {t("example_position", {
+                            current: example + 1,
+                            total: word.contexts.length,
+                          })}
                         </button>
                       )}
                     </div>
@@ -338,7 +351,8 @@ function ReviewPage({
               ) : (
                 <div className="reveal-area">
                   <button className="primary reveal" onClick={reveal}>
-                    Show answer <span className="keycap">Space</span>
+                    {t("show_answer")}{" "}
+                    <span className="keycap">{t("space")}</span>
                   </button>
                 </div>
               )}
@@ -347,22 +361,24 @@ function ReviewPage({
             <Empty
               title={
                 queue?.waiting
-                  ? "No reviews due."
+                  ? t("no_reviews_due")
                   : stats.total
-                    ? "No reviews due."
-                    : "No saved words."
+                    ? t("no_reviews_due")
+                    : t("no_saved_words")
               }
             >
               <p>
                 {queue?.waiting
-                  ? `Next review in ${intervalLabel(queue.waiting)}.`
+                  ? t("next_review_in", {
+                      value1: intervalLabel(queue.waiting),
+                    })
                   : stats.total
                     ? ""
-                    : "Use your lookup control on a word to save it."}
+                    : t("use_your_lookup_control_on_a_word_to")}
               </p>
               {!stats.total && (
                 <a className="button primary" href="#settings">
-                  Import dictionary
+                  {t("import_dictionary")}{" "}
                 </a>
               )}
             </Empty>
@@ -373,7 +389,7 @@ function ReviewPage({
               disabled={!last || busy}
               onClick={() => void undo()}
             >
-              ↶ Undo last review
+              {t("undo_last_review")}{" "}
             </button>
             {word && (
               <button
@@ -390,7 +406,7 @@ function ReviewPage({
                     .catch((error) => setError(error.message))
                 }
               >
-                <Icon name="check" /> Master
+                <Icon name="check" /> {t("master")}{" "}
               </button>
             )}
             {word && (
@@ -403,7 +419,7 @@ function ReviewPage({
                     .catch((error) => setError(error.message))
                 }
               >
-                Suspend word
+                {t("suspend_word")}{" "}
               </button>
             )}
           </footer>
@@ -447,21 +463,21 @@ function WordsPage({ settings }: { settings: Settings }) {
       <div className="word-toolbar">
         <input
           type="search"
-          aria-label="Search saved words"
-          placeholder="Search words"
+          aria-label={t("search_saved_words")}
+          placeholder={t("search_words")}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
         <select
-          aria-label="Filter words"
+          aria-label={t("filter_words")}
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         >
           {[
-            ["all", "All words"],
+            ["all", t("all_words")],
             ...wordStates
               .filter((state) => state !== "unknown")
-              .map((state) => [state, wordStateLabels[state]]),
+              .map((state) => [state, t(wordStateLabels[state])]),
           ].map(([value, label]) => (
             <option key={value} value={value}>
               {label}
@@ -471,11 +487,11 @@ function WordsPage({ settings }: { settings: Settings }) {
       </div>
       {!visible.length ? (
         <section className="panel">
-          <Empty title="No words found.">
+          <Empty title={t("no_words_found")}>
             <p>
               {query || filter !== "all"
                 ? ""
-                : "Save a word from a website to add it here."}
+                : t("save_a_word_from_a_website_to_add")}
             </p>
           </Empty>
         </section>
@@ -495,11 +511,11 @@ function WordsPage({ settings }: { settings: Settings }) {
                   <strong lang={w.language}>{w.lemma}</strong>
                   <span>
                     {shortDefinition(w).slice(0, 140) ||
-                      "Open to see definitions"}
+                      t("open_to_see_definitions")}
                   </span>
                 </div>
                 <span className={`state state-${stateOf(w)}`}>
-                  {wordStateLabels[stateOf(w)]}
+                  {t(wordStateLabels[stateOf(w)])}
                 </span>
               </button>
             ))}
@@ -509,7 +525,7 @@ function WordsPage({ settings }: { settings: Settings }) {
               <div className="row between">
                 <button
                   className="icon-button"
-                  aria-label="Close word details"
+                  aria-label={t("close_word_details")}
                   onClick={() => setSelected("")}
                 >
                   <Icon name="close" />
@@ -526,7 +542,7 @@ function WordsPage({ settings }: { settings: Settings }) {
               {editing ? (
                 <div className="edit-form">
                   <label>
-                    Definition
+                    {t("definition")}{" "}
                     <textarea
                       rows={7}
                       value={definition}
@@ -534,8 +550,9 @@ function WordsPage({ settings }: { settings: Settings }) {
                     />
                   </label>
                   <p className="muted small-text">
-                    Saving replaces the dictionary snapshot for this card.
-                    Refresh from the dictionary to restore it.
+                    {t(
+                      "saving_replaces_the_dictionary_snapshot_for_this_card",
+                    )}{" "}
                   </p>
                   <div className="row">
                     <button
@@ -553,15 +570,19 @@ function WordsPage({ settings }: { settings: Settings }) {
                         })
                       }
                     >
-                      Save definition
+                      {t("save_definition")}{" "}
                     </button>
                     <button className="quiet" onClick={() => setEditing(false)}>
-                      Cancel
+                      {t("cancel")}{" "}
                     </button>
                   </div>
                 </div>
               ) : (
-                <Meanings meanings={word.meanings} />
+                <Meanings
+                  meanings={word.meanings}
+                  language={word.language}
+                  settings={settings}
+                />
               )}
               {word.contexts.map((context, i) => (
                 <div className="sentence-box" key={`${word.id}:${i}`}>
@@ -578,14 +599,18 @@ function WordsPage({ settings }: { settings: Settings }) {
                       className="link"
                       onClick={() => {
                         const sentence = prompt(
-                          "Edit this sentence. The encountered word must remain in it.",
+                          t(
+                            "edit_this_sentence_the_encountered_word_must_remain",
+                          ),
                           context.sentence,
                         );
                         if (sentence === null) return;
                         const start = sentence.indexOf(context.surface);
                         if (start < 0) {
                           setError(
-                            `Keep “${context.surface}” in the sentence.`,
+                            t("keep_in_the_sentence", {
+                              surface: context.surface,
+                            }),
                           );
                           return;
                         }
@@ -608,7 +633,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                         );
                       }}
                     >
-                      Edit sentence
+                      {t("edit_sentence")}{" "}
                     </button>
                     <AudioButton
                       word={word}
@@ -621,10 +646,17 @@ function WordsPage({ settings }: { settings: Settings }) {
               ))}
               {word.card && !word.known && (
                 <div className="schedule-info">
-                  <span>Next review</span>
-                  <strong>{new Date(word.card.due).toLocaleString()}</strong>
+                  <span>{t("next_review")}</span>
+                  <strong>
+                    {new Date(word.card.due).toLocaleString(
+                      i18n.resolvedLanguage,
+                    )}
+                  </strong>
                   <span>
-                    {word.card.reps} reviews · {word.card.lapses} lapses
+                    {t("review_history_counts", {
+                      reviews: number(word.card.reps),
+                      lapses: number(word.card.lapses),
+                    })}{" "}
                   </span>
                 </div>
               )}
@@ -636,7 +668,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                     setEditing(true);
                   }}
                 >
-                  Edit definition
+                  {t("edit_definition")}{" "}
                 </button>
                 <button
                   className="quiet"
@@ -646,7 +678,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                     )
                   }
                 >
-                  Refresh from dictionary
+                  {t("refresh_from_dictionary")}{" "}
                 </button>
                 <button
                   className="quiet master-action"
@@ -663,7 +695,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                   }
                 >
                   <Icon name="check" />
-                  {word.known ? "Unmaster" : "Master"}
+                  {word.known ? t("unmaster") : t("master")}
                 </button>
                 {!word.known && (
                   <button
@@ -678,7 +710,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                       )
                     }
                   >
-                    {word.suspended ? "Resume" : "Suspend"}
+                    {word.suspended ? t("resume") : t("suspend")}
                   </button>
                 )}
                 <button
@@ -686,7 +718,9 @@ function WordsPage({ settings }: { settings: Settings }) {
                   onClick={() => {
                     if (
                       confirm(
-                        `Delete “${word.lemma}”, its review history, and its recording?`,
+                        t("delete_its_review_history_and_its_recording", {
+                          lemma: word.lemma,
+                        }),
                       )
                     )
                       void action(async () => {
@@ -695,7 +729,7 @@ function WordsPage({ settings }: { settings: Settings }) {
                       });
                   }}
                 >
-                  Delete word
+                  {t("delete_word")}{" "}
                 </button>
               </div>
             </section>
@@ -726,6 +760,21 @@ function SettingsPage({
   >({});
   const worker = useRef<Worker | undefined>(undefined);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [exampleCorpus, setExampleCorpus] = useState({
+    count: 0,
+    installed: false,
+  });
+  useEffect(() => {
+    let alive = true;
+    void rpc({ action: "exampleCorpus" })
+      .then((value) => {
+        if (alive) setExampleCorpus(value);
+      })
+      .catch((error) => setError(error.message));
+    return () => {
+      alive = false;
+    };
+  }, [settings.studyLanguage, busy]);
   const load = useCallback(() => {
     void rpc({ action: "dictionaries" })
       .then(setDictionaries)
@@ -770,7 +819,7 @@ function SettingsPage({
   async function importZip(
     blob: Blob,
     expectedId?: string,
-    language: string = settings.language,
+    language: string = settings.studyLanguage,
   ) {
     await new Promise<void>((resolve, reject) => {
       const current = new ImportWorker();
@@ -787,13 +836,67 @@ function SettingsPage({
       current.onerror = (event) => {
         current.terminate();
         worker.current = undefined;
-        reject(new Error(event.message || "Dictionary import failed."));
+        reject(new Error(event.message || t("dictionary_import_failed")));
       };
-      current.postMessage({ blob, language, expectedId });
+      current.postMessage({
+        blob,
+        language,
+        expectedId,
+        locale: i18n.language,
+      });
     });
     await rpc({ action: "invalidate" });
     load();
-    setNotice("Dictionary imported.");
+    setNotice(t("dictionary_imported"));
+  }
+  async function downloadDictionary(
+    url: string,
+    language: string,
+    title: string,
+  ) {
+    await task(async () => {
+      setProgress({
+        phase: t("downloading_dictionary", { title }),
+        done: 0,
+        total: 0,
+      });
+      const response = await fetch(url, { credentials: "omit" });
+      if (!response.ok)
+        throw new Error(
+          t("dictionary_download_failed", { status: response.status }),
+        );
+      await importZip(await response.blob(), undefined, language);
+    });
+  }
+  async function installLanguageData(type: "examples", blob?: Blob) {
+    if (!settings.studyLanguage)
+      throw new Error(t("choose_a_study_language_first"));
+    await new Promise<void>((resolve, reject) => {
+      const current = new LanguageDataWorker();
+      worker.current = current;
+      current.onmessage = (event) => {
+        if (event.data.progress) setProgress(event.data.progress);
+        if (event.data.error || event.data.count !== undefined) {
+          current.terminate();
+          worker.current = undefined;
+          if (event.data.error) reject(new Error(event.data.error));
+          else resolve();
+        }
+      };
+      current.onerror = (event) => {
+        current.terminate();
+        worker.current = undefined;
+        reject(new Error(event.message || t("language_data_import_failed")));
+      };
+      current.postMessage({
+        type,
+        language: settings.studyLanguage,
+        blob,
+        locale: i18n.language,
+      });
+    });
+    await rpc({ action: "invalidate" });
+    setNotice(t("example_sentences_saved"));
   }
   async function fileImport(
     file: File | undefined,
@@ -805,27 +908,29 @@ function SettingsPage({
       else if (category === "settings") {
         const value = await readSettings(file);
         if (
-          !confirm(
-            "Replace your settings with this file? Dictionaries, words, and reviews will stay on this device.",
-          )
+          !confirm(t("replace_your_settings_with_this_file_dictionaries_words"))
         )
           return;
         await restoreSettings(value);
         setSettings(value);
         await rpc({ action: "invalidate" });
-        setNotice("Settings imported.");
+        setNotice(t("settings_imported"));
       } else {
         const data = await readLearning(file);
         if (
           !confirm(
-            `Replace your learning data with ${data.vocabulary.length} words, ${data.reviews.length} reviews, and ${data.audio.length} recordings? Export your current learning data first if you want to keep it.`,
+            t("replace_your_learning_data_with_words_reviews_and", {
+              length: data.vocabulary.length,
+              length1: data.reviews.length,
+              length2: data.audio.length,
+            }),
           )
         )
           return;
         await restoreLearning(data);
         sessionStorage.removeItem("last-review");
         await rpc({ action: "invalidate" });
-        setNotice("Learning data imported.");
+        setNotice(t("learning_data_imported"));
       }
     });
   }
@@ -833,6 +938,12 @@ function SettingsPage({
     setBusy(true);
     setError("");
     try {
+      if (
+        languageIso3(settings.studyLanguage) &&
+        !(await rpc({ action: "exampleCorpus" })).installed
+      )
+        await installLanguageData("examples");
+
       setSettings(
         await rpc({
           action: "setSettings",
@@ -848,39 +959,139 @@ function SettingsPage({
   }
   return (
     <>
-      {setup && <h1 className="setup-title">Setup</h1>}
+      {setup && <h1 className="setup-title">{t("setup")}</h1>}
+      <section className="settings-section">
+        <div className="section-heading">
+          <h2>{t("languages")}</h2>
+        </div>
+        <label className="setting-row">
+          <strong>{t("study_language")}</strong>
+          <LanguageSelect
+            label={t("study_language")}
+            value={settings.studyLanguage}
+            onChange={(studyLanguage) =>
+              void update({ studyLanguage, voice: "" })
+            }
+          />
+        </label>
+        <label className="setting-row">
+          <span>
+            <strong>{t("native_language")}</strong>
+            {setup && (
+              <small>
+                {t("detected_language", {
+                  language: languageName(systemLanguage()),
+                })}
+              </small>
+            )}
+          </span>
+          <LanguageSelect
+            label={t("native_language")}
+            value={settings.nativeLanguage}
+            onChange={(nativeLanguage) => void update({ nativeLanguage })}
+          />
+        </label>
+        <label className="setting-row">
+          <strong>{t("interface_language_setting")}</strong>
+          <select
+            aria-label={t("interface_language_setting")}
+            value={settings.interfaceLanguage}
+            onChange={(event) =>
+              void update({
+                interfaceLanguage: event.target
+                  .value as Settings["interfaceLanguage"],
+              })
+            }
+          >
+            <option value="auto">{t("same_as_native_language")}</option>
+            {interfaceLanguages.map((language) => (
+              <option key={language} value={language}>
+                {new Intl.DisplayNames([language], { type: "language" }).of(
+                  language,
+                )}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="setting-footnote">
+          {t("read_and_collect_words_in_your_study_language")}{" "}
+          {t("interface_language", {
+            language: languageName(i18n.resolvedLanguage || "en"),
+          })}
+        </div>
+      </section>
       <ErrorBox error={error} />
       {notice && (
         <div className="notice success" role="status">
           {notice}
         </div>
       )}
+      <section className="settings-section" id="example-sentences">
+        <div className="section-heading">
+          <h2>{t("example_sentences")}</h2>
+        </div>
+        <div className="setting-row">
+          <strong>
+            {exampleCorpus.installed
+              ? t("example_count", {
+                  count: exampleCorpus.count,
+                  language: languageName(settings.studyLanguage),
+                })
+              : t("no_examples_installed_for_this_study_language")}
+          </strong>
+          <div className="row">
+            <button
+              disabled={
+                busy ||
+                !settings.studyLanguage ||
+                !languageIso3(settings.studyLanguage)
+              }
+              onClick={() => void task(() => installLanguageData("examples"))}
+            >
+              {exampleCorpus.installed
+                ? t("update_examples")
+                : t("download_examples")}
+            </button>
+            <label
+              className={`button ${busy || !settings.studyLanguage ? "disabled" : ""}`}
+            >
+              {t("import_tsv")}{" "}
+              <input
+                type="file"
+                accept=".tsv,.bz2"
+                hidden
+                disabled={busy || !settings.studyLanguage}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file)
+                    void task(() => installLanguageData("examples", file));
+                  event.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+        </div>
+        {progress && busy && (
+          <p role="status">
+            {progress.phase}
+            {progress.total
+              ? ` · ${number(progress.done)} / ${number(progress.total)}`
+              : "…"}
+          </p>
+        )}
+        <div className="setting-footnote">
+          {t("tatoeba_examples_for_your_study_language_are_stored")}{" "}
+        </div>
+      </section>
       <section className="settings-section">
         <div className="section-heading">
           <div>
-            <h2>Dictionaries</h2>
+            <h2>{t("dictionaries")}</h2>
           </div>
-          <span className="count-pill">{dictionaries.length} installed</span>
+          <span className="count-pill">
+            {t("dictionaries_installed", { count: dictionaries.length })}
+          </span>
         </div>
-        <label className="setting-row">
-          <span>Language</span>
-          <select
-            aria-label="Language"
-            value={settings.language}
-            onChange={(event) =>
-              void update({
-                language: event.target.value as Settings["language"],
-                voice: "",
-              })
-            }
-          >
-            {supportedLanguages.map((language) => (
-              <option key={language.code} value={language.code}>
-                {language.name}
-              </option>
-            ))}
-          </select>
-        </label>
         <div
           className={`import-zone ${busy ? "disabled" : ""}`}
           onDragOver={(event) => {
@@ -893,10 +1104,12 @@ function SettingsPage({
         >
           <div>
             <strong>
-              {progress ? progress.phase : "Drop a Yomitan format-3 ZIP"}
+              {progress ? progress.phase : t("drop_a_yomitan_format_3_zip")}
             </strong>
             <p>
-              {progress ? "Keep this page open until the import finishes." : ""}
+              {progress
+                ? t("keep_this_page_open_until_the_import_finishes")
+                : ""}
             </p>
             {progress && (
               <progress
@@ -910,7 +1123,7 @@ function SettingsPage({
             disabled={busy}
             onClick={() => fileInput.current?.click()}
           >
-            {busy ? "Working…" : "Choose ZIP"}
+            {busy ? t("working") : t("choose_zip")}
           </button>
           <input
             ref={fileInput}
@@ -924,41 +1137,23 @@ function SettingsPage({
           />
         </div>
         <div className="starter-note">
-          {!dictionaries.some(
-            (d) => d.count > 0 && d.language === settings.language,
-          ) && (
-            <a
-              href={
-                supportedLanguages.find(
-                  (language) => language.code === settings.language,
-                )!.dictionaryUrl
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Download {languageName(settings.language)} dictionary
-            </a>
-          )}
+          <a
+            href="https://yomitan.wiki/dictionaries/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t("find_dictionaries")}{" "}
+          </a>
         </div>
         <FrequencyBrowser
-          language={settings.language}
+          language={settings.studyLanguage}
           busy={busy}
           onImport={(entry) =>
-            task(async () => {
-              setProgress({
-                phase: `Downloading ${entry.language} ${entry.source}…`,
-                done: 0,
-                total: 0,
-              });
-              const response = await fetch(frequencyDownloadUrl(entry.file), {
-                credentials: "omit",
-              });
-              if (!response.ok)
-                throw new Error(
-                  `Dictionary download failed (${response.status}).`,
-                );
-              await importZip(await response.blob(), undefined, entry.code);
-            })
+            downloadDictionary(
+              frequencyDownloadUrl(entry.file),
+              entry.code,
+              `${languageName(entry.code)} ${entry.source}`,
+            )
           }
         />
         <div className="dictionary-list">
@@ -984,12 +1179,20 @@ function SettingsPage({
                   <strong>{dictionary.index.title}</strong>
                   <small>
                     {dictionary.count > 0
-                      ? `${dictionary.language} → ${dictionary.target || "unspecified"} · ${dictionary.count.toLocaleString()} entries`
+                      ? t("dictionary_entries", {
+                          language: dictionary.language,
+                          target: dictionary.target || t("unspecified"),
+                          count: dictionary.count,
+                        })
                       : dictionary.language}
                     {dictionary.frequencyCount > 0 &&
-                      ` · ${dictionary.frequencyCount.toLocaleString()} frequency ranks`}
-                    {" · rev. "}
-                    {dictionary.index.revision}
+                      t("frequency_count", {
+                        count: dictionary.frequencyCount,
+                      })}
+                    {" · "}
+                    {t("dictionary_revision", {
+                      revision: dictionary.index.revision,
+                    })}
                   </small>
                 </span>
               </label>
@@ -997,7 +1200,7 @@ function SettingsPage({
                 <button
                   className="quiet"
                   disabled={busy || i === 0}
-                  title="Move dictionary up"
+                  title={t("move_dictionary_up")}
                   onClick={() =>
                     void task(async () => {
                       const previous = dictionaries[i - 1]!;
@@ -1026,11 +1229,15 @@ function SettingsPage({
                         const result = await checkUpdate(dictionary);
                         setUpdates((u) => ({ ...u, [dictionary.id]: result }));
                         if (!result)
-                          setNotice(`${dictionary.index.title} is up to date.`);
+                          setNotice(
+                            t("is_up_to_date", {
+                              title: dictionary.index.title,
+                            }),
+                          );
                       })
                     }
                   >
-                    Check updates
+                    {t("check_updates")}{" "}
                   </button>
                 )}
                 {updates[dictionary.id] && (
@@ -1045,14 +1252,18 @@ function SettingsPage({
                         );
                         if (!response.ok)
                           throw new Error(
-                            `Dictionary download failed (${response.status}).`,
+                            t("dictionary_download_failed", {
+                              status: response.status,
+                            }),
                           );
                         await importZip(await response.blob(), dictionary.id);
                         setUpdates((u) => ({ ...u, [dictionary.id]: null }));
                       })
                     }
                   >
-                    Update to {updates[dictionary.id]!.revision}
+                    {t("update_dictionary_revision", {
+                      revision: updates[dictionary.id]!.revision,
+                    })}
                   </button>
                 )}
                 <button
@@ -1064,12 +1275,12 @@ function SettingsPage({
                         dictionary.revisionId,
                       );
                       if (!archive)
-                        throw new Error("Dictionary archive unavailable.");
+                        throw new Error(t("dictionary_archive_unavailable"));
                       saveBlob(archive.blob, `${dictionary.index.title}.zip`);
                     })
                   }
                 >
-                  Export ZIP
+                  {t("export_zip")}{" "}
                 </button>
                 <button
                   className="quiet danger"
@@ -1077,7 +1288,9 @@ function SettingsPage({
                   onClick={() => {
                     if (
                       confirm(
-                        `Remove ${dictionary.index.title}? Your saved words and reviews will stay.`,
+                        t("remove_your_saved_words_and_reviews_will_stay", {
+                          title: dictionary.index.title,
+                        }),
                       )
                     )
                       void task(async () => {
@@ -1089,7 +1302,7 @@ function SettingsPage({
                       });
                   }}
                 >
-                  Remove
+                  {t("remove")}{" "}
                 </button>
               </div>
             </div>
@@ -1098,23 +1311,22 @@ function SettingsPage({
       </section>
       <section className="settings-section" id="controls">
         <div className="section-heading">
-          <h2>Lookup controls</h2>
+          <h2>{t("lookup_controls")}</h2>
         </div>
         <LookupControls
           value={settings.lookupBindings}
           onChange={(lookupBindings) => void update({ lookupBindings })}
         />
         <details className="input-prevention">
-          <summary>Input action prevention</summary>
+          <summary>{t("input_action_prevention")}</summary>
           <p className="muted">
-            Active only for matching mouse lookup bindings. Block opening links
-            in a new tab, autoscroll, or history navigation in these locations.
+            {t("active_only_for_matching_mouse_lookup_bindings_block")}{" "}
           </p>
           <div className="prevention-groups">
             {(
               [
-                ["preventMiddleMouse", "Middle mouse button"],
-                ["preventBackForward", "Back/forward mouse buttons"],
+                ["preventMiddleMouse", t("middle_mouse_button")],
+                ["preventBackForward", t("back_forward_mouse_buttons")],
               ] as const
             ).map(([key, label]) => (
               <fieldset
@@ -1132,11 +1344,11 @@ function SettingsPage({
                 <legend>{label}</legend>
                 {(
                   [
-                    ["textHover", "Text hover"],
-                    ["webpages", "Webpages"],
-                    ["popups", "Lookup popups"],
-                    ["extensionPages", "Extension pages"],
-                    ["searchFields", "Search fields"],
+                    ["textHover", t("text_hover")],
+                    ["webpages", t("webpages")],
+                    ["popups", t("lookup_popups")],
+                    ["extensionPages", t("extension_pages")],
+                    ["searchFields", t("search_fields")],
                   ] as const
                 ).map(([scope, name]) => (
                   <label key={scope}>
@@ -1170,13 +1382,13 @@ function SettingsPage({
               !dictionaries.some(
                 (dictionary) =>
                   dictionary.enabled &&
-                  dictionary.language === settings.language &&
+                  dictionary.language === settings.studyLanguage &&
                   dictionary.count > 0,
               )
             }
             onClick={() => void finishSetup()}
           >
-            Finish setup
+            {t("finish_setup")}{" "}
           </button>
         </div>
       ) : (
@@ -1185,12 +1397,12 @@ function SettingsPage({
             <section className="settings-section">
               <div className="section-heading">
                 <div>
-                  <h2>Reading & appearance</h2>
+                  <h2>{t("reading_appearance")}</h2>
                 </div>
               </div>
               <label className="setting-row">
                 <span>
-                  <strong>Parse websites automatically</strong>
+                  <strong>{t("parse_websites_automatically")}</strong>
                 </span>
                 <input
                   type="checkbox"
@@ -1203,8 +1415,8 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>Only parse the reading language</strong>
-                  <small>Skips text detected as another language.</small>
+                  <strong>{t("only_parse_the_reading_language")}</strong>
+                  <small>{t("skips_text_detected_as_another_language")}</small>
                 </span>
                 <input
                   type="checkbox"
@@ -1217,7 +1429,7 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>Appearance</strong>
+                  <strong>{t("appearance")}</strong>
                 </span>
                 <select
                   value={settings.theme}
@@ -1227,15 +1439,15 @@ function SettingsPage({
                     })
                   }
                 >
-                  <option value="system">System</option>
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
+                  <option value="system">{t("system")}</option>
+                  <option value="light">{t("light")}</option>
+                  <option value="dark">{t("dark")}</option>
                 </select>
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>Hide dictionary source links</strong>
-                  <small>In lookup popups.</small>
+                  <strong>{t("hide_dictionary_source_links")}</strong>
+                  <small>{t("in_lookup_popups")}</small>
                 </span>
                 <input
                   type="checkbox"
@@ -1248,7 +1460,7 @@ function SettingsPage({
               </label>
               {!!settings.disabledHosts.length && (
                 <div className="setting-stack">
-                  <strong>Disabled websites</strong>
+                  <strong>{t("disabled_websites")}</strong>
                   {settings.disabledHosts.map((host) => (
                     <div className="row between" key={host}>
                       <span>{host}</span>
@@ -1262,14 +1474,14 @@ function SettingsPage({
                           })
                         }
                       >
-                        Enable
+                        {t("enable")}{" "}
                       </button>
                     </div>
                   ))}
                 </div>
               )}
               <label className="setting-row">
-                <strong>Scan dictionary popups</strong>
+                <strong>{t("scan_dictionary_popups")}</strong>
                 <input
                   type="checkbox"
                   role="switch"
@@ -1284,18 +1496,18 @@ function SettingsPage({
                 onChange={(patch) => void update(patch)}
               />
               <div className="setting-footnote">
-                Disable individual sites from the toolbar.
+                {t("disable_individual_sites_from_the_toolbar")}{" "}
               </div>
             </section>
             <section className="settings-section">
               <div className="section-heading">
                 <div>
-                  <h2>Spaced repetition</h2>
+                  <h2>{t("spaced_repetition")}</h2>
                 </div>
               </div>
               <label className="setting-row">
                 <span>
-                  <strong>Use only Again and Good</strong>
+                  <strong>{t("use_only_again_and_good")}</strong>
                 </span>
                 <input
                   type="checkbox"
@@ -1308,8 +1520,8 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>New words per day</strong>
-                  <small>Does not limit reviews while reading.</small>
+                  <strong>{t("new_words_per_day")}</strong>
+                  <small>{t("does_not_limit_reviews_while_reading")}</small>
                 </span>
                 <input
                   type="number"
@@ -1324,7 +1536,7 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>Words without frequency</strong>
+                  <strong>{t("words_without_frequency")}</strong>
                 </span>
                 <select
                   value={settings.missingFrequency}
@@ -1335,14 +1547,14 @@ function SettingsPage({
                     })
                   }
                 >
-                  <option value="last">Introduce last</option>
-                  <option value="random">Assign random frequency</option>
+                  <option value="last">{t("introduce_last")}</option>
+                  <option value="random">{t("assign_random_frequency")}</option>
                 </select>
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>Desired retention</strong>
-                  <small>70–99%. Higher values mean more reviews.</small>
+                  <strong>{t("desired_retention")}</strong>
+                  <small>{t("70_99_higher_values_mean_more_reviews")}</small>
                 </span>
                 <div className="input-suffix">
                   <input
@@ -1361,7 +1573,7 @@ function SettingsPage({
                 </div>
               </label>
               <label className="setting-row">
-                <strong>Show sentence translations</strong>
+                <strong>{t("show_sentence_translations")}</strong>
                 <input
                   type="checkbox"
                   role="switch"
@@ -1375,7 +1587,7 @@ function SettingsPage({
               </label>
               <label className="setting-row">
                 <span>
-                  <strong>Default card front</strong>
+                  <strong>{t("default_card_front")}</strong>
                 </span>
                 <select
                   value={settings.front}
@@ -1385,55 +1597,36 @@ function SettingsPage({
                     })
                   }
                 >
-                  <option value="word">Word only</option>
-                  <option value="sentence">Word in sentence</option>
+                  <option value="word">{t("word_only")}</option>
+                  <option value="sentence">{t("word_in_sentence")}</option>
                 </select>
               </label>
               <div className="setting-footnote">
-                New words follow combined frequency ranks, from most common to
-                least common. Retention changes apply to future reviews.
+                {t("new_words_follow_combined_frequency_ranks_from_most")}{" "}
               </div>
             </section>
           </div>
           <section className="settings-section">
             <div className="section-heading">
-              <h2>Translation</h2>
+              <h2>{t("translation")}</h2>
             </div>
-            <label className="setting-row">
-              <strong>Translate into</strong>
-              <select
-                value={settings.translationLanguage}
-                onChange={(event) =>
-                  void update({ translationLanguage: event.target.value })
-                }
-              >
-                {translationLanguages.map((code) => (
-                  <option key={code} value={code}>
-                    {new Intl.DisplayNames(["en"], { type: "language" }).of(
-                      code,
-                    )}
-                  </option>
-                ))}
-              </select>
-            </label>
             <div className="setting-footnote">
-              Translation stays on your device. Models download on first use.
-              Chrome uses its built-in translator when available; Firefox uses
-              Bergamot. Bergamot supports fewer languages.
+              {t("translation_stays_on_your_device_models_download_on")}{" "}
             </div>
           </section>
           <section className="settings-section">
             <div className="section-heading">
               <div>
-                <h2>Pronunciation</h2>
+                <h2>{t("pronunciation")}</h2>
               </div>
             </div>
             <label className="setting-row">
               <span>
-                <strong>Download natural pronunciations</strong>
+                <strong>{t("download_natural_pronunciations")}</strong>
                 <small>
-                  Downloads from Wikimedia Commons when playing or saving a
-                  word. Only the word is sent.
+                  {t(
+                    "downloads_from_wikimedia_commons_when_playing_or_saving",
+                  )}{" "}
                 </small>
               </span>
               <input
@@ -1447,22 +1640,26 @@ function SettingsPage({
             </label>
             <label className="setting-row">
               <span>
-                <strong>Local voice</strong>
+                <strong>{t("local_voice")}</strong>
                 <small>
                   {voices.some(
-                    (v) => v.lang.split("-")[0] === settings.language,
+                    (v) => v.lang.split("-")[0] === settings.studyLanguage,
                   )
-                    ? "Used for sentences and missing recordings."
-                    : `No ${languageName(settings.language)} voice found. Install one in your system settings.`}
+                    ? t("used_for_sentences_and_missing_recordings")
+                    : t("no_voice_found_install_one_in_your_system", {
+                        value1: languageName(settings.studyLanguage),
+                      })}
                 </small>
               </span>
               <select
                 value={settings.voice}
                 onChange={(event) => void update({ voice: event.target.value })}
               >
-                <option value="">Automatic</option>
+                <option value="">{t("automatic")}</option>
                 {voices
-                  .filter((v) => v.lang.split("-")[0] === settings.language)
+                  .filter(
+                    (v) => v.lang.split("-")[0] === settings.studyLanguage,
+                  )
                   .map((voice) => (
                     <option key={voice.voiceURI} value={voice.voiceURI}>
                       {voice.name}
@@ -1472,7 +1669,7 @@ function SettingsPage({
             </label>
             <label className="setting-row">
               <span>
-                <strong>Play audio on reveal</strong>
+                <strong>{t("play_audio_on_reveal")}</strong>
               </span>
               <input
                 type="checkbox"
@@ -1487,21 +1684,21 @@ function SettingsPage({
           <section className="settings-section">
             <div className="section-heading">
               <div>
-                <h2>Import & export</h2>
+                <h2>{t("import_export")}</h2>
               </div>
             </div>
             <div className="backup-grid">
               <div>
-                <h3>Settings</h3>
+                <h3>{t("settings")}</h3>
                 <div className="row">
                   <button
                     disabled={busy}
                     onClick={() => void task(exportSettings)}
                   >
-                    Export JSON
+                    {t("export_json")}{" "}
                   </button>
                   <label className={`button ${busy ? "disabled" : ""}`}>
-                    Import JSON
+                    {t("import_json")}{" "}
                     <input
                       type="file"
                       accept=".json"
@@ -1516,17 +1713,17 @@ function SettingsPage({
                 </div>
               </div>
               <div>
-                <h3>Words & progress</h3>
-                <p>Includes sentences, review history, and saved audio.</p>
+                <h3>{t("words_progress")}</h3>
+                <p>{t("includes_sentences_review_history_and_saved_audio")}</p>
                 <div className="row">
                   <button
                     disabled={busy}
                     onClick={() => void task(exportLearning)}
                   >
-                    Export ZIP
+                    {t("export_zip")}{" "}
                   </button>
                   <label className={`button ${busy ? "disabled" : ""}`}>
-                    Import ZIP
+                    {t("import_zip")}{" "}
                     <input
                       type="file"
                       accept=".zip"
@@ -1542,12 +1739,13 @@ function SettingsPage({
               </div>
             </div>
             <div className="setting-footnote">
-              Imports replace the selected category. Export your progress before
-              uninstalling.
+              {t(
+                "imports_replace_the_selected_category_export_your_progress",
+              )}{" "}
             </div>
           </section>
           <a className="setup-link" href="#setup">
-            Open setup
+            {t("open_setup")}{" "}
           </a>
         </>
       )}

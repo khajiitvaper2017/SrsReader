@@ -1,0 +1,477 @@
+{
+  "af": {
+    "iso3": "afr"
+  },
+  "am": {
+    "iso3": "amh"
+  },
+  "an": {
+    "iso3": "arg"
+  },
+  "ar": {
+    "iso3": "ara",
+    "morphology": "ar"
+  },
+  "as": {
+    "iso3": "asm"
+  },
+  "ast": {
+    "iso3": "ast",
+    "morphology": "ast"
+  },
+  "ay": {
+    "iso3": "aym"
+  },
+  "az": {
+    "iso3": "aze"
+  },
+  "be": {
+    "iso3": "bel"
+  },
+  "bg": {
+    "iso3": "bul",
+    "morphology": "bg"
+  },
+  "bho": {
+    "iso3": "bho"
+  },
+  "bm": {
+    "iso3": "bam"
+  },
+  "bn": {
+    "iso3": "ben"
+  },
+  "br": {
+    "iso3": "bre"
+  },
+  "bs": {
+    "iso3": "bos",
+    "morphology": "hbs"
+  },
+  "ca": {
+    "iso3": "cat",
+    "morphology": "ca"
+  },
+  "ceb": {
+    "iso3": "ceb"
+  },
+  "chr": {
+    "iso3": "chr"
+  },
+  "ckb": {
+    "iso3": "ckb"
+  },
+  "co": {
+    "iso3": "cos"
+  },
+  "cs": {
+    "iso3": "ces",
+    "morphology": "cs"
+  },
+  "cy": {
+    "iso3": "cym",
+    "morphology": "cy"
+  },
+  "da": {
+    "iso3": "dan",
+    "morphology": "da"
+  },
+  "de": {
+    "iso3": "deu",
+    "morphology": "de"
+  },
+  "dv": {
+    "iso3": "div"
+  },
+  "ee": {
+    "iso3": "ewe"
+  },
+  "el": {
+    "iso3": "ell",
+    "morphology": "el"
+  },
+  "en": {
+    "iso3": "eng",
+    "morphology": "en"
+  },
+  "eo": {
+    "iso3": "epo",
+    "morphology": "eo"
+  },
+  "es": {
+    "iso3": "spa",
+    "morphology": "es"
+  },
+  "et": {
+    "iso3": "est",
+    "morphology": "et"
+  },
+  "eu": {
+    "iso3": "eus"
+  },
+  "fa": {
+    "iso3": "pes",
+    "morphology": "fa"
+  },
+  "fi": {
+    "iso3": "fin",
+    "morphology": "fi"
+  },
+  "fil": {
+    "iso3": "tgl",
+    "morphology": "tl"
+  },
+  "fo": {
+    "iso3": "fao"
+  },
+  "fr": {
+    "iso3": "fra",
+    "morphology": "fr"
+  },
+  "fy": {
+    "iso3": "fry"
+  },
+  "ga": {
+    "iso3": "gle",
+    "morphology": "ga"
+  },
+  "gd": {
+    "iso3": "gla",
+    "morphology": "gd"
+  },
+  "gl": {
+    "iso3": "glg",
+    "morphology": "gl"
+  },
+  "gn": {
+    "iso3": "grn"
+  },
+  "gu": {
+    "iso3": "guj"
+  },
+  "ha": {
+    "iso3": "hau"
+  },
+  "haw": {
+    "iso3": "haw"
+  },
+  "he": {
+    "iso3": "heb",
+    "morphology": "he"
+  },
+  "hi": {
+    "iso3": "hin",
+    "morphology": "hi"
+  },
+  "hr": {
+    "iso3": "hrv",
+    "morphology": "hbs"
+  },
+  "ht": {
+    "iso3": "hat"
+  },
+  "hu": {
+    "iso3": "hun",
+    "morphology": "hu"
+  },
+  "hy": {
+    "iso3": "hye",
+    "morphology": "hy"
+  },
+  "ia": {
+    "iso3": "ina"
+  },
+  "id": {
+    "iso3": "ind",
+    "morphology": "id"
+  },
+  "ig": {
+    "iso3": "ibo"
+  },
+  "ilo": {
+    "iso3": "ilo"
+  },
+  "is": {
+    "iso3": "isl",
+    "morphology": "is"
+  },
+  "it": {
+    "iso3": "ita",
+    "morphology": "it"
+  },
+  "ja": {
+    "iso3": "jpn"
+  },
+  "jv": {
+    "iso3": "jav"
+  },
+  "ka": {
+    "iso3": "kat",
+    "morphology": "ka"
+  },
+  "kk": {
+    "iso3": "kaz"
+  },
+  "km": {
+    "iso3": "khm"
+  },
+  "kn": {
+    "iso3": "kan"
+  },
+  "ko": {
+    "iso3": "kor"
+  },
+  "kok": {
+    "iso3": "gom"
+  },
+  "ku": {
+    "iso3": "kmr"
+  },
+  "ky": {
+    "iso3": "kir"
+  },
+  "la": {
+    "iso3": "lat",
+    "morphology": "la"
+  },
+  "lb": {
+    "iso3": "ltz",
+    "morphology": "lb"
+  },
+  "lg": {
+    "iso3": "lug"
+  },
+  "ln": {
+    "iso3": "lin"
+  },
+  "lo": {
+    "iso3": "lao"
+  },
+  "lt": {
+    "iso3": "lit",
+    "morphology": "lt"
+  },
+  "lv": {
+    "iso3": "lvs",
+    "morphology": "lv"
+  },
+  "mai": {
+    "iso3": "mai"
+  },
+  "mg": {
+    "iso3": "mlg"
+  },
+  "mi": {
+    "iso3": "mri"
+  },
+  "mk": {
+    "iso3": "mkd",
+    "morphology": "mk"
+  },
+  "ml": {
+    "iso3": "mal",
+    "morphology": "ml"
+  },
+  "mn": {
+    "iso3": "mon"
+  },
+  "mni": {
+    "iso3": "mni"
+  },
+  "mr": {
+    "iso3": "mar"
+  },
+  "ms": {
+    "iso3": "zsm",
+    "morphology": "ms"
+  },
+  "mt": {
+    "iso3": "mlt"
+  },
+  "my": {
+    "iso3": "mya"
+  },
+  "nb": {
+    "iso3": "nob",
+    "morphology": "nb"
+  },
+  "ne": {
+    "iso3": "npi"
+  },
+  "nl": {
+    "iso3": "nld",
+    "morphology": "nl"
+  },
+  "nn": {
+    "iso3": "nno",
+    "morphology": "nn"
+  },
+  "no": {
+    "morphology": "nb"
+  },
+  "ny": {
+    "iso3": "nya"
+  },
+  "oc": {
+    "iso3": "oci"
+  },
+  "om": {
+    "iso3": "gaz"
+  },
+  "or": {
+    "iso3": "ori"
+  },
+  "pa": {
+    "iso3": "pan"
+  },
+  "pl": {
+    "iso3": "pol",
+    "morphology": "pl"
+  },
+  "ps": {
+    "iso3": "pus"
+  },
+  "pt": {
+    "iso3": "por",
+    "morphology": "pt"
+  },
+  "qu": {
+    "iso3": "que"
+  },
+  "rm": {
+    "iso3": "roh"
+  },
+  "ro": {
+    "iso3": "ron",
+    "morphology": "ro"
+  },
+  "ru": {
+    "iso3": "rus",
+    "morphology": "ru"
+  },
+  "rw": {
+    "iso3": "kin"
+  },
+  "sa": {
+    "iso3": "san"
+  },
+  "sd": {
+    "iso3": "snd"
+  },
+  "si": {
+    "iso3": "sin"
+  },
+  "sk": {
+    "iso3": "slk",
+    "morphology": "sk"
+  },
+  "sl": {
+    "iso3": "slv",
+    "morphology": "sl"
+  },
+  "sm": {
+    "iso3": "smo"
+  },
+  "sn": {
+    "iso3": "sna"
+  },
+  "so": {
+    "iso3": "som"
+  },
+  "sq": {
+    "iso3": "sqi",
+    "morphology": "sq"
+  },
+  "sr": {
+    "iso3": "srp",
+    "morphology": "hbs"
+  },
+  "st": {
+    "iso3": "sot"
+  },
+  "su": {
+    "iso3": "sun"
+  },
+  "sv": {
+    "iso3": "swe",
+    "morphology": "sv"
+  },
+  "sw": {
+    "iso3": "swc",
+    "morphology": "sw"
+  },
+  "ta": {
+    "iso3": "tam"
+  },
+  "te": {
+    "iso3": "tel"
+  },
+  "tg": {
+    "iso3": "tgk"
+  },
+  "th": {
+    "iso3": "tha"
+  },
+  "ti": {
+    "iso3": "tir"
+  },
+  "tk": {
+    "iso3": "tuk"
+  },
+  "tn": {
+    "iso3": "tsn"
+  },
+  "to": {
+    "iso3": "ton"
+  },
+  "tr": {
+    "iso3": "tur",
+    "morphology": "tr"
+  },
+  "ts": {
+    "iso3": "tso"
+  },
+  "tt": {
+    "iso3": "tat"
+  },
+  "ug": {
+    "iso3": "uig"
+  },
+  "uk": {
+    "iso3": "ukr",
+    "morphology": "uk"
+  },
+  "ur": {
+    "iso3": "urd"
+  },
+  "uz": {
+    "iso3": "uzb"
+  },
+  "vi": {
+    "iso3": "vie"
+  },
+  "wa": {
+    "iso3": "wln"
+  },
+  "wo": {
+    "iso3": "wol"
+  },
+  "xh": {
+    "iso3": "xho"
+  },
+  "yi": {
+    "iso3": "yid"
+  },
+  "yo": {
+    "iso3": "yor"
+  },
+  "yue": {
+    "iso3": "yue"
+  },
+  "zh": {
+    "iso3": "cmn"
+  },
+  "zu": {
+    "iso3": "zul"
+  }
+}

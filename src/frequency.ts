@@ -63,7 +63,9 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
     await db.dictionaries.orderBy("order").toArray()
   ).filter(
     (d) =>
-      d.enabled && d.language === settings.language && d.frequencyCount > 0,
+      d.enabled &&
+      d.language === settings.studyLanguage &&
+      d.frequencyCount > 0,
   );
   const keys = [
     ...new Set(words.map((word) => folded(word.lemma, word.language))),

@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { browser } from "wxt/browser";
 import { z } from "zod";
 import {
@@ -12,6 +13,7 @@ import {
   type Vocabulary,
 } from "./model";
 import type { ScanSpan } from "./lookup";
+import type { ExamplesResult } from "./examples";
 
 const selection = {
   term: z.string().min(1).max(1000),
@@ -32,6 +34,11 @@ export const requestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("scan"), text: z.string().max(30000) }),
   z.object({ action: z.literal("detectLanguage"), text: z.string().max(6000) }),
   z.object({ action: z.literal("lookup"), term: selection.term }),
+  z.object({
+    action: z.literal("examples"),
+    lemma: selection.term,
+  }),
+  z.object({ action: z.literal("exampleCorpus") }),
   z.object({ action: z.literal("createSession"), ...selection }),
   z.object({ action: z.literal("session"), id: z.string() }),
   z.object({ action: z.literal("closeLookup") }),
@@ -99,6 +106,8 @@ type Responses = {
   detectLanguage: string | null;
   saveTranslation: void;
   lookup: LookupResult;
+  examples: ExamplesResult;
+  exampleCorpus: { count: number; installed: boolean };
   createSession: string;
   closeLookup: void;
   resizeLookup: void;
@@ -129,7 +138,7 @@ export async function rpc<R extends Request>(
   const response = await browser.runtime.sendMessage(request);
   if (!response || response.error)
     throw new Error(
-      response?.error || "The extension could not respond. Reload this page.",
+      response?.error || t("the_extension_could_not_respond_reload_this_page"),
     );
   return response.value;
 }
