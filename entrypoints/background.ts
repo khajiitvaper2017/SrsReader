@@ -79,8 +79,10 @@ export default defineBackground(() => {
     settings: Settings,
     refreshOnline = false,
   ): Promise<LookupResult> {
-    const local = (await lookupMany([term], settings.studyLanguage)).get(
-      normalize(term),
+    const lookupTerm =
+      settings.studyLanguage === "cs" ? normalizeCzechReflexive(term) : term;
+    const local = (await lookupMany([lookupTerm], settings.studyLanguage)).get(
+      normalize(lookupTerm),
     ) || { words: [], unresolved: [] };
     if (settings.studyLanguage !== "cs" || !settings.nechybujte) return local;
     if (
@@ -92,7 +94,7 @@ export default defineBackground(() => {
     try {
       return mergeNechybujte(
         local,
-        await lookupNechybujte(normalizeCzechReflexive(term), refreshOnline),
+        await lookupNechybujte(lookupTerm, refreshOnline),
       );
     } catch (error) {
       return {
