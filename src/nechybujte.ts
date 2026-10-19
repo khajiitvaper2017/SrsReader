@@ -15,7 +15,7 @@ export const nechybujteCacheKey = (term: string) =>
   `v2:${folded(term.trim(), "cs")}`;
 export function normalizeCzechReflexive(term: string): string {
   const words = term.trim().split(/\s+/u);
-  if (words.length === 2 && words.some((word) => folded(word, "cs") === "se"))
+  if (words.length === 2 && folded(words[1]!, "cs") === "se")
     return `${words.find((word) => folded(word, "cs") !== "se")!} se`;
   return term.trim();
 }

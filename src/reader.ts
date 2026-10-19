@@ -524,31 +524,16 @@ export function startReader(
       );
       const index = current ? segments.indexOf(current) : -1;
       const next = index >= 0 ? segments[index + 1] : undefined;
-      const previous = index > 0 ? segments[index - 1] : undefined;
-      const currentIsSe = current && folded(current.segment, "cs") === "se";
-      const adjacent = currentIsSe
-        ? (next &&
-            !block.text
-              .slice(current.index + current.segment.length, next.index)
-              .trim() &&
-            next) ||
-          (previous &&
-            !block.text
-              .slice(previous.index + previous.segment.length, current.index)
-              .trim() &&
-            previous)
-        : (next &&
-            folded(next.segment, "cs") === "se" &&
-            !block.text
-              .slice(current!.index + current!.segment.length, next.index)
-              .trim() &&
-            next) ||
-          (previous &&
-            folded(previous.segment, "cs") === "se" &&
-            !block.text
-              .slice(previous.index + previous.segment.length, current!.index)
-              .trim() &&
-            previous);
+      const adjacent =
+        current &&
+        folded(current.segment, "cs") !== "se" &&
+        next &&
+        folded(next.segment, "cs") === "se" &&
+        !block.text
+          .slice(current.index + current.segment.length, next.index)
+          .trim()
+          ? next
+          : undefined;
       if (current && adjacent) {
         const start = Math.min(current.index, adjacent.index);
         const end = Math.max(
