@@ -1,7 +1,7 @@
 import { languageCode, languageIso3, languageName } from "@/languages/codes";
 import { analyzeWords } from "@/languages/morphology";
 import { folded } from "@/languages/text";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 import type { ImportProgress } from "@/shared/download";
 import { readDownload } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";

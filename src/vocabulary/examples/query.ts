@@ -1,7 +1,7 @@
 import { languageCode } from "@/languages/codes";
 import { analyzeWords } from "@/languages/morphology";
 import { folded } from "@/languages/text";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 import type { Corpus } from "@/vocabulary/examples/example-corpus";
 import type { ReadingContext } from "@/vocabulary/model";
 

@@ -4,8 +4,8 @@ import {
   type Definition,
   type Meaning,
 } from "@/dictionaries/model";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import { t } from "@/shared/i18n/i18n";
 import { TextTranslation } from "@/translation/SentenceTranslation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";

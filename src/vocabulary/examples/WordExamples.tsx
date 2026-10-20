@@ -1,7 +1,7 @@
 import type { LookupWord } from "@/dictionaries/model";
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { SentenceTranslation } from "@/translation/SentenceTranslation";
 import type { Example } from "@/vocabulary/examples/query";
 import { Sentence } from "@/vocabulary/Sentence";

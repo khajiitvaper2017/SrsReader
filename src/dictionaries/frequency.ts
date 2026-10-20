@@ -1,7 +1,7 @@
 import type { Dictionary, Frequency, LookupWord } from "@/dictionaries/model";
 import { folded, normalize } from "@/languages/text";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import type { Vocabulary } from "@/vocabulary/model";
 
 export function harmonicRank(ranks: number[]) {

@@ -1,8 +1,8 @@
 import { orderNewWords } from "@/dictionaries/frequency";
 import type { LookupWord } from "@/dictionaries/model";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
-import { db } from "@/shared/db";
 import { t } from "@/shared/i18n/i18n";
 import { effectiveRetention } from "@/srs/retention";
 import { entityKey } from "@/srs/rwkv/model";

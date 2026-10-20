@@ -1,6 +1,6 @@
 import { languageCode, languageName } from "@/languages/codes";
+import { rpc } from "@/platform/messaging/send";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { browser } from "wxt/browser";
 
 type Availability =

@@ -1,7 +1,7 @@
 import type { LookupWord } from "@/dictionaries/model";
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { translateSentence } from "@/translation/browser-ai";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { Languages, LoaderCircle, Save, X } from "lucide-react";

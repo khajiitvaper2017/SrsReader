@@ -1,8 +1,8 @@
 import { isRankSource } from "@/dictionaries/frequency";
 import type { Dictionary } from "@/dictionaries/model";
+import { rpc } from "@/platform/messaging/send";
 import { learningStepsSchema, type Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { Select, SelectOption } from "@/shared/ui/Select";
 import { useEffect, useState } from "react";
 

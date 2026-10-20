@@ -1,5 +1,6 @@
 import type { ScanSpan } from "@/dictionaries/lookup";
 import { folded } from "@/languages/text";
+import { rpc } from "@/platform/messaging/send";
 import { matchesModifiers, readerKeysSchema } from "@/reader/controls";
 import { installInputPrevention } from "@/reader/input-prevention";
 import { defaults, type Settings } from "@/settings/model";
@@ -9,7 +10,6 @@ import {
   type WordState,
 } from "@/settings/word-styles";
 import { setInterfaceLanguage, t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { detectLanguage } from "@/translation/browser-ai";
 import type { ReadingContext } from "@/vocabulary/model";
 import { browser } from "wxt/browser";

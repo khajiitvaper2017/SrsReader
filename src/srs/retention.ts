@@ -3,8 +3,8 @@ import {
   isRankSource,
   wordFrequencies,
 } from "@/dictionaries/frequency";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import type { Vocabulary } from "@/vocabulary/model";
 
 export async function effectiveRetention(

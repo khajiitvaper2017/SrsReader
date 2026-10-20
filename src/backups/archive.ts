@@ -1,13 +1,10 @@
 import { audioInfoSchema } from "@/audio/model";
+import { db } from "@/platform/database/db";
 import { settingsSchema } from "@/settings/model";
 import { getSettings } from "@/settings/store";
-import { db } from "@/shared/db";
 import { saveBlob } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { reviewSchema } from "@/srs/history";
-import { srsWrite } from "@/srs/lock";
-import { invalidateRwkv } from "@/srs/rwkv/runtime";
 import { vocabularySchema, wordId } from "@/vocabulary/model";
 import {
   BlobReader,
@@ -40,6 +37,7 @@ export async function exportSettings() {
     "srs-reader-settings.json",
   );
 }
+
 export async function readSettings(file: File) {
   return z
     .object({
@@ -49,28 +47,7 @@ export async function readSettings(file: File) {
     })
     .parse(JSON.parse(await file.text())).settings;
 }
-export async function restoreSettings(
-  settings: ReturnType<typeof settingsSchema.parse>,
-) {
-  await srsWrite(() =>
-    db.transaction("rw", [db.settings, db.dictionaries], async () => {
-      const current = (await db.settings.get("main"))?.value;
-      await db.settings.put({
-        id: "main",
-        value: { ...settings, algorithm: current?.algorithm ?? "fsrs" },
-      });
-      for (const [id, preference] of Object.entries(
-        settings.dictionaryPreferences,
-      ))
-        await db.dictionaries.update(id, preference);
-    }),
-  );
-  if (settings.algorithm === "rwkv") {
-    while (!(await rpc({ action: "rwkvStatus" })).ready)
-      await rpc({ action: "prepareRwkv" });
-  }
-  await rpc({ action: "activateAlgorithm", algorithm: settings.algorithm });
-}
+
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
   version: z.union([z.literal(1), z.literal(2)]),
@@ -80,6 +57,7 @@ const learningSchema = z.object({
     audioInfoSchema.extend({ path: z.string(), mime: z.string() }),
   ),
 });
+
 export async function exportLearning() {
   const snapshot = await db.transaction(
     "r",
@@ -115,6 +93,7 @@ export async function exportLearning() {
     `srs-reader-learning-${new Date().toISOString().slice(0, 10)}.zip`,
   );
 }
+
 export async function readLearning(file: File) {
   const zip = new ZipReader(new BlobReader(file));
   try {
@@ -173,38 +152,4 @@ export async function readLearning(file: File) {
   } finally {
     await zip.close();
   }
-}
-export async function restoreLearning(
-  data: Awaited<ReturnType<typeof readLearning>>,
-) {
-  await srsWrite(() =>
-    db.transaction(
-      "rw",
-      [
-        db.vocabulary,
-        db.reviews,
-        db.audio,
-        db.srsMeta,
-        db.rwkvMeta,
-        db.rwkvEntities,
-        db.rwkvCards,
-      ],
-      async () => {
-        await invalidateRwkv();
-        await db.srsMeta.put({
-          id: "main",
-          sequence: data.reviews.reduce(
-            (max, review) => Math.max(max, review.sequence),
-            0,
-          ),
-        });
-        await db.vocabulary.clear();
-        await db.reviews.clear();
-        await db.audio.clear();
-        await db.vocabulary.bulkAdd(data.vocabulary);
-        await db.reviews.bulkAdd(data.reviews);
-        await db.audio.bulkAdd(data.audio);
-      },
-    ),
-  );
 }

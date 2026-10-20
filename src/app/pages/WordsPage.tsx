@@ -1,10 +1,10 @@
 import { AudioButton } from "@/audio/AudioButton";
 import { Meanings } from "@/dictionaries/Meanings";
 import { shortDefinition } from "@/dictionaries/definitions";
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
 import { wordStateLabels, wordStates } from "@/settings/word-styles";
 import { i18n, number, t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { Empty } from "@/shared/ui/Empty";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Select, SelectOption } from "@/shared/ui/Select";

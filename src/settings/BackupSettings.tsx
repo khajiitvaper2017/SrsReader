@@ -1,15 +1,14 @@
-import type { Settings } from "@/settings/model";
-import type { SettingsTask } from "@/settings/useSettingsTask";
 import {
   exportLearning,
   exportSettings,
   readLearning,
   readSettings,
-  restoreLearning,
-  restoreSettings,
-} from "@/shared/exports";
+} from "@/backups/archive";
+import { restoreLearning, restoreSettings } from "@/backups/restore";
+import { rpc } from "@/platform/messaging/send";
+import type { Settings } from "@/settings/model";
+import type { SettingsTask } from "@/settings/useSettingsTask";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { Download, Upload } from "lucide-react";
 export function BackupSettings({
   setSettings,

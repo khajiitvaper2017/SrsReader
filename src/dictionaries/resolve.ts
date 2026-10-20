@@ -6,9 +6,9 @@ import {
   normalizeCzechReflexive,
 } from "@/dictionaries/nechybujte";
 import { normalize } from "@/languages/text";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
-import { db } from "@/shared/db";
 import { t } from "@/shared/i18n/i18n";
 
 export async function lookup(

@@ -1,6 +1,6 @@
+import type { Request, Responses } from "@/background/contracts";
 import { settingsSchema } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import type { Request, Responses } from "@/shared/messages";
 import { browser } from "wxt/browser";
 
 export async function rpc<R extends Request>(

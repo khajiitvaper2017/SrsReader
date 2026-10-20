@@ -1,6 +1,6 @@
 import { clearLookupCache } from "@/dictionaries/lookup";
+import { db } from "@/platform/database/db";
 import { getSettings } from "@/settings/store";
-import { db } from "@/shared/db";
 import { stateOf } from "@/vocabulary/model";
 import { browser } from "wxt/browser";
 

@@ -12,8 +12,8 @@ import {
   type ParsingCandidate,
 } from "@/languages/parsing-rules";
 import { folded, normalize } from "@/languages/text";
+import { db } from "@/platform/database/db";
 import type { WordState } from "@/settings/word-styles";
-import { db } from "@/shared/db";
 import { stateOf, wordId } from "@/vocabulary/model";
 
 const cache = new Map<string, LookupResult>();

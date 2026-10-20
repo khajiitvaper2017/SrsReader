@@ -1,10 +1,10 @@
 import type { AudioInfo } from "@/audio/model";
 import { localVoices, playBlob, speak, stopAudio } from "@/audio/playback";
 import type { LookupWord } from "@/dictionaries/model";
+import { db } from "@/platform/database/db";
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { LoaderCircle, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

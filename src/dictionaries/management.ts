@@ -10,7 +10,7 @@ import {
 } from "@/dictionaries/model";
 import { languageCode } from "@/languages/codes";
 import { folded, normalize } from "@/languages/text";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 import type { ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import { httpsUrl } from "@/shared/url";

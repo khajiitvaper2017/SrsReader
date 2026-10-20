@@ -1,5 +1,5 @@
 import type { LookupWord } from "@/dictionaries/model";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 
 export async function snapshot(word: LookupWord) {
   const copy = structuredClone(word);

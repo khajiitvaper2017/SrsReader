@@ -1,0 +1,59 @@
+import { broadcast, notify } from "@/background/events";
+import type { Request } from "@/dictionaries/contracts";
+import { meaningTags } from "@/dictionaries/model";
+import { lookup } from "@/dictionaries/resolve";
+import {
+  deleteDictionary,
+  reorderDictionary,
+  setDictionaryEnabled,
+} from "@/dictionaries/storage";
+import { db } from "@/platform/database/db";
+import { srsWrite } from "@/platform/locks";
+import type { Settings } from "@/settings/model";
+import { getSettings } from "@/settings/store";
+import { stateOf } from "@/vocabulary/model";
+
+export function handleDictionaries(request: Request, settings: Settings) {
+  return request.action === "setDictionary" ||
+    request.action === "moveDictionary" ||
+    request.action === "deleteDictionary"
+    ? srsWrite(async () => execute(request, await getSettings()))
+    : execute(request, settings);
+}
+async function execute(request: Request, settings: Settings) {
+  switch (request.action) {
+    case "dictionaries":
+      return db.dictionaries.orderBy("order").toArray();
+    case "setDictionary":
+      await setDictionaryEnabled(request, settings);
+      await notify();
+      return;
+    case "moveDictionary":
+      await reorderDictionary(request, settings);
+      await notify();
+      return;
+    case "deleteDictionary":
+      await deleteDictionary(request);
+      await notify();
+      return;
+    case "lookup": {
+      const result = await lookup(request.term, settings);
+      if (result.words.length) {
+        const saved = await db.vocabulary.bulkGet(
+          result.words.map((word) => word.id),
+        );
+        await broadcast({
+          event: "parsed",
+          term: request.term,
+          language: settings.studyLanguage,
+          candidates: result.words.map((word, index) => ({
+            id: word.id,
+            tags: word.meanings.flatMap(meaningTags),
+            state: stateOf(saved[index], settings.matureIntervalDays),
+          })),
+        });
+      }
+      return result;
+    }
+  }
+}

@@ -1,7 +1,6 @@
+import { requestSchema } from "@/background/contracts";
 import { handle } from "@/background/handle";
 import { t } from "@/shared/i18n/i18n";
-import { requestSchema } from "@/shared/messages";
-import { srsWrite } from "@/srs/lock";
 import { browser } from "wxt/browser";
 
 export function startBackground() {
@@ -32,30 +31,8 @@ export function startBackground() {
         session: parsed.data.session,
         height: parsed.data.height,
       });
-    const srsActions = new Set([
-      "grade",
-      "preview",
-      "mine",
-      "defineWord",
-      "known",
-      "suspend",
-      "undo",
-      "deleteWord",
-      "setSettings",
-      "setDictionary",
-      "moveDictionary",
-      "deleteDictionary",
-      "retentionOverride",
-      "reschedule",
-      "prepareRwkv",
-      "activateAlgorithm",
-      "resetRwkv",
-    ]);
-    return (
-      srsActions.has(parsed.data.action)
-        ? srsWrite(() => handle(parsed.data))
-        : handle(parsed.data)
-    ).then(
+
+    return handle(parsed.data).then(
       (value) => ({ value }),
       (error) => ({
         error: error instanceof Error ? error.message : String(error),

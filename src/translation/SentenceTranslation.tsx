@@ -1,6 +1,6 @@
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { translateSentence } from "@/translation/browser-ai";
 import type { ReadingContext } from "@/vocabulary/model";
 import { Languages, LoaderCircle } from "lucide-react";

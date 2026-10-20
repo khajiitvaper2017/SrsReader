@@ -1,6 +1,6 @@
+import { rpc } from "@/platform/messaging/send";
 import { useSettings } from "@/settings/useSettings";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Logo } from "@/shared/ui/Logo";
 import { useChanges } from "@/shared/useChanges";

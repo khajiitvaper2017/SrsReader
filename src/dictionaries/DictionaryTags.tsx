@@ -1,6 +1,6 @@
 import type { Dictionary, Tag } from "@/dictionaries/model";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import { i18n, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { useEffect, useState } from "react";

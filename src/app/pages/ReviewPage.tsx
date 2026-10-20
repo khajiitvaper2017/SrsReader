@@ -1,10 +1,10 @@
 import { AudioButton } from "@/audio/AudioButton";
 import { playBlob, speak, stopAudio } from "@/audio/playback";
 import { Meanings } from "@/dictionaries/Meanings";
+import { db } from "@/platform/database/db";
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { Empty } from "@/shared/ui/Empty";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { useChanges } from "@/shared/useChanges";

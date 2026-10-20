@@ -1,6 +1,6 @@
 import { morphologyLanguage } from "@/languages/codes";
 import { normalize } from "@/languages/text";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 import { readDownload } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import type { ExampleProgress } from "@/vocabulary/examples/example-corpus";

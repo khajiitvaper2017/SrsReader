@@ -2,9 +2,9 @@ import { ReviewPage } from "@/app/pages/ReviewPage";
 import { SettingsPage } from "@/app/pages/SettingsPage";
 import { WordsPage } from "@/app/pages/WordsPage";
 import { stopAudio } from "@/audio/playback";
+import { rpc } from "@/platform/messaging/send";
 import { useSettings } from "@/settings/useSettings";
 import { t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { Logo } from "@/shared/ui/Logo";
 import { useChanges } from "@/shared/useChanges";
 import {

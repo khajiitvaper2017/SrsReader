@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir,writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { defineConfig } from "wxt";
 import en from "./src/shared/i18n/locales/en.json";

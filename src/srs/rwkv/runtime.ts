@@ -1,5 +1,10 @@
+import {
+  db,
+  type RwkvCard,
+  type RwkvEntity,
+  type RwkvMeta,
+} from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
-import { db, type RwkvCard, type RwkvEntity, type RwkvMeta } from "@/shared/db";
 import { t } from "@/shared/i18n/i18n";
 import { buildFeatures, emptyFeatures } from "@/srs/rwkv/features";
 import {

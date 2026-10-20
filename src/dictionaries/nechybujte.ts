@@ -4,7 +4,7 @@ import type {
   LookupWord,
 } from "@/dictionaries/model";
 import { folded } from "@/languages/text";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 import { t } from "@/shared/i18n/i18n";
 import { wordId } from "@/vocabulary/model";
 import { DOMParser } from "linkedom";

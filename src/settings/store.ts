@@ -1,5 +1,5 @@
+import { db } from "@/platform/database/db";
 import { defaults, settingsSchema, type Settings } from "@/settings/model";
-import { db } from "@/shared/db";
 import { setInterfaceLanguage } from "@/shared/i18n/i18n";
 
 export async function getSettings(): Promise<Settings> {
@@ -12,3 +12,6 @@ export async function getSettings(): Promise<Settings> {
   );
   return settings;
 }
+
+export const saveSettings = (value: Settings) =>
+  db.settings.put({ id: "main", value });

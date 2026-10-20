@@ -1,8 +1,8 @@
 import LanguageDataWorker from "@/languages/language-data.worker?worker";
+import { db } from "@/platform/database/db";
+import { rpc } from "@/platform/messaging/send";
 import type { SettingsTask } from "@/settings/useSettingsTask";
-import { db } from "@/shared/db";
 import { i18n, t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { useEffect, useRef, useState } from "react";
 export function useLanguageData(language: string, tasks: SettingsTask) {
   const { busy, setError, setProgressTarget, setProgress, setNotice } = tasks;

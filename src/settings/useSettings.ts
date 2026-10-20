@@ -1,7 +1,7 @@
+import { rpc } from "@/platform/messaging/send";
 import { installInputPrevention } from "@/reader/input-prevention";
 import { defaults, type Settings } from "@/settings/model";
 import { i18n, setInterfaceLanguage, t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { browser } from "wxt/browser";

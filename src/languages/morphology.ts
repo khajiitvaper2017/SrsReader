@@ -1,5 +1,5 @@
 import { folded, normalize } from "@/languages/text";
-import { db } from "@/shared/db";
+import { db } from "@/platform/database/db";
 
 let cached:
   { language: string; updated: number; table: Map<string, string> } | undefined;

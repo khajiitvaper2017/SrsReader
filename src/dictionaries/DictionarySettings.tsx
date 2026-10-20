@@ -11,12 +11,12 @@ import ImportWorker from "@/dictionaries/import.worker?worker";
 import { checkUpdate } from "@/dictionaries/management";
 import type { Dictionary } from "@/dictionaries/model";
 import { languageName } from "@/languages/codes";
+import { db } from "@/platform/database/db";
+import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
 import type { SettingsTask } from "@/settings/useSettingsTask";
-import { db } from "@/shared/db";
 import { readDownload, saveBlob } from "@/shared/download";
 import { i18n, t } from "@/shared/i18n/i18n";
-import { rpc } from "@/shared/rpc";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
 import {
   ArrowDown,
