@@ -8,13 +8,16 @@
   "all_words": "All words",
   "another_example": "Another example",
   "appearance": "Appearance",
+  "oled": "OLED (black)",
+  "accent_color": "Accent color",
+  "accent_color_help": "Used for buttons, links, and selected controls. Pick a color or enter a hex code such as #D26400.",
   "assign_random_frequency": "Assign random frequency",
   "audio_button_hint": "{{action}}. Right-click or hold for sources.",
   "audio_source_unavailable": "This audio source could not be played.",
   "audio_sources": "Audio sources",
   "automatic": "Automatic",
   "popup_position": "Popup position",
-  "popup_position_help": "Choose where the popup opens. Automatic keeps its side while it grows.",
+  "popup_position_help": "Automatic opens above or below the word, on the side with more space. Choose Below or Beside for another position.",
   "popup_position_below": "Below the word",
   "popup_position_beside": "Beside the word",
   "available_frequency_dictionaries": "Available frequency dictionaries",
@@ -120,7 +123,6 @@
   "extension_description": "Read with local dictionaries, save words, and review them with spaced repetition.",
   "extension_pages": "Extension pages",
   "extra_word_forms_from_simplemma_help_find_dictionary": "Extra word forms from Simplemma help find dictionary headwords. Downloaded during setup and kept on this device.",
-  "fewer_dictionaries": "Fewer dictionaries",
   "filter_words": "Filter words",
   "find_dictionaries": "Find dictionaries",
   "finding_recordings": "Finding recordings…",
@@ -203,7 +205,6 @@
   "middle_mouse": "Middle mouse",
   "middle_mouse_button": "Middle mouse button",
   "mine_word": "Mine word",
-  "more_dictionaries": "More dictionaries",
   "mouse_back": "Mouse Back",
   "mouse_button": "Mouse button",
   "mouse_forward": "Mouse Forward",
@@ -211,7 +212,7 @@
   "move_dictionary_up": "Move dictionary up",
   "native_language": "Native language",
   "nechybujte_online": "Nechybujte (online)",
-  "nechybujte_online_help": "Look up opened words online. Only the word is sent to Nechybujte. Page text is not sent to this service.",
+  "nechybujte_online_help": "Czech definitions online. Only the looked-up word is sent to Nechybujte. Page text is not sent.",
   "nechybujte_request_failed": "Nechybujte request failed ({{status}}).",
   "nechybujte_response_unrecognized": "The Nechybujte response could not be read.",
   "nechybujte_unavailable": "Nechybujte is unavailable: {{message}}",
@@ -301,7 +302,6 @@
   "settings_imported": "Settings imported.",
   "setup": "Setup",
   "show_answer": "Show answer",
-  "show_first_dictionary_only": "Show first dictionary only",
   "show_sentence_translations": "Show sentence translations",
   "skips_text_detected_as_another_language": "Scans text identified as your study language. Short text can use the page language. Skips foreign text and text with no known language.",
   "sort_by": "Sort by",
@@ -728,5 +728,10 @@
         "Yes": "reflexive"
       }
     }
-  }
+  },
+  "dictionary_display": "Display: {{title}}",
+  "dictionary_show": "Show",
+  "dictionary_if_needed": "If needed",
+  "dictionary_hide": "Hide",
+  "dictionary_display_help": "Show always includes the dictionary. If needed includes it only when dictionaries above have no entry. Hide disables it. Frequency dictionaries use the same rule for ranks."
 }

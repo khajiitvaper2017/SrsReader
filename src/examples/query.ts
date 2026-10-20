@@ -50,6 +50,26 @@ export async function wordExamples(
   const surfaceQuery = [...segmenter.segment(surface)]
     .filter((word) => word.isWordLike)
     .map((word) => folded(word.segment, language));
+  const reflexive =
+    language === "cs" && query.length === 2 && /^(se|si)$/u.test(query[1]!);
+  const findMatch = (words: string[], tokens: string[]) => {
+    if (!tokens.length) return;
+    if (!reflexive) {
+      const start = words.findIndex((_, i) =>
+        tokens.every((token, j) => words[i + j] === token),
+      );
+      return start < 0 ? undefined : tokens.map((_, i) => start + i);
+    }
+    const matched: number[] = [];
+    for (const token of tokens) {
+      const index = words.findIndex(
+        (word, i) => word === token && !matched.includes(i),
+      );
+      if (index < 0) return;
+      matched.push(index);
+    }
+    return matched.sort((a, b) => a - b);
+  };
   const surfaceFirst = surfaceQuery[0] || folded(surface, language);
   const preferred: number[] = [];
   for (let position = 0; position < corpus.sentences.length; position++) {
@@ -59,22 +79,26 @@ export async function wordExamples(
       (word) => word.isWordLike,
     );
     if (
-      words.some(
-        (_, i) =>
-          surfaceQuery.length > 0 &&
-          surfaceQuery.every(
-            (token, j) =>
-              words[i + j] && folded(words[i + j]!.segment, language) === token,
-          ),
+      findMatch(
+        words.map((word) => folded(word.segment, language)),
+        surfaceQuery,
       )
     )
       preferred.push(position);
     if (preferred.length === 8) break;
   }
+  const reflexiveAnalyses =
+    reflexive && preferred.length < 8
+      ? await analyzeWords(Object.keys(corpus.index), language)
+      : undefined;
   const positions = new Set([
     ...preferred,
-    ...(corpus.index[key] || []),
-    ...(corpus.index[query[0] || key] || []),
+    ...(reflexive
+      ? corpus.sentences.keys()
+      : [
+          ...(corpus.index[key] || []),
+          ...(corpus.index[query[0] || key] || []),
+        ]),
   ]);
   const result: Example[] = [];
   for (const position of positions) {
@@ -82,37 +106,43 @@ export async function wordExamples(
     const words = [...segmenter.segment(sentence)].filter(
       (word) => word.isWordLike,
     );
-    const surfaceMatch = words.findIndex(
-      (_, i) =>
-        surfaceQuery.length > 0 &&
-        surfaceQuery.every(
-          (token, j) =>
-            words[i + j] && folded(words[i + j]!.segment, language) === token,
-        ),
-    );
+    const foldedWords = words.map((word) => folded(word.segment, language));
+    const surfaceMatch = findMatch(foldedWords, surfaceQuery);
+    if (reflexive && !surfaceMatch && !foldedWords.includes(query[1]!))
+      continue;
     let match = surfaceMatch;
-    if (match < 0) {
-      const analyses = await analyzeWords(
-        words.map((word) => word.segment),
-        language,
-      );
-      match = words.findIndex((word, i) =>
-        query.length > 1
-          ? query.every(
-              (token, j) =>
-                words[i + j] &&
-                folded(words[i + j]!.segment, language) === token,
-            )
-          : folded(word.segment, language) === key ||
-            folded(analyses.get(word.segment) || word.segment, language) ===
-              key,
-      );
+    if (!match) {
+      if (reflexive) {
+        match = findMatch(
+          foldedWords.map((word) =>
+            /^(se|si)$/u.test(word)
+              ? word
+              : folded(reflexiveAnalyses?.get(word) || word, language).replace(
+                  / (se|si)$/u,
+                  "",
+                ),
+          ),
+          query,
+        );
+      } else {
+        match = findMatch(foldedWords, query);
+        if (!match && query.length === 1) {
+          const analyses = await analyzeWords(
+            words.map((word) => word.segment),
+            language,
+          );
+          match = findMatch(
+            words.map((word) =>
+              folded(analyses.get(word.segment) || word.segment, language),
+            ),
+            query,
+          );
+        }
+      }
     }
-    if (match < 0) continue;
-    const start = words[match]!.index;
-    const matchLength =
-      surfaceMatch >= 0 ? surfaceQuery.length : Math.max(1, query.length);
-    const last = words[match + matchLength - 1]!;
+    if (!match) continue;
+    const start = words[match[0]!]!.index;
+    const last = words[match[match.length - 1]!]!;
     const end = last.index + last.segment.length;
     result.push({
       id,

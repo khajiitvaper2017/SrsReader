@@ -7,7 +7,7 @@ export const requests = [
   z.object({
     action: z.literal("setDictionary"),
     id: z.string(),
-    enabled: z.boolean(),
+    display: z.enum(["show", "fallback", "hide"]),
   }),
   z.object({
     action: z.literal("moveDictionary"),

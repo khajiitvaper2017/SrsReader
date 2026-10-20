@@ -1,5 +1,6 @@
-import type { Meaning } from "@/dictionaries/model";
-import { dictionaryTags, loadDictionaries } from "@/dictionaries/storage";
+import type { Dictionary, Meaning } from "@/dictionaries/model";
+import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
+import { displayedMeanings } from "@/dictionaries/display";
 import type { Settings } from "@/settings/model";
 import { useEffect, useState } from "react";
 
@@ -13,18 +14,8 @@ export function useMeanings({
   settings: Settings;
   onIgnoreTag?: (tag: string) => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const firstDictionary = meanings.find(
-    (meaning) => meaning.definitions.length,
-  )?.dictionaryId;
-  const hasMore = meanings.some(
-    (meaning) =>
-      meaning.definitions.length && meaning.dictionaryId !== firstDictionary,
-  );
-  const visible =
-    settings.firstDictionaryOnly && !expanded
-      ? meanings.filter((meaning) => meaning.dictionaryId === firstDictionary)
-      : meanings;
+  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const visible = displayedMeanings(meanings, settings, dictionaries);
   const [styles, setStyles] = useState<Record<string, string>>({});
   const [tagDescriptions, setTagDescriptions] = useState<
     Record<string, string>
@@ -34,61 +25,56 @@ export function useMeanings({
     Record<string, string>
   >({});
   useEffect(() => {
-    setExpanded(false);
     let alive = true;
-    void loadDictionaries(meanings.map((m) => m.dictionaryId)).then(
-      async (rows) => {
-        const tags = await dictionaryTags(
-          rows.filter((row) => row !== undefined).map((row) => row.revisionId),
-        );
-        if (alive) {
-          setDefinitionLanguages(
-            Object.fromEntries(
-              rows
-                .filter((row) => row !== undefined)
-                .map((row) => [row.id, row.target]),
-            ),
-          );
-          setTagDescriptions(
-            Object.fromEntries(
-              rows
-                .filter((row) => row !== undefined)
-                .flatMap((row) =>
-                  tags
-                    .filter(
-                      (tag) =>
-                        tag.revisionId === row.revisionId &&
-                        tag.description &&
-                        tag.description !== tag.name,
-                    )
-                    .map((tag) => [
-                      `${row.id}:${tag.name}`,
-                      tag.description || tag.name,
-                    ]),
-                ),
-            ),
-          );
-          setStyles(
-            Object.fromEntries(
-              rows.filter((d) => d !== undefined).map((d) => [d.id, d.styles]),
-            ),
-          );
-          setMonolingual(
+    void listDictionaries(settings).then(async (rows) => {
+      const tags = await dictionaryTags(
+        rows.filter((row) => row !== undefined).map((row) => row.revisionId),
+      );
+      if (alive) {
+        setDictionaries(rows);
+        setDefinitionLanguages(
+          Object.fromEntries(
             rows
-              .filter((d) => d?.language === language && d.target === language)
-              .map((d) => d!.id),
-          );
-        }
-      },
-    );
+              .filter((row) => row !== undefined)
+              .map((row) => [row.id, row.target]),
+          ),
+        );
+        setTagDescriptions(
+          Object.fromEntries(
+            rows
+              .filter((row) => row !== undefined)
+              .flatMap((row) =>
+                tags
+                  .filter(
+                    (tag) =>
+                      tag.revisionId === row.revisionId &&
+                      tag.description &&
+                      tag.description !== tag.name,
+                  )
+                  .map((tag) => [
+                    `${row.id}:${tag.name}`,
+                    tag.description || tag.name,
+                  ]),
+              ),
+          ),
+        );
+        setStyles(
+          Object.fromEntries(
+            rows.filter((d) => d !== undefined).map((d) => [d.id, d.styles]),
+          ),
+        );
+        setMonolingual(
+          rows
+            .filter((d) => d?.language === language && d.target === language)
+            .map((d) => d!.id),
+        );
+      }
+    });
     return () => {
       alive = false;
     };
-  }, [meanings, language, settings.interfaceLanguage, settings.nativeLanguage]);
+  }, [meanings, language, settings]);
   return {
-    expanded,
-    setExpanded,
-    hasMore,
     visible,
     styles,
     tagDescriptions,

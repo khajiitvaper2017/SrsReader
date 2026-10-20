@@ -111,6 +111,11 @@ export function installReaderInput(
     event.preventDefault();
     event.stopImmediatePropagation();
   }
+  ctx.addEventListener(window, "scroll", popup.updateVisibility, {
+    capture: true,
+    passive: true,
+  });
+  ctx.addEventListener(window, "resize", popup.reposition);
   ctx.addEventListener(document, "mousemove", (event) => {
     pointer = {
       clientX: event.clientX,

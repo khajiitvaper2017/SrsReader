@@ -33,7 +33,6 @@ export async function handle(request: Request) {
     case "createSession":
     case "session":
     case "closeLookup":
-    case "resizeLookup":
       return handleLookup(request);
     case "word":
     case "saveTranslation":

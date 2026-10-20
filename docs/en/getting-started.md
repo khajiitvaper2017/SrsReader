@@ -9,6 +9,12 @@ Open a website, use your lookup control on a word, and choose **Mine word**. Ope
 
 Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as native language**; other native languages use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
 
+## Appearance
+
+Open **Settings → General → Appearance**. Choose **Light**, **Dark**, **OLED (black)**, or **System** to follow your device. Dark uses near-black surfaces. OLED uses black backgrounds. Both keep secondary labels close to the main text color.
+
+**Accent color** sets the color for buttons, links, and selected controls. The default is orange (`#D26400`). Use the color picker or enter a six-digit hex code, such as `#0080FF`. The theme and accent also apply to dictionary popups.
+
 ## Load a build
 
 - **Chrome:** open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select `.output/chrome-mv3`.

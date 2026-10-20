@@ -79,10 +79,14 @@ export function UIProvider({
   return (
     <SettingsContext.Provider value={[settings, setSettings, ready]}>
       <MantineProvider
-        theme={createUITheme()}
+        theme={createUITheme(settings)}
         colorSchemeManager={colorSchemeManager}
         forceColorScheme={
-          settings.theme === "system" ? systemScheme : settings.theme
+          settings.theme === "system"
+            ? systemScheme
+            : settings.theme === "oled"
+              ? "dark"
+              : settings.theme
         }
       >
         {children}

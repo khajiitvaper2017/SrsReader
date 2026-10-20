@@ -96,8 +96,9 @@ async function importRevision(
         t("the_downloaded_dictionary_does_not_match_the_installed"),
       );
     const existing = await db.dictionaries.get(id);
-    const preference = (await db.settings.get("main"))?.value
-      .dictionaryPreferences?.[id];
+    const preferences =
+      (await db.settings.get("main"))?.value.dictionaryPreferences || {};
+    const preference = preferences[id];
     const banks = files.filter((f) => /^term_bank_\d+\.json$/.test(f.filename));
     const metaBanks = files.filter((f) =>
       /^term_meta_bank_\d+\.json$/.test(f.filename),
@@ -285,7 +286,10 @@ async function importRevision(
       order:
         existing?.order ??
         preference?.order ??
-        ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1,
+        Math.max(
+          (await db.dictionaries.orderBy("order").last())?.order ?? -1,
+          ...Object.values(preferences).map((preference) => preference.order),
+        ) + 1,
       count,
       frequencyCount,
       maxFrequency,

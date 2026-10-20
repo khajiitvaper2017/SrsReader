@@ -17,36 +17,44 @@ export function Ratings({
   disabled,
   onGrade,
   onlyAgainGood,
+  compact = false,
 }: {
   times: number[];
   disabled: boolean;
   onGrade: (rating: number) => void;
   onlyAgainGood: boolean;
+  compact?: boolean;
 }) {
-  return (
+  const buttons = [t("again"), t("hard"), t("good"), t("easy")].map(
+    (label, i) =>
+      onlyAgainGood && i !== 0 && i !== 2 ? null : (
+        <Button
+          key={label}
+          title={times[i] ? intervalLabel(times[i]!) : undefined}
+          disabled={disabled}
+          onClick={() => onGrade(i + 1)}
+          variant="light"
+          color={["red", "orange", "green", "blue"][i]}
+          px={4}
+          h={compact ? 40 : undefined}
+          miw={0}
+        >
+          <Stack gap={0} align="center">
+            <Text span inherit>
+              {label}
+            </Text>
+            <Text span size="xs" c="dimmed">
+              {times[i] ? intervalLabel(times[i]!) : "—"}
+            </Text>
+          </Stack>
+        </Button>
+      ),
+  );
+  return compact ? (
+    <>{buttons}</>
+  ) : (
     <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing={4}>
-      {[t("again"), t("hard"), t("good"), t("easy")].map((label, i) =>
-        onlyAgainGood && i !== 0 && i !== 2 ? null : (
-          <Button
-            key={label}
-            title={times[i] ? intervalLabel(times[i]!) : undefined}
-            disabled={disabled}
-            onClick={() => onGrade(i + 1)}
-            variant="light"
-            color={["red", "orange", "green", "blue"][i]}
-            px={4}
-          >
-            <Stack gap={0} align="center">
-              <Text span inherit>
-                {label}
-              </Text>
-              <Text span size="xs" c="dimmed">
-                {times[i] ? intervalLabel(times[i]!) : "—"}
-              </Text>
-            </Stack>
-          </Button>
-        ),
-      )}
+      {buttons}
     </SimpleGrid>
   );
 }

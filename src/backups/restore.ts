@@ -18,7 +18,10 @@ export async function restoreSettings(
       for (const [id, preference] of Object.entries(
         settings.dictionaryPreferences,
       ))
-        await db.dictionaries.update(id, preference);
+        await db.dictionaries.update(id, {
+          enabled: preference.enabled,
+          order: preference.order,
+        });
     }),
   );
   if (settings.algorithm === "rwkv") {

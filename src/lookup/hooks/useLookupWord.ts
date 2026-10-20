@@ -40,8 +40,6 @@ export function useLookupWord({
   const [settings, setSettings] = useSettings();
   const readingRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const actionsRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<LookupResult>();
   const { term, context, occurrence } = page;
   const [selected, setSelected] = useState(page.selected || "");
@@ -104,30 +102,6 @@ export function useLookupWord({
     });
     return () => ctx.abort();
   }, [word?.id]);
-  useEffect(() => {
-    const session = new URLSearchParams(location.search).get("session");
-    if (!session) return;
-    const body = bodyRef.current!;
-    const resize = () => {
-      const actions = actionsRef.current;
-      void lookupClient({
-        action: "resizeLookup",
-        session,
-        height: Math.min(
-          460,
-          Math.ceil(
-            body.getBoundingClientRect().height + (actions?.offsetHeight || 0),
-          ),
-        ),
-      }).catch(console.warn);
-    };
-    const observer = new ResizeObserver(resize);
-    observer.observe(body);
-    const actions = actionsRef.current;
-    if (actions) observer.observe(actions);
-    resize();
-    return () => observer.disconnect();
-  }, [word?.id, unparsed]);
   useEffect(() => {
     let alive = true;
     void dictionariesClient({ action: "lookup", term, occurrence })
@@ -307,8 +281,6 @@ export function useLookupWord({
   return {
     readingRef,
     contentRef,
-    bodyRef,
-    actionsRef,
     settings,
     result,
     term,

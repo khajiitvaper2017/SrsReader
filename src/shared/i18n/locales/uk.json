@@ -8,13 +8,16 @@
   "all_words": "Усі слова",
   "another_example": "Інший приклад",
   "appearance": "Тема",
+  "oled": "OLED (чорна)",
+  "accent_color": "Акцентний колір",
+  "accent_color_help": "Колір кнопок, посилань і вибраних елементів. Виберіть колір або введіть шістнадцятковий код, наприклад #D26400.",
   "assign_random_frequency": "Призначати випадкову частоту",
   "audio_button_hint": "{{action}}. Натисніть правою кнопкою миші або утримуйте, щоб вибрати джерело.",
   "audio_source_unavailable": "Не вдалося відтворити це джерело аудіо.",
   "audio_sources": "Джерела озвучення",
   "automatic": "Автоматично",
   "popup_position": "Положення спливного вікна",
-  "popup_position_help": "Виберіть місце відкриття. Автоматично зберігає бік під час розгортання.",
+  "popup_position_help": "Автоматично відкриває вікно над словом або під ним — там, де більше місця. Виберіть «Під словом» або «Поруч зі словом», щоб змінити положення.",
   "popup_position_below": "Під словом",
   "popup_position_beside": "Поруч зі словом",
   "available_frequency_dictionaries": "Доступні частотні словники",
@@ -124,7 +127,6 @@
   "extension_description": "Читайте з локальними словниками, зберігайте слова та вивчайте їх за допомогою інтервальних повторень.",
   "extension_pages": "Сторінки розширення",
   "extra_word_forms_from_simplemma_help_find_dictionary": "Додаткові словоформи Simplemma допомагають знаходити початкову форму слова. Завантажуються під час налаштування та зберігаються на цьому пристрої.",
-  "fewer_dictionaries": "Лише перший словник",
   "filter_words": "Фільтр слів",
   "find_dictionaries": "Знайти словники",
   "finding_recordings": "Шукаємо записи…",
@@ -209,7 +211,6 @@
   "middle_mouse": "Середня кнопка миші",
   "middle_mouse_button": "Середня кнопка миші",
   "mine_word": "Зберегти слово",
-  "more_dictionaries": "Інші словники",
   "mouse_back": "Кнопка миші «Назад»",
   "mouse_button": "Кнопка миші",
   "mouse_forward": "Кнопка миші «Вперед»",
@@ -217,7 +218,7 @@
   "move_dictionary_up": "Підняти словник вище",
   "native_language": "Рідна мова",
   "nechybujte_online": "Nechybujte (онлайн)",
-  "nechybujte_online_help": "Шукає відкриті слова онлайн. До Nechybujte надсилається лише слово. Текст сторінки до цього сервісу не надсилається.",
+  "nechybujte_online_help": "Тлумачення чеських слів онлайн. До Nechybujte надсилається лише слово, яке ви шукаєте. Текст сторінки не надсилається.",
   "nechybujte_request_failed": "Помилка запиту до Nechybujte ({{status}}).",
   "nechybujte_response_unrecognized": "Не вдалося прочитати відповідь Nechybujte.",
   "nechybujte_unavailable": "Nechybujte недоступний: {{message}}",
@@ -307,7 +308,6 @@
   "settings_imported": "Налаштування імпортовано.",
   "setup": "Налаштування",
   "show_answer": "Показати відповідь",
-  "show_first_dictionary_only": "Показувати лише перший словник",
   "show_sentence_translations": "Показувати переклад речень",
   "skips_text_detected_as_another_language": "Аналізує текст, розпізнаний як мова навчання. Для коротких уривків використовує мову сторінки. Пропускає текст іншими мовами та текст, мову якого не визначено.",
   "sort_by": "Сортувати за",
@@ -767,5 +767,10 @@
         "Neut": "середній рід"
       }
     }
-  }
+  },
+  "dictionary_display": "Показ словника: {{title}}",
+  "dictionary_show": "Показувати",
+  "dictionary_if_needed": "За потреби",
+  "dictionary_hide": "Приховати",
+  "dictionary_display_help": "«Показувати» завжди додає статті словника. «За потреби» показує їх, лише якщо у словниках вище немає статті. «Приховати» вимикає словник. Для частотних словників це правило стосується рангів."
 }

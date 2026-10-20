@@ -1,4 +1,12 @@
-import { Box, Button, Loader, Menu, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Loader,
+  Menu,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import type { LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
@@ -29,14 +37,16 @@ export function AudioButton({
     play,
     label,
   } = usePronunciation({ word, sentence, settings, onError });
+  const Control = sentence ? Button : ActionIcon;
   return (
     <Text data-srs-reader="" component="span" inherit>
       <Menu opened={open} onChange={setOpen} closeOnItemClick={false}>
         <Menu.Target>
           <Box component="span" display="inline-flex">
-            <Button
+            <Control
               variant="subtle"
-              size="compact-xs"
+              size={sentence ? "compact-xs" : "sm"}
+              color="gray"
               aria-haspopup="menu"
               aria-expanded={open}
               title={t("audio_button_hint", { action: label })}
@@ -92,7 +102,7 @@ export function AudioButton({
                 <Volume2 aria-hidden="true" size={16} />
               )}
               {sentence && t("sentence")}
-            </Button>
+            </Control>
           </Box>
         </Menu.Target>
 

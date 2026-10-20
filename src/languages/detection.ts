@@ -34,6 +34,10 @@ export async function detectLanguages(
   texts: string[],
 ): Promise<(string | null)[]> {
   const samples = texts.map(languageSample);
+  for (const sample of new Set(samples)) {
+    if (cache.has(sample)) continue;
+    if (/[řěů]/iu.test(sample.normalize("NFC"))) cache.set(sample, "cs");
+  }
   const missing = [
     ...new Set(
       samples.filter((sample) => sample.length >= 120 && !cache.has(sample)),

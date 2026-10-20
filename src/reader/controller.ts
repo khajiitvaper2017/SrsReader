@@ -97,12 +97,6 @@ export function startReader(
       return;
     }
     if (message.event === "closeLookup") popup.close();
-    if (
-      message.event === "resizeLookup" &&
-      message.session === popup.session &&
-      typeof message.height === "number"
-    )
-      popup.resize(message.height);
     if (message.event === "changed") {
       if (message.word) {
         scanner.updateWord(message.word.id, message.word.state);

@@ -6,7 +6,7 @@ Use your lookup control on a word. **Mine word** saves its definitions and the s
 
 Definitions and example sentences can be scanned too. **Back** or **Escape** returns from a nested lookup; clicking outside closes the popup. Disable nested lookup under **Settings → Reading → Scan dictionary popups**.
 
-Drag the popup’s bottom-right corner to change its width and height. The chosen size also applies to later lookups on the same page. Reloading the page restores automatic sizing.
+The popup stays attached to the word during scrolling. **Automatic** opens it above or below the word, on the side with more space. It keeps that side during scrolling. Its opening size fits the available space and stays fixed while definitions load. Drag the bottom-right corner to resize it, including toward or across the word. Your chosen size is reused for later lookups on the same page where space permits. Reloading restores the default size. Firefox 147 or later is required.
 
 ## Personal definitions
 
@@ -46,7 +46,7 @@ LINDAT may use submitted text to improve its systems. Its models have noncommerc
 
 ## Examples and translation
 
-Popups prioritize downloaded Tatoeba examples containing the form you looked up, then fall back to other forms of the same word; **Another example** cycles through them. These are separate from the sentence you mine.
+Popups prioritize downloaded Tatoeba examples containing the form you looked up, then fall back to other forms of the same word. For a reflexive verb construction such as **jsem se dověděl**, examples containing all its words come first, even when the words are separated or in a different order. Other forms of **dovědět se** follow. **Another example** cycles through the results. These are separate from the sentence you mine.
 
 Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading → Hide source links**.
 

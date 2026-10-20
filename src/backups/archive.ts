@@ -20,6 +20,8 @@ export async function exportSettings() {
   const settings = await getSettings();
   for (const dictionary of await db.dictionaries.toArray())
     settings.dictionaryPreferences[dictionary.id] = {
+      fallback:
+        settings.dictionaryPreferences[dictionary.id]?.fallback ?? false,
       enabled: dictionary.enabled,
       order: dictionary.order,
     };

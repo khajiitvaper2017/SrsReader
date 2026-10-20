@@ -40,12 +40,6 @@ export function startBackground() {
       });
     if (parsed.data.action === "closeLookup" && sender.tab?.id)
       void browser.tabs.sendMessage(sender.tab.id, { event: "closeLookup" });
-    if (parsed.data.action === "resizeLookup" && sender.tab?.id)
-      void browser.tabs.sendMessage(sender.tab.id, {
-        event: "resizeLookup",
-        session: parsed.data.session,
-        height: parsed.data.height,
-      });
 
     return handle(parsed.data).then(
       (value) => ({ value }),

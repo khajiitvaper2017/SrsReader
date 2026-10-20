@@ -136,13 +136,6 @@ export function ReadingSettings({
             }
           />
           <Switch
-            label={t("show_first_dictionary_only")}
-            checked={settings.firstDictionaryOnly}
-            onChange={(event) =>
-              void update({ firstDictionaryOnly: event.currentTarget.checked })
-            }
-          />
-          <Switch
             label={t("hide_dictionary_source_links")}
             description={t("in_lookup_popups")}
             checked={settings.hideDictionarySources}

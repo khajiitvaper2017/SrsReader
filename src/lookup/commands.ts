@@ -28,7 +28,6 @@ async function execute(request: Request) {
       return session;
     }
     case "closeLookup":
-    case "resizeLookup":
       return;
   }
 }

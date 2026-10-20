@@ -3,15 +3,18 @@ import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import {
   lookupNechybujte,
   mergeNechybujte,
+  nechybujteCacheKey,
   normalizeCzechReflexive,
 } from "@/dictionaries/nechybujte";
-import { normalize } from "@/languages/text";
+import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { occurrenceAnalysis } from "@/languages/udpipe";
 import type { Occurrence } from "@/languages/analysis";
+import { listDictionaries } from "@/dictionaries/storage";
+import { dictionaryDisplay, displayedWords } from "@/dictionaries/display";
 
 export async function lookup(
   term: string,
@@ -27,6 +30,27 @@ export async function lookup(
       : undefined;
   const terms = [...new Set([...(contextual?.terms || []), lookupTerm])];
   const matches = await lookupMany(terms, settings.studyLanguage);
+  const dictionaries = await listDictionaries(settings);
+  const online = dictionaries.find(
+    (dictionary) => dictionary.id === "nechybujte",
+  )!;
+  const onlineMode = dictionaryDisplay(online.id, settings);
+  const higher = new Set(
+    dictionaries
+      .filter(
+        (dictionary) => dictionary.enabled && dictionary.order < online.order,
+      )
+      .map((dictionary) => dictionary.id),
+  );
+  const higherMatch = [...matches.values()].some((match) =>
+    match.words.some((word) =>
+      word.meanings.some(
+        (meaning) =>
+          meaning.dictionaryId === "personal" ||
+          higher.has(meaning.dictionaryId),
+      ),
+    ),
+  );
   const preferred = matches.get(normalize(terms[0]!)) || {
     words: [],
     unresolved: [],
@@ -34,18 +58,33 @@ export async function lookup(
   let warning: string | undefined;
   if (
     settings.studyLanguage === "cs" &&
-    settings.nechybujte &&
-    !preferred.words.some((word) =>
-      word.meanings.some((meaning) => meaning.dictionaryId !== "nechybujte"),
-    )
+    (onlineMode === "show" || (onlineMode === "fallback" && !higherMatch))
   ) {
     try {
+      const first = terms[0]!;
+      // Unknown lemmas can return unrelated fuzzy matches from Nechybujte.
+      const onlineTerm =
+        contextual &&
+        !contextual.grammar.group &&
+        !preferred.words.some(
+          (word) => folded(word.lemma, "cs") === folded(first, "cs"),
+        )
+          ? lookupTerm
+          : first;
+      if (onlineTerm !== first)
+        matches.set(normalize(first), { words: [], unresolved: [] });
+      const online = await lookupNechybujte(onlineTerm, refreshOnline);
+      if (onlineTerm !== first)
+        await db.nechybujte.put({
+          term: nechybujteCacheKey(first),
+          result: online,
+        });
       matches.set(
-        normalize(terms[0]!),
+        normalize(first),
         mergeNechybujte(
-          preferred,
-          await lookupNechybujte(terms[0]!, refreshOnline),
-          terms[0]!,
+          onlineTerm === first ? preferred : { words: [], unresolved: [] },
+          online,
+          first,
         ),
       );
     } catch (error) {
@@ -62,11 +101,10 @@ export async function lookup(
   };
   for (const candidate of terms) {
     const match = matches.get(normalize(candidate));
-    for (const word of match?.words || [])
-      if (!result.words.some((existing) => existing.id === word.id))
-        result.words.push(word);
+    result.words.push(...(match?.words || []));
     result.unresolved.push(...(match?.unresolved || []));
   }
+  result.words = displayedWords(result.words, settings, dictionaries);
   if (result.words.length) result.unresolved = [];
   return result;
 }

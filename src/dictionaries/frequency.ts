@@ -3,6 +3,7 @@ import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import type { Vocabulary } from "@/vocabulary/model";
+import { getSettings } from "@/settings/store";
 
 export function harmonicRank(ranks: number[]) {
   if (!ranks.length) return Infinity;
@@ -27,6 +28,7 @@ function frequencyRank(rows: Frequency[], lemma: string, reading: string) {
 export async function wordFrequencies(
   word: Pick<LookupWord, "lemma" | "reading" | "language">,
 ) {
+  const settings = await getSettings();
   const dictionaries = (
     await db.dictionaries.orderBy("order").toArray()
   ).filter(
@@ -42,16 +44,21 @@ export async function wordFrequencies(
       ]),
     )
     .toArray();
-  return dictionaries.flatMap((dictionary) => {
-    const rank = frequencyRank(
-      rows.filter((row) => row.revisionId === dictionary.revisionId),
-      word.lemma,
-      word.reading,
+  return dictionaries
+    .flatMap((dictionary) => {
+      const rank = frequencyRank(
+        rows.filter((row) => row.revisionId === dictionary.revisionId),
+        word.lemma,
+        word.reading,
+      );
+      return Number.isFinite(rank)
+        ? [{ id: dictionary.id, title: dictionary.index.title, rank }]
+        : [];
+    })
+    .filter(
+      (row, index) =>
+        !settings.dictionaryPreferences[row.id]?.fallback || index === 0,
     );
-    return Number.isFinite(rank)
-      ? [{ id: dictionary.id, title: dictionary.index.title, rank }]
-      : [];
-  });
 }
 
 export async function orderNewWords(words: Vocabulary[], settings: Settings) {
@@ -89,18 +96,24 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
   await Promise.all(
     words.map(async (word) => {
       const matching = byKey.get(folded(word.lemma, word.language)) || [];
+      const matchingRanks = dictionaries
+        .map((dictionary) => ({
+          dictionary,
+          rank: frequencyRank(
+            matching.filter((row) => row.revisionId === dictionary.revisionId),
+            word.lemma,
+            word.reading,
+          ),
+        }))
+        .filter((row) => Number.isFinite(row.rank));
       const rank = harmonicRank(
-        dictionaries
-          .map((dictionary) =>
-            frequencyRank(
-              matching.filter(
-                (row) => row.revisionId === dictionary.revisionId,
-              ),
-              word.lemma,
-              word.reading,
-            ),
+        matchingRanks
+          .filter(
+            (row, index) =>
+              !settings.dictionaryPreferences[row.dictionary.id]?.fallback ||
+              index === 0,
           )
-          .filter(Number.isFinite),
+          .map((row) => row.rank),
       );
       if (Number.isFinite(rank)) ranks.set(word.id, rank);
       else if (settings.missingFrequency === "random") {

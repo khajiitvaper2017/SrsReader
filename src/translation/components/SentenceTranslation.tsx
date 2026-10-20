@@ -1,11 +1,11 @@
-import { Loader, Button, Stack, Text } from "@mantine/core";
+import { ActionIcon, Loader, Button, Stack, Text } from "@mantine/core";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { translateSentence } from "@/translation/translate";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { ReadingContext } from "@/vocabulary/model";
 import { Languages } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 type Translation = NonNullable<ReadingContext["translation"]>;
 export function TextTranslation({
   text,
@@ -16,6 +16,7 @@ export function TextTranslation({
   label = t("translate"),
   collapsed = false,
   compact = false,
+  children,
 }: {
   text: string;
   language: string;
@@ -25,12 +26,14 @@ export function TextTranslation({
   label?: string;
   collapsed?: boolean;
   compact?: boolean;
+  children?: (button: ReactNode, translation: ReactNode) => ReactNode;
 }) {
   const [translation, setTranslation] = useState(initialTranslation);
   const [shown, setShown] = useState(!collapsed);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const Control = compact ? ActionIcon : Button;
   useEffect(() => {
     setTranslation(initialTranslation);
     setError("");
@@ -62,38 +65,51 @@ export function TextTranslation({
       setStatus("");
     }
   }
+  const translated = shown && translation && (
+    <Text lang={translation.language} dir="auto" w="100%">
+      {translation.text}
+    </Text>
+  );
+  const button = (!shown ||
+    !translation ||
+    translation.language !== settings.nativeLanguage) && (
+    <Control
+      title={busy ? status || t("translating") : label}
+      aria-label={busy ? status || t("translating") : label}
+      disabled={busy}
+      onClick={() => void translate()}
+      variant="subtle"
+      size={compact ? "sm" : "compact-xs"}
+      color={compact ? "gray" : undefined}
+    >
+      {busy ? (
+        <Loader size={14} aria-hidden="true" />
+      ) : (
+        <Languages aria-hidden="true" size={16} />
+      )}
+      {!compact && (busy ? status || t("translating") : label)}
+    </Control>
+  );
+  const failure = error && (
+    <Text role="alert" c="red">
+      {error}
+    </Text>
+  );
+  if (children)
+    return children(
+      button,
+      translated || failure ? (
+        <Stack data-srs-reader="" gap="xs">
+          {translated}
+          {failure}
+        </Stack>
+      ) : null,
+    );
   return (
-    <Stack data-srs-reader="" gap="xs">
-      {shown && translation && (
-        <Text lang={translation.language} dir="auto">
-          {translation.text}
-        </Text>
-      )}
-      {(!shown ||
-        !translation ||
-        translation.language !== settings.nativeLanguage) && (
-        <Button
-          title={busy ? status || t("translating") : label}
-          aria-label={busy ? status || t("translating") : label}
-          disabled={busy}
-          onClick={() => void translate()}
-          variant="subtle"
-          size="compact-xs"
-          w={compact ? 28 : undefined}
-        >
-          {busy ? (
-            <Loader size={14} aria-hidden="true" />
-          ) : (
-            <Languages aria-hidden="true" size={16} />
-          )}
-          {!compact && (busy ? status || t("translating") : label)}
-        </Button>
-      )}
-      {error && (
-        <Text role="alert" c="red">
-          {error}
-        </Text>
-      )}
+    <Stack data-srs-reader="" gap="xs" align={compact ? "flex-end" : undefined}>
+      {translated}
+      {button}
+      {failure}
     </Stack>
   );
 }
@@ -106,6 +122,7 @@ export function SentenceTranslation({
   label = t("translate_sentence"),
   collapsed = false,
   compact = false,
+  children,
 }: {
   context: ReadingContext;
   language: string;
@@ -115,6 +132,7 @@ export function SentenceTranslation({
   label?: string;
   collapsed?: boolean;
   compact?: boolean;
+  children?: (button: ReactNode, translation: ReactNode) => ReactNode;
 }) {
   return (
     <TextTranslation
@@ -137,6 +155,8 @@ export function SentenceTranslation({
             translation,
           });
       }}
-    />
+    >
+      {children}
+    </TextTranslation>
   );
 }

@@ -8,7 +8,7 @@ import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { readDownload, saveBlob } from "@/shared/download";
 import { i18n, t } from "@/shared/i18n/i18n";
-import type { ChangeEvent } from "react";
+import type { DictionaryDisplay } from "@/dictionaries/display";
 import { useEffect, useRef, useState } from "react";
 
 export function useDictionarySettings({
@@ -101,15 +101,12 @@ export function useDictionarySettings({
     if (!file || busy) return;
     await task(() => importZip(file));
   }
-  function setEnabled(
-    dictionary: Dictionary,
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  function setDisplay(dictionary: Dictionary, display: DictionaryDisplay) {
     return void task(async () => {
       await dictionariesClient({
         action: "setDictionary",
         id: dictionary.id,
-        enabled: event.target.checked,
+        display,
       });
       load();
     });
@@ -204,7 +201,7 @@ export function useDictionarySettings({
     importZip,
     downloadDictionary,
     fileImport,
-    setEnabled,
+    setDisplay,
     moveUp,
     moveDown,
     checkForUpdate,

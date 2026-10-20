@@ -10,9 +10,13 @@ Open **Settings → Dictionaries**:
 
 Keep Settings open while downloading and importing. You can switch settings tabs while a download or import runs. Once installed, dictionaries work offline.
 
-Use **↑** and **↓** to set definition priority: higher dictionaries appear first in the popup. Uncheck a dictionary to disable it.
+Use **↑** and **↓** to order dictionaries, including Nechybujte. Higher dictionaries appear first in the popup. Each dictionary has three display options:
 
-**Settings → Reading → Show first dictionary only** is enabled by default. It shows all definitions from the first dictionary with a match. **More dictionaries** reveals the remaining entries; **Fewer dictionaries** collapses them. Turn the setting off to show all dictionaries.
+- **Show:** include its entries even when another dictionary has a match.
+- **If needed:** include its entries only when dictionaries above it have no match.
+- **Hide:** disable its entries, including cached entries.
+
+Frequency dictionaries use the same rule for ranks. These choices and the order are included in settings exports.
 
 Choose **Check updates**, then **Update** when a release is available. Checks are manual. Without an update source, import a newer ZIP with the same title and languages.
 
@@ -34,8 +38,8 @@ For missing Czech **-čovat** forms, such as **dosvědčoval**, lookup can use t
 
 ## Nechybujte online
 
-When studying Czech, enable **Settings → Dictionaries → Nechybujte (online)** to add definitions, grammar, and examples from Nechybujte. It is off by default and needs no API key. Words you open are sent to Nechybujte; page scanning stays local.
+In **Settings → Dictionaries**, find **Nechybujte (online)** in the ordered list. Choose **Show** or **If needed** to use its Czech definitions, grammar, and examples. The default is **Hide**. No API key is needed. Only words you open are sent to Nechybujte; page scanning does not make online dictionary requests.
 
-Imported dictionaries appear first. Expand **More dictionaries** to see Nechybujte when a local definition is available. Fetched entries and word forms are stored on this device without expiration and reused for local page parsing, including after restarting the browser. Repeated lookups use the stored data. **Refresh from dictionary** on a saved word fetches a fresh copy. Turn the option off to stop online requests; stored entries remain available. Mined entries are also included in vocabulary exports.
+**If needed** makes no request when a dictionary above Nechybujte already has an entry for any candidate of the word. Dictionaries below it do not block the request. **Show** uses Nechybujte even when another dictionary has an entry. Both reuse cached results. Fetched entries and word forms stay on this device without expiration. **Hide** stops requests and excludes these cached entries from lookup and page scanning. It does not delete the cache or saved vocabulary. **Refresh from dictionary** on a saved word fetches a fresh copy when Nechybujte's display rule permits it. Mined entries are included in vocabulary exports.
 
 For frequency-based retention, select rank dictionaries under **Spaced repetition → Dynamic desired retention**. A rank of 1 means the most frequent word. Occurrence counts are not ranks. Words without a matching selected rank use global retention.

@@ -1,4 +1,5 @@
 import {
+  ColorInput,
   Paper,
   SegmentedControl,
   Stack,
@@ -6,6 +7,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
+import { useEffect, useState } from "react";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 
@@ -18,6 +20,8 @@ export function AppearanceSettings({
 }) {
   const theme = useMantineTheme();
   const narrow = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
+  const [accentColor, setAccentColor] = useState(settings.accentColor);
+  useEffect(() => setAccentColor(settings.accentColor), [settings.accentColor]);
   return (
     <Paper>
       <Stack gap="sm">
@@ -36,7 +40,17 @@ export function AppearanceSettings({
             { value: "system", label: t("system") },
             { value: "light", label: t("light") },
             { value: "dark", label: t("dark") },
+            { value: "oled", label: t("oled") },
           ]}
+        />
+        <ColorInput
+          label={t("accent_color")}
+          description={t("accent_color_help")}
+          maw={480}
+          value={accentColor}
+          onChange={setAccentColor}
+          onChangeEnd={(accentColor) => void onChange({ accentColor })}
+          disallowInput={false}
         />
       </Stack>
     </Paper>

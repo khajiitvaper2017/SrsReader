@@ -1,4 +1,7 @@
-import { activeDictionaries, lookupMany } from "@/dictionaries/lookup";
+import { lookupMany } from "@/dictionaries/lookup";
+import { listDictionaries } from "@/dictionaries/storage";
+import { displayedWords } from "@/dictionaries/display";
+import type { Settings } from "@/settings/model";
 import { meaningTags, type LookupWord } from "@/dictionaries/model";
 import { folded, normalize } from "@/languages/text";
 import type { Occurrence, SurfaceAnalysis } from "@/languages/analysis";
@@ -22,11 +25,17 @@ const escapeRegex = (text: string) =>
 export async function scanTexts(
   texts: string[],
   language: string,
-  matureIntervalDays: number,
+  settings: Settings,
   analyses: SurfaceAnalysis[][] = [],
 ): Promise<ScanSpan[][]> {
   const started = performance.now();
-  const dictionaries = await activeDictionaries(language);
+  const ordered = await listDictionaries(settings);
+  const dictionaries = ordered.filter(
+    (dictionary) =>
+      dictionary.enabled &&
+      dictionary.language === language &&
+      dictionary.count > 0,
+  );
   const segmenter = new Intl.Segmenter(language, { granularity: "word" });
   const segments = texts.map((text) =>
     [...segmenter.segment(text)].filter((s) => s.isWordLike),
@@ -158,14 +167,13 @@ export async function scanTexts(
       (a, b) => a.start - b.start || b.end - a.end,
     )) {
       if (candidate.start < end) continue;
-      const words: LookupWord[] = [];
+      let words: LookupWord[] = [];
       for (const term of candidate.analysis?.terms || [candidate.term])
-        for (const word of matches.get(normalize(term))?.words || [])
-          if (!words.some((existing) => existing.id === word.id))
-            words.push(word);
+        words.push(...(matches.get(normalize(term))?.words || []));
+      words = displayedWords(words, settings, ordered);
       if (!words.length && !candidate.analysis) continue;
       const state = words.length
-        ? stateOf(vocabulary.get(words[0]!.id), matureIntervalDays)
+        ? stateOf(vocabulary.get(words[0]!.id), settings.matureIntervalDays)
         : "unparsed";
       spans.push({
         start: candidate.start,
@@ -178,7 +186,7 @@ export async function scanTexts(
         candidates: words.map((word) => ({
           id: word.id,
           tags: word.meanings.flatMap(meaningTags),
-          state: stateOf(vocabulary.get(word.id), matureIntervalDays),
+          state: stateOf(vocabulary.get(word.id), settings.matureIntervalDays),
         })),
         state,
       });

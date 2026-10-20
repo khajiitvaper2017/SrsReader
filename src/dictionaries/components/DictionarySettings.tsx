@@ -7,7 +7,7 @@ import {
   Group,
   Paper,
   Stack,
-  Switch,
+  Select,
   Text,
   Title,
 } from "@mantine/core";
@@ -26,6 +26,10 @@ import { languageName } from "@/languages/codes";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import {
+  dictionaryDisplay,
+  type DictionaryDisplay,
+} from "@/dictionaries/display";
 import {
   ArrowDown,
   ArrowUp,
@@ -54,7 +58,7 @@ export function DictionarySettings({
     fileInput,
     downloadDictionary,
     fileImport,
-    setEnabled,
+    setDisplay,
     moveUp,
     moveDown,
     checkForUpdate,
@@ -76,46 +80,70 @@ export function DictionarySettings({
             <Title order={2}>{t("dictionaries")}</Title>
           </Stack>
           <Badge>
-            {t("dictionaries_installed", { count: dictionaries.length })}
+            {t("dictionaries_installed", {
+              count: dictionaries.filter(
+                (dictionary) => dictionary.id !== "nechybujte",
+              ).length,
+            })}
           </Badge>
         </Group>
         <Stack gap="xs">
           {dictionaries.map((dictionary, i) => (
             <Paper key={dictionary.id} p="sm">
               <Stack gap="xs">
-                <Switch
-                  checked={dictionary.enabled}
-                  disabled={busy}
-                  onChange={(event) => setEnabled(dictionary, event)}
-                  aria-label={dictionary.index.title}
-                  label={
-                    <span>
-                      <strong>{dictionary.index.title}</strong>
-                      <Text
-                        component="small"
-                        size="xs"
-                        c="dimmed"
-                        display="block"
-                      >
-                        {dictionary.count > 0
-                          ? t("dictionary_entries", {
-                              language: dictionary.language,
-                              target: dictionary.target || t("unspecified"),
-                              count: dictionary.count,
-                            })
-                          : dictionary.language}
-                        {dictionary.frequencyCount > 0 &&
-                          t("frequency_count", {
-                            count: dictionary.frequencyCount,
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap={4} miw={160} style={{ flex: 1 }}>
+                    <strong>{dictionary.index.title}</strong>
+                    <Text
+                      component="small"
+                      size="xs"
+                      c="dimmed"
+                      display="block"
+                    >
+                      {dictionary.id === "nechybujte" ? (
+                        t("nechybujte_online_help")
+                      ) : (
+                        <>
+                          {dictionary.count > 0
+                            ? t("dictionary_entries", {
+                                language: dictionary.language,
+                                target: dictionary.target || t("unspecified"),
+                                count: dictionary.count,
+                              })
+                            : dictionary.language}
+                          {dictionary.frequencyCount > 0 &&
+                            t("frequency_count", {
+                              count: dictionary.frequencyCount,
+                            })}
+                          {" · "}
+                          {t("dictionary_revision", {
+                            revision: dictionary.index.revision,
                           })}
-                        {" · "}
-                        {t("dictionary_revision", {
-                          revision: dictionary.index.revision,
-                        })}
-                      </Text>
-                    </span>
-                  }
-                />
+                        </>
+                      )}
+                    </Text>
+                  </Stack>
+                  <Select
+                    w={120}
+                    aria-label={t("dictionary_display", {
+                      title: dictionary.index.title,
+                    })}
+                    value={
+                      dictionary.enabled
+                        ? dictionaryDisplay(dictionary.id, settings)
+                        : "hide"
+                    }
+                    disabled={busy}
+                    onChange={(value) =>
+                      setDisplay(dictionary, value as DictionaryDisplay)
+                    }
+                    data={[
+                      { value: "show", label: t("dictionary_show") },
+                      { value: "fallback", label: t("dictionary_if_needed") },
+                      { value: "hide", label: t("dictionary_hide") },
+                    ]}
+                  />
+                </Group>
                 <Group gap={4} justify="flex-end">
                   <ActionIcon
                     disabled={busy || i === 0}
@@ -158,42 +186,38 @@ export function DictionarySettings({
                       })}
                     </Button>
                   )}
-                  <ActionIcon
-                    title={t("export_zip")}
-                    aria-label={t("export_zip")}
-                    disabled={busy}
-                    onClick={() => exportDictionary(dictionary)}
-                    variant="subtle"
-                  >
-                    <Download aria-hidden="true" size={16} />
-                  </ActionIcon>
-                  <ActionIcon
-                    title={t("remove")}
-                    aria-label={t("remove")}
-                    disabled={busy}
-                    onClick={() => removeDictionary(dictionary)}
-                    variant="subtle"
-                    color="red"
-                  >
-                    <Trash2 aria-hidden="true" size={16} />
-                  </ActionIcon>
+                  {dictionary.id !== "nechybujte" && (
+                    <>
+                      <ActionIcon
+                        title={t("export_zip")}
+                        aria-label={t("export_zip")}
+                        disabled={busy}
+                        onClick={() => exportDictionary(dictionary)}
+                        variant="subtle"
+                      >
+                        <Download aria-hidden="true" size={16} />
+                      </ActionIcon>
+                      <ActionIcon
+                        title={t("remove")}
+                        aria-label={t("remove")}
+                        disabled={busy}
+                        onClick={() => removeDictionary(dictionary)}
+                        variant="subtle"
+                        color="red"
+                      >
+                        <Trash2 aria-hidden="true" size={16} />
+                      </ActionIcon>
+                    </>
+                  )}
                 </Group>
               </Stack>
             </Paper>
           ))}
         </Stack>
         <Divider />
-        {settings.studyLanguage === "cs" && (
-          <Switch
-            checked={settings.nechybujte}
-            onChange={(event) =>
-              void update({ nechybujte: event.target.checked })
-            }
-            aria-label={t("nechybujte_online")}
-            label={t("nechybujte_online")}
-            description={t("nechybujte_online_help")}
-          />
-        )}
+        <Text size="xs" c="dimmed">
+          {t("dictionary_display_help")}
+        </Text>
         <Stack
           aria-busy={busy && progressTarget === "dictionary"}
           onDragOver={(event) => {

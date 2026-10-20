@@ -3,19 +3,24 @@ import { removeRevision } from "@/dictionaries/management";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import { getSettings } from "@/settings/store";
+import type { Dictionary } from "@/dictionaries/model";
 
-export async function setDictionaryEnabled(
+export async function setDictionaryDisplay(
   request: Extract<Request, { action: "setDictionary" }>,
   settings: Settings,
 ) {
-  const dictionary = await db.dictionaries.get(request.id);
+  const dictionary = (await listDictionaries(settings)).find(
+    (dictionary) => dictionary.id === request.id,
+  );
   if (!dictionary) throw new Error(t("dictionary_not_found"));
-  await db.dictionaries.update(request.id, {
-    enabled: request.enabled,
-  });
+  const enabled = request.display !== "hide";
+  if (request.id === "nechybujte") settings.nechybujte = enabled;
+  else await db.dictionaries.update(request.id, { enabled });
   settings.dictionaryPreferences[dictionary.id] = {
-    enabled: request.enabled,
+    enabled,
     order: dictionary.order,
+    fallback: request.display === "fallback",
   };
   await db.settings.put({ id: "main", value: settings });
   return;
@@ -26,7 +31,7 @@ export async function reorderDictionary(
 ) {
   await navigator.locks.request("srs-reader-dictionary-write", () =>
     db.transaction("rw", [db.dictionaries, db.settings], async () => {
-      const dictionaries = await db.dictionaries.orderBy("order").toArray();
+      const dictionaries = await listDictionaries(settings);
       const index = dictionaries.findIndex(
         (dictionary) => dictionary.id === request.id,
       );
@@ -40,8 +45,12 @@ export async function reorderDictionary(
       const currentSettings =
         (await db.settings.get("main"))?.value || settings;
       for (const [order, dictionary] of dictionaries.entries()) {
-        await db.dictionaries.update(dictionary.id, { order });
+        if (dictionary.id !== "nechybujte")
+          await db.dictionaries.update(dictionary.id, { order });
         currentSettings.dictionaryPreferences[dictionary.id] = {
+          fallback:
+            currentSettings.dictionaryPreferences[dictionary.id]?.fallback ??
+            dictionary.id === "nechybujte",
           enabled: dictionary.enabled,
           order,
         };
@@ -64,8 +73,26 @@ export async function deleteDictionary(
 }
 
 export const loadDictionaries = (ids: string[]) => db.dictionaries.bulkGet(ids);
-export const listDictionaries = () =>
-  db.dictionaries.orderBy("order").toArray();
+export async function listDictionaries(settings?: Settings) {
+  settings ??= await getSettings();
+  const dictionaries = await db.dictionaries.orderBy("order").toArray();
+  const preference = settings.dictionaryPreferences.nechybujte;
+  const online: Dictionary = {
+    id: "nechybujte",
+    revisionId: "nechybujte",
+    language: "cs",
+    target: "cs",
+    index: { title: t("nechybujte_online"), format: 3, revision: "" },
+    enabled: settings.nechybujte,
+    order: preference?.order ?? (dictionaries.at(-1)?.order ?? -1) + 1,
+    count: 0,
+    frequencyCount: 0,
+    maxFrequency: 0,
+    imported: 0,
+    styles: "",
+  };
+  return [...dictionaries, online].sort((a, b) => a.order - b.order);
+}
 export const dictionaryTags = (revisions: string[]) =>
   db.tags.where("revisionId").anyOf(revisions).toArray();
 export const dictionaryArchive = (revision: string) =>

@@ -6,6 +6,7 @@ import {
   Badge,
   HoverCard,
   Menu,
+  SimpleGrid,
   Stack,
   Text,
   Title,
@@ -35,7 +36,6 @@ import {
   ChevronDown,
   Pencil,
   Play,
-  Plus,
   Trash2,
   Undo2,
 } from "lucide-react";
@@ -92,8 +92,6 @@ function LookupEntry({
   const {
     readingRef,
     contentRef,
-    bodyRef,
-    actionsRef,
     settings,
     result,
     term,
@@ -129,9 +127,14 @@ function LookupEntry({
         ref={contentRef}
         gap={0}
         component="main"
-        style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          scrollbarGutter: "stable",
+        }}
       >
-        <Stack ref={bodyRef} gap="xs" p="sm">
+        <Stack gap="xs" p="sm">
           {onBack && (
             <ActionIcon
               onClick={onBack}
@@ -177,7 +180,11 @@ function LookupEntry({
                         data-srs-reader
                         maw="calc(100vw - 24px)"
                         mah="65dvh"
-                        style={{ overflowY: "auto", overflowWrap: "anywhere" }}
+                        style={{
+                          overflowY: "auto",
+                          overflowWrap: "anywhere",
+                          scrollbarGutter: "stable",
+                        }}
                       >
                         <Stack gap="xs">
                           <Text lang={word.language} size="sm" fw={500}>
@@ -211,7 +218,10 @@ function LookupEntry({
                           data-srs-reader
                           maw="calc(100vw - 24px)"
                           mah="50dvh"
-                          style={{ overflowY: "auto" }}
+                          style={{
+                            overflowY: "auto",
+                            scrollbarGutter: "stable",
+                          }}
                         >
                           {result!.words.map((candidate) => (
                             <Menu.Item
@@ -251,29 +261,6 @@ function LookupEntry({
                 </Stack>
                 <Group gap={4} align="center">
                   <FrequencyBadge word={word} />
-                  {!unparsed && (
-                    <ActionIcon
-                      title={t("edit_definition")}
-                      aria-label={t("edit_definition")}
-                      disabled={busy}
-                      onClick={() => setEditing((value) => !value)}
-                      variant="subtle"
-                    >
-                      <Pencil aria-hidden="true" size={16} />
-                    </ActionIcon>
-                  )}
-                  {hasPersonalDefinition && (
-                    <ActionIcon
-                      title={t("delete_custom_definition")}
-                      aria-label={t("delete_custom_definition")}
-                      disabled={busy}
-                      onClick={() => void deleteDefinition()}
-                      variant="subtle"
-                      color="red"
-                    >
-                      <Trash2 aria-hidden="true" size={16} />
-                    </ActionIcon>
-                  )}
                   <AudioButton
                     word={word}
                     settings={settings}
@@ -281,7 +268,7 @@ function LookupEntry({
                   />
                 </Group>
               </Group>
-              <Group gap="xs" align="center">
+              <Group gap="xs" align="center" justify="space-between">
                 {saved && (
                   <Badge>
                     {t(
@@ -292,35 +279,37 @@ function LookupEntry({
                   </Badge>
                 )}
                 {context && (
-                  <SentenceTranslation
-                    key={`${context.sentence}:${context.start}`}
-                    context={{
-                      ...context,
-                      translation:
-                        context.translation ||
-                        saved?.contexts.find(
-                          (c) =>
-                            c.sentence === context.sentence &&
-                            c.start === context.start,
-                        )?.translation,
-                    }}
-                    language={word.language}
-                    settings={settings}
-                    wordId={word.id}
-                    label={t("translate_current_sentence")}
-                    collapsed
-                    compact
-                    onTranslated={(translation) =>
-                      onContext({ ...context, translation })
-                    }
-                  />
+                  <Stack gap={0} ml="auto" style={{ flex: 1, minWidth: 0 }}>
+                    <SentenceTranslation
+                      key={`${context.sentence}:${context.start}`}
+                      context={{
+                        ...context,
+                        translation:
+                          context.translation ||
+                          saved?.contexts.find(
+                            (c) =>
+                              c.sentence === context.sentence &&
+                              c.start === context.start,
+                          )?.translation,
+                      }}
+                      language={word.language}
+                      settings={settings}
+                      wordId={word.id}
+                      label={t("translate_current_sentence")}
+                      collapsed
+                      compact
+                      onTranslated={(translation) =>
+                        onContext({ ...context, translation })
+                      }
+                    />
+                  </Stack>
                 )}
               </Group>
               {(word.forms.filter(
                 (form) => !form.startsWith("redirected from "),
               ).length > 0 ||
                 word.meanings.some((meaning) => meaning.grammar?.length)) && (
-                <Stack gap="xs" c="dimmed" fz="xs">
+                <Text c="dimmed" size="xs">
                   {[
                     ...new Set(
                       word.forms.filter(
@@ -346,7 +335,7 @@ function LookupEntry({
                         {part.text}
                       </span>
                     ))}
-                </Stack>
+                </Text>
               )}
               <Stack ref={readingRef} gap="xs">
                 {unparsed || editing ? (
@@ -367,12 +356,37 @@ function LookupEntry({
                     language={word.language}
                     settings={settings}
                     onIgnoreTag={(tag) => void ignoreTag(tag)}
+                    actions={
+                      <>
+                        <ActionIcon
+                          title={t("edit_definition")}
+                          aria-label={t("edit_definition")}
+                          disabled={busy}
+                          onClick={() => setEditing(true)}
+                          variant="subtle"
+                        >
+                          <Pencil aria-hidden="true" size={16} />
+                        </ActionIcon>
+                        {hasPersonalDefinition && (
+                          <ActionIcon
+                            title={t("delete_custom_definition")}
+                            aria-label={t("delete_custom_definition")}
+                            disabled={busy}
+                            onClick={() => void deleteDefinition()}
+                            variant="subtle"
+                            color="red"
+                          >
+                            <Trash2 aria-hidden="true" size={16} />
+                          </ActionIcon>
+                        )}
+                      </>
+                    }
                   />
                 )}
                 <WordExamples
                   word={word}
                   settings={settings}
-                  surface={context?.surface || term}
+                  surface={surface}
                 />
               </Stack>
             </>
@@ -381,7 +395,6 @@ function LookupEntry({
       </Stack>
       {word && !unparsed && (
         <Stack
-          ref={actionsRef}
           gap="xs"
           p="xs"
           data-srs-reader
@@ -392,27 +405,43 @@ function LookupEntry({
             overflowY: "auto",
           }}
         >
-          <Stack gap="xs">
-            <Group gap="xs" align="center">
-              {!saved?.card && !saved?.known && (
-                <Button
-                  disabled={busy}
-                  onClick={() => void act()}
-                  variant="filled"
-                >
-                  <Plus aria-hidden="true" size={16} /> {t("mine_word")}
-                </Button>
-              )}
+          <SimpleGrid
+            cols={
+              (!saved?.card && !saved?.known ? 1 : 0) +
+              1 +
+              (saved?.known
+                ? 0
+                : saved?.suspended
+                  ? 1
+                  : settings.onlyAgainGood
+                    ? 2
+                    : 4)
+            }
+            spacing={4}
+          >
+            {!saved?.card && !saved?.known && (
               <Button
-                aria-pressed={!!saved?.known}
                 disabled={busy}
-                onClick={() => void toggleMastery()}
-                variant="subtle"
+                onClick={() => void act()}
+                variant="light"
+                h={40}
+                px={4}
+                miw={0}
               >
-                <Check aria-hidden="true" size={16} />
-                {saved?.known ? t("unmaster") : t("master")}
+                {t("mine_word")}
               </Button>
-            </Group>
+            )}
+            <Button
+              aria-pressed={!!saved?.known}
+              disabled={busy}
+              onClick={() => void toggleMastery()}
+              variant="light"
+              h={40}
+              px={4}
+              miw={0}
+            >
+              {saved?.known ? t("unmaster") : t("master")}
+            </Button>
             {saved?.known ? null : saved?.suspended ? (
               <Button
                 onClick={() =>
@@ -422,21 +451,23 @@ function LookupEntry({
                     value: false,
                   }).then(reload)
                 }
-                variant="subtle"
+                variant="light"
+                h={40}
+                px={4}
+                miw={0}
               >
                 <Play aria-hidden="true" size={16} /> {t("resume")}
               </Button>
             ) : (
-              <>
-                <Ratings
-                  times={times}
-                  disabled={busy}
-                  onlyAgainGood={settings.onlyAgainGood}
-                  onGrade={(rating) => void act(rating)}
-                />
-              </>
+              <Ratings
+                times={times}
+                compact
+                disabled={busy}
+                onlyAgainGood={settings.onlyAgainGood}
+                onGrade={(rating) => void act(rating)}
+              />
             )}
-          </Stack>
+          </SimpleGrid>
           {notice && (
             <Stack role="status" gap="xs">
               {notice}

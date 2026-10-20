@@ -14,6 +14,9 @@ import {
 import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import { wordId } from "@/vocabulary/model";
+import { getSettings } from "@/settings/store";
+import { listDictionaries } from "@/dictionaries/storage";
+import { displayedMeanings } from "@/dictionaries/display";
 
 type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
@@ -253,6 +256,8 @@ export async function lookupMany(
   withDefinitions = true,
 ): Promise<Map<string, LookupResult>> {
   const started = performance.now();
+  const settings = await getSettings();
+  const ordered = await listDictionaries(settings);
   const results = await dictionaryLookup(
     terms,
     language,
@@ -330,6 +335,11 @@ export async function lookupMany(
         );
       }
   }
+  for (const result of results.values())
+    result.words = result.words.flatMap((word) => {
+      const meanings = displayedMeanings(word.meanings, settings, ordered);
+      return meanings.length ? [{ ...word, meanings }] : [];
+    });
   console.info("[SrsReader] Dictionary lookup finished", {
     terms: terms.length,
     localAnalysis,

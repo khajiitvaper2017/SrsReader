@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Group, Stack, Text } from "@mantine/core";
+import { ActionIcon, Anchor, Box, Group, Stack, Text } from "@mantine/core";
 import type { LookupWord } from "@/dictionaries/model";
 import { examplesClient } from "@/examples/client";
 import type { Example } from "@/examples/model";
@@ -62,46 +62,62 @@ export function WordExamples({
       </Anchor>
     );
   return (
-    <Stack
-      data-reading-source-url={example.context.url}
-      data-reading-source-title={example.context.title}
-      gap="xs"
+    <SentenceTranslation
+      compact
+      key={example.id}
+      context={example.context}
+      language={word.language}
+      settings={settings}
     >
-      <Sentence context={example.context} language={word.language} />
-      <SentenceTranslation
-        compact
-        key={example.id}
-        context={example.context}
-        language={word.language}
-        settings={settings}
-      />
-      {examples.length > 1 && (
-        <ActionIcon
-          title={t("another_example")}
-          aria-label={t("another_example")}
-          onClick={() => setIndex((index + 1) % examples.length)}
-          variant="subtle"
-        >
-          <ChevronRight aria-hidden="true" size={16} />
-        </ActionIcon>
-      )}
-      {!settings.hideDictionarySources && (
-        <Group
-          data-srs-reader=""
+      {(translationButton, translation) => (
+        <Stack
+          data-reading-source-url={example.context.url}
+          data-reading-source-title={example.context.title}
           gap="xs"
-          align="center"
-          justify="space-between"
         >
-          <Anchor
-            href={example.context.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="CC BY 2.0 FR"
-          >
-            Tatoeba · {example.author}
-          </Anchor>
-        </Group>
+          <Group gap={4} wrap="nowrap" align="flex-start">
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <Sentence context={example.context} language={word.language} />
+            </Box>
+            <Group
+              gap={4}
+              wrap="nowrap"
+              data-srs-reader
+              style={{ flexShrink: 0 }}
+            >
+              {examples.length > 1 && (
+                <ActionIcon
+                  title={t("another_example")}
+                  aria-label={t("another_example")}
+                  onClick={() => setIndex((index + 1) % examples.length)}
+                  variant="subtle"
+                >
+                  <ChevronRight aria-hidden="true" size={16} />
+                </ActionIcon>
+              )}
+              {translationButton}
+            </Group>
+          </Group>
+          {translation}
+          {!settings.hideDictionarySources && (
+            <Group
+              data-srs-reader=""
+              gap="xs"
+              align="center"
+              justify="space-between"
+            >
+              <Anchor
+                href={example.context.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="CC BY 2.0 FR"
+              >
+                Tatoeba · {example.author}
+              </Anchor>
+            </Group>
+          )}
+        </Stack>
       )}
-    </Stack>
+    </SentenceTranslation>
   );
 }

@@ -8,10 +8,13 @@ export const readerPreferencesSchema = z.object({
   preventBackForward: inputPreventionSchema,
   paused: z.boolean().default(false),
   disabledHosts: z.array(z.string()).default([]),
-  theme: z.enum(["system", "light", "dark"]).default("system"),
+  theme: z.enum(["system", "light", "dark", "oled"]).default("system"),
+  accentColor: z
+    .string()
+    .regex(/^#[0-9a-f]{6}$/i)
+    .default("#D26400"),
   popupPlacement: z.enum(["auto", "below", "beside"]).default("auto"),
   hideDictionarySources: z.boolean().default(true),
-  firstDictionaryOnly: z.boolean().default(true),
   ignoredTags: z.array(z.string()).default([]),
   nechybujte: z.boolean().default(false),
   scanPopups: z.boolean().default(true),

@@ -14,7 +14,5 @@ export type ParsedMessage = {
   language: string;
   candidates: ScanSpan["candidates"];
 };
-export type FrameMessage =
-  | { event: "closeLookup" }
-  | { event: "resizeLookup"; session: string; height: number };
+export type FrameMessage = { event: "closeLookup" };
 export type RuntimeEvent = ChangeMessage | ParsedMessage | FrameMessage;

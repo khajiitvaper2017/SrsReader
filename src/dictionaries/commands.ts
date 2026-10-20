@@ -6,7 +6,7 @@ import {
   deleteDictionary,
   listDictionaries,
   reorderDictionary,
-  setDictionaryEnabled,
+  setDictionaryDisplay,
 } from "@/dictionaries/storage";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
@@ -24,9 +24,9 @@ export function handleDictionaries(request: Request, settings: Settings) {
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "dictionaries":
-      return listDictionaries();
+      return listDictionaries(settings);
     case "setDictionary":
-      await setDictionaryEnabled(request, settings);
+      await setDictionaryDisplay(request, settings);
       await notify(undefined, "dictionaries");
       return;
     case "moveDictionary":

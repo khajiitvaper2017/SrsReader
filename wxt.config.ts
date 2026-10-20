@@ -43,6 +43,7 @@ export default defineConfig({
   },
   manifest: ({ browser }) => ({
     name: "SrsReader",
+    ...(browser === "chrome" ? { minimum_chrome_version: "125" } : {}),
     default_locale: "en",
     description: "__MSG_extensionDescription__",
     permissions: ["storage", "unlimitedStorage"],
@@ -62,7 +63,7 @@ export default defineConfig({
           browser_specific_settings: {
             gecko: {
               id: "srs-reader@local.extension",
-              strict_min_version: "140.0",
+              strict_min_version: "147.0",
               data_collection_permissions: {
                 required: ["none"],
                 optional: ["websiteContent"],

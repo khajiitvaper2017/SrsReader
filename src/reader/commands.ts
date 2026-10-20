@@ -46,7 +46,7 @@ async function execute(request: Request, settings: Settings) {
       const spans = await scanTexts(
         request.texts,
         settings.studyLanguage,
-        settings.matureIntervalDays,
+        settings,
         analyses.map((analysis) => analysis.surfaces),
       );
       const results = spans.map((spans, index) => ({

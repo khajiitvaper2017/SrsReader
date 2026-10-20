@@ -9,6 +9,9 @@ import {
   Combobox,
   NavLink,
   createTheme,
+  colorsTuple,
+  darken,
+  lighten,
   Fieldset,
   FileButton,
   Input,
@@ -27,10 +30,39 @@ import {
 } from "@mantine/core";
 
 import { t } from "@/shared/i18n/i18n";
+import type { Settings } from "@/settings/model";
 
-export function createUITheme() {
+export function createUITheme(
+  settings: Pick<Settings, "theme" | "accentColor">,
+) {
+  const oled = settings.theme === "oled";
   return createTheme({
-    primaryColor: "violet",
+    primaryColor: "accent",
+    primaryShade: 6,
+    autoContrast: true,
+    colors: {
+      accent: colorsTuple([
+        ...[0.92, 0.82, 0.68, 0.5, 0.32, 0.16].map((amount) =>
+          lighten(settings.accentColor, amount),
+        ),
+        settings.accentColor,
+        ...[0.1, 0.2, 0.3].map((amount) =>
+          darken(settings.accentColor, amount),
+        ),
+      ]),
+      dark: [
+        "#e8e8e8",
+        "#dcdcdc",
+        "#cccccc",
+        "#b8b8b8",
+        "#333333",
+        oled ? "#121212" : "#242424",
+        oled ? "#000000" : "#181818",
+        oled ? "#000000" : "#101010",
+        oled ? "#000000" : "#0a0a0a",
+        oled ? "#000000" : "#050505",
+      ],
+    },
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontSizes: { xs: "0.6875rem", sm: "0.8125rem", md: "0.875rem" },
@@ -140,6 +172,7 @@ export function createUITheme() {
                 maxWidth: "calc(100vw - 8px)",
                 maxHeight: "calc(100dvh - 8px)",
                 overflowY: "auto",
+                scrollbarGutter: "stable",
               },
             },
             middlewares: { flip: true, shift: { padding: 4 } },
@@ -200,6 +233,7 @@ export function createUITheme() {
               maxWidth: "calc(100vw - 8px)",
               maxHeight: "calc(100dvh - 8px)",
               overflowY: "auto",
+              scrollbarGutter: "stable",
             },
           },
         },
