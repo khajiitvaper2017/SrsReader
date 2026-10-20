@@ -100,8 +100,8 @@ export function SrsSettings({
         value={settings.algorithm}
         disabled={busy}
         data={[
-          { value: "fsrs", label: "FSRS" },
-          { value: "rwkv", label: "RWKV w64" },
+          { value: "fsrs", label: "FSRS-6 (ts-fsrs 5.4.2)" },
+          { value: "rwkv", label: "RWKV w64 (SM40v2)" },
         ]}
         onChange={(algorithm) => {
           return void task(async () => {
