@@ -3,7 +3,7 @@ import {
   Anchor,
   Badge,
   Button,
-  Checkbox,
+  Divider,
   Group,
   Paper,
   Stack,
@@ -26,7 +26,6 @@ import { languageName } from "@/languages/codes";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { TaskProgress } from "@/shared/ui/TaskProgress";
 import {
   ArrowDown,
   ArrowUp,
@@ -50,7 +49,6 @@ export function DictionarySettings({
 }) {
   const {
     busy,
-    progress,
     progressTarget,
     updates,
     fileInput,
@@ -71,7 +69,7 @@ export function DictionarySettings({
     tasks,
   });
   return (
-    <Paper mb="md">
+    <Paper>
       <Stack gap="md">
         <Group gap="xs" align="center" justify="space-between">
           <Stack gap="xs">
@@ -81,6 +79,110 @@ export function DictionarySettings({
             {t("dictionaries_installed", { count: dictionaries.length })}
           </Badge>
         </Group>
+        <Stack gap="xs">
+          {dictionaries.map((dictionary, i) => (
+            <Paper key={dictionary.id} p="sm">
+              <Stack gap="xs">
+                <Switch
+                  checked={dictionary.enabled}
+                  disabled={busy}
+                  onChange={(event) => setEnabled(dictionary, event)}
+                  aria-label={dictionary.index.title}
+                  label={
+                    <span>
+                      <strong>{dictionary.index.title}</strong>
+                      <Text
+                        component="small"
+                        size="xs"
+                        c="dimmed"
+                        display="block"
+                      >
+                        {dictionary.count > 0
+                          ? t("dictionary_entries", {
+                              language: dictionary.language,
+                              target: dictionary.target || t("unspecified"),
+                              count: dictionary.count,
+                            })
+                          : dictionary.language}
+                        {dictionary.frequencyCount > 0 &&
+                          t("frequency_count", {
+                            count: dictionary.frequencyCount,
+                          })}
+                        {" · "}
+                        {t("dictionary_revision", {
+                          revision: dictionary.index.revision,
+                        })}
+                      </Text>
+                    </span>
+                  }
+                />
+                <Group gap={4} justify="flex-end">
+                  <ActionIcon
+                    disabled={busy || i === 0}
+                    title={t("move_dictionary_up")}
+                    aria-label={t("move_dictionary_up")}
+                    onClick={() => moveUp(dictionary)}
+                    variant="subtle"
+                  >
+                    <ArrowUp aria-hidden="true" size={16} />
+                  </ActionIcon>
+                  <ActionIcon
+                    disabled={busy || i === dictionaries.length - 1}
+                    title={t("move_dictionary_down")}
+                    aria-label={t("move_dictionary_down")}
+                    onClick={() => moveDown(dictionary)}
+                    variant="subtle"
+                  >
+                    <ArrowDown aria-hidden="true" size={16} />
+                  </ActionIcon>
+                  {dictionary.index.isUpdatable && (
+                    <ActionIcon
+                      title={t("check_updates")}
+                      aria-label={t("check_updates")}
+                      disabled={busy}
+                      onClick={() => checkForUpdate(dictionary)}
+                      variant="subtle"
+                    >
+                      <RefreshCw aria-hidden="true" size={16} />
+                    </ActionIcon>
+                  )}
+                  {updates[dictionary.id] && (
+                    <Button
+                      disabled={busy}
+                      onClick={() => installUpdate(dictionary)}
+                      variant="filled"
+                    >
+                      <Download aria-hidden="true" size={16} />{" "}
+                      {t("update_dictionary_revision", {
+                        revision: updates[dictionary.id]!.revision,
+                      })}
+                    </Button>
+                  )}
+                  <ActionIcon
+                    title={t("export_zip")}
+                    aria-label={t("export_zip")}
+                    disabled={busy}
+                    onClick={() => exportDictionary(dictionary)}
+                    variant="subtle"
+                  >
+                    <Download aria-hidden="true" size={16} />
+                  </ActionIcon>
+                  <ActionIcon
+                    title={t("remove")}
+                    aria-label={t("remove")}
+                    disabled={busy}
+                    onClick={() => removeDictionary(dictionary)}
+                    variant="subtle"
+                    color="red"
+                  >
+                    <Trash2 aria-hidden="true" size={16} />
+                  </ActionIcon>
+                </Group>
+              </Stack>
+            </Paper>
+          ))}
+        </Stack>
+        <Divider />
         {settings.studyLanguage === "cs" && (
           <Switch
             checked={settings.nechybujte}
@@ -88,14 +190,8 @@ export function DictionarySettings({
               void update({ nechybujte: event.target.checked })
             }
             aria-label={t("nechybujte_online")}
-            label={
-              <span>
-                <strong>{t("nechybujte_online")}</strong>
-                <Text component="small" size="xs" c="dimmed" display="block">
-                  {t("nechybujte_online_help")}
-                </Text>
-              </span>
-            }
+            label={t("nechybujte_online")}
+            description={t("nechybujte_online_help")}
           />
         )}
         <Stack
@@ -109,21 +205,17 @@ export function DictionarySettings({
           }}
           gap="xs"
         >
-          <Stack gap="xs">
-            {busy && progressTarget === "dictionary" && progress ? (
-              <TaskProgress progress={progress} />
-            ) : (
-              <strong>{t("drop_a_yomitan_format_3_zip")}</strong>
-            )}
-          </Stack>
-          <Button
-            disabled={busy}
-            onClick={() => fileInput.current?.click()}
-            variant="filled"
-          >
-            <Upload aria-hidden="true" size={16} />{" "}
-            {busy ? t("working") : t("choose_zip")}
-          </Button>
+          <Text size="sm">{t("drop_a_yomitan_format_3_zip")}</Text>
+          <Group>
+            <Button
+              disabled={busy}
+              onClick={() => fileInput.current?.click()}
+              variant="filled"
+            >
+              <Upload aria-hidden="true" size={16} />{" "}
+              {busy ? t("working") : t("choose_zip")}
+            </Button>
+          </Group>
           <input
             ref={fileInput}
             type="file"
@@ -168,112 +260,6 @@ export function DictionarySettings({
             )
           }
         />
-        <Stack gap="xs">
-          {dictionaries.map((dictionary, i) => (
-            <Group
-              key={dictionary.id}
-              gap="xs"
-              align="center"
-              justify="space-between"
-            >
-              <Checkbox
-                checked={dictionary.enabled}
-                disabled={busy}
-                onChange={(event) => setEnabled(dictionary, event)}
-                aria-label={dictionary.index.title}
-                label={
-                  <span>
-                    <strong>{dictionary.index.title}</strong>
-                    <Text
-                      component="small"
-                      size="xs"
-                      c="dimmed"
-                      display="block"
-                    >
-                      {dictionary.count > 0
-                        ? t("dictionary_entries", {
-                            language: dictionary.language,
-                            target: dictionary.target || t("unspecified"),
-                            count: dictionary.count,
-                          })
-                        : dictionary.language}
-                      {dictionary.frequencyCount > 0 &&
-                        t("frequency_count", {
-                          count: dictionary.frequencyCount,
-                        })}
-                      {" · "}
-                      {t("dictionary_revision", {
-                        revision: dictionary.index.revision,
-                      })}
-                    </Text>
-                  </span>
-                }
-              />
-              <Group gap="xs" align="center">
-                <ActionIcon
-                  disabled={busy || i === 0}
-                  title={t("move_dictionary_up")}
-                  aria-label={t("move_dictionary_up")}
-                  onClick={() => moveUp(dictionary)}
-                  variant="subtle"
-                >
-                  <ArrowUp aria-hidden="true" size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  disabled={busy || i === dictionaries.length - 1}
-                  title={t("move_dictionary_down")}
-                  aria-label={t("move_dictionary_down")}
-                  onClick={() => moveDown(dictionary)}
-                  variant="subtle"
-                >
-                  <ArrowDown aria-hidden="true" size={16} />
-                </ActionIcon>
-                {dictionary.index.isUpdatable && (
-                  <ActionIcon
-                    title={t("check_updates")}
-                    aria-label={t("check_updates")}
-                    disabled={busy}
-                    onClick={() => checkForUpdate(dictionary)}
-                    variant="subtle"
-                  >
-                    <RefreshCw aria-hidden="true" size={16} />
-                  </ActionIcon>
-                )}
-                {updates[dictionary.id] && (
-                  <Button
-                    disabled={busy}
-                    onClick={() => installUpdate(dictionary)}
-                    variant="filled"
-                  >
-                    <Download aria-hidden="true" size={16} />{" "}
-                    {t("update_dictionary_revision", {
-                      revision: updates[dictionary.id]!.revision,
-                    })}
-                  </Button>
-                )}
-                <ActionIcon
-                  title={t("export_zip")}
-                  aria-label={t("export_zip")}
-                  disabled={busy}
-                  onClick={() => exportDictionary(dictionary)}
-                  variant="subtle"
-                >
-                  <Download aria-hidden="true" size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  title={t("remove")}
-                  aria-label={t("remove")}
-                  disabled={busy}
-                  onClick={() => removeDictionary(dictionary)}
-                  variant="subtle"
-                  color="red"
-                >
-                  <Trash2 aria-hidden="true" size={16} />
-                </ActionIcon>
-              </Group>
-            </Group>
-          ))}
-        </Stack>
       </Stack>
     </Paper>
   );

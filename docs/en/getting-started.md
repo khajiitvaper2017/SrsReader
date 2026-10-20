@@ -7,7 +7,7 @@
 
 Open a website, use your lookup control on a word, and choose **Mine word**. Open **Review** to study saved words.
 
-Change languages under **Settings → Languages**. **Interface language** offers English, Ukrainian, or **Same as native language**; other native languages use the English interface. You can reopen setup from Settings. **Docs** stays available during setup.
+Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as native language**; other native languages use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
 
 ## Load a build
 

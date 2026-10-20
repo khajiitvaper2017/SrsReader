@@ -2,7 +2,6 @@ import {
   Accordion,
   Badge,
   Checkbox,
-  Group,
   Stack,
   Text,
   TextInput,
@@ -31,21 +30,24 @@ export function DictionaryTags({
       <Accordion.Item value="settings">
         <Accordion.Control>{t("dictionary_tags")}</Accordion.Control>
         <Accordion.Panel>
-          <Text c="dimmed" fz="xs">
-            {t("dictionary_tags_help")}
-          </Text>
-          <ErrorBox error={error} />
-          <TextInput
-            type="search"
-            aria-label={t("search_dictionary_tags")}
-            placeholder={t("search_dictionary_tags")}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <Stack gap="xs" mah={240} style={{ overflowY: "auto" }}>
-            {entries.map(({ name, description }) => (
-              <Group key={name} gap="xs" justify="space-between" align="center">
+          <Stack gap="sm">
+            <Text c="dimmed" fz="xs">
+              {t("dictionary_tags_help")}
+            </Text>
+            <ErrorBox error={error} />
+            <TextInput
+              type="search"
+              aria-label={t("search_dictionary_tags")}
+              placeholder={t("search_dictionary_tags")}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <Stack gap="xs" mah={240} style={{ overflowY: "auto" }}>
+              {entries.map(({ name, description }) => (
                 <Checkbox
+                  key={name}
+                  label={<Badge>{name}</Badge>}
+                  description={description !== name ? description : undefined}
                   aria-label={name}
                   checked={settings.ignoredTags.includes(name)}
                   onChange={(event) =>
@@ -56,17 +58,13 @@ export function DictionaryTags({
                     })
                   }
                 />
-                <Badge title={description}>{name}</Badge>
-                <Text component="span" inherit c="dimmed">
-                  {description !== name ? description : ""}
+              ))}
+              {!entries.length && (
+                <Text c="dimmed" fz="xs">
+                  {t("no_matching_tags")}
                 </Text>
-              </Group>
-            ))}
-            {!entries.length && (
-              <Text c="dimmed" fz="xs">
-                {t("no_matching_tags")}
-              </Text>
-            )}
+              )}
+            </Stack>
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>

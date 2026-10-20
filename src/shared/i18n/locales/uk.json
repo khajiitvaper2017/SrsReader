@@ -441,5 +441,17 @@
   "undo_latest_only": "Можна скасувати лише останню відповідь серед усіх вкладок.",
   "color_saturation": "Насиченість і яскравість",
   "color_hue": "Відтінок",
-  "color_opacity": "Непрозорість"
+  "color_opacity": "Непрозорість",
+  "settings_general": "Загальні",
+  "settings_reading": "Читання",
+  "settings_audio_translation": "Звук і переклад",
+  "settings_backups": "Резервні копії",
+  "settings_sections": "Розділи налаштувань",
+  "settings_setup_intro": "Виберіть мови, додайте словник і налаштуйте дію для пошуку слів.",
+  "settings_setup_help": "Потрібна допомога з початком роботи?",
+  "settings_no_languages": "Мов за цим запитом не знайдено",
+  "settings_page_reading": "Читання сторінок",
+  "settings_review_session": "Картки для повторення",
+  "settings_daily_study": "Нові слова",
+  "settings_scheduling": "Розклад повторень"
 }

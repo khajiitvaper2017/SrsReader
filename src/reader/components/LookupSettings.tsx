@@ -3,6 +3,7 @@ import {
   Checkbox,
   Fieldset,
   Paper,
+  SimpleGrid,
   Stack,
   Text,
   Title,
@@ -18,7 +19,7 @@ export function LookupSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
 }) {
   return (
-    <Paper id="controls" mb="md">
+    <Paper id="controls">
       <Stack gap="md">
         <Title order={2}>{t("lookup_controls")}</Title>
         <LookupControls
@@ -31,55 +32,61 @@ export function LookupSettings({
               {t("input_action_prevention")}
             </Accordion.Control>
             <Accordion.Panel>
-              <Text c="dimmed">
-                {t("active_only_for_matching_mouse_lookup_bindings_block")}{" "}
-              </Text>
-              <Stack gap="xs">
-                {(
-                  [
-                    ["preventMiddleMouse", t("middle_mouse_button")],
-                    ["preventBackForward", t("back_forward_mouse_buttons")],
-                  ] as const
-                ).map(([key, label]) => (
-                  <Fieldset
-                    key={key}
-                    disabled={
-                      !settings.lookupBindings.some(
-                        (binding) =>
-                          binding.type === "mouse" &&
-                          (key === "preventMiddleMouse"
-                            ? binding.button === 1
-                            : binding.button === 3 || binding.button === 4),
-                      )
-                    }
-                    legend={label}
-                  >
-                    {(
-                      [
-                        ["textHover", t("text_hover")],
-                        ["webpages", t("webpages")],
-                        ["popups", t("lookup_popups")],
-                        ["extensionPages", t("extension_pages")],
-                        ["searchFields", t("search_fields")],
-                      ] as const
-                    ).map(([scope, name]) => (
-                      <Checkbox
-                        checked={settings[key][scope]}
-                        onChange={(event) =>
-                          void update({
-                            [key]: {
-                              ...settings[key],
-                              [scope]: event.target.checked,
-                            },
-                          })
-                        }
-                        aria-label={name}
-                        label={name}
-                        key={scope}
-                      />
-                    ))}
-                  </Fieldset>
-                ))}
+              <Stack gap="md">
+                <Text c="dimmed">
+                  {t(
+                    "active_only_for_matching_mouse_lookup_bindings_block",
+                  )}{" "}
+                </Text>
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  {(
+                    [
+                      ["preventMiddleMouse", t("middle_mouse_button")],
+                      ["preventBackForward", t("back_forward_mouse_buttons")],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <Fieldset
+                      key={key}
+                      disabled={
+                        !settings.lookupBindings.some(
+                          (binding) =>
+                            binding.type === "mouse" &&
+                            (key === "preventMiddleMouse"
+                              ? binding.button === 1
+                              : binding.button === 3 || binding.button === 4),
+                        )
+                      }
+                      legend={label}
+                    >
+                      <Stack gap="sm">
+                        {(
+                          [
+                            ["textHover", t("text_hover")],
+                            ["webpages", t("webpages")],
+                            ["popups", t("lookup_popups")],
+                            ["extensionPages", t("extension_pages")],
+                            ["searchFields", t("search_fields")],
+                          ] as const
+                        ).map(([scope, name]) => (
+                          <Checkbox
+                            checked={settings[key][scope]}
+                            onChange={(event) =>
+                              void update({
+                                [key]: {
+                                  ...settings[key],
+                                  [scope]: event.target.checked,
+                                },
+                              })
+                            }
+                            aria-label={name}
+                            label={name}
+                            key={scope}
+                          />
+                        ))}
+                      </Stack>
+                    </Fieldset>
+                  ))}
+                </SimpleGrid>
               </Stack>
             </Accordion.Panel>
           </Accordion.Item>

@@ -1,0 +1,4 @@
+/* Browser action popups need a document width before React loads. */
+body {
+  width: 340px;
+}

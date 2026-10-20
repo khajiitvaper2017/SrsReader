@@ -433,5 +433,17 @@
   "undo_latest_only": "Only the latest answer across all tabs can be undone.",
   "color_saturation": "Saturation and brightness",
   "color_hue": "Hue",
-  "color_opacity": "Opacity"
+  "color_opacity": "Opacity",
+  "settings_general": "General",
+  "settings_reading": "Reading",
+  "settings_audio_translation": "Audio & translation",
+  "settings_backups": "Backups",
+  "settings_sections": "Settings sections",
+  "settings_setup_intro": "Choose your languages, add a dictionary, and set up a lookup shortcut.",
+  "settings_setup_help": "Need help getting started?",
+  "settings_no_languages": "No matching languages",
+  "settings_page_reading": "Page reading",
+  "settings_review_session": "Review cards",
+  "settings_daily_study": "New words",
+  "settings_scheduling": "Scheduling"
 }

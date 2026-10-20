@@ -4,7 +4,7 @@
 
 Use your lookup control on a word. **Mine word** saves its definitions and the sentence you opened it from. **Save example** adds another sentence to the same word. Grading in the popup also saves the word.
 
-Definitions and example sentences can be scanned too. **Back** or **Escape** returns from a nested lookup; clicking outside closes the popup. Disable nested lookup under **Settings → Reading & appearance → Scan dictionary popups**.
+Definitions and example sentences can be scanned too. **Back** or **Escape** returns from a nested lookup; clicking outside closes the popup. Disable nested lookup under **Settings → Reading → Scan dictionary popups**.
 
 ## Personal definitions
 
@@ -14,7 +14,7 @@ For a dictionary word, click **Edit definition** (pencil) in the popup to add or
 
 ## Controls
 
-Under **Settings → Lookup controls**, enable presets or record a **Mouse button**, **Keyboard shortcut**, or **Hold key + hover** binding. Modifiers are supported; release the keys to finish a modifier-only hover binding. Escape cancels recording.
+Under **Settings → Reading → Lookup controls**, enable presets or record a **Mouse button**, **Keyboard shortcut**, or **Hold key + hover** binding. Modifiers are supported; release the keys to finish a modifier-only hover binding. Escape cancels recording.
 
 Mouse and keyboard bindings can look up selected text. Some system and browser shortcuts cannot be overridden.
 
@@ -22,7 +22,7 @@ Mouse and keyboard bindings can look up selected text. Some system and browser s
 
 ## Colors and parsing
 
-Under **Settings → Reading & appearance → Word colors**, choose text or background colors for unsaved, saved, young, mature, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
+Under **Settings → Reading → Word colors**, choose text or background colors for unsaved, saved, young, mature, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
 
 The toolbar pauses parsing or disables the current site. **Only parse the reading language** skips confidently detected foreign-language text. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
 
@@ -30,7 +30,7 @@ The toolbar pauses parsing or disables the current site. **Only parse the readin
 
 Popups prioritize downloaded Tatoeba examples containing the form you looked up, then fall back to other forms of the same word; **Another example** cycles through them. These are separate from the sentence you mine.
 
-Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading & appearance → Hide source links**.
+Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading → Hide source links**.
 
 - **Translate sentence:** translate a displayed example.
 - **Translate current sentence:** translate your reading sentence. Mining keeps that translation with the original.
@@ -38,12 +38,12 @@ Dictionary and Tatoeba source links are hidden by default. To show them, turn of
 
 Translations use your native language and run locally. Models download on first use; not every language pair is supported. Saved translations work offline. Editing a sentence removes its old translation.
 
-Download or update examples under **Settings → Example sentences**, or import a detailed Tatoeba `.tsv` or `.bz2` export.
+Download or update examples under **Settings → Dictionaries → Example sentences**, or import a detailed Tatoeba `.tsv` or `.bz2` export.
 
 ## Audio
 
-Use the speaker to hear a word or sentence. Right-click, Shift-click, or hold it to open **Audio sources**. Click a recording or system voice to try it. Recording credits are hidden by default. Turn off **Settings → Hide source links** to show them in this menu. Choose an installed local voice under **Settings → Pronunciation**. If none is available, install a system voice for your study language.
+Use the speaker to hear a word or sentence. Right-click, Shift-click, or hold it to open **Audio sources**. Click a recording or system voice to try it. Recording credits are hidden by default. Turn off **Settings → Reading → Hide source links** to show them in this menu. Choose an installed local voice under **Settings → Audio & translation → Pronunciation**. If none is available, install a system voice for your study language.
 
 **Download natural pronunciations** optionally saves word recordings from Wiktionary/Lingua Libre sources. Sentence audio uses the system voice. **Play audio on reveal** enables automatic playback during review.
 
-**Settings → Pronunciation → Normalize recording volume** is enabled by default. It levels the loudness of recordings during playback, with limited amplification and peak protection. Stored audio is unchanged. System TTS uses device volume.
+**Settings → Audio & translation → Pronunciation → Normalize recording volume** is enabled by default. It levels the loudness of recordings during playback, with limited amplification and peak protection. Stored audio is unchanged. System TTS uses device volume.

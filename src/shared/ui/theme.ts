@@ -17,6 +17,8 @@ import {
   NumberInput,
   Paper,
   Select,
+  SegmentedControl,
+  Tabs,
   Switch,
   Text,
   Textarea,
@@ -62,6 +64,11 @@ export function createUITheme() {
         },
       }),
       Input: Input.extend({ defaultProps: { size: "xs" } }),
+      InputWrapper: Input.Wrapper.extend({
+        defaultProps: {
+          inputWrapperOrder: ["label", "input", "description", "error"],
+        },
+      }),
       TextInput: TextInput.extend({
         defaultProps: { size: "xs", "data-srs-reader": true },
       }),
@@ -79,6 +86,17 @@ export function createUITheme() {
           minRows: 3,
           "data-srs-reader": true,
         },
+      }),
+      Tabs: Tabs.extend({
+        defaultProps: { variant: "pills" },
+        styles: {
+          list: { flexWrap: "wrap" },
+          tab: { fontSize: "var(--mantine-font-size-sm)", minHeight: 34 },
+        },
+      }),
+      SegmentedControl: SegmentedControl.extend({
+        defaultProps: { size: "xs", "data-srs-reader": true },
+        styles: { label: { whiteSpace: "normal" } },
       }),
       NavLink: NavLink.extend({ defaultProps: { "data-srs-reader": true } }),
       ComboboxDropdown: Combobox.Dropdown.extend({

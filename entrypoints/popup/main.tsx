@@ -1,6 +1,7 @@
 import { Popup } from "@/app/pages/PopupPage";
 import "@mantine/core/styles.css";
 import "@/shared/styles/content.css";
+import "./popup.css";
 import { UIProvider } from "@/shared/ui/UIProvider";
 import { createRoot } from "react-dom/client";
 

@@ -6,7 +6,7 @@ Open **Review**. Choose **Word** or **In context**. Press **Show answer** or **S
 
 ## Scheduling
 
-Open **Settings → Spaced repetition**.
+Open **Settings → Review**.
 
 - **Scheduling algorithm:** FSRS is the default. Select **RWKV w64** to download its model from GitHub and prepare your review history. Keep the page open until preparation finishes. You can resume interrupted preparation later. Both algorithms work offline. Switching algorithms keeps current due dates.
 - **Desired retention:** default 80%; accepts 70–99%. Higher values usually mean more reviews. Existing profiles keep their saved value.

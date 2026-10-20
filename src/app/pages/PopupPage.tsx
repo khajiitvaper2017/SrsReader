@@ -69,7 +69,7 @@ export function Popup() {
   }
   if (!ready) return null;
   return (
-    <Stack gap="md" p="md" w={340} maw="100vw">
+    <Stack gap="md" p="md">
       <Group gap="xs" align="center" justify="space-between" component="header">
         <Logo small />
       </Group>

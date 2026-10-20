@@ -8,7 +8,6 @@ import type { LanguageData } from "@/languages/hooks/useLanguageData";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { Download, Upload } from "lucide-react";
 export function LanguageDataSettings({
   settings,
@@ -20,10 +19,10 @@ export function LanguageDataSettings({
   tasks: SettingsTask;
 }) {
   const { morphology, exampleCorpus, install: installLanguageData } = data;
-  const { busy, progressTarget, progress, run: task } = tasks;
+  const { busy, run: task } = tasks;
   return (
     <>
-      <Paper id="word-forms" mb="md">
+      <Paper id="word-forms">
         <Stack gap="md">
           <Title order={2}>{t("word_forms")}</Title>
           <Group gap="xs" align="center">
@@ -43,11 +42,6 @@ export function LanguageDataSettings({
                 : t("download_word_forms")}
             </Button>
           </Group>
-          {busy && progressTarget === "morphology" && progress && (
-            <Stack gap="xs">
-              <TaskProgress progress={progress} />
-            </Stack>
-          )}
           <Stack gap="xs" c="dimmed" fz="xs">
             {morphologyLanguage(settings.studyLanguage)
               ? t("extra_word_forms_from_simplemma_help_find_dictionary")
@@ -55,7 +49,7 @@ export function LanguageDataSettings({
           </Stack>
         </Stack>
       </Paper>
-      <Paper id="example-sentences" mb="md">
+      <Paper id="example-sentences">
         <Stack gap="md">
           <Title order={2}>{t("example_sentences")}</Title>
           <Group gap="xs" align="center">
@@ -100,11 +94,6 @@ export function LanguageDataSettings({
               </FileButton>
             </Group>
           </Group>
-          {busy && progressTarget === "examples" && progress && (
-            <Stack gap="xs">
-              <TaskProgress progress={progress} />
-            </Stack>
-          )}
           <Stack gap="xs" c="dimmed" fz="xs">
             {t("tatoeba_examples_for_your_study_language_are_stored")}{" "}
           </Stack>

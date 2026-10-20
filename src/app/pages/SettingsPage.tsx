@@ -1,9 +1,11 @@
 import {
+  Alert,
   Anchor,
   Button,
   Group,
   Paper,
-  SimpleGrid,
+  Tabs,
+  Text,
   Stack,
   Title,
 } from "@mantine/core";
@@ -27,19 +29,33 @@ import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { ReviewSettings } from "@/srs/components/ReviewSettings";
-import { Check } from "lucide-react";
+import {
+  BookOpen,
+  Check,
+  Database,
+  Languages,
+  MousePointer2,
+  SlidersHorizontal,
+  Volume2,
+} from "lucide-react";
+import { WordColors } from "@/settings/components/WordColors";
+import { AppearanceSettings } from "@/settings/components/AppearanceSettings";
+import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { useCallback, useEffect, useState } from "react";
 export function SettingsPage({
   settings,
   setSettings,
   setup = false,
+  tab = "general",
 }: {
   settings: Settings;
   setSettings: (settings: Settings) => void;
   setup?: boolean;
+  tab?: string;
 }) {
   const tasks = useSettingsTask();
-  const { error, setError, notice, busy, setBusy, setProgress } = tasks;
+  const { error, setError, notice, busy, setBusy, progress, setProgress } =
+    tasks;
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const languageData = useLanguageData(settings.studyLanguage, tasks);
   const load = useCallback(() => {
@@ -88,77 +104,177 @@ export function SettingsPage({
       setProgress(undefined);
     }
   }
+  const sections = [
+    {
+      value: "general",
+      label: t("settings_general"),
+      icon: <SlidersHorizontal size={16} />,
+    },
+    {
+      value: "reading",
+      label: t("settings_reading"),
+      icon: <MousePointer2 size={16} />,
+    },
+    {
+      value: "dictionaries",
+      label: t("dictionaries"),
+      icon: <BookOpen size={16} />,
+    },
+    { value: "review", label: t("review"), icon: <Check size={16} /> },
+    {
+      value: "audio",
+      label: t("settings_audio_translation"),
+      icon: <Volume2 size={16} />,
+    },
+    {
+      value: "backups",
+      label: t("settings_backups"),
+      icon: <Database size={16} />,
+    },
+  ];
+  const selected = sections.some((section) => section.value === tab)
+    ? tab
+    : "general";
+  const dictionarySettings = (
+    <DictionarySettings
+      settings={settings}
+      dictionaries={dictionaries}
+      onChange={update}
+      reload={load}
+      tasks={tasks}
+    />
+  );
+  const dataSettings = (
+    <LanguageDataSettings
+      settings={settings}
+      data={languageData}
+      tasks={tasks}
+    />
+  );
   return (
-    <>
-      {setup && <Title order={1}>{t("setup")}</Title>}
-      <LanguageSettings settings={settings} onChange={update} setup={setup} />
+    <Stack gap="md">
+      <Stack gap={4}>
+        <Title order={1}>{t(setup ? "setup" : "settings")}</Title>
+        {setup && <Text c="dimmed">{t("settings_setup_intro")}</Text>}
+      </Stack>
       <ErrorBox error={error} />
       {notice && (
-        <Stack role="status" gap="xs">
+        <Alert color="green" role="status">
           {notice}
-        </Stack>
+        </Alert>
       )}
-      <LanguageDataSettings
-        settings={settings}
-        data={languageData}
-        tasks={tasks}
-      />
-
-      <DictionarySettings
-        settings={settings}
-        dictionaries={dictionaries}
-        onChange={update}
-        reload={load}
-        tasks={tasks}
-      />
-      <LookupSettings settings={settings} onChange={update} />
+      {busy && progress && (
+        <Paper>
+          <TaskProgress progress={progress} />
+        </Paper>
+      )}
       {setup ? (
-        <Group gap="xs" align="center" justify="space-between">
-          <Button
-            disabled={
-              busy ||
-              !settings.lookupBindings.length ||
-              !dictionaries.some(
-                (dictionary) =>
-                  dictionary.enabled &&
-                  dictionary.language === settings.studyLanguage &&
-                  dictionary.count > 0,
-              )
-            }
-            onClick={() => void finishSetup()}
-            variant="filled"
-          >
-            <Check aria-hidden="true" size={16} /> {t("finish_setup")}{" "}
-          </Button>
-        </Group>
-      ) : (
         <>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            <ReadingSettings
-              settings={settings}
-              onChange={update}
-              dictionaries={dictionaries}
-            />
+          <LanguageSettings settings={settings} onChange={update} setup />
+          {dictionarySettings}
+          <LookupSettings settings={settings} onChange={update} />
+          {dataSettings}
+          <Group justify="flex-end">
+            <Button
+              variant="filled"
+              loading={busy}
+              leftSection={<Check size={16} />}
+              disabled={
+                !settings.lookupBindings.length ||
+                !dictionaries.some(
+                  (dictionary) =>
+                    dictionary.enabled &&
+                    dictionary.language === settings.studyLanguage &&
+                    dictionary.count > 0,
+                )
+              }
+              onClick={() => void finishSetup()}
+            >
+              {t("finish_setup")}
+            </Button>
+          </Group>
+        </>
+      ) : (
+        <Tabs
+          value={selected}
+          onChange={(value) => {
+            location.hash = `settings/${value}`;
+          }}
+          keepMountedMode="display-none"
+        >
+          <Tabs.List mb="md" aria-label={t("settings_sections")}>
+            {sections.map((section) => (
+              <Tabs.Tab
+                data-srs-reader
+                key={section.value}
+                value={section.value}
+                leftSection={section.icon}
+              >
+                {section.label}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+          <Tabs.Panel value="general">
+            <Stack gap="md">
+              <LanguageSettings settings={settings} onChange={update} />
+              <AppearanceSettings settings={settings} onChange={update} />
+              <Paper>
+                <Group justify="space-between" gap="sm">
+                  <Group gap="xs">
+                    <Languages size={18} />
+                    <Text>{t("settings_setup_help")}</Text>
+                  </Group>
+                  <Button component="a" href="#setup">
+                    {t("open_setup")}
+                  </Button>
+                </Group>
+              </Paper>
+            </Stack>
+          </Tabs.Panel>
+          <Tabs.Panel value="reading">
+            <Stack gap="md">
+              <ReadingSettings
+                settings={settings}
+                onChange={update}
+                dictionaries={dictionaries}
+              />
+              <LookupSettings settings={settings} onChange={update} />
+              <WordColors settings={settings} onChange={update} />
+            </Stack>
+          </Tabs.Panel>
+          <Tabs.Panel value="dictionaries">
+            <Stack gap="md">
+              {dictionarySettings}
+              {dataSettings}
+            </Stack>
+          </Tabs.Panel>
+          <Tabs.Panel value="review">
             <ReviewSettings
               settings={settings}
               onChange={update}
               dictionaries={dictionaries}
               onError={setError}
             />
-          </SimpleGrid>
-          <Paper mb="md">
+          </Tabs.Panel>
+          <Tabs.Panel value="audio">
             <Stack gap="md">
-              <Title order={2}>{t("translation")}</Title>
-              <Stack gap="xs" c="dimmed" fz="xs">
-                {t("translation_stays_on_your_device_models_download_on")}{" "}
-              </Stack>
+              <AudioSettings settings={settings} onChange={update} />
+              <Paper>
+                <Stack gap="sm">
+                  <Title order={2}>{t("translation")}</Title>
+                  <Text c="dimmed">
+                    {t("translation_stays_on_your_device_models_download_on")}
+                  </Text>
+                  <Anchor href="#docs/reading">{t("docs_reading")}</Anchor>
+                </Stack>
+              </Paper>
             </Stack>
-          </Paper>
-          <AudioSettings settings={settings} onChange={update} />
-          <BackupSettings setSettings={setSettings} tasks={tasks} />
-          <Anchor href="#setup">{t("open_setup")} </Anchor>
-        </>
+          </Tabs.Panel>
+          <Tabs.Panel value="backups">
+            <BackupSettings setSettings={setSettings} tasks={tasks} />
+          </Tabs.Panel>
+        </Tabs>
       )}
-    </>
+    </Stack>
   );
 }

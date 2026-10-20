@@ -3,7 +3,7 @@ import {
   Button,
   Checkbox,
   Group,
-  NativeSelect,
+  Select,
   Stack,
   Text,
 } from "@mantine/core";
@@ -98,7 +98,7 @@ export function LookupControls({
   );
   return (
     <Stack gap="xs">
-      <Group gap="xs" align="center">
+      <Group gap="md" align="center">
         {lookupPresets.map((binding) => {
           const key = bindingKey(binding);
           const selected = value.some((b) => bindingKey(b) === key);
@@ -137,19 +137,18 @@ export function LookupControls({
         </Group>
       ))}
       <Group gap="xs" align="center">
-        <NativeSelect
+        <Select
           aria-label={t("custom_binding_type")}
           value={type}
           disabled={recording}
-          onChange={(event) => {
-            const value = event.currentTarget.value;
-            return setType(value as typeof type);
-          }}
-        >
-          <option value="mouse">{t("mouse_button")}</option>
-          <option value="key">{t("keyboard_shortcut")}</option>
-          <option value="hover">{t("hold_key_hover")}</option>
-        </NativeSelect>
+          w={{ base: "100%", xs: 240 }}
+          onChange={(value) => setType(value as typeof type)}
+          data={[
+            { value: "mouse", label: t("mouse_button") },
+            { value: "key", label: t("keyboard_shortcut") },
+            { value: "hover", label: t("hold_key_hover") },
+          ]}
+        />
         <Button
           disabled={recording}
           onClick={() => setRecording(true)}

@@ -107,8 +107,12 @@ export function App() {
             </React.Suspense>
           ) : setup ? (
             <SettingsPage settings={settings} setSettings={setSettings} setup />
-          ) : page === "settings" ? (
-            <SettingsPage settings={settings} setSettings={setSettings} />
+          ) : page === "settings" || page.startsWith("settings/") ? (
+            <SettingsPage
+              settings={settings}
+              setSettings={setSettings}
+              tab={page.split("/")[1]}
+            />
           ) : page === "words" ? (
             <WordsPage settings={settings} />
           ) : (

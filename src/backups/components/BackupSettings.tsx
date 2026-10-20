@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   FileButton,
   Group,
@@ -23,7 +24,7 @@ export function BackupSettings({
 }) {
   const { busy, task, fileImport } = useBackups({ setSettings, tasks });
   return (
-    <Paper mb="md">
+    <Paper>
       <Stack gap="md">
         <Title order={2}>{t("import_export")}</Title>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
@@ -84,9 +85,9 @@ export function BackupSettings({
             </Group>
           </Stack>
         </SimpleGrid>
-        <Stack gap="xs" c="dimmed" fz="xs">
-          {t("imports_replace_the_selected_category_export_your_progress")}{" "}
-        </Stack>
+        <Alert color="yellow">
+          {t("imports_replace_the_selected_category_export_your_progress")}
+        </Alert>
       </Stack>
     </Paper>
   );
