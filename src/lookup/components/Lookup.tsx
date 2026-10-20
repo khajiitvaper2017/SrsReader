@@ -11,6 +11,7 @@ import {
   Stack,
   Text,
   Title,
+  VisuallyHidden,
 } from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
@@ -116,6 +117,7 @@ function LookupEntry({
     notice,
     setNotice,
     lastReview,
+    reviewed,
     setLastReview,
     unparsed,
     word,
@@ -518,7 +520,8 @@ function LookupEntry({
             cols={
               (!saved?.card && !saved?.known ? 1 : 0) +
               1 +
-              (saved?.known
+              (lastReview ? 1 : 0) +
+              (saved?.known || reviewed
                 ? 0
                 : saved?.suspended
                   ? 1
@@ -551,7 +554,7 @@ function LookupEntry({
             >
               {saved?.known ? t("unmaster") : t("master")}
             </Button>
-            {saved?.known ? null : saved?.suspended ? (
+            {saved?.known || reviewed ? null : saved?.suspended ? (
               <Button
                 onClick={() =>
                   void vocabularyClient({
@@ -576,31 +579,30 @@ function LookupEntry({
                 onGrade={(rating) => void act(rating)}
               />
             )}
+            {lastReview && (
+              <Button
+                title={notice}
+                aria-label={t("undo")}
+                disabled={busy}
+                onClick={() =>
+                  void srsClient({ action: "undo", id: lastReview })
+                    .then(() => {
+                      setLastReview("");
+                      setNotice(t("review_undone"));
+                      reload();
+                    })
+                    .catch((error) => setError(error.message))
+                }
+                variant="light"
+                h={40}
+                px={4}
+                miw={0}
+              >
+                <Undo2 aria-hidden="true" size={16} /> {t("cancel")}
+              </Button>
+            )}
           </SimpleGrid>
-          {notice && (
-            <Stack role="status" gap="xs">
-              {notice}
-              {lastReview && (
-                <ActionIcon
-                  title={t("undo")}
-                  aria-label={t("undo")}
-                  disabled={busy}
-                  onClick={() =>
-                    void srsClient({ action: "undo", id: lastReview })
-                      .then(() => {
-                        setLastReview("");
-                        setNotice(t("review_undone"));
-                        reload();
-                      })
-                      .catch((error) => setError(error.message))
-                  }
-                  variant="subtle"
-                >
-                  <Undo2 aria-hidden="true" size={16} />
-                </ActionIcon>
-              )}
-            </Stack>
-          )}
+          {notice && <VisuallyHidden role="status">{notice}</VisuallyHidden>}
         </Stack>
       )}
     </Stack>

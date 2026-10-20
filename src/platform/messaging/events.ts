@@ -1,4 +1,5 @@
 import type { ScanSpan } from "@/reader/scan";
+import type { Occurrence } from "@/languages/analysis";
 import type { WordState } from "@/vocabulary/state";
 
 export type ChangeScope =
@@ -15,4 +16,11 @@ export type ParsedMessage = {
   candidates: ScanSpan["candidates"];
 };
 export type FrameMessage = { event: "closeLookup" };
-export type RuntimeEvent = ChangeMessage | ParsedMessage | FrameMessage;
+export type ParsedOccurrenceMessage = {
+  event: "parsedOccurrence";
+  language: string;
+  occurrence: Occurrence;
+  candidates: ScanSpan["candidates"];
+};
+export type RuntimeEvent =
+  ChangeMessage | ParsedMessage | ParsedOccurrenceMessage | FrameMessage;

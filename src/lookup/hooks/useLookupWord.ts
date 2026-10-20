@@ -55,6 +55,7 @@ export function useLookupWord({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [lastReview, setLastReview] = useState("");
+  const [reviewed, setReviewed] = useState(false);
   const duration = useReviewClock(`${selected}:${saved?.card?.reps}`);
   const noResults = result?.words.length === 0;
   const candidates =
@@ -213,7 +214,7 @@ export function useLookupWord({
     }
   }
   async function act(rating?: number) {
-    if (!word) return;
+    if (!word || (rating && reviewed)) return;
     setBusy(true);
     setError("");
     try {
@@ -232,6 +233,7 @@ export function useLookupWord({
         });
         setSaved(result.word);
         setLastReview(result.reviewId);
+        setReviewed(true);
         setNotice(
           t("reviewed", {
             value1: [t("again"), t("hard"), t("good"), t("easy")][rating - 1],
@@ -345,6 +347,7 @@ export function useLookupWord({
     notice,
     setNotice,
     lastReview,
+    reviewed,
     setLastReview,
     unparsed,
     word,

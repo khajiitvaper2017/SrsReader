@@ -87,13 +87,15 @@ export function startReader(
   }
   const onMessage = (message: RuntimeEvent) => {
     if (
-      message.event === "parsed" &&
+      (message.event === "parsed" || message.event === "parsedOccurrence") &&
       active &&
       message.language === settings.studyLanguage &&
-      message.term &&
       message.candidates?.length
     ) {
-      scanner.applyParsedTerm(message.term, message.candidates);
+      if (message.event === "parsedOccurrence")
+        scanner.applyParsedOccurrence(message.occurrence, message.candidates);
+      else if (message.term)
+        scanner.applyParsedTerm(message.term, message.candidates);
       return;
     }
     if (message.event === "closeLookup") popup.close();

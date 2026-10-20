@@ -1,6 +1,7 @@
 import { broadcast, notify } from "@/background/events";
 import type { Request } from "@/dictionaries/contracts";
 import { meaningTags } from "@/dictionaries/model";
+import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { lookup } from "@/dictionaries/resolve";
 import {
   deleteDictionary,
@@ -44,13 +45,21 @@ async function execute(request: Request, settings: Settings) {
         false,
         request.occurrence,
       );
-      if (result.words.length && !request.occurrence) {
-        const saved = await getWords(result.words.map((word) => word.id));
+      const words = result.words.filter(
+        (word) =>
+          word.meanings.length && wordMatchesGrammar(word, result.grammar),
+      );
+      if (words.length) {
+        const saved = await getWords(words.map((word) => word.id));
         await broadcast({
-          event: "parsed",
-          term: request.term,
+          ...(request.occurrence
+            ? ({
+                event: "parsedOccurrence",
+                occurrence: request.occurrence,
+              } as const)
+            : ({ event: "parsed", term: request.term } as const)),
           language: settings.studyLanguage,
-          candidates: result.words.map((word, index) => ({
+          candidates: words.map((word, index) => ({
             id: word.id,
             tags: word.meanings.flatMap(meaningTags),
             state: stateOf(saved[index], settings.matureIntervalDays),

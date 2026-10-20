@@ -1,4 +1,5 @@
 import type { ScanSpan } from "@/reader/scan";
+import type { Occurrence } from "@/languages/analysis";
 import {
   detectLanguages,
   languageSample,
@@ -125,6 +126,29 @@ export function createScanner(
         block.spans.push(span);
         block.ranges.push(range);
         highlights.get(span.state)!.add(range);
+      }
+  }
+  function applyParsedOccurrence(
+    occurrence: Occurrence,
+    candidates: ScanSpan["candidates"],
+  ) {
+    const matches = (span: ScanSpan) =>
+      span.occurrence?.key === occurrence.key &&
+      span.occurrence.start === occurrence.start &&
+      span.occurrence.end === occurrence.end;
+    const update = (span: ScanSpan) => {
+      span.candidates = candidates;
+      span.ids = candidates.map((candidate) => candidate.id);
+      updateSpanState(span);
+    };
+    for (const result of parsed.values())
+      for (const span of result.spans) if (matches(span)) update(span);
+    for (const block of blocks.values())
+      for (const span of block.spans) {
+        if (!matches(span)) continue;
+        highlights.get(span.state).delete(span.range);
+        update(span);
+        highlights.get(span.state).add(span.range);
       }
   }
   function queueBlock(element: Element, rebuildRanges = false) {
@@ -719,6 +743,7 @@ export function createScanner(
     refreshTags,
     updateWord,
     applyParsedTerm,
+    applyParsedOccurrence,
     dispose: clear,
   };
 }
