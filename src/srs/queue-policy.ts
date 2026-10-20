@@ -58,8 +58,13 @@ export function buildQueue(
       Math.max(now + 500, word.card!.due - settings.learnAheadMinutes * 60000),
     ),
   );
+  const queued = [...due, ...fresh, ...ahead];
   return {
-    words: [...due, ...fresh, ...ahead],
+    words: queued,
+    learning: queued.filter((word) => word.card!.state === 1).length,
+    relearning: queued.filter((word) => word.card!.state === 3).length,
+    reviews: queued.filter((word) => word.card!.state === 2).length,
+    ahead: ahead.length,
     due: due.length,
     fresh: fresh.length,
     waiting: future.length ? waiting : null,

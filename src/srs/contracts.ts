@@ -1,3 +1,4 @@
+import type { ReviewStatistics } from "@/srs/statistics";
 import type { Settings } from "@/settings/model";
 import { selection } from "@/vocabulary/contracts";
 import type { Vocabulary } from "@/vocabulary/model";
@@ -30,6 +31,10 @@ export const requests = [
   }),
   z.object({ action: z.literal("reschedule"), after: z.string().default("") }),
   z.object({ action: z.literal("stats") }),
+  z.object({
+    action: z.literal("reviewStats"),
+    year: z.number().int().min(1970).max(9998).optional(),
+  }),
 ] as const;
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
@@ -39,6 +44,10 @@ export type Responses = {
   queue: {
     words: Vocabulary[];
     due: number;
+    learning: number;
+    relearning: number;
+    reviews: number;
+    ahead: number;
     fresh: number;
     waiting: number | null;
     wakeAt: number;
@@ -54,5 +63,6 @@ export type Responses = {
   resetRwkv: void;
   activateAlgorithm: Settings;
   reschedule: { count: number; cursor: string | null };
+  reviewStats: ReviewStatistics;
   stats: { total: number; known: number; due: number; today: number };
 };

@@ -52,6 +52,7 @@ export async function handle(request: Request) {
     case "queue":
     case "preview":
     case "stats":
+    case "reviewStats":
     case "resetRwkv":
     case "rwkvStatus":
     case "prepareRwkv":

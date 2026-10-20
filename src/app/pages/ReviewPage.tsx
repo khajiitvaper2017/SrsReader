@@ -1,5 +1,6 @@
 import {
   SegmentedControl,
+  Badge,
   Kbd,
   ActionIcon,
   Anchor,
@@ -17,6 +18,7 @@ import { t } from "@/shared/i18n/i18n";
 import { Empty } from "@/shared/ui/Empty";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Ratings, intervalLabel } from "@/srs/components/Ratings";
+import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { useReviewSession } from "@/srs/hooks/useReviewSession";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
@@ -57,17 +59,29 @@ export function ReviewPage({
   return (
     <>
       <SrsProgress />
-      <Group gap="lg" mb="sm">
-        <span>
-          {t("due")} <strong>{queue?.due ?? "—"}</strong>
-        </span>
-        <span>
-          {t("new")} <strong>{queue?.fresh ?? "—"}</strong>
-        </span>
-        <span>
-          {t("reviewed_today")} <strong>{stats.today}</strong>
-        </span>
+      <Group gap="xs" mb="sm">
+        {(
+          [
+            ["new", queue?.fresh],
+            ["srs_queue_learning", queue?.learning],
+            ["srs_queue_relearning", queue?.relearning],
+            ["review", queue?.reviews],
+            ["reviewed_today", stats.today],
+          ] as const
+        ).map(([label, count]) => (
+          <Text key={label} size="sm">
+            {t(label)}{" "}
+            <Text span fw={700}>
+              {count ?? "—"}
+            </Text>
+          </Text>
+        ))}
       </Group>
+      {!!queue?.ahead && (
+        <Text size="xs" c="dimmed" mb="sm">
+          {t("srs_queue_ahead", { count: queue.ahead })}
+        </Text>
+      )}
       <ErrorBox error={error} />
       <Stack gap="xs">
         <Paper mb="md">
@@ -86,6 +100,16 @@ export function ReviewPage({
             {word ? (
               <>
                 <Stack gap="xs" align="center" ta="center" py="lg">
+                  <Badge variant="light">
+                    {t(
+                      [
+                        "new",
+                        "srs_queue_learning",
+                        "review",
+                        "srs_queue_relearning",
+                      ][word.card!.state]!,
+                    )}
+                  </Badge>
                   {front === "sentence" && context ? (
                     <Stack gap="xs">
                       <Sentence context={context} language={word.language} />
@@ -254,6 +278,7 @@ export function ReviewPage({
           </Stack>
         </Paper>
       </Stack>
+      <ReviewStatistics />
     </>
   );
 }

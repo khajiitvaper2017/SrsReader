@@ -13,6 +13,7 @@ import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 import { grade } from "@/srs/grading";
 import { reviewQueue } from "@/srs/queue";
 import { rescheduleExisting } from "@/srs/reschedule";
+import { reviewStatistics } from "@/srs/statistics";
 import { clearUndo } from "@/srs/storage";
 import { undoReview } from "@/srs/undo";
 import { dailyCounts } from "@/srs/workload";
@@ -58,6 +59,8 @@ async function execute(request: Request, settings: Settings) {
       return reviewQueue();
     case "preview":
       return preview(await getWord(request.id), request.durationMs, request.id);
+    case "reviewStats":
+      return reviewStatistics(settings, request.year);
     case "stats": {
       const words = await languageWords(settings.studyLanguage);
       return {

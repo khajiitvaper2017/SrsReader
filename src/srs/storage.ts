@@ -1,6 +1,8 @@
 import type { LookupWord } from "@/dictionaries/model";
 import { db } from "@/platform/database/db";
 import { t } from "@/shared/i18n/i18n";
+import { dayStart, studyDay } from "@/srs/study-day";
+import type { ReviewSummary } from "@/srs/history";
 import type { candidates } from "@/srs/answers";
 import type { SchedulingPreferences } from "@/srs/preferences";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
@@ -114,3 +116,36 @@ export function rescheduleCard(id: string, card: Vocabulary["card"]) {
     });
 }
 export const clearUndo = () => db.srsMeta.update("main", { undo: undefined });
+
+export async function statisticsHistory(
+  language: string,
+  now: number,
+  rolloverHour: number,
+) {
+  const history: ReviewSummary[] = [];
+  const activity = new Map<number, number>();
+  const start = dayStart(studyDay(now, rolloverHour) - 29, rolloverHour);
+  await db.reviews
+    .where("time")
+    .between(0, now, true, true)
+    .filter(
+      (review) => review.active && JSON.parse(review.wordId)[0] === language,
+    )
+    .each((review) => {
+      const day = studyDay(review.time, rolloverHour);
+      activity.set(day, (activity.get(day) ?? 0) + 1);
+      if (review.time >= start)
+        history.push({
+          time: review.time,
+          rating: review.rating,
+          durationMs: review.durationMs,
+          state: review.before?.card?.state ?? 0,
+        });
+    });
+  return {
+    history,
+    activity: [...activity]
+      .map(([day, count]) => ({ day, count }))
+      .sort((a, b) => a.day - b.day),
+  };
+}
