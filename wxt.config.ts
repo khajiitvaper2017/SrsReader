@@ -9,6 +9,21 @@ export default defineConfig({
   entrypointsDir: "../entrypoints",
   modules: ["@wxt-dev/module-react"],
   zip: { excludeSources: ["dicts/**", "graft/**"] },
+  vite: () => ({
+    plugins: [
+      {
+        name: "block-page-paint-until-settings",
+        transformIndexHtml: {
+          order: "post",
+          handler: (html) =>
+            html.replaceAll(
+              '<script type="module"',
+              '<script type="module" blocking="render"',
+            ),
+        },
+      },
+    ],
+  }),
   hooks: {
     async "build:publicAssets"(_wxt, files) {
       for (const [locale, messages] of Object.entries({ en, uk })) {

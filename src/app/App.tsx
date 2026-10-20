@@ -26,7 +26,12 @@ const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
 export function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
   const [settings, setSettings, ready] = useSettings();
-  const [stats, setStats] = useState({ total: 0, due: 0, known: 0, today: 0 });
+  const [stats, setStats] = useState<{
+    total: number;
+    due: number;
+    known: number;
+    today: number;
+  }>();
   const loadStats = useCallback(() => {
     void srsClient({ action: "stats" }).then(setStats).catch(console.error);
   }, []);
@@ -47,7 +52,7 @@ export function App() {
   const docs = page === "docs" || page.startsWith("docs/");
   const inSetup = page === "setup" || !settings.setupComplete;
   const setup = inSetup && !docs;
-  if (!ready) return null;
+  if (!ready || !stats) return null;
   return (
     <AppShell header={{ height: { base: 100, sm: 58 } }} padding="md">
       <AppShell.Header>

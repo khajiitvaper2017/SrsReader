@@ -1,7 +1,7 @@
 import type { ChangeMessage } from "@/platform/messaging/events";
 import { installInputPrevention } from "@/reader/input-prevention";
 import { settingsClient } from "@/settings/client";
-import { defaults, type Settings } from "@/settings/model";
+import type { Settings } from "@/settings/model";
 import { i18n, setInterfaceLanguage, t } from "@/shared/i18n/i18n";
 import {
   createContext,
@@ -29,6 +29,21 @@ const colorSchemeManager = {
   clear: () => {},
 };
 
+const initialSettings = await settingsClient({ action: "settings" });
+await setInterfaceLanguage(
+  initialSettings.interfaceLanguage,
+  initialSettings.nativeLanguage,
+);
+const initialScheme =
+  initialSettings.theme === "system"
+    ? matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
+    : initialSettings.theme === "oled"
+      ? "dark"
+      : initialSettings.theme;
+document.documentElement.dataset.mantineColorScheme = initialScheme;
+
 export function UIProvider({
   scope,
   children,
@@ -37,14 +52,16 @@ export function UIProvider({
   children: ReactNode;
 }) {
   useTranslation(undefined, { i18n });
-  const [settings, setSettings] = useState<Settings>(defaults);
-  const [ready, setReady] = useState(false);
+  const [settings, setSettings] = useState<Settings>(initialSettings);
   useEffect(() => {
     const load = () => {
       void settingsClient({ action: "settings" })
-        .then((value) => {
+        .then(async (value) => {
+          await setInterfaceLanguage(
+            value.interfaceLanguage,
+            value.nativeLanguage,
+          );
           setSettings(value);
-          setReady(true);
         })
         .catch(console.error);
     };
@@ -55,7 +72,6 @@ export function UIProvider({
       )
         load();
     };
-    load();
     browser.runtime.onMessage.addListener(changed);
     return () => browser.runtime.onMessage.removeListener(changed);
   }, []);
@@ -75,9 +91,9 @@ export function UIProvider({
     () => installInputPrevention(() => settings, scope),
     [settings, scope],
   );
-  const systemScheme = useColorScheme("light");
+  const systemScheme = useColorScheme(initialScheme);
   return (
-    <SettingsContext.Provider value={[settings, setSettings, ready]}>
+    <SettingsContext.Provider value={[settings, setSettings, true]}>
       <MantineProvider
         theme={createUITheme(settings)}
         colorSchemeManager={colorSchemeManager}

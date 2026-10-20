@@ -56,10 +56,11 @@ export function ReviewPage({
     reveal,
     undo,
   } = useReviewSession({ settings, stats });
+  if (!queue && !error) return <SrsProgress />;
   return (
     <>
       <SrsProgress />
-      <Group gap="xs" mb="sm">
+      <Group gap="xs" mb="sm" justify="center">
         {(
           [
             ["new", queue?.fresh],
@@ -89,6 +90,7 @@ export function ReviewPage({
             <Group justify="center" mb="lg">
               <SegmentedControl
                 size="xs"
+                styles={{ label: { whiteSpace: "nowrap" } }}
                 value={front}
                 onChange={(value) => setFront(value as typeof front)}
                 data={[
