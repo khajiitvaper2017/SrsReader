@@ -12,7 +12,13 @@ The popup stays attached to the word during scrolling. **Automatic** opens it ab
 
 Use your lookup control on an unparsed word to open a definition editor. Enter a definition, or click **Translate word** to translate it into your native language. You can edit the translation before saving.
 
-For a dictionary word, click **Edit definition** (pencil) in the popup to add or change a personal definition. **Save definition** saves the word and reading sentence for SRS. Personal definitions appear first on future lookups and are included in vocabulary exports. You can also edit them on the **Words** page.
+Click **Add custom definition** (+) beside the audio and sentence translation buttons. The header stays visible while you scroll. **Save definition** adds a separate entry and saves the word and reading sentence for SRS. Personal definitions appear first and are included in vocabulary exports. Use the pencil beside a personal definition to edit it, or the trash button to delete it.
+
+When parser analysis is available, new personal definitions receive matching tags declared by installed dictionaries. The editor previews these tags before saving. They cover part of speech, noun gender and animacy, verb aspect, and reflexivity. Inflection details remain in the grammar hover card.
+
+The word selector also lists parser base forms without dictionary definitions. Select **dovídat se** or **dovídat** to add a personal definition under that form. **If needed** dictionaries can supply the exact base form even when a higher dictionary only has an entry for a different lemma.
+
+Enter each sense on a new line. Blank lines are skipped. The numbered preview shows how the senses will appear after you save.
 
 ## Controls
 
@@ -39,6 +45,8 @@ Each attempt can take up to 30 seconds. If a request fails, SrsReader retries af
 Click a verb, its auxiliary, or its reflexive **se** or **si** to look up the main verb. For example, **jsem**, **se**, and **dovídal** in **jsem se dovídal** all suggest **dovídat se**. Clicking one highlights all linked words. Intervening words stay unhighlighted. A linking verb, such as **jsem** in **jsem rád**, still suggests **být**. Hover over the popup heading to see the full word form or verb construction. Keyboard focus also shows it. Click the small arrow after the heading to choose another dictionary entry. Nechybujte entries include their listed variants and aspect pairs. The exact contextual lemma appears first when available. Grammar analysis does not change saved word identities or SRS states.
 
 Hover over the popup heading or focus it with the keyboard to see grammar below the full form. This includes case, person, number, gender, tense, mood, aspect, voice, and other available features. For a verb with auxiliaries, it shows the combined construction, then the clicked word’s own form, grammatical features, and relation to another word. Grammar stays available when no dictionary entry matches. The parser can make mistakes. It does not supply a conjugation class or features absent from its analysis.
+
+Each dictionary has its own **Show more** arrow when it contains grammar mismatches. Click it to reveal excluded meanings for the current word. To reveal hidden word candidates, open the word selector and use that dictionary’s **Show more** item. Conflicting tags are red; hover over a tag for an explanation. Meanings with missing or unknown tags stay visible.
 
 Enable **Automatically ignore proper names** to give recognized names the Ignored appearance. Names stay searchable. This does not save them as ignored. Saved vocabulary states take priority. Words annotated as nationalities are excluded. Name recognition can make mistakes.
 

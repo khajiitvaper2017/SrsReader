@@ -170,7 +170,12 @@ export async function scanTexts(
       let words: LookupWord[] = [];
       for (const term of candidate.analysis?.terms || [candidate.term])
         words.push(...(matches.get(normalize(term))?.words || []));
-      words = displayedWords(words, settings, ordered);
+      words = displayedWords(
+        words,
+        settings,
+        ordered,
+        candidate.analysis?.terms.slice(0, -1),
+      );
       if (!words.length && !candidate.analysis) continue;
       const state = words.length
         ? stateOf(vocabulary.get(words[0]!.id), settings.matureIntervalDays)

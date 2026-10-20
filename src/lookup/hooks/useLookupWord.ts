@@ -1,6 +1,7 @@
 import type { Occurrence } from "@/languages/analysis";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
+import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { folded } from "@/languages/text";
 import { lookupClient } from "@/lookup/client";
 import type { LookupPage } from "@/lookup/model";
@@ -44,7 +45,10 @@ export function useLookupWord({
   const { term, context, occurrence } = page;
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [expandedDictionaries, setExpandedDictionaries] = useState<string[]>(
+    [],
+  );
+  const [editing, setEditing] = useState<"add" | number | null>(null);
   const [saved, setSaved] = useState<Vocabulary>();
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
@@ -52,10 +56,14 @@ export function useLookupWord({
   const [notice, setNotice] = useState("");
   const [lastReview, setLastReview] = useState("");
   const duration = useReviewClock(`${selected}:${saved?.card?.reps}`);
-  const unparsed = result?.words.length === 0;
+  const noResults = result?.words.length === 0;
+  const candidates =
+    result?.words.filter((candidate) =>
+      wordMatchesGrammar(candidate, result.grammar, expandedDictionaries),
+    ) || [];
   const word: LookupWord | undefined =
-    result?.words.find((w) => w.id === selected) ||
-    (unparsed && settings.studyLanguage
+    candidates.find((w) => w.id === selected) ||
+    (noResults && settings.studyLanguage
       ? {
           id: wordId(
             settings.studyLanguage,
@@ -69,6 +77,7 @@ export function useLookupWord({
           forms: [],
         }
       : undefined);
+  const unparsed = !!word && !word.meanings.length;
   const hasPersonalDefinition =
     word?.meanings.some((meaning) => meaning.dictionaryId === "personal") ||
     false;
@@ -107,12 +116,26 @@ export function useLookupWord({
     void dictionariesClient({ action: "lookup", term, occurrence })
       .then((lookup) => {
         if (!alive) return;
+        const restored = lookup.words.find((word) => word.id === page.selected);
         setResult(lookup);
+        setExpandedDictionaries(
+          restored && !wordMatchesGrammar(restored, lookup.grammar)
+            ? [
+                ...new Set(
+                  restored.meanings.map((meaning) => meaning.dictionaryId),
+                ),
+              ]
+            : [],
+        );
         setError(lookup.warning || "");
         setSelected(
-          lookup.words.some((word) => word.id === page.selected)
-            ? page.selected!
-            : lookup.words[0]?.id || "",
+          (
+            restored ||
+            lookup.words.find((word) =>
+              wordMatchesGrammar(word, lookup.grammar),
+            ) ||
+            lookup.words[0]
+          )?.id || "",
         );
       })
       .catch((error) => setError(error.message));
@@ -260,16 +283,20 @@ export function useLookupWord({
     setResult(await dictionariesClient({ action: "lookup", term, occurrence }));
     setSelected(saved.id);
     setSaved(saved);
-    setEditing(false);
+    setEditing(null);
     setNotice("");
   }
-  async function deleteDefinition() {
+  async function deleteDefinition(definitionIndex: number) {
     if (!word || !hasPersonalDefinition || busy) return;
     setBusy(true);
     setError("");
     try {
-      await vocabularyClient({ action: "deleteDefinition", id: word.id });
-      setEditing(false);
+      await vocabularyClient({
+        action: "deleteDefinition",
+        id: word.id,
+        definitionIndex,
+      });
+      setEditing(null);
       setNotice("");
       reload();
     } catch (error) {
@@ -277,6 +304,22 @@ export function useLookupWord({
     } finally {
       setBusy(false);
     }
+  }
+  function toggleDictionary(id: string) {
+    const expanded = expandedDictionaries.includes(id)
+      ? expandedDictionaries.filter((dictionary) => dictionary !== id)
+      : [...expandedDictionaries, id];
+    setExpandedDictionaries(expanded);
+    const current = result?.words.find(
+      (candidate) => candidate.id === selected,
+    );
+    const next =
+      current && wordMatchesGrammar(current, result?.grammar, expanded)
+        ? current
+        : result?.words.find((candidate) =>
+            wordMatchesGrammar(candidate, result.grammar, expanded),
+          );
+    if (next) setSelected(next.id);
   }
   return {
     readingRef,
@@ -289,6 +332,9 @@ export function useLookupWord({
     setSelected,
     candidateOpen,
     setCandidateOpen,
+    candidates,
+    expandedDictionaries,
+    toggleDictionary,
     editing,
     setEditing,
     saved,

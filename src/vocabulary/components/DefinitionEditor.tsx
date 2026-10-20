@@ -1,6 +1,8 @@
-import type { Occurrence } from "@/languages/analysis";
+import type { Occurrence, OccurrenceGrammar } from "@/languages/analysis";
 import {
   Loader,
+  List,
+  Badge,
   ActionIcon,
   Button,
   Group,
@@ -8,19 +10,24 @@ import {
   Text,
   Textarea,
 } from "@mantine/core";
-import type { LookupWord } from "@/dictionaries/model";
+import type { LookupWord, Meaning } from "@/dictionaries/model";
+import { definitionSenses } from "@/dictionaries/definitions";
+import { dictionaryGrammarTags } from "@/dictionaries/grammar";
+import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { translateSentence } from "@/translation/translate";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { Languages, Save, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 export function DefinitionEditor({
   word,
   term,
   context,
   occurrence,
+  grammar,
+  definitionIndex,
   settings,
   onSaved,
   onError,
@@ -30,21 +37,59 @@ export function DefinitionEditor({
   term: string;
   context?: ReadingContext;
   occurrence?: Occurrence;
+  grammar?: OccurrenceGrammar;
+  definitionIndex?: number;
   settings: Settings;
   onSaved: (word: Vocabulary) => Promise<void>;
   onError: (message: string) => void;
   onCancel?: () => void;
 }) {
   const [definition, setDefinition] = useState(
-    word?.meanings
-      .filter((meaning) => meaning.dictionaryId === "personal")
-      .flatMap((meaning) =>
-        meaning.definitions.filter((value) => typeof value === "string"),
-      )
+    (definitionIndex === undefined
+      ? []
+      : word?.meanings.filter((meaning) => meaning.dictionaryId === "personal")[
+          definitionIndex
+        ]?.definitions || []
+    )
+      .filter((value) => typeof value === "string")
       .join("\n") || "",
   );
   const [busy, setBusy] = useState(false);
+  const senses = definitionSenses(definition);
   const [status, setStatus] = useState("");
+  const [tags, setTags] = useState<Pick<Meaning, "tags" | "tagDescriptions">>();
+  useEffect(() => {
+    let alive = true;
+    setTags(undefined);
+    if (!grammar) {
+      const existing =
+        definitionIndex === undefined
+          ? undefined
+          : word?.meanings.filter(
+              (meaning) => meaning.dictionaryId === "personal",
+            )[definitionIndex];
+      setTags({
+        tags: existing?.tags || "",
+        tagDescriptions: existing?.tagDescriptions,
+      });
+      return;
+    }
+    void listDictionaries(settings)
+      .then((rows) =>
+        dictionaryTags(
+          rows.filter((row) => row.enabled).map((row) => row.revisionId),
+        ),
+      )
+      .then((available) => {
+        if (alive) setTags(dictionaryGrammarTags(grammar, available));
+      })
+      .catch((error) => {
+        if (alive) onError(error.message);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [grammar, settings, word, definitionIndex, onError]);
   async function translate() {
     setBusy(true);
     onError("");
@@ -75,6 +120,7 @@ export function DefinitionEditor({
         context,
         occurrence,
         definition,
+        definitionIndex,
       });
       await onSaved(saved);
     } catch (error) {
@@ -85,17 +131,48 @@ export function DefinitionEditor({
   }
   return (
     <Stack data-srs-reader="" gap="xs">
+      <Group gap={4} role="group" aria-label={t("definition_tags")}>
+        <Text size="xs" c="dimmed">
+          {t("definition_tags")}
+        </Text>
+        {!tags ? (
+          <Loader size="xs" aria-label={t("loading_definition_tags")} />
+        ) : tags.tags ? (
+          tags.tags.split(/\s+/u).map((tag) => (
+            <Badge key={tag} title={tags.tagDescriptions?.[tag]}>
+              {tag}
+            </Badge>
+          ))
+        ) : (
+          <Text size="xs" c="dimmed">
+            {t("no_definition_tags")}
+          </Text>
+        )}
+      </Group>
       <Textarea
         rows={3}
+        description={t("definition_senses_hint")}
         aria-label={t("personal_definition")}
         placeholder={t("personal_definition")}
         value={definition}
         disabled={busy}
         onChange={(event) => setDefinition(event.target.value)}
       />
+      {senses.length > 0 && (
+        <Stack gap={4}>
+          <Text size="xs" c="dimmed">
+            {t("definition_preview")}
+          </Text>
+          <List type="ordered" size="sm" withPadding>
+            {senses.map((sense, index) => (
+              <List.Item key={index}>{sense}</List.Item>
+            ))}
+          </List>
+        </Stack>
+      )}
       <Group gap="xs" align="center">
         <Button
-          disabled={busy || !definition.trim()}
+          disabled={busy || !tags || !definition.trim()}
           onClick={() => void save()}
           variant="filled"
         >

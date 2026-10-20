@@ -1,4 +1,6 @@
-import type { LookupWord } from "@/dictionaries/model";
+import type { LookupWord, Meaning } from "@/dictionaries/model";
+import { definitionSenses } from "@/dictionaries/definitions";
+import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 import { emptySchedule } from "@/srs/model";
@@ -23,21 +25,34 @@ export async function mine(word: LookupWord, context?: ReadingContext) {
 
 export function definePersonalWord(
   word: LookupWord,
-  definition: string,
-  context?: ReadingContext,
+  request: Extract<Request, { action: "defineWord" }>,
+  tags?: Pick<Meaning, "tags" | "tagDescriptions">,
 ) {
   return db.transaction("rw", db.vocabulary, async () => {
-    const saved = await mine(word, context);
-    saved.meanings = [
-      {
+    const saved = await mine(word, request.context);
+    const definitions = definitionSenses(request.definition);
+    const personal = saved.meanings.filter(
+      (meaning) => meaning.dictionaryId === "personal",
+    );
+    if (request.definitionIndex === undefined) {
+      personal.push({
         dictionaryId: "personal",
         title: "",
         revision: "",
         attribution: "",
         sourceUrl: "",
         tags: "",
-        definitions: [definition],
-      },
+        ...tags,
+        definitions,
+      });
+    } else {
+      const meaning = personal[request.definitionIndex];
+      if (!meaning) throw new Error(t("definition_not_found"));
+      if (tags) Object.assign(meaning, tags);
+      meaning.definitions = definitions;
+    }
+    saved.meanings = [
+      ...personal,
       ...saved.meanings.filter(
         (meaning) => meaning.dictionaryId !== "personal",
       ),
@@ -96,8 +111,11 @@ export async function deleteDefinition(
     .where("id")
     .equals(request.id)
     .modify((word) => {
+      let index = 0;
       word.meanings = word.meanings.filter(
-        (meaning) => meaning.dictionaryId !== "personal",
+        (meaning) =>
+          meaning.dictionaryId !== "personal" ||
+          index++ !== request.definitionIndex,
       );
       word.version++;
       word.updated = Date.now();

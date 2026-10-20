@@ -1,5 +1,12 @@
 import type { Vocabulary } from "@/vocabulary/model";
 
+export function definitionSenses(text: string): string[] {
+  return text
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 export function definitionText(value: unknown): string {
   if (typeof value === "string") return value;
   if (Array.isArray(value)) return value.map(definitionText).join(" ");

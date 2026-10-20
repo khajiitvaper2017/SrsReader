@@ -15,6 +15,7 @@ import { occurrenceAnalysis } from "@/languages/udpipe";
 import type { Occurrence } from "@/languages/analysis";
 import { listDictionaries } from "@/dictionaries/storage";
 import { dictionaryDisplay, displayedWords } from "@/dictionaries/display";
+import { wordId } from "@/vocabulary/model";
 
 export async function lookup(
   term: string,
@@ -29,6 +30,22 @@ export async function lookup(
       ? await occurrenceAnalysis(occurrence, term)
       : undefined;
   const terms = [...new Set([...(contextual?.terms || []), lookupTerm])];
+  const grammar = contextual?.grammar;
+  const baseTokens =
+    grammar?.sentence.tokens.filter((token) =>
+      grammar.group
+        ? grammar.group.tokenIds.includes(token.id) &&
+          !grammar.group.tokenIds.includes(token.head)
+        : grammar.tokenIds.includes(token.id),
+    ) || [];
+  const bases = [
+    ...new Set([
+      ...(grammar?.group ? [grammar.group.lemma] : []),
+      ...baseTokens
+        .map((token) => token.lemma)
+        .filter((lemma) => lemma !== "_"),
+    ]),
+  ];
   const matches = await lookupMany(terms, settings.studyLanguage);
   const dictionaries = await listDictionaries(settings);
   const online = dictionaries.find(
@@ -43,12 +60,16 @@ export async function lookup(
       .map((dictionary) => dictionary.id),
   );
   const higherMatch = [...matches.values()].some((match) =>
-    match.words.some((word) =>
-      word.meanings.some(
-        (meaning) =>
-          meaning.dictionaryId === "personal" ||
-          higher.has(meaning.dictionaryId),
-      ),
+    match.words.some(
+      (word) =>
+        (!contextual ||
+          folded(word.lemma, settings.studyLanguage) ===
+            folded(terms[0]!, settings.studyLanguage)) &&
+        word.meanings.some(
+          (meaning) =>
+            meaning.dictionaryId === "personal" ||
+            higher.has(meaning.dictionaryId),
+        ),
     ),
   );
   const preferred = matches.get(normalize(terms[0]!)) || {
@@ -104,7 +125,24 @@ export async function lookup(
     result.words.push(...(match?.words || []));
     result.unresolved.push(...(match?.unresolved || []));
   }
-  result.words = displayedWords(result.words, settings, dictionaries);
+  result.words = displayedWords(result.words, settings, dictionaries, bases);
+  for (const lemma of bases) {
+    if (
+      result.words.some(
+        (word) =>
+          folded(word.lemma, word.language) === folded(lemma, word.language),
+      )
+    )
+      continue;
+    result.words.push({
+      id: wordId(settings.studyLanguage, lemma, ""),
+      lemma,
+      language: settings.studyLanguage,
+      reading: "",
+      forms: [],
+      meanings: [],
+    });
+  }
   if (result.words.length) result.unresolved = [];
   return result;
 }

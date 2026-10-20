@@ -24,8 +24,13 @@ export const requests = [
     term: selection.term.trim().min(1),
     id: z.string().optional(),
     definition: z.string().trim().min(1),
+    definitionIndex: z.number().int().nonnegative().optional(),
   }),
-  z.object({ action: z.literal("deleteDefinition"), id: z.string() }),
+  z.object({
+    action: z.literal("deleteDefinition"),
+    id: z.string(),
+    definitionIndex: z.number().int().nonnegative(),
+  }),
   z.object({
     action: z.literal("known"),
     id: z.string(),

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Occurrence } from "@/languages/analysis";
 import {
   ActionIcon,
@@ -14,6 +15,7 @@ import {
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { Meanings } from "@/dictionaries/components/Meanings";
+import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { WordExamples } from "@/examples/components/WordExamples";
 import { folded } from "@/languages/text";
 import { useLookupNavigation } from "@/lookup/hooks/useLookupNavigation";
@@ -34,7 +36,9 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  ChevronUp,
   Pencil,
+  Plus,
   Play,
   Trash2,
   Undo2,
@@ -99,6 +103,9 @@ function LookupEntry({
     setSelected,
     candidateOpen,
     setCandidateOpen,
+    candidates,
+    expandedDictionaries,
+    toggleDictionary,
     editing,
     setEditing,
     saved,
@@ -112,7 +119,6 @@ function LookupEntry({
     setLastReview,
     unparsed,
     word,
-    hasPersonalDefinition,
     reload,
     ignoreTag,
     act,
@@ -121,6 +127,194 @@ function LookupEntry({
     deleteDefinition,
   } = useLookupWord({ page, onLookup, onBack, onContext });
   const surface = result?.grammar?.group?.form || term;
+  const hiddenCandidateDictionaries = new Map(
+    result?.words
+      .filter((candidate) => !wordMatchesGrammar(candidate, result.grammar))
+      .flatMap((candidate) =>
+        candidate.meanings.map(
+          (meaning) => [meaning.dictionaryId, meaning.title] as const,
+        ),
+      ),
+  );
+  const renderHeader = (sentenceButton?: ReactNode, translation?: ReactNode) =>
+    word && (
+      <>
+        <Stack
+          component="header"
+          gap="xs"
+          pos="sticky"
+          top={0}
+          bg="var(--mantine-color-body)"
+          style={{ zIndex: 2 }}
+          data-srs-reader
+        >
+          <Group gap="xs" align="center" justify="space-between">
+            <Stack gap="xs" miw={0} maw="100%">
+              <Group gap={4} wrap="nowrap">
+                <HoverCard
+                  disabled={
+                    !result?.grammar &&
+                    folded(surface, word.language) ===
+                      folded(word.lemma, word.language)
+                  }
+                  events={{ hover: true, focus: true, touch: true }}
+                  position="bottom-start"
+                  width={360}
+                  middlewares={{
+                    shift: {
+                      boundary: contentRef.current ?? undefined,
+                      padding: 12,
+                    },
+                    size: {
+                      boundary: contentRef.current ?? undefined,
+                      padding: 12,
+                    },
+                  }}
+                  interactive
+                  role="tooltip"
+                >
+                  <HoverCard.Target>
+                    <Title
+                      lang={word.language}
+                      order={1}
+                      tabIndex={0}
+                      style={{ minWidth: 0, overflowWrap: "anywhere" }}
+                    >
+                      {word.lemma}
+                    </Title>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown
+                    data-srs-reader
+                    maw="calc(100vw - 24px)"
+                    mah="65dvh"
+                    style={{
+                      overflowY: "auto",
+                      overflowWrap: "anywhere",
+                      scrollbarGutter: "stable",
+                    }}
+                  >
+                    <Stack gap="xs">
+                      <Text lang={word.language} size="sm" fw={500}>
+                        {surface}
+                      </Text>
+                      {result?.grammar && <Grammar grammar={result.grammar} />}
+                    </Stack>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+                {(candidates.length > 1 ||
+                  hiddenCandidateDictionaries.size > 0) && (
+                  <Menu
+                    opened={candidateOpen}
+                    onChange={setCandidateOpen}
+                    position="bottom-end"
+                  >
+                    <Menu.Target>
+                      <ActionIcon
+                        size="sm"
+                        variant="subtle"
+                        disabled={busy}
+                        aria-label={`${t("choose_word")}: ${word.lemma}`}
+                        title={t("choose_word")}
+                        style={{ flexShrink: 0 }}
+                      >
+                        <ChevronDown aria-hidden="true" size={16} />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown
+                      data-srs-reader
+                      maw="calc(100vw - 24px)"
+                      mah="50dvh"
+                      style={{
+                        overflowY: "auto",
+                        scrollbarGutter: "stable",
+                      }}
+                    >
+                      {candidates.map((candidate) => (
+                        <Menu.Item
+                          key={candidate.id}
+                          leftSection={
+                            candidate.id === word.id ? (
+                              <Check aria-hidden="true" size={14} />
+                            ) : undefined
+                          }
+                          aria-current={
+                            candidate.id === word.id ? "true" : undefined
+                          }
+                          onClick={() => {
+                            setSelected(candidate.id);
+                            setNotice("");
+                            setLastReview("");
+                          }}
+                          style={{
+                            whiteSpace: "normal",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {[candidate.lemma, candidate.reading]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </Menu.Item>
+                      ))}
+                      {[...hiddenCandidateDictionaries].map(([id, title]) => (
+                        <Menu.Item
+                          key={`more:${id}`}
+                          closeMenuOnClick={false}
+                          leftSection={
+                            expandedDictionaries.includes(id) ? (
+                              <ChevronUp size={14} aria-hidden="true" />
+                            ) : (
+                              <ChevronDown size={14} aria-hidden="true" />
+                            )
+                          }
+                          onClick={() => toggleDictionary(id)}
+                        >
+                          {t(
+                            expandedDictionaries.includes(id)
+                              ? "show_less"
+                              : "show_more",
+                          )}
+                          : {title}
+                        </Menu.Item>
+                      ))}
+                    </Menu.Dropdown>
+                  </Menu>
+                )}
+              </Group>
+              {word.reading && (
+                <Text component="span" inherit c="dimmed">
+                  {word.reading}
+                </Text>
+              )}
+            </Stack>
+            <Group gap={4} align="center">
+              <FrequencyBadge word={word} />
+              <AudioButton word={word} settings={settings} onError={setError} />
+              <ActionIcon
+                title={t("add_custom_definition")}
+                aria-label={t("add_custom_definition")}
+                onClick={() => {
+                  setEditing("add");
+                  contentRef.current?.scrollTo({ top: 0 });
+                }}
+                disabled={busy}
+                variant="subtle"
+                size="sm"
+              >
+                <Plus aria-hidden="true" size={16} />
+              </ActionIcon>
+              {sentenceButton}
+            </Group>
+          </Group>
+
+          {saved && (
+            <Badge w="fit-content">
+              {t(wordStateLabels[stateOf(saved, settings.matureIntervalDays)])}
+            </Badge>
+          )}
+        </Stack>
+        {translation}
+      </>
+    );
   return (
     <Stack gap={0} h="100dvh" style={{ overflow: "hidden" }}>
       <Stack
@@ -149,172 +343,51 @@ function LookupEntry({
           <ErrorBox error={error} />
           <SrsProgress />
           {!result && !error && <Text c="dimmed">{t("looking_up")}</Text>}
+          {!word && !!result?.words.length && (
+            <Stack gap="xs">
+              <Title order={1}>{term}</Title>
+              <Meanings
+                meanings={result.words.flatMap(
+                  (candidate) => candidate.meanings,
+                )}
+                language={settings.studyLanguage}
+                settings={settings}
+                grammar={result.grammar}
+                expandedDictionaries={expandedDictionaries}
+                onToggleDictionary={toggleDictionary}
+              />
+            </Stack>
+          )}
           {word && (
             <>
-              <Group gap="xs" align="center" justify="space-between">
-                <Stack gap="xs" miw={0} maw="100%">
-                  <Group gap={4} wrap="nowrap">
-                    <HoverCard
-                      disabled={
-                        !result?.grammar &&
-                        folded(surface, word.language) ===
-                          folded(word.lemma, word.language)
-                      }
-                      events={{ hover: true, focus: true, touch: true }}
-                      position="bottom-start"
-                      width={360}
-                      middlewares={{
-                        shift: {
-                          boundary: contentRef.current ?? undefined,
-                          padding: 12,
-                        },
-                        size: {
-                          boundary: contentRef.current ?? undefined,
-                          padding: 12,
-                        },
-                      }}
-                      interactive
-                      role="tooltip"
-                    >
-                      <HoverCard.Target>
-                        <Title
-                          lang={word.language}
-                          order={1}
-                          tabIndex={0}
-                          style={{ minWidth: 0, overflowWrap: "anywhere" }}
-                        >
-                          {word.lemma}
-                        </Title>
-                      </HoverCard.Target>
-                      <HoverCard.Dropdown
-                        data-srs-reader
-                        maw="calc(100vw - 24px)"
-                        mah="65dvh"
-                        style={{
-                          overflowY: "auto",
-                          overflowWrap: "anywhere",
-                          scrollbarGutter: "stable",
-                        }}
-                      >
-                        <Stack gap="xs">
-                          <Text lang={word.language} size="sm" fw={500}>
-                            {surface}
-                          </Text>
-                          {result?.grammar && (
-                            <Grammar grammar={result.grammar} />
-                          )}
-                        </Stack>
-                      </HoverCard.Dropdown>
-                    </HoverCard>
-                    {result!.words.length > 1 && (
-                      <Menu
-                        opened={candidateOpen}
-                        onChange={setCandidateOpen}
-                        position="bottom-end"
-                      >
-                        <Menu.Target>
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            disabled={busy}
-                            aria-label={`${t("choose_word")}: ${word.lemma}`}
-                            title={t("choose_word")}
-                            style={{ flexShrink: 0 }}
-                          >
-                            <ChevronDown aria-hidden="true" size={16} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown
-                          data-srs-reader
-                          maw="calc(100vw - 24px)"
-                          mah="50dvh"
-                          style={{
-                            overflowY: "auto",
-                            scrollbarGutter: "stable",
-                          }}
-                        >
-                          {result!.words.map((candidate) => (
-                            <Menu.Item
-                              key={candidate.id}
-                              leftSection={
-                                candidate.id === word.id ? (
-                                  <Check aria-hidden="true" size={14} />
-                                ) : undefined
-                              }
-                              aria-current={
-                                candidate.id === word.id ? "true" : undefined
-                              }
-                              onClick={() => {
-                                setSelected(candidate.id);
-                                setNotice("");
-                                setLastReview("");
-                              }}
-                              style={{
-                                whiteSpace: "normal",
-                                overflowWrap: "anywhere",
-                              }}
-                            >
-                              {[candidate.lemma, candidate.reading]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </Menu.Item>
-                          ))}
-                        </Menu.Dropdown>
-                      </Menu>
-                    )}
-                  </Group>
-                  {word.reading && (
-                    <Text component="span" inherit c="dimmed">
-                      {word.reading}
-                    </Text>
-                  )}
-                </Stack>
-                <Group gap={4} align="center">
-                  <FrequencyBadge word={word} />
-                  <AudioButton
-                    word={word}
-                    settings={settings}
-                    onError={setError}
-                  />
-                </Group>
-              </Group>
-              <Group gap="xs" align="center" justify="space-between">
-                {saved && (
-                  <Badge>
-                    {t(
-                      wordStateLabels[
-                        stateOf(saved, settings.matureIntervalDays)
-                      ],
-                    )}
-                  </Badge>
-                )}
-                {context && (
-                  <Stack gap={0} ml="auto" style={{ flex: 1, minWidth: 0 }}>
-                    <SentenceTranslation
-                      key={`${context.sentence}:${context.start}`}
-                      context={{
-                        ...context,
-                        translation:
-                          context.translation ||
-                          saved?.contexts.find(
-                            (c) =>
-                              c.sentence === context.sentence &&
-                              c.start === context.start,
-                          )?.translation,
-                      }}
-                      language={word.language}
-                      settings={settings}
-                      wordId={word.id}
-                      label={t("translate_current_sentence")}
-                      collapsed
-                      compact
-                      onTranslated={(translation) =>
-                        onContext({ ...context, translation })
-                      }
-                    />
-                  </Stack>
-                )}
-              </Group>
+              {context ? (
+                <SentenceTranslation
+                  key={`${word.id}:${context.sentence}:${context.start}`}
+                  context={{
+                    ...context,
+                    translation:
+                      context.translation ||
+                      saved?.contexts.find(
+                        (c) =>
+                          c.sentence === context.sentence &&
+                          c.start === context.start,
+                      )?.translation,
+                  }}
+                  language={word.language}
+                  settings={settings}
+                  wordId={word.id}
+                  label={t("translate_current_sentence")}
+                  collapsed
+                  compact
+                  onTranslated={(translation) =>
+                    onContext({ ...context, translation })
+                  }
+                >
+                  {renderHeader}
+                </SentenceTranslation>
+              ) : (
+                renderHeader()
+              )}
               {(word.forms.filter(
                 (form) => !form.startsWith("redirected from "),
               ).length > 0 ||
@@ -348,48 +421,74 @@ function LookupEntry({
                 </Text>
               )}
               <Stack ref={readingRef} gap="xs">
-                {unparsed || editing ? (
+                {unparsed || editing !== null ? (
                   <DefinitionEditor
-                    key={word.id}
-                    word={unparsed ? undefined : word}
+                    key={`${word.id}:${editing}`}
+                    word={result?.words.length ? word : undefined}
                     term={term}
                     context={context}
                     occurrence={page.occurrence}
+                    grammar={result?.grammar}
+                    definitionIndex={
+                      typeof editing === "number" ? editing : undefined
+                    }
                     settings={settings}
                     onSaved={definitionSaved}
                     onError={setError}
-                    onCancel={unparsed ? undefined : () => setEditing(false)}
+                    onCancel={unparsed ? undefined : () => setEditing(null)}
                   />
                 ) : (
                   <Meanings
                     meanings={word.meanings}
                     language={word.language}
                     settings={settings}
+                    grammar={result?.grammar}
+                    expandedDictionaries={expandedDictionaries}
+                    onToggleDictionary={toggleDictionary}
                     onIgnoreTag={(tag) => void ignoreTag(tag)}
-                    actions={
-                      <>
-                        <ActionIcon
-                          title={t("edit_definition")}
-                          aria-label={t("edit_definition")}
-                          disabled={busy}
-                          onClick={() => setEditing(true)}
-                          variant="subtle"
-                        >
-                          <Pencil aria-hidden="true" size={16} />
-                        </ActionIcon>
-                        {hasPersonalDefinition && (
+                    actions={(meaning) =>
+                      meaning.dictionaryId === "personal" && (
+                        <>
+                          <ActionIcon
+                            title={t("edit_definition")}
+                            aria-label={t("edit_definition")}
+                            disabled={busy}
+                            onClick={() => {
+                              setEditing(
+                                word.meanings
+                                  .filter(
+                                    (part) => part.dictionaryId === "personal",
+                                  )
+                                  .indexOf(meaning),
+                              );
+                              contentRef.current?.scrollTo({ top: 0 });
+                            }}
+                            variant="subtle"
+                            size="sm"
+                          >
+                            <Pencil aria-hidden="true" size={16} />
+                          </ActionIcon>
                           <ActionIcon
                             title={t("delete_custom_definition")}
                             aria-label={t("delete_custom_definition")}
                             disabled={busy}
-                            onClick={() => void deleteDefinition()}
+                            onClick={() =>
+                              void deleteDefinition(
+                                word.meanings
+                                  .filter(
+                                    (part) => part.dictionaryId === "personal",
+                                  )
+                                  .indexOf(meaning),
+                              )
+                            }
                             variant="subtle"
+                            size="sm"
                             color="red"
                           >
                             <Trash2 aria-hidden="true" size={16} />
                           </ActionIcon>
-                        )}
-                      </>
+                        </>
+                      )
                     }
                   />
                 )}

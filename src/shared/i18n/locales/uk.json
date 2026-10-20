@@ -494,7 +494,8 @@
       "Style": "Стиль",
       "Emph": "Підсилення",
       "Gender[psor]": "Рід власника",
-      "Number[psor]": "Число власника"
+      "Number[psor]": "Число власника",
+      "UPOS": "Частина мови"
     },
     "pos": {
       "ADJ": "Прикметник",
@@ -815,5 +816,15 @@
   "srs_heatmap_days_one": "{{count}} день",
   "srs_heatmap_days_few": "{{count}} дні",
   "srs_heatmap_days_many": "{{count}} днів",
-  "srs_heatmap_days_other": "{{count}} дня"
+  "srs_heatmap_days_other": "{{count}} дня",
+  "show_more": "Показати більше",
+  "show_less": "Показати менше",
+  "dictionary_grammar_conflict": "{{feature}}: у словнику — {{dictionary}}, а за розбором цього речення — {{parser}}.",
+  "add_custom_definition": "Додати власне визначення",
+  "definition_not_found": "Власне визначення не знайдено.",
+  "definition_senses_hint": "Вводьте кожне значення з нового рядка. Порожні рядки пропускаються.",
+  "definition_preview": "Попередній перегляд",
+  "definition_tags": "Позначки",
+  "no_definition_tags": "Немає доступних позначок",
+  "loading_definition_tags": "Завантаження позначок…"
 }

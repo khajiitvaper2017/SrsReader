@@ -3,6 +3,9 @@ import { notify } from "@/background/events";
 import { clearLookupCache } from "@/dictionaries/lookup";
 import type { LookupWord } from "@/dictionaries/model";
 import { lookup, resolved } from "@/dictionaries/resolve";
+import { dictionaryGrammarTags } from "@/dictionaries/grammar";
+import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
+import { occurrenceAnalysis } from "@/languages/udpipe";
 import { folded } from "@/languages/text";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
@@ -67,10 +70,22 @@ async function execute(request: Request, settings: Settings) {
             meanings: [],
             forms: [],
           };
+      const contextual = await occurrenceAnalysis(
+        request.occurrence,
+        request.term,
+      );
+      const dictionaries = await listDictionaries(settings);
+      const available = await dictionaryTags(
+        dictionaries
+          .filter((dictionary) => dictionary.enabled)
+          .map((dictionary) => dictionary.revisionId),
+      );
       const saved = await definePersonalWord(
         word,
-        request.definition,
-        request.context,
+        request,
+        contextual
+          ? dictionaryGrammarTags(contextual.grammar, available)
+          : undefined,
       );
       await notify(saved.id);
       return saved;

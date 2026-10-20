@@ -1,5 +1,6 @@
 import type { Dictionary, Meaning, LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
+import { folded } from "@/languages/text";
 
 export type DictionaryDisplay = "show" | "fallback" | "hide";
 
@@ -53,6 +54,7 @@ export function displayedWords(
   words: LookupWord[],
   settings: Settings,
   dictionaries: Dictionary[],
+  preferredLemmas: string[] = [],
 ) {
   const merged = new Map<string, LookupWord>();
   for (const word of words) {
@@ -77,10 +79,26 @@ export function displayedWords(
   const order = new Map(
     visible.map((meaning, index) => [meaning.dictionaryId, index]),
   );
-  return words.flatMap((word) => {
-    const meanings = word.meanings
-      .filter((meaning) => order.has(meaning.dictionaryId))
-      .sort((a, b) => order.get(a.dictionaryId)! - order.get(b.dictionaryId)!);
-    return meanings.length ? [{ ...word, meanings }] : [];
-  });
+  const priority = (word: LookupWord) => {
+    const index = preferredLemmas.findIndex(
+      (lemma) =>
+        folded(lemma, word.language) === folded(word.lemma, word.language),
+    );
+    return index < 0 ? preferredLemmas.length : index;
+  };
+  return words
+    .flatMap((word) => {
+      const meanings = preferredLemmas.some(
+        (lemma) =>
+          folded(lemma, word.language) === folded(word.lemma, word.language),
+      )
+        ? displayedMeanings(word.meanings, settings, dictionaries)
+        : word.meanings
+            .filter((meaning) => order.has(meaning.dictionaryId))
+            .sort(
+              (a, b) => order.get(a.dictionaryId)! - order.get(b.dictionaryId)!,
+            );
+      return meanings.length ? [{ ...word, meanings }] : [];
+    })
+    .sort((a, b) => priority(a) - priority(b));
 }

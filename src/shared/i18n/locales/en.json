@@ -486,7 +486,8 @@
       "Style": "Style",
       "Emph": "Emphatic",
       "Gender[psor]": "Possessor gender",
-      "Number[psor]": "Possessor number"
+      "Number[psor]": "Possessor number",
+      "UPOS": "Part of speech"
     },
     "pos": {
       "ADJ": "Adjective",
@@ -772,5 +773,15 @@
   "srs_heatmap_cards_one": "{{count}} card",
   "srs_heatmap_cards_other": "{{count}} cards",
   "srs_heatmap_days_one": "{{count}} day",
-  "srs_heatmap_days_other": "{{count}} days"
+  "srs_heatmap_days_other": "{{count}} days",
+  "show_more": "Show more",
+  "show_less": "Show less",
+  "dictionary_grammar_conflict": "{{feature}}: the dictionary says {{dictionary}}; the parser says {{parser}} in this sentence.",
+  "add_custom_definition": "Add custom definition",
+  "definition_not_found": "Custom definition not found.",
+  "definition_senses_hint": "Use one line for each sense. Blank lines are skipped.",
+  "definition_preview": "Preview",
+  "definition_tags": "Tags",
+  "no_definition_tags": "No tags available",
+  "loading_definition_tags": "Loading tags…"
 }
