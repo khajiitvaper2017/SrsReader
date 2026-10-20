@@ -1,10 +1,12 @@
-import { defineConfig } from "wxt";
-import { resolve } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
-import en from "./src/locales/en.json";
-import uk from "./src/locales/uk.json";
+import { resolve } from "node:path";
+import { defineConfig } from "wxt";
+import en from "./src/shared/i18n/locales/en.json";
+import uk from "./src/shared/i18n/locales/uk.json";
 
 export default defineConfig({
+  srcDir: "src",
+  entrypointsDir: "../entrypoints",
   modules: ["@wxt-dev/module-react"],
   zip: { excludeSources: ["dicts/**", "graft/**"] },
   hooks: {

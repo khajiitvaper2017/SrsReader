@@ -1,0 +1,30 @@
+import { installMorphology } from "@/languages/morphology-data";
+import { setInterfaceLanguage } from "@/shared/i18n/i18n";
+import { installExampleCorpus } from "@/vocabulary/examples/example-corpus";
+
+self.onmessage = async (
+  event: MessageEvent<{
+    locale: string;
+    type: "examples" | "morphology";
+    language: string;
+    blob?: Blob;
+  }>,
+) => {
+  await setInterfaceLanguage(event.data.locale);
+  try {
+    const progress = (value: unknown) => self.postMessage({ progress: value });
+    const count =
+      event.data.type === "morphology"
+        ? await installMorphology(event.data.language, progress)
+        : await installExampleCorpus(
+            event.data.language,
+            event.data.blob,
+            progress,
+          );
+    self.postMessage({ count });
+  } catch (error) {
+    self.postMessage({
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
