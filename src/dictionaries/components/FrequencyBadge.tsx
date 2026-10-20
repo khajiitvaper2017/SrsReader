@@ -1,9 +1,9 @@
+import { Badge, Group, Popover, Stack, Text } from "@mantine/core";
 import { harmonicRank, wordFrequencies } from "@/dictionaries/frequency";
 import type { LookupWord } from "@/dictionaries/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { number, t } from "@/shared/i18n/i18n";
 import { useCallback, useEffect, useState } from "react";
-
 export function FrequencyBadge({ word }: { word: LookupWord }) {
   const [rows, setRows] = useState<Awaited<ReturnType<typeof wordFrequencies>>>(
     [],
@@ -28,25 +28,42 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
     .map((row) => `${row.title}: ${number(row.rank)}`)
     .join("\n");
   return (
-    <details className="frequency-badge" data-srs-reader>
-      <summary
-        title={`${rows.length > 1 ? t("combined_rank_harmonic_mean") : ""}${details}`}
+    <Popover
+      withinPortal
+      position="bottom-end"
+      middlewares={{ flip: true, shift: { padding: 4 } }}
+    >
+      <Popover.Target>
+        <Badge
+          component="button"
+          type="button"
+          style={{ cursor: "pointer" }}
+          data-srs-reader
+          title={`${rows.length > 1 ? t("combined_rank_harmonic_mean") : ""}${details}`}
+        >
+          {number(rank)}
+        </Badge>
+      </Popover.Target>
+      <Popover.Dropdown
+        data-srs-reader
+        maw="calc(100vw - 8px)"
+        mah="calc(100dvh - 8px)"
+        style={{ overflowY: "auto" }}
       >
-        {number(rank)}
-      </summary>
-      <div className="frequency-ranks">
-        {rows.map((row) => (
-          <div key={row.title}>
-            <span title={row.title}>{row.title}</span>
-            <strong>{number(row.rank)}</strong>
-          </div>
-        ))}
-        {rows.length > 1 && (
-          <small className="muted">
-            {t("combined_using_the_harmonic_mean")}
-          </small>
-        )}
-      </div>
-    </details>
+        <Stack gap="xs">
+          {rows.map((row) => (
+            <Group key={row.title} gap="xs" justify="space-between">
+              <span title={row.title}>{row.title}</span>
+              <strong>{number(row.rank)}</strong>
+            </Group>
+          ))}
+          {rows.length > 1 && (
+            <Text component="small" size="xs" c="dimmed" display="block">
+              {t("combined_using_the_harmonic_mean")}
+            </Text>
+          )}
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
   );
 }

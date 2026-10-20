@@ -1,13 +1,12 @@
+import { Loader, Button, Stack, Text } from "@mantine/core";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { translateSentence } from "@/translation/translate";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { ReadingContext } from "@/vocabulary/model";
-import { Languages, LoaderCircle } from "lucide-react";
+import { Languages } from "lucide-react";
 import { useEffect, useState } from "react";
-
 type Translation = NonNullable<ReadingContext["translation"]>;
-
 export function TextTranslation({
   text,
   language,
@@ -64,42 +63,40 @@ export function TextTranslation({
     }
   }
   return (
-    <div
-      className={`sentence-translation ${compact ? "compact" : ""}`}
-      data-srs-reader=""
-    >
+    <Stack data-srs-reader="" gap="xs">
       {shown && translation && (
-        <p lang={translation.language} dir="auto">
+        <Text lang={translation.language} dir="auto">
           {translation.text}
-        </p>
+        </Text>
       )}
       {(!shown ||
         !translation ||
         translation.language !== settings.nativeLanguage) && (
-        <button
-          className={compact ? "quiet icon-button" : "link"}
+        <Button
           title={busy ? status || t("translating") : label}
           aria-label={busy ? status || t("translating") : label}
           disabled={busy}
           onClick={() => void translate()}
+          variant="subtle"
+          size="compact-xs"
+          w={compact ? 28 : undefined}
         >
           {busy ? (
-            <LoaderCircle className="spin" aria-hidden="true" />
+            <Loader size={14} aria-hidden="true" />
           ) : (
-            <Languages aria-hidden="true" />
+            <Languages aria-hidden="true" size={16} />
           )}
           {!compact && (busy ? status || t("translating") : label)}
-        </button>
+        </Button>
       )}
       {error && (
-        <p className="translation-error" role="alert">
+        <Text role="alert" c="red">
           {error}
-        </p>
+        </Text>
       )}
-    </div>
+    </Stack>
   );
 }
-
 export function SentenceTranslation({
   context,
   language,

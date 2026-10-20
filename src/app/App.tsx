@@ -1,3 +1,11 @@
+import {
+  AppShell,
+  Anchor,
+  Badge,
+  Button,
+  Container,
+  Group,
+} from "@mantine/core";
 import { ReviewPage } from "@/app/pages/ReviewPage";
 import { SettingsPage } from "@/app/pages/SettingsPage";
 import { WordsPage } from "@/app/pages/WordsPage";
@@ -14,9 +22,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
-
 const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
-
 export function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
   const [settings, setSettings, ready] = useSettings();
@@ -43,52 +49,58 @@ export function App() {
   const setup = inSetup && !docs;
   if (!ready) return null;
   return (
-    <div
-      className={`app-shell ${settings.hideDictionarySources ? "hide-dictionary-sources" : ""}`}
-    >
-      <main className="app-main">
-        <header className="app-header">
-          <a href="#review" className="brand-link">
-            <Logo small />
-          </a>
-          <nav aria-label={t("pages")}>
-            {(inSetup
-              ? [
-                  ["setup", t("setup")],
-                  ["docs", t("docs")],
-                ]
-              : [
-                  ["review", t("review")],
-                  ["words", t("words")],
-                  ["settings", t("settings")],
-                  ["docs", t("docs")],
-                ]
-            ).map(([id, label]) => (
-              <a
-                className={page.split("/")[0] === id ? "active" : ""}
-                href={`#${id}`}
-                key={id}
-              >
-                {id === "review" ? (
-                  <BookOpen aria-hidden="true" />
-                ) : id === "words" ? (
-                  <BookMarked aria-hidden="true" />
-                ) : id === "settings" ? (
-                  <SettingsIcon aria-hidden="true" />
-                ) : id === "docs" ? (
-                  <BookOpen aria-hidden="true" />
-                ) : (
-                  <SlidersHorizontal aria-hidden="true" />
-                )}
-                {label}
-                {id === "review" && stats.due > 0 && (
-                  <span className="nav-count">{stats.due}</span>
-                )}
-              </a>
-            ))}
-          </nav>
-        </header>
-        <div className="page-content">
+    <AppShell header={{ height: { base: 100, sm: 58 } }} padding="md">
+      <AppShell.Header>
+        <Container size="lg" h="100%">
+          <Group h="100%" justify="space-between" gap="xs">
+            <Anchor href="#review" underline="never" c="inherit">
+              <Logo small />
+            </Anchor>
+            <Group component="nav" aria-label={t("pages")} gap={4}>
+              {(inSetup
+                ? [
+                    ["setup", t("setup")],
+                    ["docs", t("docs")],
+                  ]
+                : [
+                    ["review", t("review")],
+                    ["words", t("words")],
+                    ["settings", t("settings")],
+                    ["docs", t("docs")],
+                  ]
+              ).map(([id, label]) => (
+                <Button
+                  component="a"
+                  key={id}
+                  href={`#${id}`}
+                  variant={page.split("/")[0] === id ? "light" : "subtle"}
+                  aria-current={page.split("/")[0] === id ? "page" : undefined}
+                  leftSection={
+                    id === "review" || id === "docs" ? (
+                      <BookOpen size={16} />
+                    ) : id === "words" ? (
+                      <BookMarked size={16} />
+                    ) : id === "settings" ? (
+                      <SettingsIcon size={16} />
+                    ) : (
+                      <SlidersHorizontal size={16} />
+                    )
+                  }
+                  rightSection={
+                    id === "review" && stats.due > 0 ? (
+                      <Badge>{stats.due}</Badge>
+                    ) : undefined
+                  }
+                >
+                  {label}
+                </Button>
+              ))}
+            </Group>
+          </Group>
+        </Container>
+      </AppShell.Header>
+      <AppShell.Main>
+        <Container size={page === "review" ? "sm" : "lg"} px={0}>
           {docs ? (
             <React.Suspense fallback={null}>
               <DocsPage topic={page.split("/")[1] || "getting-started"} />
@@ -102,8 +114,8 @@ export function App() {
           ) : (
             <ReviewPage settings={settings} stats={stats} />
           )}
-        </div>
-      </main>
-    </div>
+        </Container>
+      </AppShell.Main>
+    </AppShell>
   );
 }

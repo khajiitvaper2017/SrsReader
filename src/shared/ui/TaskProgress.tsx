@@ -1,6 +1,6 @@
+import { Group, Progress, Stack, Text } from "@mantine/core";
 import type { ImportProgress } from "@/shared/download";
 import { downloadSize, number } from "@/shared/i18n/i18n";
-
 export function TaskProgress({ progress }: { progress: ImportProgress }) {
   const { phase, done, total, unit } = progress;
   const percent = total ? Math.min(100, (done / total) * 100) : undefined;
@@ -13,28 +13,30 @@ export function TaskProgress({ progress }: { progress: ImportProgress }) {
           ? number(done)
           : "";
   return (
-    <div className="task-progress">
-      <div className="task-progress-label">
-        <span>{phase}</span>
-        <span>
+    <Stack gap={4}>
+      <Group justify="space-between" gap="xs">
+        <Text size="xs">{phase}</Text>
+        <Text size="xs" c="dimmed">
           {detail}
           {percent !== undefined &&
             ` · ${number(percent / 100, { style: "percent", maximumFractionDigits: 0 })}`}
-        </span>
-      </div>
-      <div
-        className={`task-progress-track ${percent === undefined ? "indeterminate" : ""}`}
+        </Text>
+      </Group>
+      <Progress.Root
         role="progressbar"
         aria-label={phase}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
         aria-valuetext={detail || undefined}
+        size="sm"
       >
-        <span
-          style={percent === undefined ? undefined : { width: `${percent}%` }}
+        <Progress.Section
+          value={percent ?? 100}
+          animated={percent === undefined}
+          withAria={false}
         />
-      </div>
-    </div>
+      </Progress.Root>
+    </Stack>
   );
 }

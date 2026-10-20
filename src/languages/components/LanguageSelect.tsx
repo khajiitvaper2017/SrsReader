@@ -1,7 +1,6 @@
+import { NativeSelect } from "@mantine/core";
 import { languageName, supportedLanguages } from "@/languages/codes";
 import { i18n, t } from "@/shared/i18n/i18n";
-import { Select, SelectOption } from "@/shared/ui/Select";
-
 export function LanguageSelect({
   value,
   label,
@@ -10,26 +9,31 @@ export function LanguageSelect({
   value: string;
   label: string;
   onChange: (language: string) => void;
+  w?: number;
+  maw?: string;
 }) {
   return (
-    <Select
+    <NativeSelect
       aria-label={label}
       value={value}
-      onValueChange={(value) => onChange(value)}
+      onChange={(event) => {
+        const value = event.currentTarget.value;
+        return onChange(value);
+      }}
     >
-      <SelectOption value="" disabled>
+      <option value="" disabled>
         {t("choose_a_language")}{" "}
-      </SelectOption>
+      </option>
       {[...supportedLanguages]
         .filter((language) => languageName(language) !== language)
         .sort((a, b) =>
           languageName(a).localeCompare(languageName(b), i18n.resolvedLanguage),
         )
         .map((language) => (
-          <SelectOption key={language} value={language}>
+          <option key={language} value={language}>
             {languageName(language)}
-          </SelectOption>
+          </option>
         ))}
-    </Select>
+    </NativeSelect>
   );
 }

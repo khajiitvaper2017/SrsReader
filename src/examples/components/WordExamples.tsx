@@ -1,3 +1,4 @@
+import { ActionIcon, Anchor, Group, Stack, Text } from "@mantine/core";
 import type { LookupWord } from "@/dictionaries/model";
 import { examplesClient } from "@/examples/client";
 import type { Example } from "@/examples/model";
@@ -8,7 +9,6 @@ import { Sentence } from "@/vocabulary/components/Sentence";
 import { ChevronRight, Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
-
 export function WordExamples({
   word,
   settings,
@@ -45,27 +45,27 @@ export function WordExamples({
   const example = examples[index];
   if (error)
     return (
-      <p className="translation-error" role="alert">
+      <Text role="alert" c="red">
         {error}
-      </p>
+      </Text>
     );
   if (!example)
     return installed ? null : (
-      <a
-        className="example-download"
+      <Anchor
         data-srs-reader=""
         href={browser.runtime.getURL("/app.html") + "#settings"}
         target="_blank"
         rel="noopener noreferrer"
       >
-        <Download aria-hidden="true" /> {t("download_example_sentences")}
-      </a>
+        <Download aria-hidden="true" size={16} />{" "}
+        {t("download_example_sentences")}
+      </Anchor>
     );
   return (
-    <div
-      className="word-examples"
+    <Stack
       data-reading-source-url={example.context.url}
       data-reading-source-title={example.context.title}
+      gap="xs"
     >
       <Sentence context={example.context} language={word.language} />
       <SentenceTranslation
@@ -76,25 +76,32 @@ export function WordExamples({
         settings={settings}
       />
       {examples.length > 1 && (
-        <button
+        <ActionIcon
           title={t("another_example")}
           aria-label={t("another_example")}
-          className="quiet icon-button example-next"
           onClick={() => setIndex((index + 1) % examples.length)}
+          variant="subtle"
         >
-          <ChevronRight aria-hidden="true" />
-        </button>
+          <ChevronRight aria-hidden="true" size={16} />
+        </ActionIcon>
       )}
-      <div className="example-footer" data-srs-reader="">
-        <a
-          href={example.context.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="CC BY 2.0 FR"
+      {!settings.hideDictionarySources && (
+        <Group
+          data-srs-reader=""
+          gap="xs"
+          align="center"
+          justify="space-between"
         >
-          Tatoeba · {example.author}
-        </a>
-      </div>
-    </div>
+          <Anchor
+            href={example.context.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="CC BY 2.0 FR"
+          >
+            Tatoeba · {example.author}
+          </Anchor>
+        </Group>
+      )}
+    </Stack>
   );
 }

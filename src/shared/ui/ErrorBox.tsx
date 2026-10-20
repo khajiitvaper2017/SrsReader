@@ -1,7 +1,8 @@
+import { Alert } from "@mantine/core";
 export function ErrorBox({ error }: { error: string }) {
   return error ? (
-    <div className="notice error" role="alert">
+    <Alert color="red" role="alert" mb="xs">
       {error}
-    </div>
+    </Alert>
   ) : null;
 }

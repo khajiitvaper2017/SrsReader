@@ -1,6 +1,6 @@
+import { Text } from "@mantine/core";
 import { useDictionaryImage } from "@/dictionaries/hooks/useDictionaryImage";
 import { t } from "@/shared/i18n/i18n";
-
 export function ImageContent({
   path,
   dictionaryId,
@@ -21,7 +21,6 @@ export function ImageContent({
     width,
     height,
   });
-
   return url ? (
     <img
       src={url}
@@ -31,6 +30,8 @@ export function ImageContent({
       loading="lazy"
     />
   ) : (
-    <span className="muted">{alt || t("image_unavailable")}</span>
+    <Text component="span" inherit c="dimmed">
+      {alt || t("image_unavailable")}
+    </Text>
   );
 }

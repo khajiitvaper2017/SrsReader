@@ -1,14 +1,21 @@
 import {
+  ActionIcon,
+  Button,
+  Checkbox,
+  Group,
+  NativeSelect,
+  Stack,
+  Text,
+} from "@mantine/core";
+import {
   bindingKey,
   bindingLabel,
   lookupPresets,
   type LookupBinding,
 } from "@/reader/controls";
 import { t } from "@/shared/i18n/i18n";
-import { Select, SelectOption } from "@/shared/ui/Select";
 import { Keyboard, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-
 export function LookupControls({
   value,
   onChange,
@@ -90,34 +97,32 @@ export function LookupControls({
       ),
   );
   return (
-    <div className="lookup-controls">
-      <div className="binding-presets">
+    <Stack gap="xs">
+      <Group gap="xs" align="center">
         {lookupPresets.map((binding) => {
           const key = bindingKey(binding);
           const selected = value.some((b) => bindingKey(b) === key);
           return (
-            <label key={key}>
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={() =>
-                  onChange(
-                    selected
-                      ? value.filter((b) => bindingKey(b) !== key)
-                      : [...value, binding],
-                  )
-                }
-              />
-              {bindingLabel(binding)}
-            </label>
+            <Checkbox
+              checked={selected}
+              onChange={() =>
+                onChange(
+                  selected
+                    ? value.filter((b) => bindingKey(b) !== key)
+                    : [...value, binding],
+                )
+              }
+              aria-label={bindingLabel(binding)}
+              label={bindingLabel(binding)}
+              key={key}
+            />
           );
         })}
-      </div>
+      </Group>
       {custom.map((binding) => (
-        <div className="binding-row" key={bindingKey(binding)}>
+        <Group key={bindingKey(binding)} gap="xs" align="center">
           <span>{bindingLabel(binding)}</span>
-          <button
-            className="quiet icon-button"
+          <ActionIcon
             title={t("remove_2", { value1: bindingLabel(binding) })}
             aria-label={t("remove_2", { value1: bindingLabel(binding) })}
             onClick={() =>
@@ -125,45 +130,53 @@ export function LookupControls({
                 value.filter((b) => bindingKey(b) !== bindingKey(binding)),
               )
             }
+            variant="subtle"
           >
-            <Trash2 aria-hidden="true" />
-          </button>
-        </div>
+            <Trash2 aria-hidden="true" size={16} />
+          </ActionIcon>
+        </Group>
       ))}
-      <div className="binding-recorder">
-        <Select
+      <Group gap="xs" align="center">
+        <NativeSelect
           aria-label={t("custom_binding_type")}
           value={type}
           disabled={recording}
-          onValueChange={(value) => setType(value as typeof type)}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            return setType(value as typeof type);
+          }}
         >
-          <SelectOption value="mouse">{t("mouse_button")}</SelectOption>
-          <SelectOption value="key">{t("keyboard_shortcut")}</SelectOption>
-          <SelectOption value="hover">{t("hold_key_hover")}</SelectOption>
-        </Select>
-        <button disabled={recording} onClick={() => setRecording(true)}>
-          <Keyboard aria-hidden="true" /> {t("record_binding")}
-        </button>
+          <option value="mouse">{t("mouse_button")}</option>
+          <option value="key">{t("keyboard_shortcut")}</option>
+          <option value="hover">{t("hold_key_hover")}</option>
+        </NativeSelect>
+        <Button
+          disabled={recording}
+          onClick={() => setRecording(true)}
+          variant="default"
+        >
+          <Keyboard aria-hidden="true" size={16} /> {t("record_binding")}
+        </Button>
         {recording && (
-          <button
+          <ActionIcon
             title={t("cancel")}
             aria-label={t("cancel")}
-            className="quiet icon-button"
             data-binding-cancel
             onClick={() => setRecording(false)}
+            variant="subtle"
           >
-            <X aria-hidden="true" />
-          </button>
+            <X aria-hidden="true" size={16} />
+          </ActionIcon>
         )}
-      </div>
+      </Group>
       {recording && (
-        <p role="status" className="binding-status">
+        <Text role="status">
           {type === "mouse"
             ? t("press_a_mouse_button")
             : t("press_a_key_or_key_combination")}{" "}
           {t("escape_cancels")}{" "}
-        </p>
+        </Text>
       )}
-    </div>
+    </Stack>
   );
 }

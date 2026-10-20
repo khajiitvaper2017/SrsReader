@@ -1,3 +1,4 @@
+import { Stack, ActionIcon, Button, Group, Switch, Text } from "@mantine/core";
 import { dictionariesClient } from "@/dictionaries/client";
 import { settingsClient } from "@/settings/client";
 import { useSettings } from "@/settings/hooks/useSettings";
@@ -15,9 +16,8 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
-
 export function Popup() {
-  const [settings, setSettings] = useSettings();
+  const [settings, setSettings, ready] = useSettings();
   const [host, setHost] = useState("");
   const [stats, setStats] = useState({ total: 0, due: 0, known: 0, today: 0 });
   const [error, setError] = useState("");
@@ -67,69 +67,64 @@ export function Popup() {
       setError((error as Error).message);
     }
   }
+  if (!ready) return null;
   return (
-    <div className="toolbar-shell">
-      <header className="row between">
+    <Stack gap="md" p="md" w={340} maw="100vw">
+      <Group gap="xs" align="center" justify="space-between" component="header">
         <Logo small />
-      </header>
+      </Group>
       <ErrorBox error={error} />
       {!settings.setupComplete ? (
-        <button
-          className="primary toolbar-review"
-          onClick={() => open("setup")}
-        >
-          <SlidersHorizontal aria-hidden="true" /> {t("setup")}{" "}
-        </button>
+        <Button onClick={() => open("setup")} variant="filled">
+          <SlidersHorizontal aria-hidden="true" size={16} /> {t("setup")}{" "}
+        </Button>
       ) : !dictionaryCount ? (
-        <div className="toolbar-setup">
-          <p>{t("no_dictionary_installed")}</p>
-          <button className="primary" onClick={() => open("settings")}>
-            <Upload aria-hidden="true" /> {t("import_dictionary")}{" "}
-          </button>
-        </div>
+        <Group gap="xs" align="center">
+          <Text>{t("no_dictionary_installed")}</Text>
+          <Button onClick={() => open("settings")} variant="filled">
+            <Upload aria-hidden="true" size={16} />{" "}
+            {t("import_dictionary")}{" "}
+          </Button>
+        </Group>
       ) : (
-        <button
-          className="primary toolbar-review"
-          onClick={() => open("review")}
-        >
-          <BookOpen aria-hidden="true" /> {t("review")} <span>{stats.due}</span>
-        </button>
+        <Button onClick={() => open("review")} variant="filled">
+          <BookOpen aria-hidden="true" size={16} /> {t("review")}{" "}
+          <span>{stats.due}</span>
+        </Button>
       )}
-      <div className="toolbar-controls">
-        <label className="toggle-row">
-          <span>{t("parse_websites")}</span>
-          <input
-            type="checkbox"
-            role="switch"
-            checked={!settings.paused}
-            onChange={() => void toggle(false)}
-          />
-        </label>
+      <Group gap="xs" align="center">
+        <Switch
+          aria-label={t("parse_websites")}
+          checked={!settings.paused}
+          onChange={() => void toggle(false)}
+          label={<span>{t("parse_websites")}</span>}
+        />
         {host && (
-          <label className="toggle-row">
-            <span className="truncate">{t("enabled_on_host", { host })}</span>
-            <input
-              type="checkbox"
-              role="switch"
-              checked={!settings.disabledHosts.includes(host)}
-              onChange={() => void toggle(true)}
-            />
-          </label>
+          <Switch
+            aria-label={t("enabled_on_host", { host })}
+            checked={!settings.disabledHosts.includes(host)}
+            onChange={() => void toggle(true)}
+            label={
+              <Text component="span" inherit>
+                {t("enabled_on_host", { host })}
+              </Text>
+            }
+          />
         )}
-      </div>
-      <footer className="row between">
-        <button className="quiet" onClick={() => open("words")}>
-          <BookMarked aria-hidden="true" /> {t("words")}{" "}
-        </button>
-        <button
+      </Group>
+      <Group gap="xs" align="center" justify="space-between" component="footer">
+        <Button onClick={() => open("words")} variant="subtle">
+          <BookMarked aria-hidden="true" size={16} /> {t("words")}{" "}
+        </Button>
+        <ActionIcon
           title={t("settings")}
           aria-label={t("settings")}
-          className="quiet icon-button"
           onClick={() => open("settings")}
+          variant="subtle"
         >
-          <Settings aria-hidden="true" />
-        </button>
-      </footer>
-    </div>
+          <Settings aria-hidden="true" size={16} />
+        </ActionIcon>
+      </Group>
+    </Stack>
   );
 }

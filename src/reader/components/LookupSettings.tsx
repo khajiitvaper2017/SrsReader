@@ -1,7 +1,15 @@
+import {
+  Accordion,
+  Checkbox,
+  Fieldset,
+  Paper,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { LookupControls } from "@/reader/components/LookupControls";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-
 export function LookupSettings({
   settings,
   onChange: update,
@@ -10,68 +18,73 @@ export function LookupSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
 }) {
   return (
-    <section className="settings-section" id="controls">
-      <div className="section-heading">
-        <h2>{t("lookup_controls")}</h2>
-      </div>
-      <LookupControls
-        value={settings.lookupBindings}
-        onChange={(lookupBindings) => void update({ lookupBindings })}
-      />
-      <details className="input-prevention">
-        <summary>{t("input_action_prevention")}</summary>
-        <p className="muted">
-          {t("active_only_for_matching_mouse_lookup_bindings_block")}{" "}
-        </p>
-        <div className="prevention-groups">
-          {(
-            [
-              ["preventMiddleMouse", t("middle_mouse_button")],
-              ["preventBackForward", t("back_forward_mouse_buttons")],
-            ] as const
-          ).map(([key, label]) => (
-            <fieldset
-              key={key}
-              disabled={
-                !settings.lookupBindings.some(
-                  (binding) =>
-                    binding.type === "mouse" &&
-                    (key === "preventMiddleMouse"
-                      ? binding.button === 1
-                      : binding.button === 3 || binding.button === 4),
-                )
-              }
-            >
-              <legend>{label}</legend>
-              {(
-                [
-                  ["textHover", t("text_hover")],
-                  ["webpages", t("webpages")],
-                  ["popups", t("lookup_popups")],
-                  ["extensionPages", t("extension_pages")],
-                  ["searchFields", t("search_fields")],
-                ] as const
-              ).map(([scope, name]) => (
-                <label key={scope}>
-                  <input
-                    type="checkbox"
-                    checked={settings[key][scope]}
-                    onChange={(event) =>
-                      void update({
-                        [key]: {
-                          ...settings[key],
-                          [scope]: event.target.checked,
-                        },
-                      })
+    <Paper id="controls" mb="md">
+      <Stack gap="md">
+        <Title order={2}>{t("lookup_controls")}</Title>
+        <LookupControls
+          value={settings.lookupBindings}
+          onChange={(lookupBindings) => void update({ lookupBindings })}
+        />
+        <Accordion>
+          <Accordion.Item value="settings">
+            <Accordion.Control>
+              {t("input_action_prevention")}
+            </Accordion.Control>
+            <Accordion.Panel>
+              <Text c="dimmed">
+                {t("active_only_for_matching_mouse_lookup_bindings_block")}{" "}
+              </Text>
+              <Stack gap="xs">
+                {(
+                  [
+                    ["preventMiddleMouse", t("middle_mouse_button")],
+                    ["preventBackForward", t("back_forward_mouse_buttons")],
+                  ] as const
+                ).map(([key, label]) => (
+                  <Fieldset
+                    key={key}
+                    disabled={
+                      !settings.lookupBindings.some(
+                        (binding) =>
+                          binding.type === "mouse" &&
+                          (key === "preventMiddleMouse"
+                            ? binding.button === 1
+                            : binding.button === 3 || binding.button === 4),
+                      )
                     }
-                  />
-                  {name}
-                </label>
-              ))}
-            </fieldset>
-          ))}
-        </div>
-      </details>
-    </section>
+                    legend={label}
+                  >
+                    {(
+                      [
+                        ["textHover", t("text_hover")],
+                        ["webpages", t("webpages")],
+                        ["popups", t("lookup_popups")],
+                        ["extensionPages", t("extension_pages")],
+                        ["searchFields", t("search_fields")],
+                      ] as const
+                    ).map(([scope, name]) => (
+                      <Checkbox
+                        checked={settings[key][scope]}
+                        onChange={(event) =>
+                          void update({
+                            [key]: {
+                              ...settings[key],
+                              [scope]: event.target.checked,
+                            },
+                          })
+                        }
+                        aria-label={name}
+                        label={name}
+                        key={scope}
+                      />
+                    ))}
+                  </Fieldset>
+                ))}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
+      </Stack>
+    </Paper>
   );
 }

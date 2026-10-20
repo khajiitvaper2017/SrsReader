@@ -1,9 +1,17 @@
+import {
+  Accordion,
+  Badge,
+  Checkbox,
+  Group,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { useDictionaryTags } from "@/dictionaries/hooks/useDictionaryTags";
 import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
-
 export function DictionaryTags({
   dictionaries,
   settings,
@@ -18,45 +26,50 @@ export function DictionaryTags({
     settings,
     onChange,
   });
-
   return (
-    <details className="dictionary-tags">
-      <summary>{t("dictionary_tags")}</summary>
-      <p className="setting-footnote">{t("dictionary_tags_help")}</p>
-      <ErrorBox error={error} />
-      <input
-        type="search"
-        aria-label={t("search_dictionary_tags")}
-        placeholder={t("search_dictionary_tags")}
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-      />
-      <div className="dictionary-tag-list">
-        {entries.map(({ name, description }) => (
-          <label className="dictionary-tag-row" key={name}>
-            <input
-              type="checkbox"
-              checked={settings.ignoredTags.includes(name)}
-              onChange={(event) =>
-                onChange({
-                  ignoredTags: event.target.checked
-                    ? [...settings.ignoredTags, name]
-                    : settings.ignoredTags.filter((tag) => tag !== name),
-                })
-              }
-            />
-            <span className="tag" title={description}>
-              {name}
-            </span>
-            <span className="muted">
-              {description !== name ? description : ""}
-            </span>
-          </label>
-        ))}
-        {!entries.length && (
-          <p className="setting-footnote">{t("no_matching_tags")}</p>
-        )}
-      </div>
-    </details>
+    <Accordion>
+      <Accordion.Item value="settings">
+        <Accordion.Control>{t("dictionary_tags")}</Accordion.Control>
+        <Accordion.Panel>
+          <Text c="dimmed" fz="xs">
+            {t("dictionary_tags_help")}
+          </Text>
+          <ErrorBox error={error} />
+          <TextInput
+            type="search"
+            aria-label={t("search_dictionary_tags")}
+            placeholder={t("search_dictionary_tags")}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <Stack gap="xs" mah={240} style={{ overflowY: "auto" }}>
+            {entries.map(({ name, description }) => (
+              <Group key={name} gap="xs" justify="space-between" align="center">
+                <Checkbox
+                  aria-label={name}
+                  checked={settings.ignoredTags.includes(name)}
+                  onChange={(event) =>
+                    onChange({
+                      ignoredTags: event.target.checked
+                        ? [...settings.ignoredTags, name]
+                        : settings.ignoredTags.filter((tag) => tag !== name),
+                    })
+                  }
+                />
+                <Badge title={description}>{name}</Badge>
+                <Text component="span" inherit c="dimmed">
+                  {description !== name ? description : ""}
+                </Text>
+              </Group>
+            ))}
+            {!entries.length && (
+              <Text c="dimmed" fz="xs">
+                {t("no_matching_tags")}
+              </Text>
+            )}
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    </Accordion>
   );
 }

@@ -1,3 +1,12 @@
+import {
+  Anchor,
+  Button,
+  Group,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Title,
+} from "@mantine/core";
 import { AudioSettings } from "@/audio/components/AudioSettings";
 import { BackupSettings } from "@/backups/components/BackupSettings";
 import { dictionariesClient } from "@/dictionaries/client";
@@ -20,7 +29,6 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { ReviewSettings } from "@/srs/components/ReviewSettings";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-
 export function SettingsPage({
   settings,
   setSettings,
@@ -66,7 +74,6 @@ export function SettingsPage({
         !(await examplesClient({ action: "exampleCorpus" })).installed
       )
         await languageData.install("examples");
-
       setSettings(
         await settingsClient({
           action: "setSettings",
@@ -83,13 +90,13 @@ export function SettingsPage({
   }
   return (
     <>
-      {setup && <h1 className="setup-title">{t("setup")}</h1>}
+      {setup && <Title order={1}>{t("setup")}</Title>}
       <LanguageSettings settings={settings} onChange={update} setup={setup} />
       <ErrorBox error={error} />
       {notice && (
-        <div className="notice success" role="status">
+        <Stack role="status" gap="xs">
           {notice}
-        </div>
+        </Stack>
       )}
       <LanguageDataSettings
         settings={settings}
@@ -106,9 +113,8 @@ export function SettingsPage({
       />
       <LookupSettings settings={settings} onChange={update} />
       {setup ? (
-        <div className="setup-footer">
-          <button
-            className="primary"
+        <Group gap="xs" align="center" justify="space-between">
+          <Button
             disabled={
               busy ||
               !settings.lookupBindings.length ||
@@ -120,13 +126,14 @@ export function SettingsPage({
               )
             }
             onClick={() => void finishSetup()}
+            variant="filled"
           >
-            <Check aria-hidden="true" /> {t("finish_setup")}{" "}
-          </button>
-        </div>
+            <Check aria-hidden="true" size={16} /> {t("finish_setup")}{" "}
+          </Button>
+        </Group>
       ) : (
         <>
-          <div className="settings-columns">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <ReadingSettings
               settings={settings}
               onChange={update}
@@ -138,20 +145,18 @@ export function SettingsPage({
               dictionaries={dictionaries}
               onError={setError}
             />
-          </div>
-          <section className="settings-section">
-            <div className="section-heading">
-              <h2>{t("translation")}</h2>
-            </div>
-            <div className="setting-footnote">
-              {t("translation_stays_on_your_device_models_download_on")}{" "}
-            </div>
-          </section>
+          </SimpleGrid>
+          <Paper mb="md">
+            <Stack gap="md">
+              <Title order={2}>{t("translation")}</Title>
+              <Stack gap="xs" c="dimmed" fz="xs">
+                {t("translation_stays_on_your_device_models_download_on")}{" "}
+              </Stack>
+            </Stack>
+          </Paper>
           <AudioSettings settings={settings} onChange={update} />
           <BackupSettings setSettings={setSettings} tasks={tasks} />
-          <a className="setup-link" href="#setup">
-            {t("open_setup")}{" "}
-          </a>
+          <Anchor href="#setup">{t("open_setup")} </Anchor>
         </>
       )}
     </>

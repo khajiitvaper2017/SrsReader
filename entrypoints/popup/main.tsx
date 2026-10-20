@@ -1,5 +1,11 @@
 import { Popup } from "@/app/pages/PopupPage";
-import "@/shared/styles/styles.css";
+import "@mantine/core/styles.css";
+import "@/shared/styles/content.css";
+import { UIProvider } from "@/shared/ui/UIProvider";
 import { createRoot } from "react-dom/client";
 
-createRoot(document.getElementById("root")!).render(<Popup />);
+createRoot(document.getElementById("root")!).render(
+  <UIProvider scope="extensionPages">
+    <Popup />
+  </UIProvider>,
+);

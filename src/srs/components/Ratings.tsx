@@ -1,5 +1,5 @@
+import { Button, SimpleGrid, Stack, Text } from "@mantine/core";
 import { number, t } from "@/shared/i18n/i18n";
-
 export function intervalLabel(time: number) {
   const minutes = Math.max(1, Math.round((time - Date.now()) / 60000));
   if (minutes < 60) return t("interval_minutes", { count: minutes });
@@ -12,7 +12,6 @@ export function intervalLabel(time: number) {
         value: number(days / 365, { maximumFractionDigits: 1 }),
       });
 }
-
 export function Ratings({
   times,
   disabled,
@@ -25,21 +24,29 @@ export function Ratings({
   onlyAgainGood: boolean;
 }) {
   return (
-    <div className="ratings">
+    <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing={4}>
       {[t("again"), t("hard"), t("good"), t("easy")].map((label, i) =>
         onlyAgainGood && i !== 0 && i !== 2 ? null : (
-          <button
+          <Button
             key={label}
-            className={`rating rating-${i + 1}`}
             title={times[i] ? intervalLabel(times[i]!) : undefined}
             disabled={disabled}
             onClick={() => onGrade(i + 1)}
+            variant="light"
+            color={["red", "orange", "green", "blue"][i]}
+            px={4}
           >
-            <span>{label}</span>
-            <small>{times[i] ? intervalLabel(times[i]!) : "—"}</small>
-          </button>
+            <Stack gap={0} align="center">
+              <Text span inherit>
+                {label}
+              </Text>
+              <Text span size="xs" c="dimmed">
+                {times[i] ? intervalLabel(times[i]!) : "—"}
+              </Text>
+            </Stack>
+          </Button>
         ),
       )}
-    </div>
+    </SimpleGrid>
   );
 }

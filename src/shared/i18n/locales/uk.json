@@ -438,5 +438,8 @@
   "srs_lapses_other": "{{count}} забування",
   "srs_lapses_few": "{{count}} забування",
   "srs_lapses_many": "{{count}} забувань",
-  "undo_latest_only": "Можна скасувати лише останню відповідь серед усіх вкладок."
+  "undo_latest_only": "Можна скасувати лише останню відповідь серед усіх вкладок.",
+  "color_saturation": "Насиченість і яскравість",
+  "color_hue": "Відтінок",
+  "color_opacity": "Непрозорість"
 }

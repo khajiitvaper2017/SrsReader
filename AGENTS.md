@@ -14,6 +14,7 @@ The project uses Mantine. These standards apply to all UI work.
 - Keep all UI text localized in English and Ukrainian. Allow room for longer translations and narrow screens.
 
 <!-- graft:start -->
+
 ## Graft — repo context graph
 
 This repo is indexed in `graft/`: small linked markdown nodes that explain each

@@ -1,10 +1,19 @@
+import {
+  Button,
+  FileButton,
+  Group,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { exportLearning, exportSettings } from "@/backups/archive";
 import { useBackups } from "@/backups/hooks/useBackups";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { Download, Upload } from "lucide-react";
-
 export function BackupSettings({
   setSettings,
   tasks,
@@ -13,62 +22,72 @@ export function BackupSettings({
   tasks: SettingsTask;
 }) {
   const { busy, task, fileImport } = useBackups({ setSettings, tasks });
-
   return (
-    <section className="settings-section">
-      <div className="section-heading">
-        <div>
-          <h2>{t("import_export")}</h2>
-        </div>
-      </div>
-      <div className="backup-grid">
-        <div>
-          <h3>{t("settings")}</h3>
-          <div className="row">
-            <button disabled={busy} onClick={() => void task(exportSettings)}>
-              <Download aria-hidden="true" /> {t("export_json")}{" "}
-            </button>
-            <label className={`button ${busy ? "disabled" : ""}`}>
-              <Upload aria-hidden="true" /> {t("import_json")}{" "}
-              <input
-                type="file"
+    <Paper mb="md">
+      <Stack gap="md">
+        <Title order={2}>{t("import_export")}</Title>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Stack gap="xs">
+            <Title order={3}>{t("settings")}</Title>
+            <Group gap="xs" align="center">
+              <Button
+                disabled={busy}
+                onClick={() => void task(exportSettings)}
+                variant="default"
+              >
+                <Download aria-hidden="true" size={16} />{" "}
+                {t("export_json")}{" "}
+              </Button>
+              <FileButton
                 accept=".json"
-                hidden
                 disabled={busy}
-                onChange={(event) => {
-                  void fileImport(event.target.files?.[0], "settings");
-                  event.target.value = "";
+                onChange={(importedFile) => {
+                  void fileImport(importedFile ?? undefined, "settings");
                 }}
-              />
-            </label>
-          </div>
-        </div>
-        <div>
-          <h3>{t("words_progress")}</h3>
-          <p>{t("includes_sentences_review_history_and_saved_audio")}</p>
-          <div className="row">
-            <button disabled={busy} onClick={() => void task(exportLearning)}>
-              <Download aria-hidden="true" /> {t("export_zip")}{" "}
-            </button>
-            <label className={`button ${busy ? "disabled" : ""}`}>
-              <Upload aria-hidden="true" /> {t("import_zip")}{" "}
-              <input
-                type="file"
+              >
+                {(props) => (
+                  <Button {...props} disabled={busy}>
+                    <Upload aria-hidden="true" size={16} />{" "}
+                    {t("import_json")}{" "}
+                  </Button>
+                )}
+              </FileButton>
+            </Group>
+          </Stack>
+          <Stack gap="xs">
+            <Title order={3}>{t("words_progress")}</Title>
+            <Text>
+              {t("includes_sentences_review_history_and_saved_audio")}
+            </Text>
+            <Group gap="xs" align="center">
+              <Button
+                disabled={busy}
+                onClick={() => void task(exportLearning)}
+                variant="default"
+              >
+                <Download aria-hidden="true" size={16} /> {t("export_zip")}{" "}
+              </Button>
+              <FileButton
                 accept=".zip"
-                hidden
                 disabled={busy}
-                onChange={(event) => {
-                  void fileImport(event.target.files?.[0], "learning");
-                  event.target.value = "";
+                onChange={(importedFile) => {
+                  void fileImport(importedFile ?? undefined, "learning");
                 }}
-              />
-            </label>
-          </div>
-        </div>
-      </div>
-      <div className="setting-footnote">
-        {t("imports_replace_the_selected_category_export_your_progress")}{" "}
-      </div>
-    </section>
+              >
+                {(props) => (
+                  <Button {...props} disabled={busy}>
+                    <Upload aria-hidden="true" size={16} />{" "}
+                    {t("import_zip")}{" "}
+                  </Button>
+                )}
+              </FileButton>
+            </Group>
+          </Stack>
+        </SimpleGrid>
+        <Stack gap="xs" c="dimmed" fz="xs">
+          {t("imports_replace_the_selected_category_export_your_progress")}{" "}
+        </Stack>
+      </Stack>
+    </Paper>
   );
 }

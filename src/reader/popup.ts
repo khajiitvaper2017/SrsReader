@@ -53,8 +53,9 @@ export function createPopup(
       `?session=${encodeURIComponent(session)}`;
     Object.assign(popup.style, {
       position: "fixed",
+      boxSizing: "border-box",
       border: "1px solid #8884",
-      borderRadius: "8px",
+      borderRadius: "5px",
       boxShadow: "0 5px 20px #0002",
       zIndex: "2147483647",
       colorScheme:
@@ -68,7 +69,7 @@ export function createPopup(
   function sizePopup(requestedHeight: number) {
     if (!popup || !popupRange) return;
     const box = popupRange.getBoundingClientRect();
-    const width = Math.min(360, innerWidth - 16);
+    const width = Math.max(1, Math.min(360, innerWidth - 16));
     const height = Math.max(
       1,
       Math.min(Math.max(140, requestedHeight), 460, innerHeight - 16),

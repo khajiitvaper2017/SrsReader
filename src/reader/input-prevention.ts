@@ -1,7 +1,7 @@
 import { matchesModifiers } from "@/reader/controls";
 import type { ReaderConfiguration as Settings } from "@/reader/types";
 
-type PageScope = "webpages" | "popups" | "extensionPages";
+export type PageScope = "webpages" | "popups" | "extensionPages";
 
 function overText(event: MouseEvent) {
   const caret = document.caretPositionFromPoint(event.clientX, event.clientY);

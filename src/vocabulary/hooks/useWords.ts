@@ -4,7 +4,6 @@ import { t } from "@/shared/i18n/i18n";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { ReadingContext } from "@/vocabulary/model";
 import { stateOf, type Vocabulary } from "@/vocabulary/model";
-import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useWords({ settings }: { settings: Settings }) {
@@ -15,7 +14,7 @@ export function useWords({ settings }: { settings: Settings }) {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState(false);
   const [definition, setDefinition] = useState("");
-  const detailRef = useRef<HTMLElement>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     detailRef.current?.scrollTo(0, 0);
     detailRef.current?.scrollIntoView({ block: "nearest" });
@@ -91,9 +90,8 @@ export function useWords({ settings }: { settings: Settings }) {
       }),
     );
   }
-  function changeRetention(event: ChangeEvent<HTMLInputElement>) {
+  function changeRetention(value: string | number) {
     if (!word) return;
-    const value = event.target.value;
     if (value === "" || (Number(value) >= 70 && Number(value) <= 99))
       void action(() =>
         vocabularyClient({

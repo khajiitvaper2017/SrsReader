@@ -1,9 +1,17 @@
+import {
+  Group,
+  NativeSelect,
+  NumberInput,
+  Paper,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from "@mantine/core";
 import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { Select, SelectOption } from "@/shared/ui/Select";
 import { SrsSettings } from "@/srs/components/SrsSettings";
-
 export function ReviewSettings({
   settings,
   onChange: update,
@@ -16,138 +24,146 @@ export function ReviewSettings({
   onError: (message: string) => void;
 }) {
   return (
-    <section className="settings-section">
-      <div className="section-heading">
-        <div>
-          <h2>{t("spaced_repetition")}</h2>
-        </div>
-      </div>
-      <SrsSettings
-        settings={settings}
-        dictionaries={dictionaries}
-        onChange={update}
-        onError={setError}
-      />
-      <label className="setting-row">
-        <span>
-          <strong>{t("use_only_again_and_good")}</strong>
-        </span>
-        <input
-          type="checkbox"
-          role="switch"
+    <Paper mb="md">
+      <Stack gap="md">
+        <Title order={2}>{t("spaced_repetition")}</Title>
+
+        <Switch
           checked={settings.onlyAgainGood}
           onChange={(event) =>
             void update({ onlyAgainGood: event.target.checked })
           }
-        />
-      </label>
-      <label className="setting-row">
-        <span>
-          <strong>{t("new_words_per_day")}</strong>
-          <small>{t("does_not_limit_reviews_while_reading")}</small>
-        </span>
-        <input
-          type="number"
-          min={0}
-          max={10000}
-          value={settings.newLimit}
-          onChange={(event) => {
-            if (event.target.value !== "")
-              void update({ newLimit: Number(event.target.value) });
-          }}
-        />
-      </label>
-      <label className="setting-row">
-        <span>
-          <strong>{t("words_without_frequency")}</strong>
-        </span>
-        <Select
-          value={settings.missingFrequency}
-          onValueChange={(value) =>
-            void update({
-              missingFrequency: value as Settings["missingFrequency"],
-            })
+          aria-label={t("use_only_again_and_good")}
+          label={
+            <span>
+              <strong>{t("use_only_again_and_good")}</strong>
+            </span>
           }
-        >
-          <SelectOption value="last">{t("introduce_last")}</SelectOption>
-          <SelectOption value="random">
-            {t("assign_random_frequency")}
-          </SelectOption>
-        </Select>
-      </label>
-      <label className="setting-row">
-        <span>
-          <strong>{t("mature_interval_days")}</strong>
-          <small>{t("mature_interval_help")}</small>
-        </span>
-        <div className="input-suffix">
-          <input
-            type="number"
+        />
+        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <strong>{t("new_words_per_day")}</strong>
+            <Text component="small" size="xs" c="dimmed" display="block">
+              {t("does_not_limit_reviews_while_reading")}
+            </Text>
+          </span>
+          <NumberInput
+            min={0}
+            max={10000}
+            value={settings.newLimit}
+            onChange={(value) => {
+              if (value !== "") void update({ newLimit: Number(value) });
+            }}
+            aria-label={t("new_words_per_day")}
+            w={160}
+            maw="50%"
+          />
+        </Group>
+        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <strong>{t("words_without_frequency")}</strong>
+          </span>
+          <NativeSelect
+            value={settings.missingFrequency}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              return void update({
+                missingFrequency: value as Settings["missingFrequency"],
+              });
+            }}
+            aria-label={t("words_without_frequency")}
+            w={160}
+            maw="50%"
+          >
+            <option value="last">{t("introduce_last")}</option>
+            <option value="random">{t("assign_random_frequency")}</option>
+          </NativeSelect>
+        </Group>
+        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <strong>{t("mature_interval_days")}</strong>
+            <Text component="small" size="xs" c="dimmed" display="block">
+              {t("mature_interval_help")}
+            </Text>
+          </span>
+          <NumberInput
             min={1}
             step={1}
             value={settings.matureIntervalDays}
-            onChange={(event) => {
-              if (event.target.value !== "")
+            onChange={(value) => {
+              if (value !== "")
                 void update({
-                  matureIntervalDays: Number(event.target.value),
+                  matureIntervalDays: Number(value),
                 });
             }}
+            aria-label={t("mature_interval_days")}
+            w={160}
+            maw="50%"
           />
-        </div>
-      </label>
-      <label className="setting-row">
-        <span>
-          <strong>{t("desired_retention")}</strong>
-          <small>{t("70_99_higher_values_mean_more_reviews")}</small>
-        </span>
-        <div className="input-suffix">
-          <input
-            type="number"
+        </Group>
+        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <strong>{t("desired_retention")}</strong>
+            <Text component="small" size="xs" c="dimmed" display="block">
+              {t("70_99_higher_values_mean_more_reviews")}
+            </Text>
+          </span>
+          <NumberInput
             min={70}
             max={99}
             value={Math.round(settings.retention * 100)}
-            onChange={(event) => {
-              if (event.target.value !== "")
+            onChange={(value) => {
+              if (value !== "")
                 void update({
-                  retention: Number(event.target.value) / 100,
+                  retention: Number(value) / 100,
                 });
             }}
+            suffix="%"
+            aria-label={t("desired_retention")}
+            w={160}
+            maw="50%"
           />
-          <span>%</span>
-        </div>
-      </label>
-      <label className="setting-row">
-        <strong>{t("show_sentence_translations")}</strong>
-        <input
-          type="checkbox"
-          role="switch"
+        </Group>
+        <Switch
           checked={settings.showSentenceTranslation}
           onChange={(event) =>
             void update({
               showSentenceTranslation: event.target.checked,
             })
           }
+          aria-label={t("show_sentence_translations")}
+          label={<strong>{t("show_sentence_translations")}</strong>}
         />
-      </label>
-      <label className="setting-row">
-        <span>
-          <strong>{t("default_card_front")}</strong>
-        </span>
-        <Select
-          value={settings.front}
-          onValueChange={(value) =>
-            void update({
-              front: value as Settings["front"],
-            })
-          }
-        >
-          <SelectOption value="word">{t("word_only")}</SelectOption>
-          <SelectOption value="sentence">{t("word_in_sentence")}</SelectOption>
-        </Select>
-      </label>
-      <div className="setting-footnote">
-        {t("new_words_follow_combined_frequency_ranks_from_most")}{" "}
-      </div>
-    </section>
+        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <strong>{t("default_card_front")}</strong>
+          </span>
+          <NativeSelect
+            value={settings.front}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              return void update({
+                front: value as Settings["front"],
+              });
+            }}
+            aria-label={t("default_card_front")}
+            w={160}
+            maw="50%"
+          >
+            <option value="word">{t("word_only")}</option>
+            <option value="sentence">{t("word_in_sentence")}</option>
+          </NativeSelect>
+        </Group>
+        <SrsSettings
+          settings={settings}
+          dictionaries={dictionaries}
+          onChange={update}
+          onError={setError}
+        />
+        <Stack gap="xs" c="dimmed" fz="xs">
+          {t("new_words_follow_combined_frequency_ranks_from_most")}{" "}
+        </Stack>
+      </Stack>
+    </Paper>
   );
 }

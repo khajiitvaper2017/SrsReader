@@ -1,3 +1,14 @@
+import {
+  ActionIcon,
+  Button,
+  Group,
+  NumberInput,
+  Paper,
+  Stack,
+  Text,
+  Textarea,
+  Title,
+} from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { Meanings } from "@/dictionaries/components/Meanings";
 import { shortDefinition } from "@/dictionaries/definitions";
@@ -17,7 +28,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-
 export function WordDetails({
   settings,
   controller,
@@ -44,178 +54,190 @@ export function WordDetails({
   } = controller;
   if (!word) return null;
   return (
-    <section className="word-detail panel" ref={detailRef}>
-      <div className="row between">
-        <button
-          className="icon-button"
-          title={t("close_word_details")}
-          aria-label={t("close_word_details")}
-          onClick={() => setSelected("")}
-        >
-          <X aria-hidden="true" />
-        </button>
-      </div>
-      <div className="word-heading">
-        <h2 lang={word.language}>{word.lemma}</h2>
-        <AudioButton word={word} settings={settings} onError={setError} />
-      </div>
-      {editing ? (
-        <div className="edit-form">
-          <label>
-            {t("definition")}{" "}
-            <textarea
-              rows={7}
-              value={definition}
-              onChange={(event) => setDefinition(event.target.value)}
-            />
-          </label>
-          <p className="muted small-text">
-            {t("saving_replaces_the_dictionary_snapshot_for_this_card")}{" "}
-          </p>
-          <div className="row">
-            <button
-              className="primary"
-              disabled={!definition.trim()}
-              onClick={() => saveDefinition()}
-            >
-              <Save aria-hidden="true" /> {t("save_definition")}
-            </button>
-            <button
-              className="quiet icon-button"
-              title={t("cancel")}
-              aria-label={t("cancel")}
-              onClick={() => setEditing(false)}
-            >
-              <X aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <Meanings
-          meanings={word.meanings}
-          language={word.language}
-          settings={settings}
-        />
-      )}
-      <WordExamples
-        key={word.id}
-        word={word}
-        settings={settings}
-        surface={word.contexts[0]?.surface}
-      />
-      {word.contexts.map((context, i) => (
-        <div className="sentence-box" key={`${word.id}:${i}`}>
-          <Sentence context={context} language={word.language} />
-          <SentenceTranslation
-            context={context}
+    <Paper ref={detailRef} mb="md">
+      <Stack gap="md">
+        <Group gap="xs" align="center" justify="space-between">
+          <ActionIcon
+            title={t("close_word_details")}
+            aria-label={t("close_word_details")}
+            onClick={() => setSelected("")}
+            variant="default"
+          >
+            <X aria-hidden="true" size={16} />
+          </ActionIcon>
+        </Group>
+        <Group gap="xs" align="center" justify="space-between">
+          <Title lang={word.language} order={2}>
+            {word.lemma}
+          </Title>
+          <AudioButton word={word} settings={settings} onError={setError} />
+        </Group>
+        {editing ? (
+          <Stack gap="xs">
+            <Group gap="xs" justify="space-between" align="center">
+              {t("definition")}{" "}
+              <Textarea
+                rows={7}
+                value={definition}
+                onChange={(event) => setDefinition(event.target.value)}
+                aria-label={t("definition")}
+              />
+            </Group>
+            <Text c="dimmed" fz="xs">
+              {t("saving_replaces_the_dictionary_snapshot_for_this_card")}{" "}
+            </Text>
+            <Group gap="xs" align="center">
+              <Button
+                disabled={!definition.trim()}
+                onClick={() => saveDefinition()}
+                variant="filled"
+              >
+                <Save aria-hidden="true" size={16} /> {t("save_definition")}
+              </Button>
+              <ActionIcon
+                title={t("cancel")}
+                aria-label={t("cancel")}
+                onClick={() => setEditing(false)}
+                variant="subtle"
+              >
+                <X aria-hidden="true" size={16} />
+              </ActionIcon>
+            </Group>
+          </Stack>
+        ) : (
+          <Meanings
+            meanings={word.meanings}
             language={word.language}
             settings={settings}
-            wordId={word.id}
           />
-          <div className="sentence-footer">
-            <span className="truncate">{context.title}</span>
-            <button
-              title={t("edit_sentence")}
-              aria-label={t("edit_sentence")}
-              className="quiet icon-button"
-              onClick={() => editSentence(context, i)}
-            >
-              <Pencil aria-hidden="true" />
-            </button>
-            <AudioButton
-              word={word}
-              sentence={context.sentence}
-              settings={settings}
-              onError={setError}
-            />
-          </div>
-        </div>
-      ))}
-      <label className="setting-row">
-        <span>
-          <strong>{t("srs_word_retention")}</strong>
-          <small>{t("srs_override_help")}</small>
-        </span>
-        <input
-          type="number"
-          min={70}
-          max={99}
-          placeholder={t("srs_global")}
-          value={
-            word.retentionOverride === null
-              ? ""
-              : Math.round(word.retentionOverride * 100)
-          }
-          onChange={(event) => changeRetention(event)}
-        />
-      </label>
-      {word.card && (
-        <p className="muted">
-          {t("srs_lapses", { count: word.card.lapses })}
-          {word.leech ? ` · ${t("srs_leech")}` : ""}
-        </p>
-      )}
-      {word.card && !word.known && (
-        <div className="schedule-info">
-          <span>{t("next_review")}</span>
-          <strong>
-            {new Date(word.card.due).toLocaleString(i18n.resolvedLanguage)}
-          </strong>
-          <span>
-            {t("review_history_counts", {
-              reviews: number(word.card.reps),
-              lapses: number(word.card.lapses),
-            })}{" "}
-          </span>
-        </div>
-      )}
-      <div className="detail-actions">
-        <button
-          title={t("edit_definition")}
-          aria-label={t("edit_definition")}
-          className="quiet icon-button"
-          onClick={() => {
-            setDefinition(shortDefinition(word));
-            setEditing(true);
-          }}
-        >
-          <Pencil aria-hidden="true" />
-        </button>
-        <button
-          title={t("refresh_from_dictionary")}
-          aria-label={t("refresh_from_dictionary")}
-          className="quiet icon-button"
-          onClick={() => refreshWord()}
-        >
-          <RefreshCw aria-hidden="true" />
-        </button>
-        <button
-          className="quiet master-action"
-          aria-pressed={word.known}
-          onClick={() => toggleMastery()}
-        >
-          <Check aria-hidden="true" />
-          {word.known ? t("unmaster") : t("master")}
-        </button>
-        {!word.known && (
-          <button className="quiet" onClick={() => toggleSuspension()}>
-            {word.suspended ? (
-              <Play aria-hidden="true" />
-            ) : (
-              <Pause aria-hidden="true" />
-            )}{" "}
-            {word.suspended ? t("resume") : t("suspend")}
-          </button>
         )}
-        <button
-          title={t("delete_word")}
-          aria-label={t("delete_word")}
-          className="danger quiet icon-button"
-          onClick={() => deleteWord()}
-        >
-          <Trash2 aria-hidden="true" />
-        </button>
-      </div>
-    </section>
+        <WordExamples
+          key={word.id}
+          word={word}
+          settings={settings}
+          surface={word.contexts[0]?.surface}
+        />
+        {word.contexts.map((context, i) => (
+          <Stack key={`${word.id}:${i}`} gap="xs">
+            <Sentence context={context} language={word.language} />
+            <SentenceTranslation
+              context={context}
+              language={word.language}
+              settings={settings}
+              wordId={word.id}
+            />
+            <Group gap="xs" align="center" justify="space-between">
+              <Text component="span" inherit>
+                {context.title}
+              </Text>
+              <ActionIcon
+                title={t("edit_sentence")}
+                aria-label={t("edit_sentence")}
+                onClick={() => editSentence(context, i)}
+                variant="subtle"
+              >
+                <Pencil aria-hidden="true" size={16} />
+              </ActionIcon>
+              <AudioButton
+                word={word}
+                sentence={context.sentence}
+                settings={settings}
+                onError={setError}
+              />
+            </Group>
+          </Stack>
+        ))}
+        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <strong>{t("srs_word_retention")}</strong>
+            <Text component="small" size="xs" c="dimmed" display="block">
+              {t("srs_override_help")}
+            </Text>
+          </span>
+          <NumberInput
+            min={70}
+            max={99}
+            placeholder={t("srs_global")}
+            value={
+              word.retentionOverride === null
+                ? ""
+                : Math.round(word.retentionOverride * 100)
+            }
+            onChange={changeRetention}
+            aria-label={t("srs_word_retention")}
+            w={160}
+            maw="50%"
+          />
+        </Group>
+        {word.card && (
+          <Text c="dimmed">
+            {t("srs_lapses", { count: word.card.lapses })}
+            {word.leech ? ` · ${t("srs_leech")}` : ""}
+          </Text>
+        )}
+        {word.card && !word.known && (
+          <Stack gap="xs">
+            <span>{t("next_review")}</span>
+            <strong>
+              {new Date(word.card.due).toLocaleString(i18n.resolvedLanguage)}
+            </strong>
+            <span>
+              {t("review_history_counts", {
+                reviews: number(word.card.reps),
+                lapses: number(word.card.lapses),
+              })}{" "}
+            </span>
+          </Stack>
+        )}
+        <Group gap="xs" align="center">
+          <ActionIcon
+            title={t("edit_definition")}
+            aria-label={t("edit_definition")}
+            onClick={() => {
+              setDefinition(shortDefinition(word));
+              setEditing(true);
+            }}
+            variant="subtle"
+          >
+            <Pencil aria-hidden="true" size={16} />
+          </ActionIcon>
+          <ActionIcon
+            title={t("refresh_from_dictionary")}
+            aria-label={t("refresh_from_dictionary")}
+            onClick={() => refreshWord()}
+            variant="subtle"
+          >
+            <RefreshCw aria-hidden="true" size={16} />
+          </ActionIcon>
+          <Button
+            aria-pressed={word.known}
+            onClick={() => toggleMastery()}
+            variant="subtle"
+          >
+            <Check aria-hidden="true" size={16} />
+            {word.known ? t("unmaster") : t("master")}
+          </Button>
+          {!word.known && (
+            <Button onClick={() => toggleSuspension()} variant="subtle">
+              {word.suspended ? (
+                <Play aria-hidden="true" size={16} />
+              ) : (
+                <Pause aria-hidden="true" size={16} />
+              )}{" "}
+              {word.suspended ? t("resume") : t("suspend")}
+            </Button>
+          )}
+          <ActionIcon
+            title={t("delete_word")}
+            aria-label={t("delete_word")}
+            onClick={() => deleteWord()}
+            variant="subtle"
+            color="red"
+          >
+            <Trash2 aria-hidden="true" size={16} />
+          </ActionIcon>
+        </Group>
+      </Stack>
+    </Paper>
   );
 }

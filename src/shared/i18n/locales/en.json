@@ -430,5 +430,8 @@
   "srs_lapses_other": "{{count}} lapses",
   "srs_lapses_few": "{{count}} lapses",
   "srs_lapses_many": "{{count}} lapses",
-  "undo_latest_only": "Only the latest answer across all tabs can be undone."
+  "undo_latest_only": "Only the latest answer across all tabs can be undone.",
+  "color_saturation": "Saturation and brightness",
+  "color_hue": "Hue",
+  "color_opacity": "Opacity"
 }

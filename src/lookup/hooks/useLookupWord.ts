@@ -16,7 +16,7 @@ import {
   type ReadingContext,
   type Vocabulary,
 } from "@/vocabulary/model";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ContentScriptContext } from "wxt/utils/content-script-context";
 
 export function useLookupWord({
@@ -35,7 +35,11 @@ export function useLookupWord({
   onBack?: () => void;
   onContext: (context: ReadingContext) => void;
 }) {
-  const [settings, setSettings] = useSettings("popups");
+  const [settings, setSettings] = useSettings();
+  const readingRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<LookupResult>();
   const { term, context } = page;
   const [selected, setSelected] = useState(page.selected || "");
@@ -70,8 +74,8 @@ export function useLookupWord({
     false;
   useEffect(() => {
     if (!word) return;
-    const root = document.querySelector<HTMLElement>(".lookup-reading")!;
-    const content = document.querySelector<HTMLElement>(".lookup-content")!;
+    const root = readingRef.current!;
+    const content = contentRef.current!;
     if (page.selected === selected && page.openDetails)
       [...root.querySelectorAll("details")].forEach((details, index) => {
         details.open = page.openDetails!.includes(index);
@@ -100,29 +104,27 @@ export function useLookupWord({
   useEffect(() => {
     const session = new URLSearchParams(location.search).get("session");
     if (!session) return;
-    const body = document.querySelector<HTMLElement>(".lookup-body")!;
+    const body = bodyRef.current!;
     const resize = () => {
-      const actions = document.querySelector<HTMLElement>(".lookup-actions");
+      const actions = actionsRef.current;
       void lookupClient({
         action: "resizeLookup",
         session,
         height: Math.min(
           460,
           Math.ceil(
-            body.getBoundingClientRect().height +
-              (actions?.offsetHeight || 0) +
-              20,
+            body.getBoundingClientRect().height + (actions?.offsetHeight || 0),
           ),
         ),
       }).catch(console.warn);
     };
     const observer = new ResizeObserver(resize);
     observer.observe(body);
-    const actions = document.querySelector(".lookup-actions");
+    const actions = actionsRef.current;
     if (actions) observer.observe(actions);
     resize();
     return () => observer.disconnect();
-  }, [word?.id]);
+  }, [word?.id, unparsed]);
   useEffect(() => {
     let alive = true;
     void dictionariesClient({ action: "lookup", term })
@@ -297,6 +299,10 @@ export function useLookupWord({
     }
   }
   return {
+    readingRef,
+    contentRef,
+    bodyRef,
+    actionsRef,
     settings,
     result,
     term,

@@ -1,3 +1,4 @@
+import { Button, FileButton, Group, Paper, Stack, Title } from "@mantine/core";
 import {
   languageIso3,
   languageName,
@@ -9,7 +10,6 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { Download, Upload } from "lucide-react";
-
 export function LanguageDataSettings({
   settings,
   data,
@@ -23,90 +23,93 @@ export function LanguageDataSettings({
   const { busy, progressTarget, progress, run: task } = tasks;
   return (
     <>
-      <section className="settings-section" id="word-forms">
-        <div className="section-heading">
-          <h2>{t("word_forms")}</h2>
-        </div>
-        <div className="setting-row">
-          <strong>
-            {morphology.count
-              ? t("word_forms_count", { count: morphology.count })
-              : t("no_additional_word_forms_installed")}
-          </strong>
-          <button
-            disabled={busy || !morphologyLanguage(settings.studyLanguage)}
-            onClick={() => void task(() => installLanguageData("morphology"))}
-          >
-            <Download aria-hidden="true" />{" "}
-            {morphology.count ? t("download_again") : t("download_word_forms")}
-          </button>
-        </div>
-        {busy && progressTarget === "morphology" && progress && (
-          <div className="setting-progress">
-            <TaskProgress progress={progress} />
-          </div>
-        )}
-        <div className="setting-footnote">
-          {morphologyLanguage(settings.studyLanguage)
-            ? t("extra_word_forms_from_simplemma_help_find_dictionary")
-            : t("dictionary_word_forms_are_used_no_extra_simplemma")}
-        </div>
-      </section>
-      <section className="settings-section" id="example-sentences">
-        <div className="section-heading">
-          <h2>{t("example_sentences")}</h2>
-        </div>
-        <div className="setting-row">
-          <strong>
-            {exampleCorpus.installed
-              ? t("example_count", {
-                  count: exampleCorpus.count,
-                  language: languageName(settings.studyLanguage),
-                })
-              : t("no_examples_installed_for_this_study_language")}
-          </strong>
-          <div className="row">
-            <button
-              disabled={
-                busy ||
-                !settings.studyLanguage ||
-                !languageIso3(settings.studyLanguage)
-              }
-              onClick={() => void task(() => installLanguageData("examples"))}
+      <Paper id="word-forms" mb="md">
+        <Stack gap="md">
+          <Title order={2}>{t("word_forms")}</Title>
+          <Group gap="xs" align="center">
+            <strong>
+              {morphology.count
+                ? t("word_forms_count", { count: morphology.count })
+                : t("no_additional_word_forms_installed")}
+            </strong>
+            <Button
+              disabled={busy || !morphologyLanguage(settings.studyLanguage)}
+              onClick={() => void task(() => installLanguageData("morphology"))}
+              variant="default"
             >
-              <Download aria-hidden="true" />
+              <Download aria-hidden="true" size={16} />{" "}
+              {morphology.count
+                ? t("download_again")
+                : t("download_word_forms")}
+            </Button>
+          </Group>
+          {busy && progressTarget === "morphology" && progress && (
+            <Stack gap="xs">
+              <TaskProgress progress={progress} />
+            </Stack>
+          )}
+          <Stack gap="xs" c="dimmed" fz="xs">
+            {morphologyLanguage(settings.studyLanguage)
+              ? t("extra_word_forms_from_simplemma_help_find_dictionary")
+              : t("dictionary_word_forms_are_used_no_extra_simplemma")}
+          </Stack>
+        </Stack>
+      </Paper>
+      <Paper id="example-sentences" mb="md">
+        <Stack gap="md">
+          <Title order={2}>{t("example_sentences")}</Title>
+          <Group gap="xs" align="center">
+            <strong>
               {exampleCorpus.installed
-                ? t("update_examples")
-                : t("download_examples")}
-            </button>
-            <label
-              className={`button ${busy || !settings.studyLanguage ? "disabled" : ""}`}
-            >
-              <Upload aria-hidden="true" /> {t("import_tsv")}{" "}
-              <input
-                type="file"
+                ? t("example_count", {
+                    count: exampleCorpus.count,
+                    language: languageName(settings.studyLanguage),
+                  })
+                : t("no_examples_installed_for_this_study_language")}
+            </strong>
+            <Group gap="xs" align="center">
+              <Button
+                disabled={
+                  busy ||
+                  !settings.studyLanguage ||
+                  !languageIso3(settings.studyLanguage)
+                }
+                onClick={() => void task(() => installLanguageData("examples"))}
+                variant="default"
+              >
+                <Download aria-hidden="true" size={16} />
+                {exampleCorpus.installed
+                  ? t("update_examples")
+                  : t("download_examples")}
+              </Button>
+              <FileButton
                 accept=".tsv,.bz2"
-                hidden
                 disabled={busy || !settings.studyLanguage}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
+                onChange={(importedFile) => {
+                  const file = importedFile ?? undefined;
                   if (file)
                     void task(() => installLanguageData("examples", file));
-                  event.target.value = "";
                 }}
-              />
-            </label>
-          </div>
-        </div>
-        {busy && progressTarget === "examples" && progress && (
-          <div className="setting-progress">
-            <TaskProgress progress={progress} />
-          </div>
-        )}
-        <div className="setting-footnote">
-          {t("tatoeba_examples_for_your_study_language_are_stored")}{" "}
-        </div>
-      </section>
+              >
+                {(props) => (
+                  <Button {...props} disabled={busy || !settings.studyLanguage}>
+                    <Upload aria-hidden="true" size={16} />{" "}
+                    {t("import_tsv")}{" "}
+                  </Button>
+                )}
+              </FileButton>
+            </Group>
+          </Group>
+          {busy && progressTarget === "examples" && progress && (
+            <Stack gap="xs">
+              <TaskProgress progress={progress} />
+            </Stack>
+          )}
+          <Stack gap="xs" c="dimmed" fz="xs">
+            {t("tatoeba_examples_for_your_study_language_are_stored")}{" "}
+          </Stack>
+        </Stack>
+      </Paper>
     </>
   );
 }

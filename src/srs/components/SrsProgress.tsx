@@ -1,6 +1,6 @@
+import { Text } from "@mantine/core";
 import { t } from "@/shared/i18n/i18n";
 import { useEffect, useState } from "react";
-
 export function SrsProgress() {
   const [progress, setProgress] = useState<{
     processed: number;
@@ -14,11 +14,11 @@ export function SrsProgress() {
     return () => window.removeEventListener("srs-progress", receive);
   }, []);
   return progress && !progress.ready ? (
-    <p role="status">
+    <Text role="status">
       {t("rwkv_replaying", {
         processed: progress.processed,
         total: progress.total,
       })}
-    </p>
+    </Text>
   ) : null;
 }

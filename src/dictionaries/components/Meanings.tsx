@@ -1,3 +1,4 @@
+import { Group, ActionIcon, Anchor, Badge, Stack, Text } from "@mantine/core";
 import { Structured } from "@/dictionaries/components/StructuredContent";
 import { definitionText } from "@/dictionaries/definitions";
 import { useMeanings } from "@/dictionaries/hooks/useMeanings";
@@ -10,9 +11,8 @@ import { safeUrl, scopedStyles } from "@/dictionaries/sanitize";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { TextTranslation } from "@/translation/components/SentenceTranslation";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Button, Menu } from "@mantine/core";
 import { ChevronDown, ChevronUp, EyeOff } from "lucide-react";
-
 export function Meanings({
   meanings,
   language,
@@ -34,52 +34,43 @@ export function Meanings({
     monolingual,
     definitionLanguages,
   } = useMeanings({ meanings, language, settings, onIgnoreTag });
-
   return (
-    <div className="meanings">
+    <Stack gap="xs">
       {visible.map((meaning, i) => (
-        <section className="meaning" key={`${meaning.dictionaryId}:${i}`}>
-          <div className="meaning-label">
-            <span className="dictionary-name">
+        <Stack key={`${meaning.dictionaryId}:${i}`} gap="xs">
+          <Group gap={4} data-srs-reader>
+            <Text component="span" size="xs" c="dimmed">
               {meaning.dictionaryId === "personal"
                 ? t("personal_definition")
                 : meaning.title}
-            </span>
+            </Text>
             {meaningTags(meaning).map((tag, j) =>
               onIgnoreTag ? (
-                <DropdownMenu.Root key={j} modal={false}>
-                  <DropdownMenu.Trigger
-                    className="tag tag-action"
-                    data-srs-reader=""
-                    title={
-                      meaning.tagDescriptions?.[tag] ||
-                      tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
-                      undefined
-                    }
-                  >
-                    {tag}
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                      className="tag-menu"
-                      sideOffset={4}
-                      collisionPadding={8}
-                      aria-label={tag}
+                <Menu key={j}>
+                  <Menu.Target>
+                    <Button
+                      variant="light"
+                      size="compact-xs"
                       data-srs-reader=""
+                      title={
+                        meaning.tagDescriptions?.[tag] ||
+                        tagDescriptions[`${meaning.dictionaryId}:${tag}`] ||
+                        undefined
+                      }
                     >
-                      <DropdownMenu.Item
-                        className="select-option"
-                        onSelect={() => onIgnoreTag(tag)}
-                      >
-                        <EyeOff aria-hidden="true" />{" "}
-                        {t("ignore_words_with_tag")}
-                      </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
+                      {tag}
+                    </Button>
+                  </Menu.Target>
+
+                  <Menu.Dropdown aria-label={tag} data-srs-reader="">
+                    <Menu.Item onClick={() => onIgnoreTag(tag)}>
+                      <EyeOff aria-hidden="true" size={16} />{" "}
+                      {t("ignore_words_with_tag")}
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
               ) : (
-                <span
-                  className="tag"
+                <Badge
                   key={j}
                   title={
                     meaning.tagDescriptions?.[tag] ||
@@ -88,18 +79,17 @@ export function Meanings({
                   }
                 >
                   {tag}
-                </span>
+                </Badge>
               ),
             )}
-          </div>
+          </Group>
           <style>
             {scopedStyles(
               styles[meaning.dictionaryId] || "",
               `[data-meaning="${i}"]`,
             )}
           </style>
-          <div
-            className="dictionary-content"
+          <Stack
             data-meaning={i}
             data-reading-language={
               meaning.dictionaryId === "nechybujte"
@@ -108,6 +98,9 @@ export function Meanings({
                   ? settings.nativeLanguage
                   : definitionLanguages[meaning.dictionaryId] || ""
             }
+            gap="xs"
+            className="dictionary-content"
+            data-hide-sources={settings.hideDictionarySources || undefined}
           >
             {meaning.dictionaryId === "nechybujte" ? (
               <ol data-sc-content="glosses">
@@ -122,15 +115,15 @@ export function Meanings({
               </ol>
             ) : (
               meaning.definitions.map((definition: Definition, j) => (
-                <div key={j}>
+                <Stack key={j} gap="xs">
                   <Structured
                     value={definition}
                     dictionaryId={meaning.dictionaryId}
                   />
-                </div>
+                </Stack>
               ))
             )}
-          </div>
+          </Stack>
           {(monolingual.includes(meaning.dictionaryId) ||
             meaning.dictionaryId === "nechybujte") &&
             language !== settings.nativeLanguage && (
@@ -151,42 +144,46 @@ export function Meanings({
                 label={t("translate_definition")}
               />
             )}
-          {meaning.attribution && (
-            <div className="attribution">
-              {safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl) ? (
-                <a
-                  href={
-                    safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl)
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {meaning.attribution}
-                </a>
-              ) : (
-                meaning.attribution
-              )}
-            </div>
-          )}
-        </section>
+          {meaning.attribution &&
+            (!settings.hideDictionarySources ||
+              !(
+                safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl)
+              )) && (
+              <Group gap={4} data-srs-reader>
+                {safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl) ? (
+                  <Anchor
+                    href={
+                      safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl)
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {meaning.attribution}
+                  </Anchor>
+                ) : (
+                  meaning.attribution
+                )}
+              </Group>
+            )}
+        </Stack>
       ))}
       {settings.firstDictionaryOnly && hasMore && (
-        <button
-          className="quiet icon-button dictionary-expand"
+        <ActionIcon
           title={expanded ? t("fewer_dictionaries") : t("more_dictionaries")}
           aria-label={
             expanded ? t("fewer_dictionaries") : t("more_dictionaries")
           }
           aria-expanded={expanded}
           onClick={() => setExpanded(!expanded)}
+          variant="subtle"
         >
           {expanded ? (
-            <ChevronUp aria-hidden="true" />
+            <ChevronUp aria-hidden="true" size={16} />
           ) : (
-            <ChevronDown aria-hidden="true" />
+            <ChevronDown aria-hidden="true" size={16} />
           )}
-        </button>
+        </ActionIcon>
       )}
-    </div>
+    </Stack>
   );
 }

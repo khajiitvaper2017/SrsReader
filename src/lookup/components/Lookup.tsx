@@ -1,3 +1,13 @@
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Badge,
+  Select,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { Meanings } from "@/dictionaries/components/Meanings";
@@ -8,7 +18,6 @@ import { useLookupWord } from "@/lookup/hooks/useLookupWord";
 import type { LookupPage } from "@/lookup/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
-import { Select, SelectOption } from "@/shared/ui/Select";
 import { srsClient } from "@/srs/client";
 import { Ratings } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
@@ -26,11 +35,9 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-
 export function Lookup() {
   const { pages, setPages, error } = useLookupNavigation();
   if (!pages.length) return <ErrorBox error={error} />;
-
   return (
     <LookupEntry
       key={pages.length}
@@ -60,7 +67,6 @@ export function Lookup() {
     />
   );
 }
-
 function LookupEntry({
   page,
   onLookup,
@@ -79,6 +85,10 @@ function LookupEntry({
   onContext: (context: ReadingContext) => void;
 }) {
   const {
+    readingRef,
+    contentRef,
+    bodyRef,
+    actionsRef,
     settings,
     result,
     term,
@@ -108,111 +118,111 @@ function LookupEntry({
     definitionSaved,
     deleteDefinition,
   } = useLookupWord({ page, onLookup, onBack, onContext });
-
   return (
-    <div
-      className={`lookup-shell ${settings.hideDictionarySources ? "hide-dictionary-sources" : ""}`}
-    >
-      <main className="lookup-content">
-        <div className="lookup-body">
+    <Stack gap={0} h="100dvh" style={{ overflow: "hidden" }}>
+      <Stack
+        ref={contentRef}
+        gap={0}
+        component="main"
+        style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
+      >
+        <Stack ref={bodyRef} gap="xs" p="sm">
           {onBack && (
-            <button
-              className="quiet lookup-back"
+            <ActionIcon
               onClick={onBack}
               disabled={busy}
               title={t("back_to_previous_word")}
               aria-label={t("back_to_previous_word")}
+              variant="subtle"
             >
-              <ArrowLeft aria-hidden="true" />
-            </button>
+              <ArrowLeft aria-hidden="true" size={16} />
+            </ActionIcon>
           )}
           <ErrorBox error={error} />
           <SrsProgress />
-          {!result && !error && <p className="muted">{t("looking_up")}</p>}
+          {!result && !error && <Text c="dimmed">{t("looking_up")}</Text>}
           {word && (
             <>
-              <div className="word-heading">
-                <div>
-                  <h1 lang={word.language}>
+              <Group gap="xs" align="center" justify="space-between">
+                <Stack gap="xs">
+                  <Title lang={word.language} order={1}>
                     {folded(term, word.language) !==
                       folded(word.lemma, word.language) && (
-                      <span className="surface-form">{term} → </span>
+                      <Text component="span" inherit>
+                        {term} →{" "}
+                      </Text>
                     )}
                     {word.lemma}
-                    {result!.words.length > 1 && (
-                      <Select
-                        iconOnly
-                        value={selected}
-                        open={candidateOpen}
-                        onOpenChange={setCandidateOpen}
-                        disabled={busy}
-                        aria-label={`${t("choose_word")}: ${word.lemma}`}
-                        title={t("choose_word")}
-                        onValueChange={(value) => {
-                          setSelected(value);
-                          setNotice("");
-                          setLastReview("");
-                        }}
-                      >
-                        {result!.words.map((candidate) => (
-                          <SelectOption key={candidate.id} value={candidate.id}>
-                            <span lang={candidate.language}>
-                              {candidate.lemma}
-                            </span>
-                            {candidate.reading && (
-                              <small>{candidate.reading}</small>
-                            )}
-                          </SelectOption>
-                        ))}
-                      </Select>
-                    )}
-                  </h1>
-                  {word.reading && (
-                    <span className="muted">{word.reading}</span>
+                  </Title>
+                  {result!.words.length > 1 && (
+                    <Select
+                      value={selected}
+                      disabled={busy}
+                      aria-label={`${t("choose_word")}: ${word.lemma}`}
+                      title={t("choose_word")}
+                      dropdownOpened={candidateOpen}
+                      onDropdownOpen={() => setCandidateOpen(true)}
+                      onDropdownClose={() => setCandidateOpen(false)}
+                      data={result!.words.map((candidate) => ({
+                        value: candidate.id,
+                        label: [candidate.lemma, candidate.reading]
+                          .filter(Boolean)
+                          .join(" · "),
+                      }))}
+                      onChange={(value) => {
+                        setSelected(value!);
+                        setNotice("");
+                        setLastReview("");
+                      }}
+                    />
                   )}
-                </div>
-                <div className="lookup-heading-actions">
+                  {word.reading && (
+                    <Text component="span" inherit c="dimmed">
+                      {word.reading}
+                    </Text>
+                  )}
+                </Stack>
+                <Group gap={4} align="center">
                   <FrequencyBadge word={word} />
                   {!unparsed && (
-                    <button
-                      className="quiet icon-button"
+                    <ActionIcon
                       title={t("edit_definition")}
                       aria-label={t("edit_definition")}
                       disabled={busy}
                       onClick={() => setEditing((value) => !value)}
+                      variant="subtle"
                     >
-                      <Pencil aria-hidden="true" />
-                    </button>
+                      <Pencil aria-hidden="true" size={16} />
+                    </ActionIcon>
                   )}
                   {hasPersonalDefinition && (
-                    <button
-                      className="quiet icon-button danger"
+                    <ActionIcon
                       title={t("delete_custom_definition")}
                       aria-label={t("delete_custom_definition")}
                       disabled={busy}
                       onClick={() => void deleteDefinition()}
+                      variant="subtle"
+                      color="red"
                     >
-                      <Trash2 aria-hidden="true" />
-                    </button>
+                      <Trash2 aria-hidden="true" size={16} />
+                    </ActionIcon>
                   )}
                   <AudioButton
                     word={word}
                     settings={settings}
                     onError={setError}
                   />
-                </div>
-              </div>
-              <div className="lookup-meta">
+                </Group>
+              </Group>
+              <Group gap="xs" align="center">
                 {saved && (
-                  <span
-                    className={`state state-${stateOf(saved, settings.matureIntervalDays)}`}
-                  >
+                  <Badge>
                     {t(
                       wordStateLabels[
                         stateOf(saved, settings.matureIntervalDays)
                       ],
                     )}
-                  </span>
+                  </Badge>
                 )}
                 {context && (
                   <SentenceTranslation
@@ -238,12 +248,12 @@ function LookupEntry({
                     }
                   />
                 )}
-              </div>
+              </Group>
               {(word.forms.filter(
                 (form) => !form.startsWith("redirected from "),
               ).length > 0 ||
                 word.meanings.some((meaning) => meaning.grammar?.length)) && (
-                <div className="muted small-text">
+                <Stack gap="xs" c="dimmed" fz="xs">
                   {[
                     ...new Set(
                       word.forms.filter(
@@ -269,9 +279,9 @@ function LookupEntry({
                         {part.text}
                       </span>
                     ))}
-                </div>
+                </Stack>
               )}
-              <div className="lookup-reading">
+              <Stack ref={readingRef} gap="xs">
                 {unparsed || editing ? (
                   <DefinitionEditor
                     key={word.id}
@@ -296,37 +306,47 @@ function LookupEntry({
                   settings={settings}
                   surface={context?.surface || term}
                 />
-              </div>
+              </Stack>
             </>
           )}
-        </div>
-      </main>
+        </Stack>
+      </Stack>
       {word && !unparsed && (
-        <section className="lookup-actions">
-          <div className="lookup-action-row">
-            <div className="row mining-actions">
+        <Stack
+          ref={actionsRef}
+          gap="xs"
+          p="xs"
+          data-srs-reader
+          style={{
+            borderTop: "1px solid var(--mantine-color-default-border)",
+            flexShrink: 0,
+            maxHeight: "60dvh",
+            overflowY: "auto",
+          }}
+        >
+          <Stack gap="xs">
+            <Group gap="xs" align="center">
               {!saved?.card && !saved?.known && (
-                <button
-                  className="primary"
+                <Button
                   disabled={busy}
                   onClick={() => void act()}
+                  variant="filled"
                 >
-                  <Plus aria-hidden="true" /> {t("mine_word")}
-                </button>
+                  <Plus aria-hidden="true" size={16} /> {t("mine_word")}
+                </Button>
               )}
-              <button
-                className="quiet master-action"
+              <Button
                 aria-pressed={!!saved?.known}
                 disabled={busy}
                 onClick={() => void toggleMastery()}
+                variant="subtle"
               >
-                <Check aria-hidden="true" />
+                <Check aria-hidden="true" size={16} />
                 {saved?.known ? t("unmaster") : t("master")}
-              </button>
-            </div>
+              </Button>
+            </Group>
             {saved?.known ? null : saved?.suspended ? (
-              <button
-                className="quiet"
+              <Button
                 onClick={() =>
                   void vocabularyClient({
                     action: "suspend",
@@ -334,9 +354,10 @@ function LookupEntry({
                     value: false,
                   }).then(reload)
                 }
+                variant="subtle"
               >
-                <Play aria-hidden="true" /> {t("resume")}
-              </button>
+                <Play aria-hidden="true" size={16} /> {t("resume")}
+              </Button>
             ) : (
               <>
                 <Ratings
@@ -347,15 +368,14 @@ function LookupEntry({
                 />
               </>
             )}
-          </div>
+          </Stack>
           {notice && (
-            <div className="success-note" role="status">
+            <Stack role="status" gap="xs">
               {notice}
               {lastReview && (
-                <button
+                <ActionIcon
                   title={t("undo")}
                   aria-label={t("undo")}
-                  className="quiet icon-button"
                   disabled={busy}
                   onClick={() =>
                     void srsClient({ action: "undo", id: lastReview })
@@ -366,14 +386,15 @@ function LookupEntry({
                       })
                       .catch((error) => setError(error.message))
                   }
+                  variant="subtle"
                 >
-                  <Undo2 aria-hidden="true" />
-                </button>
+                  <Undo2 aria-hidden="true" size={16} />
+                </ActionIcon>
               )}
-            </div>
+            </Stack>
           )}
-        </section>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

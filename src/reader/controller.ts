@@ -17,8 +17,7 @@ export function startReader(
   options: ReaderOptions = {},
 ) {
   const root = options.root || document.body;
-  const excluded =
-    excludedSelector + (options.onLookup ? ",.meaning-label,.attribution" : "");
+  const excluded = excludedSelector;
   let settings: Settings = defaults;
   let active = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
