@@ -163,6 +163,16 @@ function LookupEntry({
                       events={{ hover: true, focus: true, touch: true }}
                       position="bottom-start"
                       width={360}
+                      middlewares={{
+                        shift: {
+                          boundary: contentRef.current ?? undefined,
+                          padding: 12,
+                        },
+                        size: {
+                          boundary: contentRef.current ?? undefined,
+                          padding: 12,
+                        },
+                      }}
                       interactive
                       role="tooltip"
                     >
