@@ -75,6 +75,8 @@ export const requestSchema = z.discriminatedUnion("action", [
     ...selection,
     id: z.string(),
     rating: z.number().int().min(1).max(4),
+    durationMs: z.number().finite().nonnegative().nullable().optional(),
+    time: z.number().finite().optional(),
     source: z.enum(["reading", "review"]),
     version: z.number().int().nonnegative(),
   }),
@@ -100,7 +102,24 @@ export const requestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("undo"), id: z.string() }),
   z.object({ action: z.literal("words"), query: z.string().default("") }),
   z.object({ action: z.literal("queue") }),
-  z.object({ action: z.literal("preview"), id: z.string() }),
+  z.object({
+    action: z.literal("preview"),
+    id: z.string(),
+    durationMs: z.number().finite().nonnegative().nullable().optional(),
+  }),
+  z.object({ action: z.literal("rwkvStatus") }),
+  z.object({ action: z.literal("resetRwkv") }),
+  z.object({ action: z.literal("prepareRwkv") }),
+  z.object({
+    action: z.literal("activateAlgorithm"),
+    algorithm: z.enum(["fsrs", "rwkv"]),
+  }),
+  z.object({ action: z.literal("reschedule"), after: z.string().default("") }),
+  z.object({
+    action: z.literal("retentionOverride"),
+    id: z.string(),
+    value: z.number().min(0.7).max(0.99).nullable(),
+  }),
   z.object({ action: z.literal("stats") }),
   z.object({ action: z.literal("audioSources"), id: z.string() }),
   z.object({
@@ -146,8 +165,20 @@ type Responses = {
     due: number;
     fresh: number;
     waiting: number | null;
+    wakeAt: number;
   };
   preview: number[];
+  rwkvStatus: {
+    downloaded: boolean;
+    processed: number;
+    total: number;
+    ready: boolean;
+  };
+  prepareRwkv: Responses["rwkvStatus"];
+  resetRwkv: void;
+  activateAlgorithm: Settings;
+  reschedule: { count: number; cursor: string | null };
+  retentionOverride: void;
   stats: { total: number; known: number; due: number; today: number };
   audio: AudioInfo | null;
   audioSources: AudioInfo[];
@@ -155,7 +186,27 @@ type Responses = {
 export async function rpc<R extends Request>(
   request: R,
 ): Promise<Responses[R["action"]]> {
-  const response = await browser.runtime.sendMessage(request);
+  let response = await browser.runtime.sendMessage(request);
+  while (response?.needsReplay) {
+    window.dispatchEvent(
+      new CustomEvent("srs-progress", {
+        detail: { processed: 0, total: 0, ready: false },
+      }),
+    );
+    try {
+      let progress: Responses["prepareRwkv"];
+      do {
+        progress = await rpc({ action: "prepareRwkv" });
+        window.dispatchEvent(
+          new CustomEvent("srs-progress", { detail: progress }),
+        );
+      } while (!progress.ready);
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent("srs-progress"));
+      throw error;
+    }
+    response = await browser.runtime.sendMessage(request);
+  }
   if (!response || response.error)
     throw new Error(
       response?.error || t("the_extension_could_not_respond_reload_this_page"),

@@ -17,6 +17,9 @@ import {
   wordId,
 } from "./model";
 import { getSettings } from "./srs";
+import { srsWrite } from "./srs-lock";
+import { invalidateRwkv } from "./rwkv/runtime";
+import { rpc } from "./api";
 
 export function saveBlob(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob);
@@ -59,17 +62,28 @@ export async function readSettings(file: File) {
 export async function restoreSettings(
   settings: ReturnType<typeof settingsSchema.parse>,
 ) {
-  await db.transaction("rw", [db.settings, db.dictionaries], async () => {
-    await db.settings.put({ id: "main", value: settings });
-    for (const [id, preference] of Object.entries(
-      settings.dictionaryPreferences,
-    ))
-      await db.dictionaries.update(id, preference);
-  });
+  await srsWrite(() =>
+    db.transaction("rw", [db.settings, db.dictionaries], async () => {
+      const current = (await db.settings.get("main"))?.value;
+      await db.settings.put({
+        id: "main",
+        value: { ...settings, algorithm: current?.algorithm ?? "fsrs" },
+      });
+      for (const [id, preference] of Object.entries(
+        settings.dictionaryPreferences,
+      ))
+        await db.dictionaries.update(id, preference);
+    }),
+  );
+  if (settings.algorithm === "rwkv") {
+    while (!(await rpc({ action: "rwkvStatus" })).ready)
+      await rpc({ action: "prepareRwkv" });
+  }
+  await rpc({ action: "activateAlgorithm", algorithm: settings.algorithm });
 }
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   vocabulary: z.array(vocabularySchema),
   reviews: z.array(reviewSchema),
   audio: z.array(
@@ -97,7 +111,7 @@ export async function exportLearning() {
     new TextReader(
       JSON.stringify({
         format: "srs-reader-learning",
-        version: 1,
+        version: 2,
         vocabulary: snapshot.vocabulary,
         reviews: snapshot.reviews,
         audio,
@@ -151,6 +165,20 @@ export async function readLearning(file: File) {
       const { path, mime, ...info } = item;
       audio.push({ ...info, blob: await entry.getData(new BlobWriter(mime)) });
     }
+    if (data.version === 1) {
+      for (const word of data.vocabulary) word.srsVersion = word.version;
+      data.reviews.sort((a, b) => a.time - b.time || a.id.localeCompare(b.id));
+      for (const [index, review] of data.reviews.entries()) {
+        review.sequence = index + 1;
+        review.afterSrsVersion = review.afterVersion;
+        if (review.before) review.before.srsVersion = review.before.version;
+      }
+    } else if (
+      data.reviews.some((review) => review.sequence < 1) ||
+      new Set(data.reviews.map((review) => review.sequence)).size !==
+        data.reviews.length
+    )
+      throw new Error(t("invalid_review_references_in_learning_archive"));
     return { ...data, audio };
   } finally {
     await zip.close();
@@ -159,16 +187,34 @@ export async function readLearning(file: File) {
 export async function restoreLearning(
   data: Awaited<ReturnType<typeof readLearning>>,
 ) {
-  await db.transaction(
-    "rw",
-    [db.vocabulary, db.reviews, db.audio],
-    async () => {
-      await db.vocabulary.clear();
-      await db.reviews.clear();
-      await db.audio.clear();
-      await db.vocabulary.bulkAdd(data.vocabulary);
-      await db.reviews.bulkAdd(data.reviews);
-      await db.audio.bulkAdd(data.audio);
-    },
+  await srsWrite(() =>
+    db.transaction(
+      "rw",
+      [
+        db.vocabulary,
+        db.reviews,
+        db.audio,
+        db.srsMeta,
+        db.rwkvMeta,
+        db.rwkvEntities,
+        db.rwkvCards,
+      ],
+      async () => {
+        await invalidateRwkv();
+        await db.srsMeta.put({
+          id: "main",
+          sequence: data.reviews.reduce(
+            (max, review) => Math.max(max, review.sequence),
+            0,
+          ),
+        });
+        await db.vocabulary.clear();
+        await db.reviews.clear();
+        await db.audio.clear();
+        await db.vocabulary.bulkAdd(data.vocabulary);
+        await db.reviews.bulkAdd(data.reviews);
+        await db.audio.bulkAdd(data.audio);
+      },
+    ),
   );
 }

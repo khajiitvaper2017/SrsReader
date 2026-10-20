@@ -3,6 +3,7 @@ import {
   folded,
   normalize,
   type Frequency,
+  type Dictionary,
   type LookupWord,
   type Settings,
   type Vocabulary,
@@ -53,7 +54,7 @@ export async function wordFrequencies(
       word.reading,
     );
     return Number.isFinite(rank)
-      ? [{ title: dictionary.index.title, rank }]
+      ? [{ id: dictionary.id, title: dictionary.index.title, rank }]
       : [];
   });
 }
@@ -128,4 +129,34 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
       a.created - b.created ||
       a.id.localeCompare(b.id),
   );
+}
+
+export function isRankSource(dictionary: Dictionary, settings: Settings) {
+  return (
+    settings.rankSources[dictionary.id] ??
+    /^Leipzig[. ].*Rank/i.test(dictionary.index.title)
+  );
+}
+export async function effectiveRetention(
+  word: Pick<Vocabulary, "language" | "lemma" | "reading"> & {
+    retentionOverride?: number | null;
+  },
+  settings: Settings,
+) {
+  if (word.retentionOverride != null) return word.retentionOverride;
+  if (!settings.dynamicRetention) return settings.retention;
+  const dictionaries = await db.dictionaries.toArray();
+  const sources = new Set(
+    dictionaries
+      .filter((dictionary) => isRankSource(dictionary, settings))
+      .map((dictionary) => dictionary.id),
+  );
+  const ranks = (await wordFrequencies(word))
+    .filter((row) => sources.has(row.id) && row.rank > 0)
+    .map((row) => row.rank);
+  if (!ranks.length) return settings.retention;
+  const rank = harmonicRank(ranks);
+  return settings.retentionBands.find(
+    (band) => band.upTo === null || rank <= band.upTo,
+  )!.retention;
 }

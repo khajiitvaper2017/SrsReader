@@ -1,4 +1,32 @@
 import Dexie, { type Table } from "dexie";
+import { vocabularySchema, reviewSchema, settingsSchema } from "./model";
+import type { StoredLayers } from "./rwkv/precision";
+import type { FeatureCard, FeatureGlobal } from "./rwkv/features";
+import type { Heads } from "./rwkv/model";
+
+export type RwkvEntity = { id: string; state: StoredLayers };
+export type RwkvCard = {
+  id: string;
+  features: FeatureCard;
+  curve: Pick<Heads, "w" | "s" | "d">;
+};
+export type RwkvMeta = {
+  id: string;
+  key: string;
+  cursor: number;
+  features: FeatureGlobal;
+};
+export type SrsMeta = {
+  id: string;
+  sequence: number;
+  undo?: {
+    reviewId: string;
+    entities: RwkvEntity[];
+    card?: RwkvCard;
+    meta: RwkvMeta;
+  };
+};
+
 import type {
   AudioRecord,
   Dictionary,
@@ -14,6 +42,10 @@ import type {
 } from "./model";
 
 class ReaderDatabase extends Dexie {
+  srsMeta!: Table<SrsMeta, string>;
+  rwkvMeta!: Table<RwkvMeta, string>;
+  rwkvEntities!: Table<RwkvEntity, string>;
+  rwkvCards!: Table<RwkvCard, string>;
   dictionaries!: Table<Dictionary, string>;
   entries!: Table<Entry, string>;
   frequencies!: Table<Frequency, string>;
@@ -55,6 +87,52 @@ class ReaderDatabase extends Dexie {
     this.version(3).stores({ exampleCorpora: "language" });
     this.version(4).stores({ morphology: "language" });
     this.version(5).stores({ nechybujte: "term" });
+    this.version(6)
+      .stores({
+        reviews: "id, wordId, time, [wordId+time], &sequence",
+        srsMeta: "id",
+        rwkvMeta: "id",
+        rwkvEntities: "id",
+        rwkvCards: "id",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table("vocabulary")
+          .toCollection()
+          .modify((word) => {
+            Object.assign(
+              word,
+              vocabularySchema.parse({ ...word, srsVersion: word.version }),
+            );
+          });
+        let sequence = 0;
+        await tx
+          .table("reviews")
+          .orderBy("time")
+          .modify((review) => {
+            Object.assign(
+              review,
+              reviewSchema.parse({
+                ...review,
+                sequence: ++sequence,
+                afterSrsVersion: review.afterVersion,
+              }),
+            );
+          });
+        await tx.table("srsMeta").put({ id: "main", sequence });
+        const settings = await tx.table("settings").get("main");
+        if (settings)
+          await tx
+            .table("settings")
+            .put({
+              id: "main",
+              value: settingsSchema.parse({
+                retention: 0.9,
+                onlyAgainGood: true,
+                ...settings.value,
+              }),
+            });
+      });
   }
 }
 export const db = new ReaderDatabase();

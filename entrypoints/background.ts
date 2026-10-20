@@ -37,7 +37,12 @@ import {
   preview,
   reviewQueue,
   undoReview,
+  dailyCounts,
+  rescheduleExisting,
 } from "../src/srs";
+
+import { srsWrite } from "../src/srs-lock";
+import { invalidateRwkv, replayBatch, rwkvStatus } from "../src/rwkv/runtime";
 
 export default defineBackground(() => {
   const sessions = new Map<
@@ -183,6 +188,12 @@ export default defineBackground(() => {
       case "settings":
         return settings;
       case "setSettings":
+        if (
+          request.value.algorithm === "rwkv" &&
+          settings.algorithm !== "rwkv" &&
+          !(await rwkvStatus(request.value)).ready
+        )
+          throw new Error(t("rwkv_not_ready"));
         await db.settings.put({ id: "main", value: request.value });
         await notify();
         return request.value;
@@ -391,6 +402,8 @@ export default defineBackground(() => {
           request.source,
           request.version,
           request.context,
+          request.durationMs,
+          request.time,
         );
         cacheAudio(word);
         await notify(word.id);
@@ -408,6 +421,7 @@ export default defineBackground(() => {
           .equals(request.id)
           .modify((w) => {
             w.suspended = request.value;
+            w.srsVersion++;
             w.version++;
             w.updated = Date.now();
           });
@@ -416,11 +430,21 @@ export default defineBackground(() => {
       case "deleteWord":
         await db.transaction(
           "rw",
-          [db.vocabulary, db.reviews, db.audio],
+          [
+            db.vocabulary,
+            db.reviews,
+            db.audio,
+            db.rwkvMeta,
+            db.rwkvEntities,
+            db.rwkvCards,
+            db.srsMeta,
+          ],
           async () => {
             await db.vocabulary.delete(request.id);
             await db.reviews.where("wordId").equals(request.id).delete();
             await db.audio.delete(request.id);
+            await invalidateRwkv();
+            await db.srsMeta.update("main", { undo: undefined });
           },
         );
         await notify(request.id);
@@ -507,30 +531,58 @@ export default defineBackground(() => {
       case "queue":
         return reviewQueue();
       case "preview":
-        return preview(await db.vocabulary.get(request.id));
+        return preview(
+          await db.vocabulary.get(request.id),
+          request.durationMs,
+          request.id,
+        );
       case "stats": {
         const words = await db.vocabulary
           .where("language")
           .equals(settings.studyLanguage)
           .toArray();
-        const midnight = new Date();
-        midnight.setHours(0, 0, 0, 0);
         return {
           total: words.length,
           known: words.filter((w) => w.known).length,
           due: words.filter(
             (w) => stateOf(w, settings.matureIntervalDays) === "due",
           ).length,
-          today: await db.reviews
-            .where("time")
-            .aboveOrEqual(midnight.getTime())
-            .filter(
-              (review) =>
-                JSON.parse(review.wordId)[0] === settings.studyLanguage,
-            )
-            .count(),
+          today: (await dailyCounts(settings)).today,
         };
       }
+      case "resetRwkv":
+        await invalidateRwkv();
+        await db.srsMeta.update("main", { undo: undefined });
+        return;
+      case "rwkvStatus":
+        return rwkvStatus(settings);
+      case "prepareRwkv":
+        return replayBatch(settings);
+      case "activateAlgorithm": {
+        if (request.algorithm === "rwkv" && !(await rwkvStatus(settings)).ready)
+          throw new Error(t("rwkv_not_ready"));
+        const value = { ...settings, algorithm: request.algorithm };
+        await db.settings.put({ id: "main", value });
+        await notify();
+        return value;
+      }
+      case "reschedule": {
+        const result = await rescheduleExisting(request.after);
+        await notify();
+        return result;
+      }
+      case "retentionOverride":
+        await db.vocabulary
+          .where("id")
+          .equals(request.id)
+          .modify((word) => {
+            word.retentionOverride = request.value;
+            word.srsVersion++;
+            word.version++;
+            word.updated = Date.now();
+          });
+        await notify(request.id);
+        return;
       case "audioSources": {
         const [language, lemma, reading] = JSON.parse(request.id) as [
           string,
@@ -585,10 +637,37 @@ export default defineBackground(() => {
         session: parsed.data.session,
         height: parsed.data.height,
       });
-    return handle(parsed.data).then(
+    const srsActions = new Set([
+      "grade",
+      "preview",
+      "mine",
+      "defineWord",
+      "known",
+      "suspend",
+      "undo",
+      "deleteWord",
+      "setSettings",
+      "setDictionary",
+      "moveDictionary",
+      "deleteDictionary",
+      "retentionOverride",
+      "reschedule",
+      "prepareRwkv",
+      "activateAlgorithm",
+      "resetRwkv",
+    ]);
+    return (
+      srsActions.has(parsed.data.action)
+        ? srsWrite(() => handle(parsed.data))
+        : handle(parsed.data)
+    ).then(
       (value) => ({ value }),
       (error) => ({
         error: error instanceof Error ? error.message : String(error),
+        needsReplay:
+          error instanceof Error &&
+          "code" in error &&
+          error.code === "RWKV_NOT_READY",
       }),
     );
   });

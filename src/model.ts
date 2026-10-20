@@ -21,6 +21,16 @@ export const languageSchema = z.string().transform((value, ctx) => {
     return z.NEVER;
   }
 });
+export const learningStepsSchema = z.array(
+  z
+    .string()
+    .regex(/^(?:\d+(?:\.\d+)?|\.\d+)[mhd]$/)
+    .refine((step) => parseFloat(step) > 0),
+);
+export const retentionBandSchema = z.object({
+  upTo: z.number().positive().nullable(),
+  retention: z.number().min(0.7).max(0.99),
+});
 export const settingsSchema = z
   .object({
     studyLanguage: z.union([z.literal(""), languageSchema]).default(""),
@@ -45,8 +55,41 @@ export const settingsSchema = z
     wordStyles: wordStylesSchema,
     front: z.enum(["word", "sentence"]).default("word"),
     matureIntervalDays: z.number().int().min(1).default(28),
-    retention: z.number().min(0.7).max(0.99).default(0.9),
-    onlyAgainGood: z.boolean().default(true),
+    retention: z.number().min(0.7).max(0.99).default(0.8),
+    algorithm: z.enum(["fsrs", "rwkv"]).default("fsrs"),
+    learningSteps: learningStepsSchema.default(["10m"]),
+    relearningSteps: learningStepsSchema.default(["10m"]),
+    minimumInterval: z.number().int().min(1).max(36500).default(1),
+    rolloverHour: z.number().int().min(0).max(23).default(4),
+    learnAheadMinutes: z.number().nonnegative().finite().default(20),
+    reviewLimit: z.number().int().positive().nullable().default(null),
+    leechThreshold: z.number().int().nonnegative().default(8),
+    leechAction: z.enum(["suspend", "mark"]).default("suspend"),
+    intervalFuzz: z.boolean().default(false),
+    dynamicRetention: z.boolean().default(false),
+    retentionBands: z
+      .array(retentionBandSchema)
+      .min(1)
+      .refine(
+        (bands) =>
+          bands.at(-1)?.upTo === null &&
+          bands.every(
+            (band, index) =>
+              index === bands.length - 1 ||
+              (band.upTo !== null &&
+                (index === 0 ||
+                  band.upTo > (bands[index - 1]!.upTo ?? Infinity))),
+          ),
+        t("srs_invalid_bands"),
+      )
+      .default([
+        { upTo: 1000, retention: 0.9 },
+        { upTo: 5000, retention: 0.85 },
+        { upTo: 20000, retention: 0.8 },
+        { upTo: null, retention: 0.75 },
+      ]),
+    rankSources: z.record(z.string(), z.boolean()).default({}),
+    onlyAgainGood: z.boolean().default(false),
     newLimit: z.number().int().min(0).max(10000).default(20),
     missingFrequency: z.enum(["last", "random"]).default("last"),
     audioDownloads: z.boolean().default(false),
@@ -223,7 +266,7 @@ export type LookupResult = {
   warning?: string;
 };
 
-export const scheduleSchema = z.object({
+const legacyScheduleSchema = z.object({
   due: z.number().finite(),
   stability: z.number().finite().nonnegative(),
   difficulty: z.number().finite().nonnegative(),
@@ -235,6 +278,37 @@ export const scheduleSchema = z.object({
   state: z.number().int().min(0).max(3),
   last_review: z.number().finite().nullable(),
 });
+const commonScheduleSchema = z.object({
+  due: z.number().finite(),
+  scheduled_days: z.number().finite().nonnegative(),
+  reps: z.number().int().nonnegative(),
+  lapses: z.number().int().nonnegative(),
+  learning_steps: z.number().int().nonnegative(),
+  state: z.number().int().min(0).max(3),
+  last_review: z.number().finite().nullable(),
+  last_review_day: z.number().int().nullable().default(null),
+  interday: z.boolean(),
+  fsrs: z.object({
+    stability: z.number().finite().nonnegative(),
+    difficulty: z.number().finite().nonnegative(),
+  }),
+});
+export const scheduleSchema = z.union([
+  commonScheduleSchema,
+  legacyScheduleSchema.transform((card) => ({
+    due: card.due,
+    scheduled_days: card.scheduled_days,
+    reps: card.reps,
+    lapses: card.lapses,
+    learning_steps: card.learning_steps,
+    state: card.state,
+    last_review: card.last_review,
+    last_review_day: null,
+    interday:
+      (card.state === 1 || card.state === 3) && card.scheduled_days >= 1,
+    fsrs: { stability: card.stability, difficulty: card.difficulty },
+  })),
+]);
 export type Schedule = z.infer<typeof scheduleSchema>;
 export const vocabularySchema = z.object({
   id: z.string(),
@@ -246,6 +320,9 @@ export const vocabularySchema = z.object({
   known: z.boolean(),
   suspended: z.boolean(),
   card: scheduleSchema.nullable(),
+  srsVersion: z.number().int().nonnegative().default(0),
+  leech: z.boolean().default(false),
+  retentionOverride: z.number().min(0.7).max(0.99).nullable().default(null),
   version: z.number().int().nonnegative(),
   created: z.number().finite(),
   updated: z.number().finite(),
@@ -263,7 +340,12 @@ export const reviewSchema = z.object({
     z.string(),
     z.union([z.number().finite(), z.string(), z.null()]),
   ),
-  scheduler: z.literal("ts-fsrs@5.4.2/FSRS-6"),
+  scheduler: z.enum(["ts-fsrs@5.4.2/FSRS-6", "rwkv-sm40v2-w8-s8"]),
+  sequence: z.number().int().nonnegative().default(0),
+  active: z.boolean().default(true),
+  durationMs: z.number().finite().nonnegative().nullable().default(null),
+  after: scheduleSchema.nullable().default(null),
+  afterSrsVersion: z.number().int().nonnegative().default(0),
   retention: z.number().min(0.7).max(0.99),
 });
 export type Review = z.infer<typeof reviewSchema>;

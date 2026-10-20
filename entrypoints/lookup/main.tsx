@@ -1,3 +1,5 @@
+import { useReviewClock } from "../../src/useReviewClock";
+import { SrsProgress } from "../../src/SrsProgress";
 import { Select, SelectOption } from "../../src/Select";
 import {
   Check,
@@ -139,6 +141,7 @@ function LookupEntry({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [lastReview, setLastReview] = useState("");
+  const duration = useReviewClock(`${selected}:${saved?.card?.reps}`);
   const unparsed = result?.words.length === 0;
   const word: LookupWord | undefined =
     result?.words.find((w) => w.id === selected) ||
@@ -236,7 +239,7 @@ function LookupEntry({
     if (!selected || !term) return;
     void Promise.all([
       rpc({ action: "word", id: selected }),
-      rpc({ action: "preview", id: selected }),
+      rpc({ action: "preview", id: selected, durationMs: duration() }),
       rpc({ action: "settings" }),
       rpc({ action: "lookup", term }),
     ])
@@ -248,7 +251,7 @@ function LookupEntry({
         setError(result.warning || "");
       })
       .catch((error) => setError(error.message));
-  }, [selected, term]);
+  }, [selected, term, duration]);
   useEffect(reload, [reload]);
   useChanges(reload);
   useEffect(() => {
@@ -312,7 +315,9 @@ function LookupEntry({
           id: word.id,
           term,
           rating,
-          version: saved?.version || 0,
+          version: saved?.srsVersion ?? 0,
+          durationMs: duration(),
+          time: Date.now(),
           source: "reading",
           context,
         });
@@ -391,6 +396,7 @@ function LookupEntry({
             </button>
           )}
           <ErrorBox error={error} />
+          <SrsProgress />
           {!result && !error && <p className="muted">{t("looking_up")}</p>}
           {word && (
             <>

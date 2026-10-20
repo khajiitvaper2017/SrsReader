@@ -10,13 +10,15 @@ Open **Settings** and keep these exports:
 
 Import each file into its matching section. Settings and learning imports replace that category after confirmation; they do not merge. Dictionaries may be imported before or after settings. Saved cards can be reviewed without their original dictionaries.
 
+RWKV model files and saved model states are not included. After restore, RWKV downloads its model if needed and rebuilds its state from review history. Undone answers are included in the history but do not affect scheduling.
+
 Word-form tables and Tatoeba corpora are not included in these exports. Download them again under **Word forms** and **Example sentences** after moving to another browser.
 
 Export before uninstalling, clearing browser data, or moving to another browser. There is no account or cloud backup.
 
 ## What stays local
 
-Parsing, reviews, and translation run on your device. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers. Optional pronunciation downloads send the word to Wikimedia Commons, not your sentences or website URLs.
+Parsing, reviews, and translation run on your device. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers, and GitHub for the RWKV model. Optional pronunciation downloads send the word to Wikimedia Commons, not your sentences or website URLs.
 
 ## Sources
 

@@ -1,3 +1,6 @@
+import { SrsSettings } from "../../src/SrsSettings";
+import { SrsProgress } from "../../src/SrsProgress";
+import { useReviewClock } from "../../src/useReviewClock";
 import { Select, SelectOption } from "../../src/Select";
 import {
   Check,
@@ -100,6 +103,10 @@ function App() {
   useEffect(loadStats, [loadStats]);
   useChanges(loadStats);
   useEffect(() => {
+    const timer = setInterval(loadStats, 60000);
+    return () => clearInterval(timer);
+  }, [loadStats]);
+  useEffect(() => {
     const hash = () => {
       setPage(location.hash.slice(1) || "review");
       stopAudio();
@@ -196,6 +203,7 @@ function ReviewPage({
   const [example, setExample] = useState(0);
   const word = queue?.words[0];
   const context = word?.contexts[example];
+  const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const load = useCallback(() => {
     if (busyRef.current) return;
     void rpc({ action: "queue" })
@@ -211,16 +219,27 @@ function ReviewPage({
     setRevealed(false);
     setExample(0);
     stopAudio();
-    if (word)
-      void rpc({ action: "preview", id: word.id })
-        .then(setTimes)
-        .catch((error) => setError(error.message));
   }, [word?.id, word?.card?.reps]);
   useEffect(() => {
-    if (!queue?.waiting) return;
+    if (!word) return;
+    let alive = true;
+    setTimes([]);
+    void rpc({ action: "preview", id: word.id, durationMs: duration() })
+      .then((value) => {
+        if (alive) setTimes(value);
+      })
+      .catch((error) => {
+        if (alive) setError(error.message);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [word?.id, word?.srsVersion, settings, revealed, duration]);
+  useEffect(() => {
+    if (!queue?.wakeAt) return;
     const timer = setTimeout(
       load,
-      Math.min(Math.max(500, queue.waiting - Date.now() + 50), 60000),
+      Math.min(Math.max(500, queue.wakeAt - Date.now() + 50), 60000),
     );
     return () => clearTimeout(timer);
   }, [queue, load]);
@@ -236,8 +255,10 @@ function ReviewPage({
         id: word.id,
         term: word.lemma,
         rating,
-        version: word.version,
+        version: word.srsVersion,
         source: "review",
+        durationMs: duration(),
+        time: Date.now(),
       });
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
@@ -300,6 +321,7 @@ function ReviewPage({
   }
   return (
     <>
+      <SrsProgress />
       <div className="review-stats">
         <span>
           {t("due")} <strong>{queue?.due ?? "—"}</strong>
@@ -516,7 +538,10 @@ function WordsPage({ settings }: { settings: Settings }) {
   const word = words.find((w) => w.id === selected);
   const visible = words.filter(
     (w) =>
-      filter === "all" || stateOf(w, settings.matureIntervalDays) === filter,
+      filter === "all" ||
+      (filter === "leeches"
+        ? w.leech
+        : stateOf(w, settings.matureIntervalDays) === filter),
   );
   async function action(task: () => Promise<unknown>) {
     try {
@@ -544,6 +569,7 @@ function WordsPage({ settings }: { settings: Settings }) {
           onValueChange={(value) => setFilter(value)}
         >
           <SelectOption value="all">{t("all_words")}</SelectOption>
+          <SelectOption value="leeches">{t("srs_leeches")}</SelectOption>
           {wordStates
             .filter((state) => state !== "unknown")
             .map((state) => (
@@ -728,6 +754,43 @@ function WordsPage({ settings }: { settings: Settings }) {
                   </div>
                 </div>
               ))}
+              <label className="setting-row">
+                <span>
+                  <strong>{t("srs_word_retention")}</strong>
+                  <small>{t("srs_override_help")}</small>
+                </span>
+                <input
+                  type="number"
+                  min={70}
+                  max={99}
+                  placeholder={t("srs_global")}
+                  value={
+                    word.retentionOverride === null
+                      ? ""
+                      : Math.round(word.retentionOverride * 100)
+                  }
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (
+                      value === "" ||
+                      (Number(value) >= 70 && Number(value) <= 99)
+                    )
+                      void action(() =>
+                        rpc({
+                          action: "retentionOverride",
+                          id: word.id,
+                          value: value === "" ? null : Number(value) / 100,
+                        }),
+                      );
+                  }}
+                />
+              </label>
+              {word.card && (
+                <p className="muted">
+                  {t("srs_lapses", { count: word.card.lapses })}
+                  {word.leech ? ` · ${t("srs_leech")}` : ""}
+                </p>
+              )}
               {word.card && !word.known && (
                 <div className="schedule-info">
                   <span>{t("next_review")}</span>
@@ -1787,6 +1850,12 @@ function SettingsPage({
                   <h2>{t("spaced_repetition")}</h2>
                 </div>
               </div>
+              <SrsSettings
+                settings={settings}
+                dictionaries={dictionaries}
+                onChange={update}
+                onError={setError}
+              />
               <label className="setting-row">
                 <span>
                   <strong>{t("use_only_again_and_good")}</strong>

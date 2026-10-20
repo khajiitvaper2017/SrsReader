@@ -1765,3 +1765,38 @@ button.master-action[aria-pressed="true"] {
   font-size: 12px;
   margin-top: 2px;
 }
+
+.srs-settings details {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.srs-settings summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.srs-settings input[type="text"] {
+  width: min(180px, 45%);
+}
+.srs-bands .row {
+  flex-wrap: wrap;
+  align-items: end;
+  margin: 10px 0;
+}
+.srs-bands label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.srs-bands input {
+  width: 110px;
+}
+.srs-settings progress {
+  width: 100%;
+}
+.srs-settings .setting-row > span {
+  flex: 1;
+  min-width: 0;
+}
+.srs-settings .setting-row > input {
+  flex-shrink: 0;
+}
