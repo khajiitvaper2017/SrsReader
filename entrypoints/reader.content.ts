@@ -1,4 +1,4 @@
-import { startReader } from "@/reader/content";
+import { startReader } from "@/reader/controller";
 import { defineContentScript } from "wxt/utils/define-content-script";
 
 export default defineContentScript({

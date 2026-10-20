@@ -26,15 +26,15 @@ async function execute(request: Request, settings: Settings) {
       return db.dictionaries.orderBy("order").toArray();
     case "setDictionary":
       await setDictionaryEnabled(request, settings);
-      await notify();
+      await notify(undefined, "dictionaries");
       return;
     case "moveDictionary":
       await reorderDictionary(request, settings);
-      await notify();
+      await notify(undefined, "dictionaries");
       return;
     case "deleteDictionary":
       await deleteDictionary(request);
-      await notify();
+      await notify(undefined, "dictionaries");
       return;
     case "lookup": {
       const result = await lookup(request.term, settings);

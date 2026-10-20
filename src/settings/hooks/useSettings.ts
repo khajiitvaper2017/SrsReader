@@ -1,3 +1,4 @@
+import type { ChangeMessage } from "@/platform/messaging/events";
 import { installInputPrevention } from "@/reader/input-prevention";
 import { settingsClient } from "@/settings/client";
 import { defaults, type Settings } from "@/settings/model";
@@ -21,8 +22,12 @@ export function useSettings(
         })
         .catch(console.error);
     };
-    const changed = (message: { event?: string }) => {
-      if (message.event === "changed") load();
+    const changed = (message: ChangeMessage) => {
+      if (
+        message.event === "changed" &&
+        ["collection", "settings", "dictionaries"].includes(message.scope)
+      )
+        load();
     };
     load();
     browser.runtime.onMessage.addListener(changed);

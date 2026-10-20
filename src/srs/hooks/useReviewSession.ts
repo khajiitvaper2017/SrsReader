@@ -33,7 +33,7 @@ export function useReviewSession({
       .catch((error) => setError(error.message));
   }, []);
   useEffect(load, [load]);
-  useChanges(load);
+  useChanges(load, ["vocabulary", "srs", "settings", "dictionaries"]);
   useEffect(() => {
     setFront(settings.front);
   }, [settings.front]);

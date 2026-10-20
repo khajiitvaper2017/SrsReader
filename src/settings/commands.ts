@@ -23,7 +23,7 @@ async function execute(request: Request, settings: Settings) {
       )
         throw new Error(t("rwkv_not_ready"));
       await saveSettings(request.value);
-      await notify();
+      await notify(undefined, "settings");
       return request.value;
   }
 }

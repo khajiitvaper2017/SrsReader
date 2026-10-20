@@ -39,7 +39,7 @@ export function SettingsPage({
       .catch((error) => setError(error.message));
   }, []);
   useEffect(load, [load]);
-  useChanges(load);
+  useChanges(load, ["dictionaries"]);
   async function update(patch: Partial<Settings>) {
     const next = { ...settings, ...patch };
     setSettings(next);

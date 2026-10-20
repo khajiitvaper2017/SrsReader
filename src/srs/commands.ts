@@ -86,12 +86,12 @@ async function execute(request: Request, settings: Settings) {
         throw new Error(t("rwkv_not_ready"));
       const value = { ...settings, algorithm: request.algorithm };
       await saveSettings(value);
-      await notify();
+      await notify(undefined, "settings");
       return value;
     }
     case "reschedule": {
       const result = await rescheduleExisting(request.after);
-      await notify();
+      await notify(undefined, "srs");
       return result;
     }
   }

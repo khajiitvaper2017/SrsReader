@@ -26,7 +26,7 @@ export function useWords({ settings }: { settings: Settings }) {
       .catch((error) => setError(error.message));
   }, [query]);
   useEffect(load, [load]);
-  useChanges(load);
+  useChanges(load, ["vocabulary", "settings", "dictionaries"]);
   const word = words.find((w) => w.id === selected);
   const visible = words.filter(
     (w) =>

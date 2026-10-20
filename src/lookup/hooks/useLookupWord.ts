@@ -3,7 +3,7 @@ import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import { folded } from "@/languages/text";
 import { lookupClient } from "@/lookup/client";
 import type { LookupPage } from "@/lookup/model";
-import { startReader } from "@/reader/content";
+import { startReader } from "@/reader/controller";
 import { settingsClient } from "@/settings/client";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
@@ -159,7 +159,7 @@ export function useLookupWord({
       .catch((error) => setError(error.message));
   }, [selected, term, duration]);
   useEffect(reload, [reload]);
-  useChanges(reload);
+  useChanges(reload, ["vocabulary", "srs", "settings", "dictionaries"]);
   useEffect(() => {
     function key(event: KeyboardEvent) {
       if (

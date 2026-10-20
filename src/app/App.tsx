@@ -25,7 +25,7 @@ export function App() {
     void srsClient({ action: "stats" }).then(setStats).catch(console.error);
   }, []);
   useEffect(loadStats, [loadStats]);
-  useChanges(loadStats);
+  useChanges(loadStats, ["vocabulary", "srs", "settings"]);
   useEffect(() => {
     const timer = setInterval(loadStats, 60000);
     return () => clearInterval(timer);
