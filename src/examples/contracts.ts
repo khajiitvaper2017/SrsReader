@@ -1,5 +1,5 @@
+import type { ExamplesResult } from "@/examples/query";
 import { selection } from "@/vocabulary/contracts";
-import type { ExamplesResult } from "@/vocabulary/examples/query";
 import { z } from "zod";
 export const requests = [
   z.object({

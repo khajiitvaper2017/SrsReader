@@ -1,9 +1,9 @@
 import { morphologyLanguage } from "@/languages/codes";
 import { normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
+import type { ImportProgress } from "@/shared/download";
 import { readDownload } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
-import type { ExampleProgress } from "@/vocabulary/examples/example-corpus";
 import { XzReadableStream } from "xz-decompress";
 
 // Simplemma's SMFC1 data format is pinned together with its decoder.
@@ -59,7 +59,7 @@ function decodeForms(data: Uint8Array) {
 
 export async function installMorphology(
   language: string,
-  progress: (value: ExampleProgress) => void,
+  progress: (value: ImportProgress) => void,
 ) {
   const source = morphologyLanguage(language);
   if (!source)

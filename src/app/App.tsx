@@ -2,11 +2,11 @@ import { ReviewPage } from "@/app/pages/ReviewPage";
 import { SettingsPage } from "@/app/pages/SettingsPage";
 import { WordsPage } from "@/app/pages/WordsPage";
 import { stopAudio } from "@/audio/playback";
-import { rpc } from "@/platform/messaging/send";
-import { useSettings } from "@/settings/useSettings";
+import { useSettings } from "@/settings/hooks/useSettings";
+import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { Logo } from "@/shared/ui/Logo";
-import { useChanges } from "@/shared/useChanges";
+import { srsClient } from "@/srs/client";
 import {
   BookMarked,
   BookOpen,
@@ -22,7 +22,7 @@ export function App() {
   const [settings, setSettings, ready] = useSettings();
   const [stats, setStats] = useState({ total: 0, due: 0, known: 0, today: 0 });
   const loadStats = useCallback(() => {
-    void rpc({ action: "stats" }).then(setStats).catch(console.error);
+    void srsClient({ action: "stats" }).then(setStats).catch(console.error);
   }, []);
   useEffect(loadStats, [loadStats]);
   useChanges(loadStats);

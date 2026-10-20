@@ -1,8 +1,8 @@
 import { readLearning } from "@/backups/archive";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
-import { rpc } from "@/platform/messaging/send";
 import { settingsSchema } from "@/settings/model";
+import { srsClient } from "@/srs/client";
 import { invalidateRwkv } from "@/srs/rwkv/runtime";
 
 export async function restoreSettings(
@@ -22,10 +22,13 @@ export async function restoreSettings(
     }),
   );
   if (settings.algorithm === "rwkv") {
-    while (!(await rpc({ action: "rwkvStatus" })).ready)
-      await rpc({ action: "prepareRwkv" });
+    while (!(await srsClient({ action: "rwkvStatus" })).ready)
+      await srsClient({ action: "prepareRwkv" });
   }
-  await rpc({ action: "activateAlgorithm", algorithm: settings.algorithm });
+  await srsClient({
+    action: "activateAlgorithm",
+    algorithm: settings.algorithm,
+  });
 }
 
 export async function restoreLearning(

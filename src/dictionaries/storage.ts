@@ -62,3 +62,15 @@ export async function deleteDictionary(
   });
   return;
 }
+
+export const loadDictionaries = (ids: string[]) => db.dictionaries.bulkGet(ids);
+export const dictionaryTags = (revisions: string[]) =>
+  db.tags.where("revisionId").anyOf(revisions).toArray();
+export const dictionaryArchive = (revision: string) =>
+  db.archives.get(revision);
+export async function dictionaryImage(id: string, path: string) {
+  const dictionary = await db.dictionaries.get(id);
+  return dictionary
+    ? db.dictionaryMedia.get(dictionary.revisionId + ":" + path)
+    : undefined;
+}

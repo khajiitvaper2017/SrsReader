@@ -1,21 +1,23 @@
-import { AudioSettings } from "@/audio/AudioSettings";
-import { DictionarySettings } from "@/dictionaries/DictionarySettings";
+import { AudioSettings } from "@/audio/components/AudioSettings";
+import { BackupSettings } from "@/backups/components/BackupSettings";
+import { dictionariesClient } from "@/dictionaries/client";
+import { DictionarySettings } from "@/dictionaries/components/DictionarySettings";
 import type { Dictionary } from "@/dictionaries/model";
-import { LanguageDataSettings } from "@/languages/LanguageDataSettings";
-import { LanguageSettings } from "@/languages/LanguageSettings";
+import { examplesClient } from "@/examples/client";
 import { languageIso3, morphologyLanguage } from "@/languages/codes";
-import { useLanguageData } from "@/languages/useLanguageData";
-import { db } from "@/platform/database/db";
-import { rpc } from "@/platform/messaging/send";
-import { LookupSettings } from "@/reader/LookupSettings";
-import { ReadingSettings } from "@/reader/ReadingSettings";
-import { BackupSettings } from "@/settings/BackupSettings";
+import { LanguageDataSettings } from "@/languages/components/LanguageDataSettings";
+import { LanguageSettings } from "@/languages/components/LanguageSettings";
+import { useLanguageData } from "@/languages/hooks/useLanguageData";
+import { installedMorphology } from "@/languages/storage";
+import { LookupSettings } from "@/reader/components/LookupSettings";
+import { ReadingSettings } from "@/reader/components/ReadingSettings";
+import { settingsClient } from "@/settings/client";
+import { useSettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
-import { useSettingsTask } from "@/settings/useSettingsTask";
+import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
-import { useChanges } from "@/shared/useChanges";
-import { ReviewSettings } from "@/srs/ReviewSettings";
+import { ReviewSettings } from "@/srs/components/ReviewSettings";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 export function SettingsPage({
@@ -32,7 +34,7 @@ export function SettingsPage({
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const languageData = useLanguageData(settings.studyLanguage, tasks);
   const load = useCallback(() => {
-    void rpc({ action: "dictionaries" })
+    void dictionariesClient({ action: "dictionaries" })
       .then(setDictionaries)
       .catch((error) => setError(error.message));
   }, []);
@@ -42,7 +44,7 @@ export function SettingsPage({
     const next = { ...settings, ...patch };
     setSettings(next);
     try {
-      setSettings(await rpc({ action: "setSettings", value: next }));
+      setSettings(await settingsClient({ action: "setSettings", value: next }));
       setError("");
     } catch (error) {
       setSettings(settings);
@@ -55,17 +57,17 @@ export function SettingsPage({
     try {
       if (
         morphologyLanguage(settings.studyLanguage) &&
-        !(await db.morphology.get(settings.studyLanguage))
+        !(await installedMorphology(settings.studyLanguage))
       )
         await languageData.install("morphology");
       if (
         languageIso3(settings.studyLanguage) &&
-        !(await rpc({ action: "exampleCorpus" })).installed
+        !(await examplesClient({ action: "exampleCorpus" })).installed
       )
         await languageData.install("examples");
 
       setSettings(
-        await rpc({
+        await settingsClient({
           action: "setSettings",
           value: { ...settings, setupComplete: true },
         }),

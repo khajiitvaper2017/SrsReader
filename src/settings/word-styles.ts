@@ -1,32 +1,13 @@
-import type { Settings } from "@/settings/model";
+import { wordStates } from "@/vocabulary/state";
 import { z } from "zod";
 
-export const wordStates = [
-  "unknown",
-  "new",
-  "learning",
-  "review",
-  "due",
-  "known",
-  "suspended",
-] as const;
-export type WordState = (typeof wordStates)[number];
 export const wordStyleStates = [...wordStates, "ignored", "unparsed"] as const;
-export const wordStateLabels = {
-  unknown: "new",
-  new: "saved",
-  learning: "young",
-  review: "mature",
-  due: "due",
-  known: "mastered",
-  suspended: "suspended",
-  ignored: "ignored",
-  unparsed: "unparsed",
-};
+
 const styleSchema = z.object({
   mode: z.enum(["none", "text", "background"]),
   color: z.string().regex(/^#[\da-f]{6}$/i),
 });
+
 export const wordStylesSchema = z
   .object({
     unknown: styleSchema.default({ mode: "text", color: "#dc4c4c" }),
@@ -40,15 +21,3 @@ export const wordStylesSchema = z
     unparsed: styleSchema.default({ mode: "none", color: "#9298a4" }),
   })
   .prefault({});
-
-export function wordHighlightCss(settings: Settings) {
-  return (
-    wordStyleStates
-      .map((state) => {
-        const { mode, color } = settings.wordStyles[state];
-        const enabled = settings.wordColorsEnabled;
-        return `::highlight(srs-${state}){color:${enabled && mode === "text" ? color : "inherit"};background-color:${enabled && mode === "background" ? color + "30" : "transparent"}}`;
-      })
-      .join("\n") + "\n::highlight(srs-focus){background-color:#a78bfa60}"
-  );
-}

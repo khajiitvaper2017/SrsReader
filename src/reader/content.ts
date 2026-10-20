@@ -1,17 +1,17 @@
 import type { ScanSpan } from "@/dictionaries/lookup";
+import { detectLanguage } from "@/languages/detection";
 import { folded } from "@/languages/text";
-import { rpc } from "@/platform/messaging/send";
+import { lookupClient } from "@/lookup/client";
+import { readerClient } from "@/reader/client";
 import { matchesModifiers, readerKeysSchema } from "@/reader/controls";
+import { wordHighlightCss } from "@/reader/highlight-style";
 import { installInputPrevention } from "@/reader/input-prevention";
+import { settingsClient } from "@/settings/client";
 import { defaults, type Settings } from "@/settings/model";
-import {
-  wordHighlightCss,
-  wordStyleStates,
-  type WordState,
-} from "@/settings/word-styles";
+import { wordStyleStates } from "@/settings/word-styles";
 import { setInterfaceLanguage, t } from "@/shared/i18n/i18n";
-import { detectLanguage } from "@/translation/browser-ai";
 import type { ReadingContext } from "@/vocabulary/model";
+import type { WordState } from "@/vocabulary/state";
 import { browser } from "wxt/browser";
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
 
@@ -291,7 +291,7 @@ export function startReader(
             const space = text.lastIndexOf(" ", end);
             if (space > offset) end = space;
           }
-          const spans = await rpc({
+          const spans = await readerClient({
             action: "scan",
             text: text.slice(offset, end),
           });
@@ -411,7 +411,11 @@ export function startReader(
       return;
     }
     popupRange = range;
-    const session = await rpc({ action: "createSession", term, context });
+    const session = await lookupClient({
+      action: "createSession",
+      term,
+      context,
+    });
     if (popupRange !== range || !range.startContainer.isConnected) return;
     popupSession = session;
     popup = document.createElement("iframe");
@@ -646,7 +650,7 @@ export function startReader(
   }
   async function configure(preservePopup = false) {
     const previous = settings;
-    settings = await rpc({ action: "settings" });
+    settings = await settingsClient({ action: "settings" });
     await setInterfaceLanguage(
       settings.interfaceLanguage,
       settings.nativeLanguage,

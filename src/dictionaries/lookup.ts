@@ -13,8 +13,8 @@ import {
 } from "@/languages/parsing-rules";
 import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
-import type { WordState } from "@/settings/word-styles";
 import { stateOf, wordId } from "@/vocabulary/model";
+import type { WordState } from "@/vocabulary/state";
 
 const cache = new Map<string, LookupResult>();
 export function clearLookupCache() {

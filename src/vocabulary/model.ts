@@ -1,9 +1,9 @@
 import { meaningSchema } from "@/dictionaries/model";
 import { normalize } from "@/languages/text";
-import type { WordState } from "@/settings/word-styles";
 import { t } from "@/shared/i18n/i18n";
 import { scheduleSchema } from "@/srs/model";
 import { translationSchema } from "@/translation/model";
+import type { WordState } from "@/vocabulary/state";
 import { z } from "zod";
 
 export const wordId = (language: string, lemma: string, reading: string) =>
