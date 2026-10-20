@@ -68,7 +68,8 @@ export async function commitReview({
         afterVersion: saved.version,
         afterSrsVersion: saved.srsVersion,
         after: saved.card,
-        log: {},
+        log:
+          settings.algorithm === "rwkv" ? { rwkvMode: settings.rwkvMode } : {},
         scheduler:
           settings.algorithm === "fsrs"
             ? "ts-fsrs@5.4.2/FSRS-6"

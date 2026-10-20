@@ -1,21 +1,8 @@
-import { t } from "@/shared/i18n/i18n";
-import { loadModel } from "@/srs/engines/rwkv/assets";
-import { rwkvStatus } from "@/srs/engines/rwkv/cache";
 import { buildFeatures } from "@/srs/engines/rwkv/features";
-import { entityKey, type EntityStates } from "@/srs/engines/rwkv/model";
-import { pack, unpack } from "@/srs/engines/rwkv/precision";
-import type {
-  RwkvCard,
-  RwkvEntity,
-  RwkvMeta,
-} from "@/srs/engines/rwkv/records";
-import {
-  invalidateRwkv,
-  loadCard,
-  loadEntities,
-  loadMeta,
-  replayedReview,
-} from "@/srs/engines/rwkv/storage";
+import { entityKey } from "@/srs/engines/rwkv/model";
+import { pack } from "@/srs/engines/rwkv/precision";
+import type { RwkvCard, RwkvMeta } from "@/srs/engines/rwkv/records";
+import { loadRwkvState } from "@/srs/engines/rwkv/state";
 import type { SchedulingPreferences as Settings } from "@/srs/preferences";
 import { studyDay } from "@/srs/study-day";
 
@@ -26,29 +13,10 @@ export async function simulateAnswers(
   durationMs: number | null,
   settings: Settings,
 ) {
-  if (!(await rwkvStatus(settings)).ready)
-    throw Object.assign(new Error(t("rwkv_not_ready")), {
-      code: "RWKV_NOT_READY",
-    });
-  const model = await loadModel();
-  const meta = (await loadMeta())!;
-  const card = await loadCard(wordId);
-  const ids = [wordId, language, wordId, "main", "main"];
-  const keys = ids.map((id, stream) => entityKey(stream, id));
-  const existing = (await loadEntities(keys)).filter(
-    (entity): entity is RwkvEntity => !!entity,
-  );
-  if (
-    (card && existing.length !== ids.length) ||
-    (!card && (await replayedReview(wordId, meta.cursor)))
-  ) {
-    await invalidateRwkv();
-    throw Object.assign(new Error(t("rwkv_not_ready")), {
-      code: "RWKV_NOT_READY",
-    });
-  }
-  const states: EntityStates = new Map(
-    existing.map((entity) => [entity.id, unpack(entity.state)]),
+  const { model, meta, card, ids, entities, states } = await loadRwkvState(
+    wordId,
+    language,
+    settings,
   );
   const answers = [1, 2, 3, 4].map((rating) => {
     const row = buildFeatures(
@@ -81,5 +49,5 @@ export async function simulateAnswers(
       meta: { ...meta, features: row.global } satisfies RwkvMeta,
     };
   });
-  return { model, answers, before: { entities: existing, card, meta } };
+  return { model, answers, before: { entities, card, meta } };
 }

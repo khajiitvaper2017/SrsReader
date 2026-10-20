@@ -15,6 +15,7 @@ export const srsPreferencesSchema = z.object({
   front: z.enum(["word", "sentence"]).default("word"),
   retention: z.number().min(0.7).max(0.99).default(0.8),
   algorithm: z.enum(["fsrs", "rwkv"]).default("fsrs"),
+  rwkvMode: z.enum(["curve", "instant"]).default("curve"),
   learningSteps: learningStepsSchema.default(["10m"]),
   relearningSteps: learningStepsSchema.default(["10m"]),
   minimumInterval: z.number().int().min(1).max(36500).default(1),

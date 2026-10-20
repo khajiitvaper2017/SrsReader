@@ -9,6 +9,7 @@ Open **Review**. Choose **Word** or **In context**. Press **Show answer** or **S
 Open **Settings → Review**.
 
 - **Scheduling algorithm:** FSRS is the default. Select **RWKV w64** to download its model from GitHub and prepare your review history. Keep the page open until preparation finishes. You can resume interrupted preparation later. Both algorithms work offline. Switching algorithms keeps current due dates.
+- **RWKV scheduling mode:** available when RWKV is selected. **Curve** is the default. It uses the forgetting curve saved after an answer. **Instant** queries recall at future review dates to find an interval for your desired retention. It can take longer. Both modes work offline and use the same review history. Switching modes does not require another download or rebuild. It affects future answers. Use **Maintenance → Reschedule existing cards** to apply the selected mode to current Review cards. In Instant mode, a card already below the target can become due today. If its prediction stays above the target throughout the date search, the interval reaches the maximum of 36,500 days.
 - **Desired retention:** default 80%; accepts 70–99%. Higher values usually mean more reviews. Existing profiles keep their saved value.
 - **Use only Again and Good:** hides Hard and Easy. New profiles show all four answers.
 - **Mature interval (days):** default 28. A scheduled interval below this value is Young. An interval at or above it is Mature. This does not depend on the age of the word.

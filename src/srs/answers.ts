@@ -1,6 +1,7 @@
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
 import { fsrsAnswers } from "@/srs/engines/fsrs";
+import { rwkvInterval } from "@/srs/engines/rwkv/interval";
 import { simulateAnswers } from "@/srs/engines/rwkv/simulate";
 import { reviewIntervals } from "@/srs/intervals";
 import { emptySchedule } from "@/srs/model";
@@ -24,7 +25,7 @@ export async function candidates(
       : undefined;
   const raw = neural
     ? neural.answers.map((answer) =>
-        neural.model.interval(answer.heads, retention),
+        rwkvInterval(neural.model, answer, word.language, retention, settings),
       )
     : fsrs.map((answer) => answer.interval);
   const intervals = reviewIntervals(

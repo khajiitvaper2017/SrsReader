@@ -116,6 +116,22 @@ export function SrsSettings({
           });
         }}
       />
+      {settings.algorithm === "rwkv" && (
+        <Select
+          label={t("rwkv_mode")}
+          description={t("rwkv_mode_help")}
+          value={settings.rwkvMode}
+          disabled={busy}
+          data={[
+            { value: "curve", label: t("rwkv_mode_curve") },
+            { value: "instant", label: t("rwkv_mode_instant") },
+          ]}
+          onChange={(value) => {
+            if (value === "curve" || value === "instant")
+              void task(() => onChange({ rwkvMode: value }));
+          }}
+        />
+      )}
       {settings.algorithm === "rwkv" && status && (
         <Text c="dimmed">
           {status.ready
