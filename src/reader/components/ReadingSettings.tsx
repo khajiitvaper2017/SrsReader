@@ -13,6 +13,9 @@ import { DictionaryTags } from "@/dictionaries/components/DictionaryTags";
 import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import { udpipePermission } from "@/languages/udpipe-permission";
+import { ErrorBox } from "@/shared/ui/ErrorBox";
+import { useState } from "react";
 
 export function ReadingSettings({
   settings,
@@ -23,6 +26,23 @@ export function ReadingSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
   dictionaries: Dictionary[];
 }) {
+  const [parserError, setParserError] = useState("");
+  const [parserBusy, setParserBusy] = useState(false);
+  async function changeParser(enabled: boolean) {
+    setParserBusy(true);
+    setParserError("");
+    try {
+      if (enabled && !(await udpipePermission(true))) {
+        setParserError(t("udpipe_permission_denied"));
+        return;
+      }
+      await update({ udpipe: enabled });
+    } catch (error) {
+      setParserError((error as Error).message);
+    } finally {
+      setParserBusy(false);
+    }
+  }
   return (
     <>
       <Paper>
@@ -41,6 +61,23 @@ export function ReadingSettings({
             checked={settings.detectPageLanguage}
             onChange={(event) =>
               void update({ detectPageLanguage: event.currentTarget.checked })
+            }
+          />
+          <Switch
+            label={t("use_udpipe_for_czech")}
+            description={t("udpipe_help")}
+            checked={settings.udpipe}
+            disabled={settings.studyLanguage !== "cs" || parserBusy}
+            onChange={(event) => void changeParser(event.currentTarget.checked)}
+          />
+          <ErrorBox error={parserError} />
+          <Switch
+            label={t("automatically_ignore_proper_names")}
+            description={t("ignore_proper_names_help")}
+            checked={settings.ignoreProperNames}
+            disabled={settings.studyLanguage !== "cs" || !settings.udpipe}
+            onChange={(event) =>
+              void update({ ignoreProperNames: event.currentTarget.checked })
             }
           />
           {!!settings.disabledHosts.length && (

@@ -1,5 +1,6 @@
 import {
   dictionaryId,
+  entryMatch,
   frequencyDataSchema,
   indexSchema,
   termMetaSchema,
@@ -29,6 +30,7 @@ export async function removeRevision(id: string) {
     "rw",
     [
       db.entries,
+      db.entryMatches,
       db.frequencies,
       db.tags,
       db.dictionaryMedia,
@@ -37,6 +39,7 @@ export async function removeRevision(id: string) {
     ],
     async () => {
       await db.entries.where("revisionId").equals(id).delete();
+      await db.entryMatches.where("revisionId").equals(id).delete();
       await db.frequencies.where("revisionId").equals(id).delete();
       await db.tags.where("revisionId").equals(id).delete();
       await db.dictionaryMedia.where("revisionId").equals(id).delete();
@@ -138,7 +141,10 @@ async function importRevision(
               sequence,
             };
           });
-        await db.entries.bulkAdd(batch);
+        await db.transaction("rw", [db.entries, db.entryMatches], async () => {
+          await db.entries.bulkAdd(batch);
+          await db.entryMatches.bulkAdd(batch.map(entryMatch));
+        });
         const phrases = batch.flatMap((entry) => {
           const segments = [...segmenter.segment(entry.folded)].filter(
             (s) => s.isWordLike,

@@ -16,6 +16,8 @@ export const readerPreferencesSchema = z.object({
   nechybujte: z.boolean().default(false),
   scanPopups: z.boolean().default(true),
   detectPageLanguage: z.boolean().default(true),
+  udpipe: z.boolean().default(false),
+  ignoreProperNames: z.boolean().default(false),
   wordColorsEnabled: z.boolean().default(true),
   wordStyles: wordStylesSchema,
   matureIntervalDays: z.number().int().min(1).default(28),

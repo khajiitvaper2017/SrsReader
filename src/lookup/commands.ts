@@ -1,8 +1,12 @@
 import type { Request } from "@/lookup/contracts";
 import { t } from "@/shared/i18n/i18n";
 import type { ReadingContext } from "@/vocabulary/model";
+import type { Occurrence } from "@/languages/analysis";
 
-const sessions = new Map<string, { term: string; context?: ReadingContext }>();
+const sessions = new Map<
+  string,
+  { term: string; context?: ReadingContext; occurrence?: Occurrence }
+>();
 
 export const handleLookup = execute;
 async function execute(request: Request) {
@@ -10,7 +14,11 @@ async function execute(request: Request) {
     case "createSession": {
       const id = crypto.randomUUID();
       if (sessions.size > 100) sessions.delete(sessions.keys().next().value!);
-      sessions.set(id, { term: request.term, context: request.context });
+      sessions.set(id, {
+        term: request.term,
+        context: request.context,
+        occurrence: request.occurrence,
+      });
       return id;
     }
     case "session": {

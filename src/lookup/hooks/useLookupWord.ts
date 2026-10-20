@@ -1,3 +1,4 @@
+import type { Occurrence } from "@/languages/analysis";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import { folded } from "@/languages/text";
@@ -31,6 +32,7 @@ export function useLookupWord({
     selected: string,
     scroll: number,
     openDetails: number[],
+    occurrence?: Occurrence,
   ) => void;
   onBack?: () => void;
   onContext: (context: ReadingContext) => void;
@@ -41,7 +43,7 @@ export function useLookupWord({
   const bodyRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<LookupResult>();
-  const { term, context } = page;
+  const { term, context, occurrence } = page;
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -88,7 +90,7 @@ export function useLookupWord({
         url: word.meanings[0]?.sourceUrl || location.href,
         title: word.meanings[0]?.title || document.title,
       },
-      onLookup: (term, context) =>
+      onLookup: (term, context, occurrence) =>
         onLookup(
           term,
           context,
@@ -97,6 +99,7 @@ export function useLookupWord({
           [...root.querySelectorAll("details")].flatMap((details, index) =>
             details.open ? [index] : [],
           ),
+          occurrence,
         ),
     });
     return () => ctx.abort();
@@ -127,7 +130,7 @@ export function useLookupWord({
   }, [word?.id, unparsed]);
   useEffect(() => {
     let alive = true;
-    void dictionariesClient({ action: "lookup", term })
+    void dictionariesClient({ action: "lookup", term, occurrence })
       .then((lookup) => {
         if (!alive) return;
         setResult(lookup);
@@ -142,14 +145,14 @@ export function useLookupWord({
     return () => {
       alive = false;
     };
-  }, [term]);
+  }, [term, occurrence]);
   const reload = useCallback(() => {
     if (!selected || !term) return;
     void Promise.all([
       vocabularyClient({ action: "word", id: selected }),
       srsClient({ action: "preview", id: selected, durationMs: duration() }),
       settingsClient({ action: "settings" }),
-      dictionariesClient({ action: "lookup", term }),
+      dictionariesClient({ action: "lookup", term, occurrence }),
     ])
       .then(([word, times, settings, result]) => {
         setSaved(word);
@@ -159,7 +162,7 @@ export function useLookupWord({
         setError(result.warning || "");
       })
       .catch((error) => setError(error.message));
-  }, [selected, term, duration]);
+  }, [selected, term, duration, occurrence]);
   useEffect(reload, [reload]);
   useChanges(reload, ["vocabulary", "srs", "settings", "dictionaries"]);
   useEffect(() => {
@@ -228,6 +231,7 @@ export function useLookupWord({
           time: Date.now(),
           source: "reading",
           context,
+          occurrence,
         });
         setSaved(result.word);
         setLastReview(result.reviewId);
@@ -243,6 +247,7 @@ export function useLookupWord({
             id: word.id,
             term,
             context,
+            occurrence,
           }),
         );
         setNotice("");
@@ -265,6 +270,7 @@ export function useLookupWord({
           action: "known",
           id: word.id,
           term,
+          occurrence,
           value: !saved?.known,
         }),
       );
@@ -277,7 +283,7 @@ export function useLookupWord({
     }
   }
   async function definitionSaved(saved: Vocabulary) {
-    setResult(await dictionariesClient({ action: "lookup", term }));
+    setResult(await dictionariesClient({ action: "lookup", term, occurrence }));
     setSelected(saved.id);
     setSaved(saved);
     setEditing(false);

@@ -35,7 +35,9 @@ export function handleSrs(request: Request, settings: Settings) {
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "grade": {
-      const word = await snapshot(await resolved(request.term, request.id));
+      const word = await snapshot(
+        await resolved(request.term, request.id, request.occurrence),
+      );
       const result = await grade(
         word,
         request.rating as Grade,

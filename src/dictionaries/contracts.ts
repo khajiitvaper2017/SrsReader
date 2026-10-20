@@ -15,7 +15,11 @@ export const requests = [
     direction: z.enum(["up", "down"]),
   }),
   z.object({ action: z.literal("deleteDictionary"), id: z.string() }),
-  z.object({ action: z.literal("lookup"), term: selection.term }),
+  z.object({
+    action: z.literal("lookup"),
+    term: selection.term,
+    occurrence: selection.occurrence,
+  }),
 ] as const;
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;

@@ -1,3 +1,4 @@
+import type { Occurrence } from "@/languages/analysis";
 import {
   Loader,
   ActionIcon,
@@ -19,6 +20,7 @@ export function DefinitionEditor({
   word,
   term,
   context,
+  occurrence,
   settings,
   onSaved,
   onError,
@@ -27,6 +29,7 @@ export function DefinitionEditor({
   word?: LookupWord;
   term: string;
   context?: ReadingContext;
+  occurrence?: Occurrence;
   settings: Settings;
   onSaved: (word: Vocabulary) => Promise<void>;
   onError: (message: string) => void;
@@ -70,6 +73,7 @@ export function DefinitionEditor({
         id: word?.id,
         term,
         context,
+        occurrence,
         definition,
       });
       await onSaved(saved);

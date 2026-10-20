@@ -46,8 +46,10 @@ export function startReader(
     : installInputPrevention(() => (active ? settings : undefined), "webpages");
   ctx.onInvalidated(removeInputPrevention);
   async function configure(preservePopup = false) {
+    const started = performance.now();
     const previous = settings;
     settings = await settingsClient({ action: "settings" });
+    const settingsMs = Math.round(performance.now() - started);
     await setInterfaceLanguage(
       settings.interfaceLanguage,
       settings.nativeLanguage,
@@ -71,6 +73,15 @@ export function startReader(
       (options.onLookup
         ? settings.scanPopups
         : !settings.disabledHosts.includes(location.hostname));
+    console.info("[SrsReader] Reader configured", {
+      context: options.onLookup ? "popup" : "page",
+      active,
+      studyLanguage: settings.studyLanguage,
+      udpipeEnabled: settings.udpipe,
+      detectPageLanguage: settings.detectPageLanguage,
+      settingsMs,
+      totalMs: Math.round(performance.now() - started),
+    });
     if (!active || !preservePopup) popup.close();
     scanner.reset();
   }

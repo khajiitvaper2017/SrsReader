@@ -1,5 +1,6 @@
 import { selection } from "@/vocabulary/contracts";
 import type { ReadingContext } from "@/vocabulary/model";
+import type { Occurrence } from "@/languages/analysis";
 import { z } from "zod";
 
 export const requests = [
@@ -18,5 +19,5 @@ export type Responses = {
   createSession: string;
   closeLookup: void;
   resizeLookup: void;
-  session: { term: string; context?: ReadingContext };
+  session: { term: string; context?: ReadingContext; occurrence?: Occurrence };
 };

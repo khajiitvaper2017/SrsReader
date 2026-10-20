@@ -3,12 +3,14 @@ import type {
   Dictionary,
   DictionaryMedia,
   Entry,
+  EntryMatch,
   Frequency,
   LookupResult,
   Phrase,
   Tag,
 } from "@/dictionaries/model";
 import { installMigrations } from "@/platform/database/migrations";
+import type { AnalysisRecord } from "@/languages/analysis";
 import type { Settings } from "@/settings/model";
 import type {
   RwkvCard,
@@ -20,12 +22,14 @@ import type { Vocabulary } from "@/vocabulary/model";
 import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
+  analyses!: Table<AnalysisRecord, string>;
   srsMeta!: Table<SrsMeta, string>;
   rwkvMeta!: Table<RwkvMeta, string>;
   rwkvEntities!: Table<RwkvEntity, string>;
   rwkvCards!: Table<RwkvCard, string>;
   dictionaries!: Table<Dictionary, string>;
   entries!: Table<Entry, string>;
+  entryMatches!: Table<EntryMatch, string>;
   frequencies!: Table<Frequency, string>;
   tags!: Table<Tag, string>;
   dictionaryMedia!: Table<DictionaryMedia, string>;

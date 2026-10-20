@@ -73,7 +73,15 @@ export function installReaderInput(
         : wordAtPointer();
     if (!word) return false;
     clearTimeout(timer);
-    void popup.show(word.term, word.range, word.context).catch(console.warn);
+    void popup
+      .show(
+        word.term,
+        word.range,
+        word.context,
+        word.occurrence,
+        word.focusRanges,
+      )
+      .catch(console.warn);
     return true;
   }
   function hover(
@@ -172,7 +180,7 @@ export function installReaderInput(
     "toggle",
     (event) => {
       if (event.target instanceof HTMLElement && root.contains(event.target))
-        scanner.collect(event.target, true);
+        scanner.collect(event.target);
     },
     { capture: true },
   );

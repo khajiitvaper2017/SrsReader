@@ -12,7 +12,7 @@ import { DOMParser } from "linkedom";
 const baseUrl = "https://www.nechybujte.cz/slovnik-soucasne-cestiny/";
 const cache = new Map<string, Promise<LookupResult>>();
 export const nechybujteCacheKey = (term: string) =>
-  `v2:${folded(term.trim(), "cs")}`;
+  `v3:${folded(term.trim(), "cs")}`;
 export function normalizeCzechReflexive(term: string): string {
   const words = term.trim().split(/\s+/u);
   if (words.length === 2 && folded(words[1]!, "cs") === "se")
@@ -106,10 +106,24 @@ export function parseNechybujte(html: string): LookupResult {
     words.push(word);
     return word;
   }
-  const root = entry(lemma, document.querySelector("#entry-rest"));
-  const defined = new Set<string>();
+  function variants(lemma: string, grammar: Element | null) {
+    return [
+      ...new Set([
+        lemma,
+        ...[...(grammar?.querySelectorAll(".lex_equi .lex_ful_e") || [])].map(
+          text,
+        ),
+      ]),
+    ]
+      .filter(Boolean)
+      .map((lemma) => entry(lemma, grammar));
+  }
+  let current = variants(lemma, document.querySelector("#entry-rest"));
   for (const child of body.children) {
-    if (child.localName === "group") break;
+    if (child.localName === "group") {
+      const lemma = text(child.querySelector(".lex_ful_phrs"));
+      current = lemma ? variants(lemma, child) : [];
+    }
     if (child.localName === "sense") {
       const glossElement = child.querySelector(".lex_desc1,.lex_desc2");
       const gloss = content(glossElement);
@@ -117,8 +131,7 @@ export function parseNechybujte(html: string): LookupResult {
         ...child.querySelectorAll(".lex_samp1,.lex_samp2"),
       ].filter((node) => text(node));
       if (!text(glossElement) && !examples.length) continue;
-      defined.add(root.id);
-      root.meanings[0]!.definitions.push({
+      const definition: Definition = {
         type: "structured-content",
         content: [
           ...(gloss.length ? [{ tag: "div", content: gloss }] : []),
@@ -140,10 +153,12 @@ export function parseNechybujte(html: string): LookupResult {
               ]
             : []),
         ],
-      });
+      };
+      for (const word of current)
+        word.meanings[0]!.definitions.push(definition);
     }
   }
-  const found = words.filter((word) => defined.has(word.id));
+  const found = words.filter((word) => word.meanings[0]!.definitions.length);
   if (!found.length) throw new Error(t("nechybujte_response_unrecognized"));
   return { words: found, unresolved: [] };
 }
@@ -176,8 +191,18 @@ export function lookupNechybujte(
     const aliases = new Map<string, LookupResult>(
       result.words.map((word) => [
         nechybujteCacheKey(word.lemma),
-        { words: [word], unresolved: [] },
+        {
+          ...result,
+          words: [...result.words].sort(
+            (a, b) => Number(b.id === word.id) - Number(a.id === word.id),
+          ),
+        },
       ]),
+    );
+    result.words.sort(
+      (a, b) =>
+        Number(folded(b.lemma, "cs") === lookupKey) -
+        Number(folded(a.lemma, "cs") === lookupKey),
     );
     aliases.set(key, result);
     await db.nechybujte.bulkPut(
@@ -192,6 +217,7 @@ export function lookupNechybujte(
 export function mergeNechybujte(
   local: LookupResult,
   online: LookupResult,
+  term: string,
 ): LookupResult {
   const words = [...local.words];
   for (const word of online.words) {
@@ -208,5 +234,11 @@ export function mergeNechybujte(
         ],
       };
   }
+  const lemma = folded(term, "cs");
+  words.sort(
+    (a, b) =>
+      Number(folded(b.lemma, "cs") === lemma) -
+      Number(folded(a.lemma, "cs") === lemma),
+  );
   return { words, unresolved: words.length ? [] : local.unresolved };
 }

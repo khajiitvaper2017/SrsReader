@@ -45,7 +45,9 @@ async function execute(request: Request, settings: Settings) {
     case "word":
       return getWord(request.id);
     case "mine": {
-      const word = await snapshot(await resolved(request.term, request.id));
+      const word = await snapshot(
+        await resolved(request.term, request.id, request.occurrence),
+      );
       const saved = await mine(word, request.context);
       cacheAudio(word);
       await notify(word.id);
@@ -54,7 +56,9 @@ async function execute(request: Request, settings: Settings) {
     case "defineWord": {
       const lemma = folded(request.term.trim(), settings.studyLanguage);
       const word: LookupWord = request.id
-        ? await snapshot(await resolved(request.term, request.id))
+        ? await snapshot(
+            await resolved(request.term, request.id, request.occurrence),
+          )
         : {
             id: wordId(settings.studyLanguage, lemma, ""),
             lemma,
@@ -76,7 +80,9 @@ async function execute(request: Request, settings: Settings) {
       await notify(request.id);
       return;
     case "known": {
-      const word = await snapshot(await resolved(request.term, request.id));
+      const word = await snapshot(
+        await resolved(request.term, request.id, request.occurrence),
+      );
       const result = await setMastered(word, request.value);
       await notify(word.id);
       return result;

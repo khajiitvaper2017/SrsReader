@@ -1,9 +1,9 @@
-import {
-  meaningTags,
-  type Dictionary,
-  type Entry,
-  type LookupResult,
-  type LookupWord,
+import type {
+  Dictionary,
+  Entry,
+  EntryMatch,
+  LookupResult,
+  LookupWord,
 } from "@/dictionaries/model";
 import { mergeNechybujte, nechybujteCacheKey } from "@/dictionaries/nechybujte";
 import { analyzeWords } from "@/languages/morphology";
@@ -13,8 +13,9 @@ import {
 } from "@/languages/parsing-rules";
 import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
-import { stateOf, wordId } from "@/vocabulary/model";
-import type { WordState } from "@/vocabulary/state";
+import { wordId } from "@/vocabulary/model";
+
+type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
 const cache = new Map<string, LookupResult>();
 export function clearLookupCache() {
@@ -30,13 +31,29 @@ async function fetchTerms(
   terms: string[],
   dictionaries: Dictionary[],
   language: string,
+  withDefinitions: boolean,
 ) {
+  const started = performance.now();
   const keys = [...new Set(terms.map((t) => folded(t, language)))];
-  const entries = await db.entries
+  const table = withDefinitions ? db.entries : db.entryMatches;
+  const rows = await table
     .where("[revisionId+folded]")
     .anyOf(dictionaries.flatMap((d) => keys.map((k) => [d.revisionId, k])))
     .toArray();
-  const groups = new Map<string, Entry[]>();
+  const entries: LookupEntry[] = rows.map((entry) => ({
+    ...entry,
+    defined: withDefinitions
+      ? entry.definitions.some((definition) => !Array.isArray(definition))
+      : (entry as EntryMatch).defined,
+  }));
+  console.info("[SrsReader] Dictionary entries read", {
+    terms: keys.length,
+    dictionaries: dictionaries.length,
+    entries: entries.length,
+    withDefinitions,
+    elapsedMs: Math.round(performance.now() - started),
+  });
+  const groups = new Map<string, LookupEntry[]>();
   for (const entry of entries) {
     const group = groups.get(entry.folded) || [];
     group.push(entry);
@@ -53,11 +70,15 @@ async function fetchTerms(
 async function dictionaryLookup(
   terms: string[],
   language: string,
+  localAnalysis: boolean,
+  withDefinitions: boolean,
 ): Promise<Map<string, LookupResult>> {
   const dictionaries = await activeDictionaries(language);
   const results = new Map<string, LookupResult>();
   const missing = [...new Set(terms.map(normalize))].filter((term) => {
-    const hit = cache.get(JSON.stringify([language, term]));
+    const hit = cache.get(
+      JSON.stringify([language, term, localAnalysis, withDefinitions]),
+    );
     if (hit) {
       results.set(term, hit);
       return false;
@@ -65,22 +86,29 @@ async function dictionaryLookup(
     return true;
   });
   if (!missing.length || !dictionaries.length) return results;
-  const graph = await fetchTerms(missing, dictionaries, language);
+  const graph = await fetchTerms(
+    missing,
+    dictionaries,
+    language,
+    withDefinitions,
+  );
   const fallbacks = new Map<string, ParsingCandidate[]>();
   let frontier = missing;
   while (frontier.length) {
     const refs = new Set<string>();
-    const analyses = await analyzeWords(
-      frontier.filter((term) => !graph.get(term)?.length),
-      language,
-    );
+    const analyses = localAnalysis
+      ? await analyzeWords(
+          frontier.filter((term) => !graph.get(term)?.length),
+          language,
+        )
+      : new Map<string, string>();
     for (const term of frontier) {
       const rows = graph.get(term) || [];
       if (!rows.length) {
         const lemma = analyses.get(term);
         const candidates: ParsingCandidate[] = [
           ...(lemma ? [{ term: lemma, forms: [] }] : []),
-          ...parsingCandidates(term, language),
+          ...(localAnalysis ? parsingCandidates(term, language) : []),
         ];
         fallbacks.set(term, candidates);
         for (const candidate of candidates)
@@ -100,6 +128,7 @@ async function dictionaryLookup(
         frontier,
         dictionaries,
         language,
+        withDefinitions,
       ))
         graph.set(key, value);
   }
@@ -150,7 +179,7 @@ async function dictionaryLookup(
         const dictionary = dictionaryByRevision.get(entry.revisionId)!;
         const definitions = entry.definitions.filter((d) => !Array.isArray(d));
         if (
-          definitions.length &&
+          entry.defined &&
           (!current.verbOnly ||
             /(?:^|\s)(?:v|verb)(?:\s|$)/i.test(entry.tags)) &&
           (!current.perfectiveOnly || /(?:^|\s)pf(?:\s|$)/i.test(entry.tags))
@@ -209,7 +238,10 @@ async function dictionaryLookup(
     };
     results.set(term, value);
     if (cache.size >= 1000) cache.delete(cache.keys().next().value!);
-    cache.set(JSON.stringify([language, term]), value);
+    cache.set(
+      JSON.stringify([language, term, localAnalysis, withDefinitions]),
+      value,
+    );
   }
   return results;
 }
@@ -217,8 +249,17 @@ async function dictionaryLookup(
 export async function lookupMany(
   terms: string[],
   language: string,
+  localAnalysis = true,
+  withDefinitions = true,
 ): Promise<Map<string, LookupResult>> {
-  const results = await dictionaryLookup(terms, language);
+  const started = performance.now();
+  const results = await dictionaryLookup(
+    terms,
+    language,
+    localAnalysis,
+    withDefinitions,
+  );
+  const dictionaryFinished = performance.now();
   const lemmas = [
     ...new Set([
       ...terms.flatMap((term) => [normalize(term), folded(term, language)]),
@@ -240,7 +281,15 @@ export async function lookupMany(
         ),
     )
     .toArray();
+  const savedQueryFinished = performance.now();
   const byId = new Map(savedEntries.map((word) => [word.id, word]));
+  const byLemma = new Map<string, typeof savedEntries>();
+  for (const word of savedEntries) {
+    const key = folded(word.lemma, language);
+    const group = byLemma.get(key) || [];
+    group.push(word);
+    byLemma.set(key, group);
+  }
   for (const term of terms.map(normalize)) {
     const result = results.get(term) || { words: [], unresolved: [] };
     const words = result.words.map((word) => {
@@ -259,12 +308,8 @@ export async function lookupMany(
           }
         : word;
     });
-    for (const word of savedEntries) {
-      if (
-        folded(word.lemma, language) !== folded(term, language) ||
-        words.some((candidate) => candidate.id === word.id)
-      )
-        continue;
+    for (const word of byLemma.get(folded(term, language)) || []) {
+      if (words.some((candidate) => candidate.id === word.id)) continue;
       words.unshift({ ...word, forms: [] });
     }
     results.set(term, {
@@ -272,100 +317,29 @@ export async function lookupMany(
       unresolved: words.length ? [] : result.unresolved,
     });
   }
+  const savedMergeFinished = performance.now();
   if (language === "cs") {
     const keys = terms.map(nechybujteCacheKey);
     const stored = await db.nechybujte.bulkGet(keys);
     for (const [index, record] of stored.entries())
       if (record) {
         const term = normalize(terms[index]!);
-        results.set(term, mergeNechybujte(results.get(term)!, record.result));
+        results.set(
+          term,
+          mergeNechybujte(results.get(term)!, record.result, term),
+        );
       }
   }
+  console.info("[SrsReader] Dictionary lookup finished", {
+    terms: terms.length,
+    localAnalysis,
+    withDefinitions,
+    savedEntries: savedEntries.length,
+    dictionaryMs: Math.round(dictionaryFinished - started),
+    savedQueryMs: Math.round(savedQueryFinished - dictionaryFinished),
+    savedMergeMs: Math.round(savedMergeFinished - savedQueryFinished),
+    cachedDefinitionsMs: Math.round(performance.now() - savedMergeFinished),
+    totalMs: Math.round(performance.now() - started),
+  });
   return results;
-}
-
-export type ScanSpan = {
-  start: number;
-  end: number;
-  term: string;
-  ids: string[];
-  candidates: { id: string; tags: string[]; state: WordState }[];
-  state: WordState | "ignored";
-};
-const escapeRegex = (text: string) =>
-  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-export async function scanText(
-  text: string,
-  language: string,
-  matureIntervalDays: number,
-): Promise<ScanSpan[]> {
-  const dictionaries = await activeDictionaries(language);
-  const segments = [
-    ...new Intl.Segmenter(language, { granularity: "word" }).segment(text),
-  ].filter((s) => s.isWordLike);
-  const firsts = [...new Set(segments.map((s) => folded(s.segment, language)))];
-  const phrases = await db.phrases
-    .where("[revisionId+first]")
-    .anyOf(dictionaries.flatMap((d) => firsts.map((f) => [d.revisionId, f])))
-    .toArray();
-  const byFirst = new Map<string, string[]>();
-  for (const phrase of phrases) {
-    const list = byFirst.get(phrase.first) || [];
-    if (!list.includes(phrase.text)) list.push(phrase.text);
-    byFirst.set(phrase.first, list);
-  }
-  const candidates: { start: number; end: number; term: string }[] = [];
-  for (const segment of segments) {
-    candidates.push({
-      start: segment.index,
-      end: segment.index + segment.segment.length,
-      term: segment.segment,
-    });
-    for (const phrase of byFirst.get(folded(segment.segment, language)) || []) {
-      const match = new RegExp(
-        `^${escapeRegex(phrase).replace(/\s+/g, "\\s+")}(?=$|[^\\p{L}\\p{M}\\p{N}])`,
-        "u",
-      ).exec(folded(text.slice(segment.index), language));
-      if (match)
-        candidates.push({
-          start: segment.index,
-          end: segment.index + match[0].length,
-          term: phrase,
-        });
-    }
-  }
-  const matches = await lookupMany(
-    candidates.map((c) => c.term),
-    language,
-  );
-  const ids = [
-    ...new Set([...matches.values()].flatMap((m) => m.words.map((w) => w.id))),
-  ];
-  const vocabulary = new Map(
-    (await db.vocabulary.bulkGet(ids))
-      .filter((v) => v !== undefined)
-      .map((v) => [v.id, v]),
-  );
-  const spans: ScanSpan[] = [];
-  let end = -1;
-  for (const candidate of candidates.sort(
-    (a, b) => a.start - b.start || b.end - a.end,
-  )) {
-    if (candidate.start < end) continue;
-    const words = matches.get(normalize(candidate.term))?.words || [];
-    if (!words.length) continue;
-    const state = stateOf(vocabulary.get(words[0]!.id), matureIntervalDays);
-    spans.push({
-      ...candidate,
-      ids: words.map((w) => w.id),
-      candidates: words.map((word) => ({
-        id: word.id,
-        tags: word.meanings.flatMap(meaningTags),
-        state: stateOf(vocabulary.get(word.id), matureIntervalDays),
-      })),
-      state,
-    });
-    end = candidate.end;
-  }
-  return spans;
 }

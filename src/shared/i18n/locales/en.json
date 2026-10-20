@@ -211,7 +211,7 @@
   "move_dictionary_up": "Move dictionary up",
   "native_language": "Native language",
   "nechybujte_online": "Nechybujte (online)",
-  "nechybujte_online_help": "Look up opened words online. Sends each word to Nechybujte; page scanning stays local.",
+  "nechybujte_online_help": "Look up opened words online. Only the word is sent to Nechybujte. Page text is not sent to this service.",
   "nechybujte_request_failed": "Nechybujte request failed ({{status}}).",
   "nechybujte_response_unrecognized": "The Nechybujte response could not be read.",
   "nechybujte_unavailable": "Nechybujte is unavailable: {{message}}",
@@ -303,7 +303,7 @@
   "show_answer": "Show answer",
   "show_first_dictionary_only": "Show first dictionary only",
   "show_sentence_translations": "Show sentence translations",
-  "skips_text_detected_as_another_language": "Skips text detected as another language.",
+  "skips_text_detected_as_another_language": "Scans text identified as your study language. Short text can use the page language. Skips foreign text and text with no known language.",
   "sort_by": "Sort by",
   "sort_dictionaries": "Sort dictionaries",
   "sort_frequency_dictionaries": "Sort frequency dictionaries",
@@ -445,5 +445,288 @@
   "settings_page_reading": "Page reading",
   "settings_review_session": "Review cards",
   "settings_daily_study": "New words",
-  "settings_scheduling": "Scheduling"
+  "settings_scheduling": "Scheduling",
+  "use_udpipe_for_czech": "Use UDPipe for Czech",
+  "udpipe_help": "Sends Czech page text to LINDAT for grammar analysis. Successful results stay cached in this browser. If the service fails, local parsing is used for 10 minutes. LINDAT may use submitted text to improve its systems. Models are for noncommercial use.",
+  "udpipe_permission_denied": "Permission to send page text was not granted. Local parsing remains active.",
+  "automatically_ignore_proper_names": "Automatically ignore proper names",
+  "ignore_proper_names_help": "Uses the Ignored appearance for names recognized by UDPipe. Saved word states take priority. Nationality words are excluded. Names remain searchable and are not saved as ignored.",
+  "sentence_grammar": {
+    "features": {
+      "Case": "Case",
+      "Gender": "Gender",
+      "Animacy": "Animacy",
+      "Number": "Number",
+      "Person": "Person",
+      "Tense": "Tense",
+      "Mood": "Mood",
+      "VerbForm": "Verb form",
+      "Aspect": "Aspect",
+      "Voice": "Voice",
+      "Polarity": "Polarity",
+      "Degree": "Degree",
+      "PronType": "Pronoun type",
+      "NumType": "Numeral type",
+      "NumForm": "Numeral form",
+      "NumValue": "Numeric value",
+      "Poss": "Possessive",
+      "Reflex": "Reflexive",
+      "NameType": "Name type",
+      "AdpType": "Preposition type",
+      "ConjType": "Conjunction type",
+      "PrepCase": "Form after a preposition",
+      "Variant": "Form variant",
+      "Abbr": "Abbreviation",
+      "Foreign": "Foreign word",
+      "Hyph": "Hyphenated form",
+      "Style": "Style",
+      "Emph": "Emphatic",
+      "Gender[psor]": "Possessor gender",
+      "Number[psor]": "Possessor number"
+    },
+    "pos": {
+      "ADJ": "Adjective",
+      "ADP": "Preposition",
+      "ADV": "Adverb",
+      "AUX": "Auxiliary verb",
+      "CCONJ": "Coordinating conjunction",
+      "DET": "Determiner",
+      "INTJ": "Interjection",
+      "NOUN": "Noun",
+      "NUM": "Numeral",
+      "PART": "Particle",
+      "PRON": "Pronoun",
+      "PROPN": "Proper name",
+      "PUNCT": "Punctuation",
+      "SCONJ": "Subordinating conjunction",
+      "SYM": "Symbol",
+      "VERB": "Verb",
+      "X": "Other"
+    },
+    "relations": {
+      "aux": "Auxiliary of",
+      "aux:pass": "Passive auxiliary of",
+      "cop": "Linking verb of",
+      "expl:pv": "Reflexive part of",
+      "expl:pass": "Reflexive passive of",
+      "root": "Main predicate",
+      "case": "Preposition of",
+      "obj": "Direct object of",
+      "iobj": "Indirect object of",
+      "nsubj": "Subject of",
+      "nsubj:pass": "Passive subject of",
+      "csubj": "Subject clause of",
+      "csubj:pass": "Passive subject clause of",
+      "obl": "Modifier of",
+      "obl:arg": "Prepositional object of",
+      "obl:agent": "Passive agent of",
+      "amod": "Adjective modifier of",
+      "advmod": "Adverb modifier of",
+      "advmod:emph": "Emphasis of",
+      "nmod": "Noun modifier of",
+      "det": "Determiner of",
+      "nummod": "Numeral modifier of",
+      "nummod:gov": "Governing numeral of",
+      "det:numgov": "Governing quantity of",
+      "det:nummod": "Quantity modifier of",
+      "conj": "Coordinated with",
+      "cc": "Coordinating conjunction of",
+      "mark": "Clause marker of",
+      "advcl": "Adverbial clause of",
+      "advcl:pred": "Secondary predicate of",
+      "acl": "Adnominal clause of",
+      "acl:relcl": "Relative clause of",
+      "ccomp": "Clausal complement of",
+      "xcomp": "Infinitive complement of",
+      "appos": "Apposition of",
+      "fixed": "Fixed phrase with",
+      "flat": "Name part of",
+      "flat:foreign": "Foreign phrase with",
+      "compound": "Compound part of",
+      "punct": "Punctuation of",
+      "discourse": "Discourse marker of",
+      "parataxis": "Independent clause with",
+      "vocative": "Address to",
+      "orphan": "Elliptical relation to",
+      "dep": "Depends on",
+      "goeswith": "Word fragment of",
+      "list": "List item of",
+      "reparandum": "Correction of"
+    },
+    "values": {
+      "Case": {
+        "Nom": "Nominative",
+        "Gen": "Genitive",
+        "Dat": "Dative",
+        "Acc": "Accusative",
+        "Voc": "Vocative",
+        "Loc": "Locative",
+        "Ins": "Instrumental"
+      },
+      "Gender": {
+        "Masc": "Masculine",
+        "Fem": "Feminine",
+        "Neut": "Neuter"
+      },
+      "Animacy": {
+        "Anim": "Animate",
+        "Inan": "Inanimate"
+      },
+      "Number": {
+        "Sing": "Singular",
+        "Plur": "Plural",
+        "Dual": "Dual",
+        "Ptan": "Plural only",
+        "Coll": "Singular only"
+      },
+      "Person": {
+        "1": "1st person",
+        "2": "2nd person",
+        "3": "3rd person"
+      },
+      "Tense": {
+        "Pres": "Present",
+        "Past": "Past",
+        "Fut": "Future",
+        "Pqp": "Past perfect"
+      },
+      "Mood": {
+        "Ind": "Indicative",
+        "Imp": "Imperative",
+        "Cnd": "Conditional"
+      },
+      "VerbForm": {
+        "Fin": "Finite",
+        "Inf": "Infinitive",
+        "Part": "Participle",
+        "Conv": "Converb",
+        "Vnoun": "Verbal noun"
+      },
+      "Aspect": {
+        "Imp": "Imperfective",
+        "Perf": "Perfective",
+        "Iter": "Iterative"
+      },
+      "Voice": {
+        "Act": "Active",
+        "Pass": "Passive"
+      },
+      "Polarity": {
+        "Pos": "Affirmative",
+        "Neg": "Negative"
+      },
+      "Degree": {
+        "Pos": "Positive",
+        "Cmp": "Comparative",
+        "Sup": "Superlative"
+      },
+      "PronType": {
+        "Prs": "Personal",
+        "Rcp": "Reciprocal",
+        "Int": "Interrogative",
+        "Rel": "Relative",
+        "Dem": "Demonstrative",
+        "Tot": "Total",
+        "Neg": "Negative",
+        "Ind": "Indefinite",
+        "Exc": "Exclamative"
+      },
+      "NumType": {
+        "Card": "Cardinal",
+        "Ord": "Ordinal",
+        "Mult": "Multiplicative",
+        "Frac": "Fractional",
+        "Sets": "Set numeral",
+        "Dist": "Distributive",
+        "Range": "Range"
+      },
+      "NumForm": {
+        "Word": "Word",
+        "Digit": "Digits",
+        "Roman": "Roman numeral"
+      },
+      "NameType": {
+        "Geo": "Place name",
+        "Prs": "Person name",
+        "Giv": "Given name",
+        "Sur": "Surname",
+        "Nat": "Nationality",
+        "Com": "Company name",
+        "Pro": "Product name",
+        "Oth": "Other name"
+      },
+      "AdpType": {
+        "Prep": "Preposition",
+        "Voc": "Vocalized preposition",
+        "Comprep": "Compound preposition"
+      },
+      "ConjType": {
+        "Oper": "Operator",
+        "Comp": "Comparative"
+      },
+      "PrepCase": {
+        "Npr": "Without preposition",
+        "Pre": "After a preposition"
+      },
+      "Variant": {
+        "Short": "Short",
+        "Long": "Long"
+      },
+      "Style": {
+        "Arch": "Archaic",
+        "Coll": "Colloquial",
+        "Expr": "Expressive",
+        "Rare": "Rare",
+        "Slng": "Slang",
+        "Vrnc": "Vernacular",
+        "Vulg": "Vulgar"
+      },
+      "Poss": {
+        "Yes": "Yes"
+      },
+      "Reflex": {
+        "Yes": "Yes"
+      },
+      "Abbr": {
+        "Yes": "Yes"
+      },
+      "Foreign": {
+        "Yes": "Yes"
+      },
+      "Hyph": {
+        "Yes": "Yes"
+      },
+      "Emph": {
+        "Yes": "Yes"
+      },
+      "Gender[psor]": {
+        "Masc": "Masculine",
+        "Fem": "Feminine",
+        "Neut": "Neuter"
+      },
+      "Number[psor]": {
+        "Sing": "Singular",
+        "Plur": "Plural",
+        "Dual": "Dual",
+        "Ptan": "Plural only",
+        "Coll": "Singular only"
+      }
+    },
+    "verb_summary": {
+      "Person": {
+        "1": "first-person",
+        "2": "second-person",
+        "3": "third-person"
+      },
+      "Tense": {
+        "Pres": "present-tense",
+        "Past": "past-tense",
+        "Fut": "future-tense",
+        "Pqp": "past-perfect"
+      },
+      "Reflex": {
+        "Yes": "reflexive"
+      }
+    }
+  }
 }

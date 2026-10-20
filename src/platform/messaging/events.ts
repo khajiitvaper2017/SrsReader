@@ -1,4 +1,4 @@
-import type { ScanSpan } from "@/dictionaries/lookup";
+import type { ScanSpan } from "@/reader/scan";
 import type { WordState } from "@/vocabulary/state";
 
 export type ChangeScope =

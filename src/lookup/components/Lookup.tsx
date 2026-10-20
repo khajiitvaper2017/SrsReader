@@ -1,9 +1,11 @@
+import type { Occurrence } from "@/languages/analysis";
 import {
   ActionIcon,
   Button,
   Group,
   Badge,
-  Select,
+  HoverCard,
+  Menu,
   Stack,
   Text,
   Title,
@@ -15,6 +17,7 @@ import { WordExamples } from "@/examples/components/WordExamples";
 import { folded } from "@/languages/text";
 import { useLookupNavigation } from "@/lookup/hooks/useLookupNavigation";
 import { useLookupWord } from "@/lookup/hooks/useLookupWord";
+import { Grammar } from "@/lookup/components/Grammar";
 import type { LookupPage } from "@/lookup/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
@@ -29,6 +32,7 @@ import { wordStateLabels } from "@/vocabulary/state";
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
   Pencil,
   Play,
   Plus,
@@ -52,11 +56,11 @@ export function Lookup() {
           ),
         )
       }
-      onLookup={(term, context, selected, scroll, openDetails) =>
+      onLookup={(term, context, selected, scroll, openDetails, occurrence) =>
         setPages((pages) => [
           ...pages.slice(0, -1),
           { ...pages[pages.length - 1]!, selected, scroll, openDetails },
-          { term, context },
+          { term, context, occurrence },
         ])
       }
       onBack={
@@ -80,6 +84,7 @@ function LookupEntry({
     selected: string,
     scroll: number,
     openDetails: number[],
+    occurrence?: Occurrence,
   ) => void;
   onBack?: () => void;
   onContext: (context: ReadingContext) => void;
@@ -93,7 +98,6 @@ function LookupEntry({
     result,
     term,
     context,
-    selected,
     setSelected,
     candidateOpen,
     setCandidateOpen,
@@ -118,6 +122,7 @@ function LookupEntry({
     definitionSaved,
     deleteDefinition,
   } = useLookupWord({ page, onLookup, onBack, onContext });
+  const surface = result?.grammar?.group?.form || term;
   return (
     <Stack gap={0} h="100dvh" style={{ overflow: "hidden" }}>
       <Stack
@@ -144,38 +149,100 @@ function LookupEntry({
           {word && (
             <>
               <Group gap="xs" align="center" justify="space-between">
-                <Stack gap="xs">
-                  <Title lang={word.language} order={1}>
-                    {folded(term, word.language) !==
-                      folded(word.lemma, word.language) && (
-                      <Text component="span" inherit>
-                        {term} →{" "}
-                      </Text>
+                <Stack gap="xs" miw={0} maw="100%">
+                  <Group gap={4} wrap="nowrap">
+                    <HoverCard
+                      disabled={
+                        !result?.grammar &&
+                        folded(surface, word.language) ===
+                          folded(word.lemma, word.language)
+                      }
+                      events={{ hover: true, focus: true, touch: true }}
+                      position="bottom-start"
+                      width={360}
+                      interactive
+                      role="tooltip"
+                    >
+                      <HoverCard.Target>
+                        <Title
+                          lang={word.language}
+                          order={1}
+                          tabIndex={0}
+                          style={{ minWidth: 0, overflowWrap: "anywhere" }}
+                        >
+                          {word.lemma}
+                        </Title>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown
+                        data-srs-reader
+                        maw="calc(100vw - 24px)"
+                        mah="65dvh"
+                        style={{ overflowY: "auto", overflowWrap: "anywhere" }}
+                      >
+                        <Stack gap="xs">
+                          <Text lang={word.language} size="sm" fw={500}>
+                            {surface}
+                          </Text>
+                          {result?.grammar && (
+                            <Grammar grammar={result.grammar} />
+                          )}
+                        </Stack>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                    {result!.words.length > 1 && (
+                      <Menu
+                        opened={candidateOpen}
+                        onChange={setCandidateOpen}
+                        position="bottom-end"
+                      >
+                        <Menu.Target>
+                          <ActionIcon
+                            size="sm"
+                            variant="subtle"
+                            disabled={busy}
+                            aria-label={`${t("choose_word")}: ${word.lemma}`}
+                            title={t("choose_word")}
+                            style={{ flexShrink: 0 }}
+                          >
+                            <ChevronDown aria-hidden="true" size={16} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown
+                          data-srs-reader
+                          maw="calc(100vw - 24px)"
+                          mah="50dvh"
+                          style={{ overflowY: "auto" }}
+                        >
+                          {result!.words.map((candidate) => (
+                            <Menu.Item
+                              key={candidate.id}
+                              leftSection={
+                                candidate.id === word.id ? (
+                                  <Check aria-hidden="true" size={14} />
+                                ) : undefined
+                              }
+                              aria-current={
+                                candidate.id === word.id ? "true" : undefined
+                              }
+                              onClick={() => {
+                                setSelected(candidate.id);
+                                setNotice("");
+                                setLastReview("");
+                              }}
+                              style={{
+                                whiteSpace: "normal",
+                                overflowWrap: "anywhere",
+                              }}
+                            >
+                              {[candidate.lemma, candidate.reading]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </Menu.Item>
+                          ))}
+                        </Menu.Dropdown>
+                      </Menu>
                     )}
-                    {word.lemma}
-                  </Title>
-                  {result!.words.length > 1 && (
-                    <Select
-                      value={selected}
-                      disabled={busy}
-                      aria-label={`${t("choose_word")}: ${word.lemma}`}
-                      title={t("choose_word")}
-                      dropdownOpened={candidateOpen}
-                      onDropdownOpen={() => setCandidateOpen(true)}
-                      onDropdownClose={() => setCandidateOpen(false)}
-                      data={result!.words.map((candidate) => ({
-                        value: candidate.id,
-                        label: [candidate.lemma, candidate.reading]
-                          .filter(Boolean)
-                          .join(" · "),
-                      }))}
-                      onChange={(value) => {
-                        setSelected(value!);
-                        setNotice("");
-                        setLastReview("");
-                      }}
-                    />
-                  )}
+                  </Group>
                   {word.reading && (
                     <Text component="span" inherit c="dimmed">
                       {word.reading}
@@ -288,6 +355,7 @@ function LookupEntry({
                     word={unparsed ? undefined : word}
                     term={term}
                     context={context}
+                    occurrence={page.occurrence}
                     settings={settings}
                     onSaved={definitionSaved}
                     onError={setError}

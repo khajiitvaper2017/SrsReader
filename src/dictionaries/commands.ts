@@ -38,8 +38,13 @@ async function execute(request: Request, settings: Settings) {
       await notify(undefined, "dictionaries");
       return;
     case "lookup": {
-      const result = await lookup(request.term, settings);
-      if (result.words.length) {
+      const result = await lookup(
+        request.term,
+        settings,
+        false,
+        request.occurrence,
+      );
+      if (result.words.length && !request.occurrence) {
         const saved = await getWords(result.words.map((word) => word.id));
         await broadcast({
           event: "parsed",

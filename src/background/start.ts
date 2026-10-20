@@ -2,8 +2,23 @@ import { requestSchema } from "@/background/contracts";
 import { handle } from "@/background/handle";
 import { t } from "@/shared/i18n/i18n";
 import { browser } from "wxt/browser";
+import { udpipePermission } from "@/languages/udpipe-permission";
+import { getSettings, saveSettings } from "@/settings/store";
+import { notify } from "@/background/events";
+import { srsWrite } from "@/platform/locks";
 
 export function startBackground() {
+  if (import.meta.env.BROWSER === "firefox") {
+    browser.permissions.onRemoved.addListener(() => {
+      void srsWrite(async () => {
+        const settings = await getSettings();
+        if (settings.udpipe && !(await udpipePermission())) {
+          await saveSettings({ ...settings, udpipe: false });
+          await notify(undefined, "settings");
+        }
+      }).catch(console.warn);
+    });
+  }
   const reads = new Set([
     "settings",
     "dictionaries",

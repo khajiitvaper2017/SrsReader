@@ -1,7 +1,8 @@
-import type { ScanSpan } from "@/dictionaries/lookup";
+import type { ScanSpan } from "@/reader/scan";
 import type { LanguagesPreferences } from "@/languages/preferences";
 import type { ReaderPreferences } from "@/reader/preferences";
 import type { ReadingContext } from "@/vocabulary/model";
+import type { Occurrence } from "@/languages/analysis";
 
 export type Part = { node: Text; start: number; end: number };
 export type Block = {
@@ -13,7 +14,11 @@ export type Block = {
 };
 export type ReaderOptions = {
   root?: HTMLElement;
-  onLookup?: (term: string, context: ReadingContext) => void;
+  onLookup?: (
+    term: string,
+    context: ReadingContext,
+    occurrence?: Occurrence,
+  ) => void;
   source?: { url: string; title: string };
 };
 export type Pointer = {

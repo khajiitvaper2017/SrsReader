@@ -1,10 +1,12 @@
 import { translationSchema } from "@/translation/model";
 import { contextSchema, type Vocabulary } from "@/vocabulary/model";
 import { z } from "zod";
+import { occurrenceSchema } from "@/languages/analysis";
 
 export const selection = {
   term: z.string().min(1).max(1000),
   context: contextSchema.optional(),
+  occurrence: occurrenceSchema.optional(),
 };
 export const requests = [
   z.object({ action: z.literal("word"), id: z.string() }),
@@ -28,6 +30,7 @@ export const requests = [
     action: z.literal("known"),
     id: z.string(),
     term: selection.term,
+    occurrence: selection.occurrence,
     value: z.boolean(),
   }),
   z.object({

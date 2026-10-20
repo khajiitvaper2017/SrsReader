@@ -1,5 +1,10 @@
-import type { ScanSpan } from "@/dictionaries/lookup";
-import { detectLanguage } from "@/languages/detection";
+import type { ScanSpan } from "@/reader/scan";
+import {
+  detectLanguages,
+  languageSample,
+  languageTag,
+} from "@/languages/detection";
+import type { ScanResult } from "@/reader/contracts";
 import { folded } from "@/languages/text";
 import { blockSelector, createBlockReader, makeRange } from "@/reader/blocks";
 import { readerClient } from "@/reader/client";
@@ -23,6 +28,7 @@ export function createScanner(
 ) {
   const blocks = new Map<Element, Block>();
   const queued = new Set<Element>();
+  const pageTexts = new Map<Element, string>();
   const wordStates = new Map<string, WordState>();
   const { matchesLanguage, readBlock } = createBlockReader(
     root,
@@ -32,9 +38,13 @@ export function createScanner(
   );
   let scanning = false;
   let generation = 0;
-  let pageLanguage: Promise<string | null> = Promise.resolve(null);
+  const parsed = new Map<string, ScanResult>();
+  let scanTimer: ReturnType<typeof setTimeout> | undefined;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let observer: MutationObserver | undefined;
-  let intersection: IntersectionObserver | undefined;
+  let queuedAt: number | undefined;
+  let debounceResets = 0;
+  let scanSequence = 0;
   function deleteBlock(element: Element) {
     const old = blocks.get(element);
     if (!old) return;
@@ -43,12 +53,18 @@ export function createScanner(
     blocks.delete(element);
   }
   function updateSpanState(span: ScanSpan) {
-    const candidate = span.candidates[0]!;
-    span.state = candidate.tags.some((tag) =>
-      getSettings().ignoredTags.includes(tag),
-    )
-      ? "ignored"
-      : (wordStates.get(candidate.id) ?? candidate.state);
+    const candidate = span.candidates[0];
+    const state = candidate
+      ? (wordStates.get(candidate.id) ?? candidate.state)
+      : "unparsed";
+    span.state =
+      getSettings().ignoreProperNames &&
+      span.properName &&
+      (state === "unknown" || state === "unparsed")
+        ? "ignored"
+        : candidate?.tags.some((tag) => getSettings().ignoredTags.includes(tag))
+          ? "ignored"
+          : state;
   }
   function applyParsedTerm(term: string, candidates: ScanSpan["candidates"]) {
     const escaped = term
@@ -61,6 +77,15 @@ export function createScanner(
     );
     for (const block of blocks.values())
       for (const match of block.text.matchAll(pattern)) {
+        if (
+          block.spans.some(
+            (span) =>
+              span.occurrence &&
+              span.start < match.index + match[0].length &&
+              span.end > match.index,
+          )
+        )
+          continue;
         const start = match.index;
         const end = start + match[0].length;
         if (
@@ -102,11 +127,40 @@ export function createScanner(
         highlights.get(span.state)!.add(range);
       }
   }
-  function collect(element: Element, immediate = false) {
+  function queueBlock(element: Element, rebuildRanges = false) {
+    if (element.closest(excluded)) return false;
+    const previous = blocks.get(element);
+    if (previous) {
+      const { text, parts } = readBlock(element);
+      if (text === previous.text) {
+        const result = parsed.get(text);
+        if (result && (!result.retryAt || result.retryAt > Date.now())) {
+          if (
+            rebuildRanges ||
+            parts.length !== previous.parts.length ||
+            parts.some((part, index) => {
+              const old = previous.parts[index]!;
+              return (
+                part.node !== old.node ||
+                part.start !== old.start ||
+                part.end !== old.end
+              );
+            })
+          )
+            render(element, text, parts, result, generation);
+          return false;
+        }
+      }
+      deleteBlock(element);
+    }
+    queued.add(element);
+    return true;
+  }
+  function collect(element: Element) {
     if (!isActive() || element.closest(excluded)) return;
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const candidates = new Set<Element>();
     let node: Node | null;
-    const targets = new Set<Element>();
     while ((node = walker.nextNode())) {
       const parent = node.parentElement;
       if (
@@ -117,126 +171,265 @@ export function createScanner(
       )
         continue;
       const block = parent.closest(blockSelector);
-      if (block) targets.add(block);
+      if (block) candidates.add(block);
     }
-    for (const block of targets) {
-      intersection?.observe(block);
-      if (immediate) enqueue(block);
+    let changed = false;
+    for (const block of candidates) changed = queueBlock(block) || changed;
+    if (changed) schedule();
+  }
+  function schedule() {
+    if (!queued.size) return;
+    if (queued.size && queuedAt === undefined) {
+      queuedAt = performance.now();
+      console.info("[SrsReader] Scan queued", {
+        blocks: queued.size,
+        delayMs: 500,
+      });
     }
+    if (scanTimer !== undefined) debounceResets++;
+    clearTimeout(scanTimer);
+    scanTimer = setTimeout(() => {
+      scanTimer = undefined;
+      void drain();
+    }, 500);
+  }
+  function render(
+    element: Element,
+    text: string,
+    parts: Block["parts"],
+    result: ScanResult,
+    version: number,
+  ) {
+    deleteBlock(element);
+    const block: Block = {
+      text,
+      parts,
+      spans: [],
+      ranges: [],
+      generation: version,
+    };
+    blocks.set(element, block);
+    for (const value of result.spans) {
+      const span = { ...value };
+      updateSpanState(span);
+      const range = makeRange(parts, span.start, span.end);
+      if (!range) continue;
+      block.spans.push({ ...span, range });
+      block.ranges.push(range);
+      highlights.get(span.state).add(range);
+    }
+    if (
+      getSettings().wordColorsEnabled &&
+      getSettings().wordStyles.unparsed.mode !== "none"
+    ) {
+      let matched = 0;
+      for (const segment of new Intl.Segmenter(getSettings().studyLanguage, {
+        granularity: "word",
+      }).segment(text)) {
+        if (!segment.isWordLike) continue;
+        while (
+          block.spans[matched] &&
+          block.spans[matched]!.end <= segment.index
+        )
+          matched++;
+        if (
+          block.spans[matched] &&
+          block.spans[matched]!.start <= segment.index
+        )
+          continue;
+        const range = makeRange(
+          parts,
+          segment.index,
+          segment.index + segment.segment.length,
+        );
+        if (range) {
+          block.ranges.push(range);
+          highlights.get("unparsed").add(range);
+        }
+      }
+    }
+  }
+  function scheduleRetry() {
+    clearTimeout(retryTimer);
+    const expires = [...parsed.values()].flatMap((result) =>
+      result.retryAt ? [result.retryAt] : [],
+    );
+    if (!expires.length) return;
+    retryTimer = setTimeout(
+      () => {
+        for (const [text, result] of parsed) {
+          if (!result.retryAt || result.retryAt > Date.now()) continue;
+          parsed.delete(text);
+          for (const [element, block] of blocks)
+            if (block.text === text) queued.add(element);
+        }
+        schedule();
+      },
+      Math.max(0, Math.min(...expires) - Date.now()),
+    );
   }
   async function drain() {
-    if (scanning) return;
+    if (scanning || !isActive()) return;
     scanning = true;
+    const version = generation;
+    const started = performance.now();
+    const scan = ++scanSequence;
+    let outcome = "stale";
+    console.info("[SrsReader] Scan started", {
+      scan,
+      context: options.onLookup ? "popup" : "page",
+      blocks: queued.size,
+      debounceMs: queuedAt === undefined ? 0 : Math.round(started - queuedAt),
+      debounceResets,
+      sinceNavigationMs: Math.round(started),
+    });
+    queuedAt = undefined;
+    debounceResets = 0;
     try {
-      while (queued.size && isActive()) {
-        const element = queued.values().next().value!;
-        queued.delete(element);
+      const snapshots = [...queued].flatMap((element) => {
         if (!element.isConnected) {
+          pageTexts.delete(element);
           deleteBlock(element);
-          continue;
+          return [];
         }
         const { text, parts } = readBlock(element);
-        deleteBlock(element);
-        if (!text.trim()) continue;
-        const version = generation;
-        if (!options.onLookup && getSettings().detectPageLanguage) {
-          const detected = (await detectLanguage(text)) || (await pageLanguage);
-          if (generation !== version || !isActive()) continue;
-          if (detected && detected !== getSettings().studyLanguage) continue;
+        if (!text.trim()) {
+          pageTexts.delete(element);
+          deleteBlock(element);
+          return [];
         }
-        const block: Block = {
-          text,
-          parts,
-          spans: [],
-          ranges: [],
-          generation: version,
-        };
-        blocks.set(element, block);
-        for (let offset = 0; offset < text.length;) {
-          let end = Math.min(offset + 12000, text.length);
-          if (end < text.length) {
-            const space = text.lastIndexOf(" ", end);
-            if (space > offset) end = space;
-          }
-          const spans = await readerClient({
-            action: "scan",
-            text: text.slice(offset, end),
-          });
-          if (
-            !isActive() ||
-            generation !== version ||
-            blocks.get(element) !== block ||
-            readBlock(element).text !== text
-          )
-            break;
-          for (const span of spans) {
-            updateSpanState(span);
-            const adjusted = {
-              ...span,
-              start: span.start + offset,
-              end: span.end + offset,
-            };
-            if (
-              block.spans.some(
-                (span) =>
-                  span.start === adjusted.start && span.end === adjusted.end,
-              )
-            )
-              continue;
-            const range = makeRange(parts, adjusted.start, adjusted.end);
-            if (!range) continue;
-            block.spans.push({ ...adjusted, range });
-            block.ranges.push(range);
-            highlights.get(adjusted.state)!.add(range);
-          }
-          if (
-            getSettings().wordColorsEnabled &&
-            getSettings().wordStyles.unparsed.mode !== "none"
-          ) {
-            let matched = 0;
-            for (const segment of new Intl.Segmenter(
-              getSettings().studyLanguage,
-              {
-                granularity: "word",
-              },
-            ).segment(text.slice(offset, end))) {
-              if (!segment.isWordLike) continue;
-              while (spans[matched] && spans[matched]!.end <= segment.index)
-                matched++;
-              if (spans[matched] && spans[matched]!.start <= segment.index)
-                continue;
-              if (
-                block.spans.some(
-                  (span) =>
-                    span.start <= offset + segment.index &&
-                    span.end > offset + segment.index,
-                )
-              )
-                continue;
-              const range = makeRange(
-                parts,
-                offset + segment.index,
-                offset + segment.index + segment.segment.length,
-              );
-              if (range) {
-                block.ranges.push(range);
-                highlights.get("unparsed")!.add(range);
-              }
-            }
-          }
-          offset = end;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        pageTexts.set(element, text);
+        return [{ element, text, parts }];
+      });
+      queued.clear();
+      console.info("[SrsReader] Text collected", {
+        scan,
+        blocks: snapshots.length,
+        characters: snapshots.reduce(
+          (count, block) => count + block.text.length,
+          0,
+        ),
+        elapsedMs: Math.round(performance.now() - started),
+      });
+      let eligible = snapshots;
+      if (
+        !options.onLookup &&
+        getSettings().detectPageLanguage &&
+        snapshots.length
+      ) {
+        const detectionStarted = performance.now();
+        const pageText = languageSample(
+          [...pageTexts.values()].map(languageSample).join("\n"),
+        );
+        const [detectedPage, ...detectedBlocks] = await detectLanguages([
+          pageText,
+          ...snapshots.map((block) => block.text),
+        ]);
+        if (generation !== version || !isActive()) return;
+        const pageLanguage = detectedPage || languageTag(root);
+        eligible = snapshots.filter((block, index) => {
+          const detected =
+            detectedBlocks[index] || languageTag(block.element) || pageLanguage;
+          if (detected === getSettings().studyLanguage) return true;
+          deleteBlock(block.element);
+          return false;
+        });
+        console.info("[SrsReader] Language detection finished", {
+          scan,
+          pageLanguage,
+          elapsedMs: Math.round(performance.now() - detectionStarted),
+          eligibleBlocks: eligible.length,
+          skippedBlocks: snapshots.length - eligible.length,
+        });
       }
+      if (generation !== version || !isActive()) return;
+      eligible = eligible.filter(
+        (block) =>
+          block.element.isConnected &&
+          readBlock(block.element).text === block.text,
+      );
+      const uniqueTexts = [...new Set(eligible.map((block) => block.text))];
+      const missing = uniqueTexts.filter((text) => {
+        const hit = parsed.get(text);
+        return !hit || (!!hit.retryAt && hit.retryAt <= Date.now());
+      });
+      if (missing.length) {
+        const requestStarted = performance.now();
+        console.info("[SrsReader] Scan request started", {
+          scan,
+          blocks: missing.length,
+          readerCacheHits: uniqueTexts.length - missing.length,
+        });
+        const results = await readerClient({ action: "scan", texts: missing });
+        console.info("[SrsReader] Scan request finished", {
+          scan,
+          elapsedMs: Math.round(performance.now() - requestStarted),
+          blocksWithUDPipeAnnotations: results.filter((result) =>
+            result.spans.some((span) => span.occurrence),
+          ).length,
+          localFallbackBlocks: results.filter((result) => result.retryAt)
+            .length,
+        });
+        const retryAt = results.flatMap((result) =>
+          result.retryAt ? [result.retryAt] : [],
+        );
+        if (retryAt.length)
+          console.warn("[SrsReader] Using local fallback", {
+            scan,
+            blocks: retryAt.length,
+            retryAt: new Date(Math.min(...retryAt)).toISOString(),
+          });
+        if (generation !== version || !isActive()) return;
+        for (const [index, text] of missing.entries())
+          parsed.set(text, results[index]!);
+      }
+      const renderStarted = performance.now();
+      let coloredBlocks = 0;
+      let coloredWords = 0;
+      let udpipeWords = 0;
+      for (const snapshot of eligible) {
+        const current = readBlock(snapshot.element);
+        if (!snapshot.element.isConnected || current.text !== snapshot.text)
+          continue;
+        const result = parsed.get(snapshot.text);
+        if (result) {
+          render(
+            snapshot.element,
+            snapshot.text,
+            current.parts,
+            result,
+            version,
+          );
+          queued.delete(snapshot.element);
+          coloredBlocks++;
+          coloredWords += result.spans.length;
+          udpipeWords += result.spans.filter((span) => span.occurrence).length;
+        }
+      }
+      outcome = "colored";
+      console.info("[SrsReader] Words colored", {
+        scan,
+        blocks: coloredBlocks,
+        words: coloredWords,
+        udpipeWords,
+        colorsEnabled: getSettings().wordColorsEnabled,
+        readerCacheHits: uniqueTexts.length - missing.length,
+        renderMs: Math.round(performance.now() - renderStarted),
+      });
+      scheduleRetry();
     } catch (error) {
+      outcome = "failed";
       console.warn("SrsReader:", error);
     } finally {
+      console.info("[SrsReader] Scan finished", {
+        scan,
+        outcome,
+        totalMs: Math.round(performance.now() - started),
+        queuedBlocks: queued.size,
+      });
       scanning = false;
+      if (queued.size) schedule();
     }
-  }
-  function enqueue(element: Element) {
-    queued.add(element);
-    void drain();
   }
   function contextFor(
     block: Block,
@@ -287,8 +480,11 @@ export function createScanner(
     const part = block.parts.find((part) => part.node === caret.offsetNode);
     if (!part) return;
     const offset = part.start + caret.offset;
-    let span: Pick<ScanSpan, "start" | "end" | "term"> | undefined =
-      block.spans.find((span) => offset >= span.start && offset < span.end);
+    let span:
+      | Pick<ScanSpan, "start" | "end" | "term" | "occurrence" | "related">
+      | undefined = block.spans.find(
+      (span) => offset >= span.start && offset < span.end,
+    );
     if (!span) {
       const segment = [
         ...new Intl.Segmenter(getSettings().studyLanguage, {
@@ -308,7 +504,7 @@ export function createScanner(
         };
     }
     if (!span) return;
-    if (getSettings().studyLanguage === "cs") {
+    if (getSettings().studyLanguage === "cs" && !span.occurrence) {
       const segments = [
         ...new Intl.Segmenter(getSettings().studyLanguage, {
           granularity: "word",
@@ -352,7 +548,16 @@ export function createScanner(
       )
     )
       return;
-    return { term: span.term, range, context: contextFor(block, span) };
+    return {
+      term: span.term,
+      range,
+      context: contextFor(block, span),
+      occurrence: span.occurrence,
+      focusRanges: span.related?.flatMap(({ start, end }) => {
+        const range = makeRange(block.parts, start, end);
+        return range ? [range] : [];
+      }),
+    };
   }
   function selectedWord() {
     const selection = getSelection();
@@ -367,8 +572,9 @@ export function createScanner(
     if (
       !root.contains(range.startContainer) ||
       range.startContainer.parentElement?.closest(excluded) ||
-      !matchesLanguage(range.startContainer.parentElement!) ||
-      !matchesLanguage(range.endContainer.parentElement!)
+      (options.onLookup &&
+        (!matchesLanguage(range.startContainer.parentElement!) ||
+          !matchesLanguage(range.endContainer.parentElement!)))
     )
       return;
     const term = selection.toString().trim();
@@ -393,12 +599,35 @@ export function createScanner(
             title: options.source?.title || document.title,
             mined: Date.now(),
           };
-    return { term, range, context };
+    const span =
+      block && first && last
+        ? block.spans.find(
+            (span) =>
+              span.start === first.start + range.startOffset &&
+              span.end === last.start + range.endOffset,
+          )
+        : undefined;
+    return {
+      term,
+      range,
+      context,
+      occurrence: span?.occurrence,
+      focusRanges: span?.related?.flatMap(({ start, end }) => {
+        const range = makeRange(block!.parts, start, end);
+        return range ? [range] : [];
+      }),
+    };
   }
   function clear() {
     generation++;
     observer?.disconnect();
-    intersection?.disconnect();
+    clearTimeout(scanTimer);
+    clearTimeout(retryTimer);
+    scanTimer = undefined;
+    queuedAt = undefined;
+    debounceResets = 0;
+    parsed.clear();
+    pageTexts.clear();
     queued.clear();
     wordStates.clear();
     for (const element of blocks.keys()) deleteBlock(element);
@@ -406,17 +635,6 @@ export function createScanner(
   function reset() {
     clear();
     if (!isActive()) return;
-    pageLanguage =
-      !options.onLookup && getSettings().detectPageLanguage
-        ? detectLanguage(root.innerText)
-        : Promise.resolve(null);
-    intersection = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries)
-          if (entry.isIntersecting) enqueue(entry.target);
-      },
-      { rootMargin: "250px" },
-    );
     observer = new MutationObserver((records) => {
       for (const record of records) {
         const element =
@@ -425,21 +643,24 @@ export function createScanner(
             : record.target.parentElement;
         if (element?.closest("[data-srs-reader]")) continue;
         if (element && record.type === "attributes") {
+          for (const block of pageTexts.keys())
+            if (element === block || element.contains(block))
+              pageTexts.delete(block);
           for (const block of blocks.keys())
             if (element === block || element.contains(block)) {
               deleteBlock(block);
-              intersection?.unobserve(block);
             }
           collect(element);
           continue;
         }
         if (element) {
           const block = element.closest(blockSelector);
-          if (block && blocks.has(block)) {
-            deleteBlock(block);
-            intersection?.unobserve(block);
-            intersection?.observe(block);
-          }
+          if (
+            block &&
+            blocks.has(block) &&
+            queueBlock(block, record.type === "characterData")
+          )
+            schedule();
         }
         if (element && record.type === "characterData") collect(element);
         for (const added of record.addedNodes)
@@ -449,20 +670,27 @@ export function createScanner(
       for (const element of blocks.keys())
         if (!element.isConnected) {
           deleteBlock(element);
-          intersection?.unobserve(element);
         }
+      for (const element of pageTexts.keys())
+        if (!element.isConnected) pageTexts.delete(element);
     });
     observer.observe(root, {
       childList: true,
       subtree: true,
       characterData: true,
-      ...(options.onLookup
-        ? {
-            attributes: true,
-            attributeFilter: ["lang", "data-reading-language"],
-          }
-        : {}),
+      attributes: true,
+      attributeFilter: [
+        "lang",
+        "data-reading-language",
+        "hidden",
+        "aria-hidden",
+      ],
     });
+    if (root === document.body)
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["lang"],
+      });
     collect(root);
   }
   function refreshTags() {

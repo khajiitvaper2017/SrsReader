@@ -4,24 +4,78 @@ import type { Detector } from "@/platform/browser-ai";
 import { ai } from "@/platform/browser-ai";
 
 let detector: Promise<Detector> | undefined;
+const cache = new Map<string, string | null>();
 
-export async function detectLanguage(text: string): Promise<string | null> {
-  const sample = text.trim().slice(0, 6000);
-  if (sample.length < 120) return null;
-  if (ai.LanguageDetector) {
+export function languageSample(text: string) {
+  const trimmed = text.trim();
+  if (trimmed.length <= 6000) return trimmed;
+  const middle = Math.floor(trimmed.length / 2);
+  return [
+    trimmed.slice(0, 1998),
+    trimmed.slice(middle - 999, middle + 999),
+    trimmed.slice(-1998),
+  ].join("\n");
+}
+
+export function languageTag(element: Element) {
+  const marked = element.closest("[lang],[data-reading-language]");
+  const tag =
+    marked?.getAttribute("data-reading-language") ||
+    marked?.getAttribute("lang");
+  if (!tag) return null;
+  try {
+    return languageCode(tag);
+  } catch {
+    return null;
+  }
+}
+
+export async function detectLanguages(
+  texts: string[],
+): Promise<(string | null)[]> {
+  const samples = texts.map(languageSample);
+  const missing = [
+    ...new Set(
+      samples.filter((sample) => sample.length >= 120 && !cache.has(sample)),
+    ),
+  ];
+  if (missing.length) {
+    let local: Detector | undefined;
     try {
-      // Downloading a model needs a click; automatic parsing must not require one.
-      if ((await ai.LanguageDetector.availability()) === "available") {
+      // Automatic scanning must not download a model or require a user gesture.
+      if (
+        ai.LanguageDetector &&
+        (await ai.LanguageDetector.availability()) === "available"
+      ) {
         detector ??= ai.LanguageDetector.create();
-        const [top] = await (await detector).detect(sample);
-        if (top && top.confidence >= 0.8 && top.detectedLanguage !== "und")
-          return languageCode(top.detectedLanguage);
+        local = await detector;
       }
     } catch {
       detector = undefined;
     }
+    const fallback: string[] = [];
+    for (const sample of missing) {
+      try {
+        const [top] = (await local?.detect(sample)) || [];
+        if (top && top.confidence >= 0.8 && top.detectedLanguage !== "und") {
+          cache.set(sample, languageCode(top.detectedLanguage));
+          continue;
+        }
+      } catch {
+        detector = undefined;
+      }
+      fallback.push(sample);
+    }
+    if (fallback.length) {
+      const results = await languagesClient({
+        action: "detectLanguage",
+        texts: fallback,
+      }).catch(() => []);
+      for (const [index, sample] of fallback.entries())
+        cache.set(sample, results[index] ?? null);
+    }
   }
-  return languagesClient({ action: "detectLanguage", text: sample }).catch(
-    () => null,
-  );
+  const results = samples.map((sample) => cache.get(sample) ?? null);
+  while (cache.size > 500) cache.delete(cache.keys().next().value!);
+  return results;
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { OccurrenceGrammar } from "@/languages/analysis";
 
 export const dictionaryId = (title: string, language: string, target: string) =>
   JSON.stringify([title, language, target]);
@@ -64,6 +65,27 @@ export type Entry = {
   definitions: Definition[];
   sequence: number;
 };
+
+export type EntryMatch = Omit<Entry, "sequence" | "definitions"> & {
+  definitions: [string, string[]][];
+  defined: boolean;
+};
+
+export function entryMatch(entry: Entry): EntryMatch {
+  return {
+    id: entry.id,
+    revisionId: entry.revisionId,
+    key: entry.key,
+    folded: entry.folded,
+    reading: entry.reading,
+    tags: entry.tags,
+    definitions: entry.definitions.filter(
+      (definition): definition is [string, string[]] =>
+        Array.isArray(definition),
+    ),
+    defined: entry.definitions.some((definition) => !Array.isArray(definition)),
+  };
+}
 
 const frequencyValueSchema = z.union([
   z.number().finite().nonnegative(),
@@ -151,4 +173,5 @@ export type LookupResult = {
   words: LookupWord[];
   unresolved: string[];
   warning?: string;
+  grammar?: OccurrenceGrammar;
 };

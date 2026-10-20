@@ -1,3 +1,4 @@
+import { entryMatch, type Entry } from "@/dictionaries/model";
 import { settingsSchema } from "@/settings/model";
 import { reviewSchema } from "@/srs/history";
 import { vocabularySchema } from "@/vocabulary/model";
@@ -66,5 +67,41 @@ export function installMigrations(database: Dexie) {
             ...settings.value,
           }),
         });
+    });
+  database.version(7).stores({ analyses: "key" });
+  database
+    .version(8)
+    .stores({
+      entryMatches: "id, revisionId, [revisionId+folded]",
+    })
+    .upgrade(async (tx) => {
+      const started = performance.now();
+      const entries = tx.table<Entry, string>("entries");
+      const total = await entries.count();
+      console.info("[SrsReader] Dictionary match index building", { total });
+      let lastKey: string | undefined;
+      let count = 0;
+      for (;;) {
+        const batch = await (
+          lastKey === undefined
+            ? entries.toCollection()
+            : entries.where(":id").above(lastKey)
+        )
+          .limit(500)
+          .toArray();
+        if (!batch.length) break;
+        await tx.table("entryMatches").bulkAdd(batch.map(entryMatch));
+        count += batch.length;
+        if (count % 50000 === 0)
+          console.info("[SrsReader] Dictionary match index building", {
+            done: count,
+            total,
+          });
+        lastKey = batch[batch.length - 1]!.id;
+      }
+      console.info("[SrsReader] Dictionary match index created", {
+        entries: count,
+        elapsedMs: Math.round(performance.now() - started),
+      });
     });
 }
