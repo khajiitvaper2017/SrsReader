@@ -1,4 +1,5 @@
-import type { LayerState } from "@/srs/rwkv/model";
+import type { LayerState } from "@/srs/engines/rwkv/model";
+
 export type PackedLayer = {
   shift: Uint16Array;
   scales: Float32Array;

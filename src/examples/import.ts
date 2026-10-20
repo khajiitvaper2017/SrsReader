@@ -1,3 +1,4 @@
+import type { Corpus } from "@/examples/model";
 import { languageCode, languageIso3, languageName } from "@/languages/codes";
 import { analyzeWords } from "@/languages/morphology";
 import { folded } from "@/languages/text";
@@ -7,16 +8,10 @@ import { readDownload } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import bzip2 from "bzip2";
 
-export type Corpus = {
-  sentences: [number, string, string][];
-  index: Record<string, number[]>;
-};
-export type ExampleProgress = ImportProgress;
-
 export async function installExampleCorpus(
   language: string,
   blob: Blob | undefined,
-  progress: (value: ExampleProgress) => void,
+  progress: (value: ImportProgress) => void,
 ) {
   language = languageCode(language);
   if (!blob) {

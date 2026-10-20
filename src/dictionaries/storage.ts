@@ -64,6 +64,8 @@ export async function deleteDictionary(
 }
 
 export const loadDictionaries = (ids: string[]) => db.dictionaries.bulkGet(ids);
+export const listDictionaries = () =>
+  db.dictionaries.orderBy("order").toArray();
 export const dictionaryTags = (revisions: string[]) =>
   db.tags.where("revisionId").anyOf(revisions).toArray();
 export const dictionaryArchive = (revision: string) =>

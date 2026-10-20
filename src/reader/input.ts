@@ -1,10 +1,14 @@
 import { matchesModifiers, readerKeysSchema } from "@/reader/controls";
 import type { ReaderPopup } from "@/reader/popup";
 import type { ReaderScanner } from "@/reader/scanner";
-import type { Pointer, ReaderOptions } from "@/reader/types";
-import { type Settings } from "@/settings/model";
+import type {
+  Pointer,
+  ReaderOptions,
+  ReaderConfiguration as Settings,
+} from "@/reader/types";
 import { browser } from "wxt/browser";
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
+
 export function installReaderInput(
   ctx: ContentScriptContext,
   root: HTMLElement,

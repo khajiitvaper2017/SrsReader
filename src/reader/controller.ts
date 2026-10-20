@@ -11,6 +11,7 @@ import { defaults, type Settings } from "@/settings/model";
 import { setInterfaceLanguage } from "@/shared/i18n/i18n";
 import { browser } from "wxt/browser";
 import type { ContentScriptContext } from "wxt/utils/content-script-context";
+
 export function startReader(
   ctx: ContentScriptContext,
   options: ReaderOptions = {},

@@ -1,23 +1,24 @@
 import { cacheAudio } from "@/audio/cache";
 import { notify } from "@/background/events";
 import { resolved } from "@/dictionaries/resolve";
-import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
+import { preview } from "@/srs/answers";
 import type { Request } from "@/srs/contracts";
-import { invalidateRwkv, replayBatch, rwkvStatus } from "@/srs/rwkv/runtime";
-import {
-  dailyCounts,
-  grade,
-  preview,
-  rescheduleExisting,
-  reviewQueue,
-  undoReview,
-} from "@/srs/service";
+import { rwkvStatus } from "@/srs/engines/rwkv/cache";
+import { replayBatch } from "@/srs/engines/rwkv/replay";
+import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
+import { grade } from "@/srs/grading";
+import { reviewQueue } from "@/srs/queue";
+import { rescheduleExisting } from "@/srs/reschedule";
+import { clearUndo } from "@/srs/storage";
+import { undoReview } from "@/srs/undo";
+import { dailyCounts } from "@/srs/workload";
 import { stateOf } from "@/vocabulary/model";
 import { snapshot } from "@/vocabulary/snapshot";
+import { getWord, languageWords } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
 
 export function handleSrs(request: Request, settings: Settings) {
@@ -54,16 +55,9 @@ async function execute(request: Request, settings: Settings) {
     case "queue":
       return reviewQueue();
     case "preview":
-      return preview(
-        await db.vocabulary.get(request.id),
-        request.durationMs,
-        request.id,
-      );
+      return preview(await getWord(request.id), request.durationMs, request.id);
     case "stats": {
-      const words = await db.vocabulary
-        .where("language")
-        .equals(settings.studyLanguage)
-        .toArray();
+      const words = await languageWords(settings.studyLanguage);
       return {
         total: words.length,
         known: words.filter((w) => w.known).length,
@@ -75,7 +69,7 @@ async function execute(request: Request, settings: Settings) {
     }
     case "resetRwkv":
       await invalidateRwkv();
-      await db.srsMeta.update("main", { undo: undefined });
+      await clearUndo();
       return;
     case "rwkvStatus":
       return rwkvStatus(settings);

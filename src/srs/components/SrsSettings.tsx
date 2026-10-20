@@ -1,10 +1,11 @@
 import { isRankSource } from "@/dictionaries/frequency";
 import type { Dictionary } from "@/dictionaries/model";
-import { learningStepsSchema, type Settings } from "@/settings/model";
+import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { Select, SelectOption } from "@/shared/ui/Select";
 import { srsClient } from "@/srs/client";
 import { useSrsSettings } from "@/srs/hooks/useSrsSettings";
+import { learningStepsSchema } from "@/srs/preferences";
 
 function NumberSetting({
   label,

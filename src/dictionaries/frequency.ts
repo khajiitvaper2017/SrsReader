@@ -126,7 +126,10 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
   );
 }
 
-export function isRankSource(dictionary: Dictionary, settings: Settings) {
+export function isRankSource(
+  dictionary: Dictionary,
+  settings: Pick<Settings, "rankSources">,
+) {
   return (
     settings.rankSources[dictionary.id] ??
     /^Leipzig[. ].*Rank/i.test(dictionary.index.title)

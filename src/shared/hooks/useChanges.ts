@@ -1,6 +1,7 @@
 import type { ChangeMessage, ChangeScope } from "@/platform/messaging/events";
 import { useEffect } from "react";
 import { browser } from "wxt/browser";
+
 export function useChanges(
   callback: () => void,
   scopes?: readonly ChangeScope[],

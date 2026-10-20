@@ -1,5 +1,6 @@
 import type { ImportProgress } from "@/shared/download";
 import { downloadSize, number } from "@/shared/i18n/i18n";
+
 export function TaskProgress({ progress }: { progress: ImportProgress }) {
   const { phase, done, total, unit } = progress;
   const percent = total ? Math.min(100, (done / total) * 100) : undefined;

@@ -1,6 +1,6 @@
 import { ImageContent } from "@/dictionaries/components/DictionaryImage";
 import { safeUrl } from "@/dictionaries/sanitize";
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 const allowedTags = new Set([
   "div",

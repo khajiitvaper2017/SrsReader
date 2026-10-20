@@ -5,6 +5,7 @@ import { rpc } from "@/platform/messaging/send";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import { i18n, t } from "@/shared/i18n/i18n";
 import { useEffect, useRef, useState } from "react";
+
 export function useLanguageData(language: string, tasks: SettingsTask) {
   const { busy, setError, setProgressTarget, setProgress, setNotice } = tasks;
   const worker = useRef<Worker | undefined>(undefined);

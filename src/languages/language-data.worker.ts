@@ -1,4 +1,4 @@
-import { installExampleCorpus } from "@/examples/example-corpus";
+import { installExampleCorpus } from "@/examples/import";
 import { installMorphology } from "@/languages/morphology-data";
 import { setInterfaceLanguage } from "@/shared/i18n/i18n";
 

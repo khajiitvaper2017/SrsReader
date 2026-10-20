@@ -2,6 +2,7 @@ import { settingsSchema } from "@/settings/model";
 import { reviewSchema } from "@/srs/history";
 import { vocabularySchema } from "@/vocabulary/model";
 import Dexie from "dexie";
+
 export function installMigrations(database: Dexie) {
   database.version(1).stores({
     dictionaries: "id, revisionId, order",

@@ -1,10 +1,13 @@
 import { lookupClient } from "@/lookup/client";
 import type { ReaderHighlights } from "@/reader/highlights";
-import type { ReaderOptions } from "@/reader/types";
-import { type Settings } from "@/settings/model";
+import type {
+  ReaderOptions,
+  ReaderConfiguration as Settings,
+} from "@/reader/types";
 import { t } from "@/shared/i18n/i18n";
 import type { ReadingContext } from "@/vocabulary/model";
 import { browser } from "wxt/browser";
+
 export function createPopup(
   options: ReaderOptions,
   getSettings: () => Settings,

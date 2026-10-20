@@ -5,9 +5,9 @@ import {
   findPronunciations,
 } from "@/audio/pronunciations";
 import { getAudio } from "@/audio/storage";
-import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import { getWord } from "@/vocabulary/storage";
 
 export const handleAudio = execute;
 async function execute(request: Request, settings: Settings) {
@@ -35,7 +35,7 @@ async function execute(request: Request, settings: Settings) {
         return info;
       }
       if (!request.download || !settings.audioDownloads) return null;
-      const word = await db.vocabulary.get(request.id);
+      const word = await getWord(request.id);
       const identity = JSON.parse(request.id) as [string, string, string];
       const record = await cachePronunciation(
         word?.language || identity[0],

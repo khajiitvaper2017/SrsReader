@@ -1,12 +1,9 @@
-import type { Corpus } from "@/examples/example-corpus";
+import type { Corpus, Example, ExamplesResult } from "@/examples/model";
 import { languageCode } from "@/languages/codes";
 import { analyzeWords } from "@/languages/morphology";
 import { folded } from "@/languages/text";
 import { db } from "@/platform/database/db";
-import type { ReadingContext } from "@/vocabulary/model";
 
-export type Example = { id: number; author: string; context: ReadingContext };
-export type ExamplesResult = { installed: boolean; examples: Example[] };
 let cached:
   { language: string; revision: number; value: Promise<Corpus> } | undefined;
 

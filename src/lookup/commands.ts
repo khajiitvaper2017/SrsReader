@@ -1,6 +1,7 @@
 import type { Request } from "@/lookup/contracts";
 import { t } from "@/shared/i18n/i18n";
 import type { ReadingContext } from "@/vocabulary/model";
+
 const sessions = new Map<string, { term: string; context?: ReadingContext }>();
 
 export const handleLookup = execute;

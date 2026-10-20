@@ -1,6 +1,7 @@
-import type { ExamplesResult } from "@/examples/query";
+import type { ExamplesResult } from "@/examples/model";
 import { selection } from "@/vocabulary/contracts";
 import { z } from "zod";
+
 export const requests = [
   z.object({
     action: z.literal("examples"),

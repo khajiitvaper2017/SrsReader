@@ -4,7 +4,6 @@ import { clearLookupCache } from "@/dictionaries/lookup";
 import type { LookupWord } from "@/dictionaries/model";
 import { lookup, resolved } from "@/dictionaries/resolve";
 import { folded } from "@/languages/text";
-import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
@@ -13,10 +12,14 @@ import type { Request } from "@/vocabulary/contracts";
 import { wordId } from "@/vocabulary/model";
 import { snapshot } from "@/vocabulary/snapshot";
 import {
+  definePersonalWord,
   deleteDefinition,
   deleteWord,
   editWord,
+  getWord,
+  languageWords,
   mine,
+  replaceMeanings,
   saveTranslation,
   setMastered,
   setRetentionOverride,
@@ -40,7 +43,7 @@ async function execute(request: Request, settings: Settings) {
       await notify(request.id);
       return;
     case "word":
-      return db.vocabulary.get(request.id);
+      return getWord(request.id);
     case "mine": {
       const word = await snapshot(await resolved(request.term, request.id));
       const saved = await mine(word, request.context);
@@ -60,25 +63,11 @@ async function execute(request: Request, settings: Settings) {
             meanings: [],
             forms: [],
           };
-      const saved = await db.transaction("rw", db.vocabulary, async () => {
-        const saved = await mine(word, request.context);
-        saved.meanings = [
-          {
-            dictionaryId: "personal",
-            title: "",
-            revision: "",
-            attribution: "",
-            sourceUrl: "",
-            tags: "",
-            definitions: [request.definition],
-          },
-          ...saved.meanings.filter(
-            (meaning) => meaning.dictionaryId !== "personal",
-          ),
-        ];
-        await db.vocabulary.put(saved);
-        return saved;
-      });
+      const saved = await definePersonalWord(
+        word,
+        request.definition,
+        request.context,
+      );
       await notify(saved.id);
       return saved;
     }
@@ -105,7 +94,7 @@ async function execute(request: Request, settings: Settings) {
       await notify(request.id);
       return;
     case "refreshWord": {
-      const saved = await db.vocabulary.get(request.id);
+      const saved = await getWord(request.id);
       if (!saved) throw new Error(t("word_not_found"));
       clearLookupCache();
       const response = await lookup(
@@ -131,24 +120,12 @@ async function execute(request: Request, settings: Settings) {
           (meaning) => meaning.dictionaryId !== "personal",
         ),
       });
-      await db.vocabulary
-        .where("id")
-        .equals(saved.id)
-        .modify((w) => {
-          w.meanings = updated.meanings;
-          w.version++;
-          w.updated = Date.now();
-        });
+      await replaceMeanings(saved.id, updated.meanings);
       await notify(saved.id);
       return;
     }
     case "words":
-      return (
-        await db.vocabulary
-          .where("language")
-          .equals(settings.studyLanguage)
-          .toArray()
-      )
+      return (await languageWords(settings.studyLanguage))
         .filter((w) =>
           folded(w.lemma, settings.studyLanguage).includes(
             folded(request.query, settings.studyLanguage),

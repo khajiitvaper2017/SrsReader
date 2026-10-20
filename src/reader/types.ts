@@ -1,5 +1,8 @@
 import type { ScanSpan } from "@/dictionaries/lookup";
+import type { LanguagesPreferences } from "@/languages/preferences";
+import type { ReaderPreferences } from "@/reader/preferences";
 import type { ReadingContext } from "@/vocabulary/model";
+
 export type Part = { node: Text; start: number; end: number };
 export type Block = {
   text: string;
@@ -18,3 +21,6 @@ export type Pointer = {
   clientY: number;
   target: EventTarget | null;
 };
+
+export type ReaderConfiguration = ReaderPreferences &
+  LanguagesPreferences & { setupComplete: boolean };

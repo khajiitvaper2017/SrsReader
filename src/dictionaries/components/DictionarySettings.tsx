@@ -22,6 +22,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+
 export function DictionarySettings({
   settings,
   dictionaries,

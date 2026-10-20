@@ -1,6 +1,6 @@
 import type { LookupWord } from "@/dictionaries/model";
 import { examplesClient } from "@/examples/client";
-import type { Example } from "@/examples/query";
+import type { Example } from "@/examples/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";

@@ -4,14 +4,15 @@ import { meaningTags } from "@/dictionaries/model";
 import { lookup } from "@/dictionaries/resolve";
 import {
   deleteDictionary,
+  listDictionaries,
   reorderDictionary,
   setDictionaryEnabled,
 } from "@/dictionaries/storage";
-import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
 import { stateOf } from "@/vocabulary/model";
+import { getWords } from "@/vocabulary/storage";
 
 export function handleDictionaries(request: Request, settings: Settings) {
   return request.action === "setDictionary" ||
@@ -23,7 +24,7 @@ export function handleDictionaries(request: Request, settings: Settings) {
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "dictionaries":
-      return db.dictionaries.orderBy("order").toArray();
+      return listDictionaries();
     case "setDictionary":
       await setDictionaryEnabled(request, settings);
       await notify(undefined, "dictionaries");
@@ -39,9 +40,7 @@ async function execute(request: Request, settings: Settings) {
     case "lookup": {
       const result = await lookup(request.term, settings);
       if (result.words.length) {
-        const saved = await db.vocabulary.bulkGet(
-          result.words.map((word) => word.id),
-        );
+        const saved = await getWords(result.words.map((word) => word.id));
         await broadcast({
           event: "parsed",
           term: request.term,

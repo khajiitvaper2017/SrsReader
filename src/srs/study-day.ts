@@ -1,3 +1,6 @@
+import type { Schedule } from "@/srs/model";
+import type { SchedulingPreferences as Settings } from "@/srs/preferences";
+
 export const DAY = 86400000;
 
 export function studyDay(time: number, rolloverHour: number) {
@@ -20,4 +23,15 @@ export function dayStart(day: number, rolloverHour: number) {
 
 export function stepMinutes(step: string) {
   return parseFloat(step) * ({ m: 1, h: 60, d: 1440 }[step.at(-1)!] ?? 1);
+}
+
+export function rescheduledDue(
+  card: Schedule,
+  interval: number,
+  settings: Settings,
+) {
+  return dayStart(
+    studyDay(card.last_review!, settings.rolloverHour) + interval,
+    settings.rolloverHour,
+  );
 }

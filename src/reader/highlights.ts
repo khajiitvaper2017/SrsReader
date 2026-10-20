@@ -1,7 +1,8 @@
 import { wordHighlightCss } from "@/reader/highlight-style";
-import type { Settings } from "@/settings/model";
+import type { ReaderConfiguration as Settings } from "@/reader/types";
 import { wordStyleStates } from "@/settings/word-styles";
 import type { WordState } from "@/vocabulary/state";
+
 export function createHighlights(settings: Settings) {
   const highlights = new Map<WordState | "ignored" | "unparsed", Highlight>();
   const style = document.createElement("style");

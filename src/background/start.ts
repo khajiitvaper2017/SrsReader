@@ -36,10 +36,8 @@ export function startBackground() {
       (value) => ({ value }),
       (error) => ({
         error: error instanceof Error ? error.message : String(error),
-        needsReplay:
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "RWKV_NOT_READY",
+        code:
+          error instanceof Error && "code" in error ? error.code : undefined,
       }),
     );
   });

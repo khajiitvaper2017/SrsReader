@@ -1,32 +1,3 @@
-import { installMigrations } from "@/platform/database/migrations";
-import type { FeatureCard, FeatureGlobal } from "@/srs/rwkv/features";
-import type { Heads } from "@/srs/rwkv/model";
-import type { StoredLayers } from "@/srs/rwkv/precision";
-import Dexie, { type Table } from "dexie";
-
-export type RwkvEntity = { id: string; state: StoredLayers };
-export type RwkvCard = {
-  id: string;
-  features: FeatureCard;
-  curve: Pick<Heads, "w" | "s" | "d">;
-};
-export type RwkvMeta = {
-  id: string;
-  key: string;
-  cursor: number;
-  features: FeatureGlobal;
-};
-export type SrsMeta = {
-  id: string;
-  sequence: number;
-  undo?: {
-    reviewId: string;
-    entities: RwkvEntity[];
-    card?: RwkvCard;
-    meta: RwkvMeta;
-  };
-};
-
 import type { AudioRecord } from "@/audio/model";
 import type {
   Dictionary,
@@ -37,9 +8,16 @@ import type {
   Phrase,
   Tag,
 } from "@/dictionaries/model";
+import { installMigrations } from "@/platform/database/migrations";
 import type { Settings } from "@/settings/model";
-import type { Review } from "@/srs/history";
+import type {
+  RwkvCard,
+  RwkvEntity,
+  RwkvMeta,
+} from "@/srs/engines/rwkv/records";
+import type { Review, SrsMeta } from "@/srs/history";
 import type { Vocabulary } from "@/vocabulary/model";
+import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
   srsMeta!: Table<SrsMeta, string>;

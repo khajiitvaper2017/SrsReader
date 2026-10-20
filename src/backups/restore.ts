@@ -3,7 +3,7 @@ import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import { settingsSchema } from "@/settings/model";
 import { srsClient } from "@/srs/client";
-import { invalidateRwkv } from "@/srs/rwkv/runtime";
+import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 
 export async function restoreSettings(
   settings: ReturnType<typeof settingsSchema.parse>,

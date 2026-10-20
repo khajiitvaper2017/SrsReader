@@ -9,6 +9,7 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { Download, Upload } from "lucide-react";
+
 export function LanguageDataSettings({
   settings,
   data,

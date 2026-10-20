@@ -20,6 +20,7 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { ReviewSettings } from "@/srs/components/ReviewSettings";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+
 export function SettingsPage({
   settings,
   setSettings,

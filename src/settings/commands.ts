@@ -4,7 +4,7 @@ import type { Request } from "@/settings/contracts";
 import type { Settings } from "@/settings/model";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
-import { rwkvStatus } from "@/srs/rwkv/runtime";
+import { rwkvStatus } from "@/srs/engines/rwkv/cache";
 
 export function handleSettings(request: Request, settings: Settings) {
   return request.action === "setSettings"

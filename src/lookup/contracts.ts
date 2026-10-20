@@ -1,6 +1,7 @@
 import { selection } from "@/vocabulary/contracts";
 import type { ReadingContext } from "@/vocabulary/model";
 import { z } from "zod";
+
 export const requests = [
   z.object({ action: z.literal("createSession"), ...selection }),
   z.object({ action: z.literal("session"), id: z.string() }),

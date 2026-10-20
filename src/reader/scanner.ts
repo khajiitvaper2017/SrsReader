@@ -4,10 +4,15 @@ import { folded } from "@/languages/text";
 import { blockSelector, createBlockReader, makeRange } from "@/reader/blocks";
 import { readerClient } from "@/reader/client";
 import type { ReaderHighlights } from "@/reader/highlights";
-import type { Block, Pointer, ReaderOptions } from "@/reader/types";
-import { type Settings } from "@/settings/model";
+import type {
+  Block,
+  Pointer,
+  ReaderOptions,
+  ReaderConfiguration as Settings,
+} from "@/reader/types";
 import type { ReadingContext } from "@/vocabulary/model";
 import type { WordState } from "@/vocabulary/state";
+
 export function createScanner(
   root: HTMLElement,
   excluded: string,

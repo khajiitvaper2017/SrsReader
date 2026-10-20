@@ -47,3 +47,18 @@ export const scheduleSchema = z.union([
 ]);
 
 export type Schedule = z.infer<typeof scheduleSchema>;
+
+export function emptySchedule(now = Date.now()): Schedule {
+  return {
+    due: now,
+    scheduled_days: 0,
+    reps: 0,
+    lapses: 0,
+    learning_steps: 0,
+    state: 0,
+    last_review: null,
+    last_review_day: null,
+    interday: false,
+    fsrs: { stability: 0, difficulty: 0 },
+  };
+}

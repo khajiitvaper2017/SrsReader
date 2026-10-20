@@ -1,5 +1,6 @@
 import type { ImportProgress } from "@/shared/download";
 import { useEffect, useState } from "react";
+
 export function useSettingsTask() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -42,4 +43,14 @@ export function useSettingsTask() {
     run: task,
   };
 }
-export type SettingsTask = ReturnType<typeof useSettingsTask>;
+export type SettingsTask = Pick<
+  ReturnType<typeof useSettingsTask>,
+  | "busy"
+  | "progress"
+  | "progressTarget"
+  | "setProgress"
+  | "setProgressTarget"
+  | "setError"
+  | "setNotice"
+  | "run"
+>;

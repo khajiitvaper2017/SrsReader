@@ -10,6 +10,7 @@ import { handleSettings } from "@/settings/commands";
 import { getSettings } from "@/settings/store";
 import { handleSrs } from "@/srs/commands";
 import { handleVocabulary } from "@/vocabulary/commands";
+
 export async function handle(request: Request) {
   const settings = await getSettings();
   switch (request.action) {

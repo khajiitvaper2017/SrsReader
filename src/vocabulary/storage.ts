@@ -1,10 +1,9 @@
 import type { LookupWord } from "@/dictionaries/model";
 import { db } from "@/platform/database/db";
-import { invalidateRwkv } from "@/srs/rwkv/runtime";
+import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
+import { emptySchedule } from "@/srs/model";
 import type { Request } from "@/vocabulary/contracts";
-
-import { emptySchedule } from "@/srs/scheduling";
-import type { ReadingContext } from "@/vocabulary/model";
+import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { addContext, freshWord } from "@/vocabulary/service";
 
 export async function mine(word: LookupWord, context?: ReadingContext) {
@@ -20,6 +19,43 @@ export async function mine(word: LookupWord, context?: ReadingContext) {
     await db.vocabulary.put(saved);
     return saved;
   });
+}
+
+export function definePersonalWord(
+  word: LookupWord,
+  definition: string,
+  context?: ReadingContext,
+) {
+  return db.transaction("rw", db.vocabulary, async () => {
+    const saved = await mine(word, context);
+    saved.meanings = [
+      {
+        dictionaryId: "personal",
+        title: "",
+        revision: "",
+        attribution: "",
+        sourceUrl: "",
+        tags: "",
+        definitions: [definition],
+      },
+      ...saved.meanings.filter(
+        (meaning) => meaning.dictionaryId !== "personal",
+      ),
+    ];
+    await db.vocabulary.put(saved);
+    return saved;
+  });
+}
+
+export function replaceMeanings(id: string, meanings: Vocabulary["meanings"]) {
+  return db.vocabulary
+    .where("id")
+    .equals(id)
+    .modify((word) => {
+      word.meanings = meanings;
+      word.version++;
+      word.updated = Date.now();
+    });
 }
 
 export async function setMastered(word: LookupWord, value: boolean) {

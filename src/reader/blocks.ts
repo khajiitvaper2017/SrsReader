@@ -1,5 +1,9 @@
-import type { Part, ReaderOptions } from "@/reader/types";
-import { type Settings } from "@/settings/model";
+import type {
+  Part,
+  ReaderOptions,
+  ReaderConfiguration as Settings,
+} from "@/reader/types";
+
 export const blockSelector =
   "p,li,h1,h2,h3,h4,h5,h6,td,th,blockquote,pre,figcaption,div,section,article,main,body";
 export const excludedSelector =

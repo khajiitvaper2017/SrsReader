@@ -1,6 +1,7 @@
 import type { Dictionary, LookupResult } from "@/dictionaries/model";
 import { selection } from "@/vocabulary/contracts";
 import { z } from "zod";
+
 export const requests = [
   z.object({ action: z.literal("dictionaries") }),
   z.object({

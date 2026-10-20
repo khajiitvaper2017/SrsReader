@@ -17,6 +17,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+
 export function WordDetails({
   settings,
   controller,

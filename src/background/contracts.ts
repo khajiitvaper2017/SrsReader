@@ -39,6 +39,7 @@ import {
   type Responses as vocabularyResponses,
 } from "@/vocabulary/contracts";
 import { z } from "zod";
+
 export const requestSchema = z.discriminatedUnion("action", [
   ...settingsRequests,
   ...dictionariesRequests,

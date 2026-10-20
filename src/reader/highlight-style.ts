@@ -1,4 +1,4 @@
-import type { Settings } from "@/settings/model";
+import type { ReaderPreferences as Settings } from "@/reader/preferences";
 import { wordStyleStates } from "@/settings/word-styles";
 
 export function wordHighlightCss(settings: Settings) {

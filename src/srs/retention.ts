@@ -4,7 +4,8 @@ import {
   wordFrequencies,
 } from "@/dictionaries/frequency";
 import { db } from "@/platform/database/db";
-import type { Settings } from "@/settings/model";
+import type { SchedulingPreferences as Settings } from "@/srs/preferences";
+import { resolveRetention } from "@/srs/retention-policy";
 import type { Vocabulary } from "@/vocabulary/model";
 
 export async function effectiveRetention(
@@ -13,8 +14,9 @@ export async function effectiveRetention(
   },
   settings: Settings,
 ) {
-  if (word.retentionOverride != null) return word.retentionOverride;
-  if (!settings.dynamicRetention) return settings.retention;
+  if (word.retentionOverride != null)
+    return resolveRetention(word.retentionOverride, null, settings);
+  if (!settings.dynamicRetention) return resolveRetention(null, null, settings);
   const dictionaries = await db.dictionaries.toArray();
   const sources = new Set(
     dictionaries
@@ -24,9 +26,7 @@ export async function effectiveRetention(
   const ranks = (await wordFrequencies(word))
     .filter((row) => sources.has(row.id) && row.rank > 0)
     .map((row) => row.rank);
-  if (!ranks.length) return settings.retention;
+  if (!ranks.length) return resolveRetention(null, null, settings);
   const rank = harmonicRank(ranks);
-  return settings.retentionBands.find(
-    (band) => band.upTo === null || rank <= band.upTo,
-  )!.retention;
+  return resolveRetention(null, rank, settings);
 }

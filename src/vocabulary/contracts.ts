@@ -1,6 +1,7 @@
 import { translationSchema } from "@/translation/model";
 import { contextSchema, type Vocabulary } from "@/vocabulary/model";
 import { z } from "zod";
+
 export const selection = {
   term: z.string().min(1).max(1000),
   context: contextSchema.optional(),

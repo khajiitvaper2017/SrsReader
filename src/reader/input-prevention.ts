@@ -1,5 +1,5 @@
 import { matchesModifiers } from "@/reader/controls";
-import type { Settings } from "@/settings/model";
+import type { ReaderConfiguration as Settings } from "@/reader/types";
 
 type PageScope = "webpages" | "popups" | "extensionPages";
 

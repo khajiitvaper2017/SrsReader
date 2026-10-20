@@ -1,9 +1,9 @@
 import { playBlob, speak, stopAudio } from "@/audio/playback";
 import { getAudio } from "@/audio/storage";
-import { rpc } from "@/platform/messaging/send";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { srsClient } from "@/srs/client";
+import type { Responses } from "@/srs/contracts";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -13,8 +13,7 @@ export function useReviewSession({
   settings: Settings;
   stats: { total: number; due: number; known: number; today: number };
 }) {
-  const [queue, setQueue] =
-    useState<Awaited<ReturnType<typeof rpc<{ action: "queue" }>>>>();
+  const [queue, setQueue] = useState<Responses["queue"]>();
   const [revealed, setRevealed] = useState(false);
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");

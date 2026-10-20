@@ -2,6 +2,7 @@ import type { Settings } from "@/settings/model";
 import { selection } from "@/vocabulary/contracts";
 import type { Vocabulary } from "@/vocabulary/model";
 import { z } from "zod";
+
 export const requests = [
   z.object({
     action: z.literal("grade"),

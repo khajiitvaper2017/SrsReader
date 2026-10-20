@@ -1,3 +1,8 @@
+import type {
+  RwkvCard,
+  RwkvEntity,
+  RwkvMeta,
+} from "@/srs/engines/rwkv/records";
 import { scheduleSchema } from "@/srs/model";
 import { vocabularySchema } from "@/vocabulary/model";
 import { z } from "zod";
@@ -24,3 +29,14 @@ export const reviewSchema = z.object({
 });
 
 export type Review = z.infer<typeof reviewSchema>;
+
+export type SrsMeta = {
+  id: string;
+  sequence: number;
+  undo?: {
+    reviewId: string;
+    entities: RwkvEntity[];
+    card?: RwkvCard;
+    meta: RwkvMeta;
+  };
+};

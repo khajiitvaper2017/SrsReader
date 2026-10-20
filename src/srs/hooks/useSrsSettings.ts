@@ -1,8 +1,8 @@
 import type { Dictionary } from "@/dictionaries/model";
-import { rpc } from "@/platform/messaging/send";
-import { type Settings } from "@/settings/model";
+import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
+import type { Responses } from "@/srs/contracts";
 import { useEffect, useState } from "react";
 
 export function useSrsSettings({
@@ -16,8 +16,7 @@ export function useSrsSettings({
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [status, setStatus] =
-    useState<Awaited<ReturnType<typeof rpc<{ action: "rwkvStatus" }>>>>();
+  const [status, setStatus] = useState<Responses["rwkvStatus"]>();
   const [bands, setBands] = useState(settings.retentionBands);
   useEffect(() => setBands(settings.retentionBands), [settings.retentionBands]);
   useEffect(() => {
