@@ -151,6 +151,7 @@ export function Structured({
   if (typeof node.lang === "string") props.lang = node.lang;
   if (typeof node.title === "string") props.title = node.title;
   if (node.tag === "details") props.open = node.open === true;
+  if (node.tag === "summary") props["data-srs-reader"] = "";
   if (node.tag === "td" || node.tag === "th") {
     if (typeof node.colSpan === "number") props.colSpan = node.colSpan;
     if (typeof node.rowSpan === "number") props.rowSpan = node.rowSpan;

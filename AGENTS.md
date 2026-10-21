@@ -1,3 +1,34 @@
+## Build and development
+
+- Use Node.js 22 or newer and npm. Run `npm ci` to install from `package-lock.json`. Installation also runs `wxt prepare`.
+- Run `npm run dev` for Chromium or `npm run dev:firefox` for Firefox.
+- Run `npm run build` for Chromium or `npm run build:firefox` for Firefox. WXT writes builds to `.output/`.
+- Run `npm run zip` or `npm run zip:firefox` to create installable archives.
+- Treat `.wxt/` and `.output/` as generated files. Do not edit them. Run `npx wxt prepare` if generated WXT types are missing.
+- Always rebuild for chrome after finishing the work.
+
+## Linting and fixes
+
+- Run `npm run typecheck` to check TypeScript and `npx eslint .` to lint. There is no `lint` script.
+- Run `npm run format:check` to check Prettier formatting.
+- Run `npm run fix` to apply ESLint fixes and Prettier formatting across the repo. `npm run format` only applies formatting.
+- For a small change, use `npx eslint <files> --fix` and `npx prettier --write <files>` to avoid unrelated edits.
+- Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
+- Do not add tests unless asked. If asked, add only end-to-end tests that check app behavior.
+- Run checks that fit the change. Do not repeat checks the user already completed. Report any checks you did not run.
+
+## Project structure
+
+- This is a WXT browser extension built with React and strict TypeScript. Use `@/` imports for `src/`.
+- `entrypoints/` contains the background, website content script, app, toolbar popup, and lookup iframe entry points. Keep feature logic in `src/`.
+- `src/app/` contains app navigation and pages. `src/reader/` scans text and controls website lookups. `src/lookup/` renders word details and nested dictionary lookups.
+- Keep feature code in its own folder, such as `dictionaries/`, `languages/`, `vocabulary/`, `srs/`, or `audio/`. Put React components in `components/` and hooks in `hooks/`.
+- Follow each feature's existing `client.ts`, `contracts.ts`, and `commands.ts` pattern for background requests. `src/background/` routes requests and broadcasts changes.
+- `src/platform/` contains browser messaging, database storage, migrations, and write locks. Reuse these services.
+- `src/shared/` contains shared UI, the Mantine theme, styles, and translations. Update both `src/shared/i18n/locales/en.json` and `uk.json` for UI text.
+- User guides live in `docs/en/` and `docs/uk/`. Keep both languages current when documenting a feature.
+- `wxt.config.ts` defines extension permissions, browser settings, and bundled assets. `public/` contains static assets.
+
 ## UI standards
 
 The project uses Mantine. These standards apply to all UI work.
