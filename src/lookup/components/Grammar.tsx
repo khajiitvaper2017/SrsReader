@@ -138,7 +138,7 @@ export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
         )}
         <Text size="xs" c="dimmed">
           {label("relations", token.deprel)}
-          {head ? ` → ${head.form}` : ""}
+          {head ? ` → ${head.form} (${head.lemma})` : ""}
         </Text>
       </Stack>
     );
