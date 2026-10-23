@@ -82,15 +82,15 @@ Open **Settings → Review**.
 
 Open **Settings → Review → Display order**. These settings apply to every language and deck. They control which cards enter the queue and how they appear.
 
-**New card gather order** selects new words before the daily new-word limit:
+**Choose new words** picks which words fill your daily limit:
 
-- **Word frequency** puts more frequent words first, using combined ranks from enabled dictionaries. **Words without frequency** controls words with no matching rank.
+- **Most common first** is the default. It picks more frequent words first, using combined ranks from enabled dictionaries. **Words without frequency** controls words with no matching rank.
 - **Deck, then oldest first** starts with Mined words, then frequency decks in name order. Within each deck, older additions come first.
 - **Deck, then random** uses the same deck order and selects words at random within each deck.
 - **Oldest added first** and **Newest added first** use the date the word was added.
-- **Random** is the default. It selects words at random across the selected language or deck.
+- **Random** selects words at random across the selected language or deck.
 
-**New card sort order** controls the selected words after the daily limit. **Order gathered** is the default. **Random** shuffles those words without changing which words were selected.
+**Order chosen words** controls how the picked words appear. **Keep chosen order** keeps the order from the first setting. **Random** shuffles the same words. To study by frequency, choose **Most common first**, then **Keep chosen order**.
 
 **New/review order** accepts **Show before reviews**, **Mix with reviews**, or **Show after reviews**. The default is **Mix with reviews**. This places new cards relative to regular reviews and interday learning cards.
 

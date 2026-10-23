@@ -136,6 +136,7 @@ export function ReviewSettings({
                 description={t(help)}
                 value={settings[key]}
                 allowDeselect={false}
+                maxDropdownHeight="calc(100dvh - 16px)"
                 data={srsPreferencesSchema.shape[key]
                   .unwrap()
                   .options.map((value) => ({

@@ -26,7 +26,7 @@ export const srsPreferencesSchema = z.object({
   reviewLimit: z.number().int().positive().nullable().default(null),
   newGatherOrder: z
     .enum(["frequency", "deck", "deck_random", "oldest", "newest", "random"])
-    .default("random"),
+    .default("frequency"),
   newSortOrder: z.enum(["gathered", "random"]).default("gathered"),
   newReviewOrder: z.enum(["before", "mix", "after"]).default("mix"),
   interdayReviewOrder: z.enum(["before", "mix", "after"]).default("mix"),
