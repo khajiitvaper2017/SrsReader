@@ -58,7 +58,6 @@ export function WiktionaryBrowser({
   busy: boolean;
   onImport: (entry: WiktionaryDownload) => Promise<void>;
 }) {
-  const [open, setOpen] = useState(false);
   const [target, setTarget] = useState(
     downloads.some(
       (entry) =>
@@ -72,16 +71,12 @@ export function WiktionaryBrowser({
   const [sort, setSort] = useState("language");
   const [search, setSearch] = useState("");
   const [installing, setInstalling] = useState("");
-  const available = open
-    ? downloads.filter(
-        (entry) =>
-          languageCode(entry.source) === language &&
-          languageName(languageCode(entry.source)) !==
-            languageCode(entry.source) &&
-          languageName(languageCode(entry.target)) !==
-            languageCode(entry.target),
-      )
-    : [];
+  const available = downloads.filter(
+    (entry) =>
+      languageCode(entry.source) === language &&
+      languageName(languageCode(entry.source)) !== languageCode(entry.source) &&
+      languageName(languageCode(entry.target)) !== languageCode(entry.target),
+  );
   const targets = [
     ...new Set(available.map((entry) => languageCode(entry.target))),
   ];
@@ -114,127 +109,118 @@ export function WiktionaryBrowser({
     }
   }
   return (
-    <Accordion
-      value={open ? "catalogue" : null}
-      onChange={(value) => setOpen(value !== null)}
-    >
+    <Accordion keepMounted={false}>
       <Accordion.Item value="catalogue">
         <Accordion.Control>{t("wiktionary_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
-          {open && (
-            <>
-              <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <Group justify="space-between" align="center" wrap="nowrap">
-                  {t("definition_language")}
-                  <NativeSelect
-                    aria-label={t("definition_language")}
-                    value={target}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      setTarget(value);
-                      setType("");
-                    }}
-                    w={160}
-                    maw="50%"
-                  >
-                    <option value="">{t("all_languages")}</option>
-                    {targets.sort(compareLanguages).map((code) => (
-                      <option key={code} value={code}>
-                        {languageName(code)}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </Group>
-                <Group justify="space-between" align="center" wrap="nowrap">
-                  {t("type")}
-                  <NativeSelect
-                    aria-label={t("dictionary_type")}
-                    value={type}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      return setType(value);
-                    }}
-                    w={160}
-                    maw="50%"
-                  >
-                    <option value="">{t("all_types")}</option>
-                    {types
-                      .filter((type) =>
-                        matching.some((entry) => entry.type === type),
-                      )
-                      .map((type) => (
-                        <option key={type} value={type}>
-                          {t(typeLabels[type])}
-                        </option>
-                      ))}
-                  </NativeSelect>
-                </Group>
-                <Group justify="space-between" align="center" wrap="nowrap">
-                  {t("sort_by")}
-                  <NativeSelect
-                    aria-label={t("sort_dictionaries")}
-                    value={sort}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      return setSort(value);
-                    }}
-                    w={160}
-                    maw="50%"
-                  >
-                    <option value="language">{t("language")}</option>
-                    <option value="size">{t("download_size")}</option>
-                  </NativeSelect>
-                </Group>
-                <TextInput
-                  type="search"
-                  aria-label={t("search_dictionaries")}
-                  placeholder={t("search_languages")}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </SimpleGrid>
-              <Stack
-                aria-label={t("available_wiktionary_dictionaries")}
-                mah={280}
-                style={{ overflowY: "auto" }}
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Group justify="space-between" align="center" wrap="nowrap">
+              {t("definition_language")}
+              <NativeSelect
+                aria-label={t("definition_language")}
+                value={target}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setTarget(value);
+                  setType("");
+                }}
+                w={160}
+                maw="50%"
               >
-                {entries.map((entry) => (
-                  <Group key={wiktionaryName(entry)} align="center">
-                    <Stack>
-                      <strong>
-                        {languageName(languageCode(entry.source))} →{" "}
-                        {languageName(languageCode(entry.target))}
-                      </strong>
-                      <Text variant="supporting">
-                        {t(typeLabels[entry.type])} · {downloadSize(entry.size)}{" "}
-                        · {wiktionaryName(entry)}
-                      </Text>
-                    </Stack>
-                    <ActionIcon
-                      disabled={busy}
-                      onClick={() => void install(entry)}
-                      title={t("import_dictionary_named", {
-                        title: wiktionaryName(entry),
-                      })}
-                      aria-label={t("import_dictionary_named", {
-                        title: wiktionaryName(entry),
-                      })}
-                      variant="default"
-                    >
-                      {installing === wiktionaryName(entry) ? (
-                        <Loader size={14} aria-hidden="true" />
-                      ) : (
-                        <Download aria-hidden="true" size={16} />
-                      )}
-                    </ActionIcon>
-                  </Group>
+                <option value="">{t("all_languages")}</option>
+                {targets.sort(compareLanguages).map((code) => (
+                  <option key={code} value={code}>
+                    {languageName(code)}
+                  </option>
                 ))}
-                {!entries.length && (
-                  <Text>{t("no_matching_dictionaries")}</Text>
-                )}
-              </Stack>
-            </>
-          )}
+              </NativeSelect>
+            </Group>
+            <Group justify="space-between" align="center" wrap="nowrap">
+              {t("type")}
+              <NativeSelect
+                aria-label={t("dictionary_type")}
+                value={type}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  return setType(value);
+                }}
+                w={160}
+                maw="50%"
+              >
+                <option value="">{t("all_types")}</option>
+                {types
+                  .filter((type) =>
+                    matching.some((entry) => entry.type === type),
+                  )
+                  .map((type) => (
+                    <option key={type} value={type}>
+                      {t(typeLabels[type])}
+                    </option>
+                  ))}
+              </NativeSelect>
+            </Group>
+            <Group justify="space-between" align="center" wrap="nowrap">
+              {t("sort_by")}
+              <NativeSelect
+                aria-label={t("sort_dictionaries")}
+                value={sort}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  return setSort(value);
+                }}
+                w={160}
+                maw="50%"
+              >
+                <option value="language">{t("language")}</option>
+                <option value="size">{t("download_size")}</option>
+              </NativeSelect>
+            </Group>
+            <TextInput
+              type="search"
+              aria-label={t("search_dictionaries")}
+              placeholder={t("search_languages")}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </SimpleGrid>
+          <Stack
+            aria-label={t("available_wiktionary_dictionaries")}
+            mah={280}
+            style={{ overflowY: "auto" }}
+          >
+            {entries.map((entry) => (
+              <Group key={wiktionaryName(entry)} align="center">
+                <Stack>
+                  <strong>
+                    {languageName(languageCode(entry.source))} →{" "}
+                    {languageName(languageCode(entry.target))}
+                  </strong>
+                  <Text variant="supporting">
+                    {t(typeLabels[entry.type])} · {downloadSize(entry.size)} ·{" "}
+                    {wiktionaryName(entry)}
+                  </Text>
+                </Stack>
+                <ActionIcon
+                  disabled={busy}
+                  onClick={() => void install(entry)}
+                  title={t("import_dictionary_named", {
+                    title: wiktionaryName(entry),
+                  })}
+                  aria-label={t("import_dictionary_named", {
+                    title: wiktionaryName(entry),
+                  })}
+                  variant="default"
+                >
+                  {installing === wiktionaryName(entry) ? (
+                    <Loader size={14} aria-hidden="true" />
+                  ) : (
+                    <Download aria-hidden="true" size={16} />
+                  )}
+                </ActionIcon>
+              </Group>
+            ))}
+            {!entries.length && <Text>{t("no_matching_dictionaries")}</Text>}
+          </Stack>
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>
