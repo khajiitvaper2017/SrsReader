@@ -18,14 +18,7 @@ export async function studyOverview(settings: Settings) {
     db.vocabulary.toArray(),
     db.decks.toArray(),
   ]);
-  const languages = [
-    ...new Set([
-      ...settings.studyLanguages,
-      settings.studyLanguage,
-      ...words.map((word) => word.language),
-      ...decks.map((deck) => deck.language),
-    ]),
-  ].filter(Boolean);
+  const languages = settings.studyLanguages;
   return Promise.all(
     languages.map(async (language) => {
       const preferences = { ...settings, studyLanguage: language };

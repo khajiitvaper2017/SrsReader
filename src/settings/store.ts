@@ -13,5 +13,8 @@ export async function getSettings(): Promise<Settings> {
   return settings;
 }
 
-export const saveSettings = (value: Settings) =>
+export const saveSettings = ({
+  studyLanguage: _language,
+  ...value
+}: Omit<Settings, "studyLanguage"> & { studyLanguage?: string }) =>
   db.settings.put({ id: "main", value });

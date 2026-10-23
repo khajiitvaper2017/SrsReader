@@ -3,7 +3,7 @@ import { removeRevision } from "@/dictionaries/management";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { getSettings } from "@/settings/store";
+import { getSettings, saveSettings } from "@/settings/store";
 import type { Dictionary } from "@/dictionaries/model";
 
 export async function setDictionaryDisplay(
@@ -22,7 +22,7 @@ export async function setDictionaryDisplay(
     order: dictionary.order,
     fallback: request.display === "fallback",
   };
-  await db.settings.put({ id: "main", value: settings });
+  await saveSettings(settings);
   return;
 }
 export async function reorderDictionary(
@@ -54,7 +54,7 @@ export async function reorderDictionary(
           order,
         };
       }
-      await db.settings.put({ id: "main", value: currentSettings });
+      await saveSettings(currentSettings);
     }),
   );
   return;

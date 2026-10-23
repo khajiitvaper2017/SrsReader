@@ -1,5 +1,6 @@
 import { meaningSchema } from "@/dictionaries/model";
 import { normalize } from "@/languages/text";
+import { languageSchema } from "@/languages/model";
 import { t } from "@/shared/i18n/i18n";
 import { scheduleSchema } from "@/srs/model";
 import { translationSchema } from "@/translation/model";
@@ -11,6 +12,7 @@ export const wordId = (language: string, lemma: string, reading: string) =>
 
 export const contextSchema = z
   .object({
+    language: languageSchema.optional(),
     sentence: z.string(),
     surface: z.string(),
     start: z.number().int().nonnegative(),

@@ -28,7 +28,12 @@ export function WordExamples({
     setIndex(0);
     setError("");
     setInstalled(true);
-    void examplesClient({ action: "examples", lemma: word.lemma, surface })
+    void examplesClient({
+      action: "examples",
+      language: word.language,
+      lemma: word.lemma,
+      surface,
+    })
       .then((result) => {
         if (alive) {
           setExamples(result.examples);

@@ -1,3 +1,4 @@
+import { saveSettings } from "@/settings/store";
 import { readLearning } from "@/backups/archive";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
@@ -11,9 +12,9 @@ export async function restoreSettings(
   await srsWrite(() =>
     db.transaction("rw", [db.settings, db.dictionaries], async () => {
       const current = (await db.settings.get("main"))?.value;
-      await db.settings.put({
-        id: "main",
-        value: { ...settings, algorithm: current?.algorithm ?? "fsrs" },
+      await saveSettings({
+        ...settings,
+        algorithm: current?.algorithm ?? "fsrs",
       });
       for (const [id, preference] of Object.entries(
         settings.dictionaryPreferences,

@@ -58,19 +58,16 @@ export function ReadingSettings({
               void update({ paused: !event.currentTarget.checked })
             }
           />
-          <Switch
-            label={t("only_parse_the_reading_language")}
-            description={t("skips_text_detected_as_another_language")}
-            checked={settings.detectPageLanguage}
-            onChange={(event) =>
-              void update({ detectPageLanguage: event.currentTarget.checked })
-            }
-          />
+          <Text variant="supporting">{t("studied_reading_help")}</Text>
           <Switch
             label={t("use_udpipe")}
             description={t("udpipe_help")}
             checked={settings.udpipe}
-            disabled={!udpipeModel(settings.studyLanguage) || parserBusy}
+            disabled={
+              !settings.studyLanguages.some((language) =>
+                udpipeModel(language),
+              ) || parserBusy
+            }
             onChange={(event) => void changeParser(event.currentTarget.checked)}
           />
           <ErrorBox error={parserError} />

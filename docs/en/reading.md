@@ -32,13 +32,13 @@ Mouse and keyboard bindings can look up selected text. Some system and browser s
 
 Under **Settings → Reading → Word colors**, choose text or background colors for unsaved, saved, young, mature, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
 
-The toolbar pauses parsing or disables the current site. **Only parse the reading language** scans text identified as your study language. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
+The toolbar pauses parsing or disables the current site. Parsing automatically detects text in any language in **Settings → General → Studied languages**. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
 
 ## Grammar analysis with UDPipe
 
-Open **Settings → Reading → Use UDPipe** to enable grammar analysis in context. It is off by default. The switch is available when UDPipe supports your study language. SrsReader selects the model for that language automatically. Firefox also asks for permission to send website content. Without that permission, parsing stays local.
+Open **Settings → Reading → Use UDPipe** to enable grammar analysis in context. It is off by default. The switch is available when UDPipe supports at least one studied language. It applies to all supported studied languages. SrsReader selects the model for that language automatically. Firefox also asks for permission to send website content. Without that permission, parsing stays local.
 
-Under **Settings → Reading → UDPipe model**, choose the corpus that best matches your reading. Each option shows the corpus name and its main text types. The default favors fiction or literary text. Some default corpora also contain other text types. Your choice is saved separately for each study language.
+Under **Settings → Reading**, choose a language in **Language-specific settings**, then use **UDPipe model** to choose the corpus that best matches your reading. Each option shows the corpus name and its main text types. The default favors fiction or literary text. Some default corpora also contain other text types. Your choice is saved separately for each study language.
 
 The selector appears for these languages:
 
@@ -55,7 +55,7 @@ The selector appears for these languages:
 
 Enable **Use UDPipe** to change the model. Each model has its own cached results.
 
-UDPipe sends eligible text in your study language to [LINDAT](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php). It groups uncached text into one request per stable page where size permits. Page changes send only uncached text. Successful results stay in this browser permanently and are reused on other pages and after a restart. Clearing extension data removes them. Parser results are not included in learning or settings exports.
+UDPipe sends eligible text in your studied languages to [LINDAT](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php). It groups uncached text into one request per stable page where size permits. Page changes send only uncached text. Successful results stay in this browser permanently and are reused on other pages and after a restart. Clearing extension data removes them. Parser results are not included in learning or settings exports.
 
 Each attempt can take up to 30 seconds. If a request fails, SrsReader retries after 500 milliseconds and then after 1 second. After three failed attempts, it uses local parsing for 10 minutes. Open pages retry after that time. Other pages retry when opened again.
 

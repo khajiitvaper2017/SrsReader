@@ -98,20 +98,31 @@ async function execute(request: Request, settings: Settings) {
       await notify(await undoReview(request.id));
       return;
     case "queue":
-      return reviewQueue(request.deckId);
+      return reviewQueue(request.language, request.deckId);
     case "preview":
       return preview(await getWord(request.id), request.durationMs, request.id);
     case "reviewStats":
-      return reviewStatistics(settings, request.year);
+      return reviewStatistics(
+        { ...settings, studyLanguage: request.language },
+        request.year,
+      );
     case "stats": {
-      const words = await languageWords(settings.studyLanguage);
+      const words = (
+        await Promise.all(settings.studyLanguages.map(languageWords))
+      ).flat();
       return {
         total: words.length,
         known: words.filter((w) => w.known).length,
         due: words.filter(
           (w) => stateOf(w, settings.matureIntervalDays) === "due",
         ).length,
-        today: (await dailyCounts(settings)).today,
+        today: (
+          await Promise.all(
+            settings.studyLanguages.map((language) =>
+              dailyCounts({ ...settings, studyLanguage: language }),
+            ),
+          )
+        ).reduce((sum, counts) => sum + counts.today, 0),
       };
     }
     case "resetRwkv":
@@ -140,7 +151,11 @@ async function execute(request: Request, settings: Settings) {
       return result;
     }
     case "reschedule": {
-      const result = await rescheduleExisting(request.after);
+      const result = await rescheduleExisting(
+        request.after,
+        false,
+        request.language,
+      );
       await notify(undefined, "srs");
       return result;
     }

@@ -76,9 +76,8 @@ export function startReader(
     console.info("[SrsReader] Reader configured", {
       context: options.onLookup ? "popup" : "page",
       active,
-      studyLanguage: settings.studyLanguage,
+      studyLanguages: settings.studyLanguages,
       udpipeEnabled: settings.udpipe,
-      detectPageLanguage: settings.detectPageLanguage,
       settingsMs,
       totalMs: Math.round(performance.now() - started),
     });
@@ -89,13 +88,17 @@ export function startReader(
     if (
       (message.event === "parsed" || message.event === "parsedOccurrence") &&
       active &&
-      message.language === settings.studyLanguage &&
+      settings.studyLanguages.includes(message.language) &&
       message.candidates?.length
     ) {
       if (message.event === "parsedOccurrence")
         scanner.applyParsedOccurrence(message.occurrence, message.candidates);
       else if (message.term)
-        scanner.applyParsedTerm(message.term, message.candidates);
+        scanner.applyParsedTerm(
+          message.term,
+          message.candidates,
+          message.language,
+        );
       return;
     }
     if (message.event === "closeLookup") popup.close();

@@ -16,10 +16,15 @@ export function useLanguageData(language: string, tasks: SettingsTask) {
   });
   useEffect(() => {
     let alive = true;
+    if (!language) {
+      setMorphology({ count: 0 });
+      setExampleCorpus({ count: 0, installed: false });
+      return;
+    }
     void installedMorphology(language).then((value) => {
       if (alive) setMorphology({ count: value?.count ?? 0 });
     });
-    void examplesClient({ action: "exampleCorpus" })
+    void examplesClient({ action: "exampleCorpus", language })
       .then((value) => {
         if (alive) setExampleCorpus(value);
       })
@@ -32,10 +37,11 @@ export function useLanguageData(language: string, tasks: SettingsTask) {
   async function installLanguageData(
     type: "examples" | "morphology",
     blob?: Blob,
+    targetLanguage = language,
   ) {
     setProgressTarget(type);
     setProgress(undefined);
-    if (!language) throw new Error(t("choose_a_study_language_first"));
+    if (!targetLanguage) throw new Error(t("choose_a_study_language_first"));
     await new Promise<void>((resolve, reject) => {
       const current = new LanguageDataWorker();
       worker.current = current;
@@ -55,7 +61,7 @@ export function useLanguageData(language: string, tasks: SettingsTask) {
       };
       current.postMessage({
         type,
-        language,
+        language: targetLanguage,
         blob,
         locale: i18n.language,
       });

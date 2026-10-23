@@ -34,7 +34,6 @@ export function createScanner(
   const { matchesLanguage, readBlock } = createBlockReader(
     root,
     excluded,
-    options,
     getSettings,
   );
   let scanning = false;
@@ -67,7 +66,11 @@ export function createScanner(
           ? "ignored"
           : state;
   }
-  function applyParsedTerm(term: string, candidates: ScanSpan["candidates"]) {
+  function applyParsedTerm(
+    term: string,
+    candidates: ScanSpan["candidates"],
+    language: string,
+  ) {
     const escaped = term
       .trim()
       .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -77,56 +80,58 @@ export function createScanner(
       "giu",
     );
     for (const block of blocks.values())
-      for (const match of block.text.matchAll(pattern)) {
-        if (
-          block.spans.some(
-            (span) =>
-              span.occurrence &&
-              span.start < match.index + match[0].length &&
-              span.end > match.index,
-          )
-        )
-          continue;
-        const start = match.index;
-        const end = start + match[0].length;
-        if (
-          block.spans.some(
-            (span) =>
-              span.start < end &&
-              span.end > start &&
-              (span.start !== start || span.end !== end),
-          )
-        )
-          continue;
-        const range = makeRange(block.parts, start, end);
-        if (!range) continue;
-        block.ranges = block.ranges.filter((old) => {
+      if (block.language === language)
+        for (const match of block.text.matchAll(pattern)) {
           if (
-            old.compareBoundaryPoints(Range.START_TO_START, range) >= 0 &&
-            old.compareBoundaryPoints(Range.END_TO_END, range) <= 0
-          ) {
-            for (const highlight of highlights.values()) highlight.delete(old);
-            return false;
-          }
-          return true;
-        });
-        block.spans = block.spans.filter(
-          (span) => span.start !== start || span.end !== end,
-        );
-        const span = {
-          start,
-          end,
-          term: match[0],
-          ids: candidates.map((candidate) => candidate.id),
-          candidates,
-          state: candidates[0]!.state,
-          range,
-        };
-        updateSpanState(span);
-        block.spans.push(span);
-        block.ranges.push(range);
-        highlights.get(span.state)!.add(range);
-      }
+            block.spans.some(
+              (span) =>
+                span.occurrence &&
+                span.start < match.index + match[0].length &&
+                span.end > match.index,
+            )
+          )
+            continue;
+          const start = match.index;
+          const end = start + match[0].length;
+          if (
+            block.spans.some(
+              (span) =>
+                span.start < end &&
+                span.end > start &&
+                (span.start !== start || span.end !== end),
+            )
+          )
+            continue;
+          const range = makeRange(block.parts, start, end);
+          if (!range) continue;
+          block.ranges = block.ranges.filter((old) => {
+            if (
+              old.compareBoundaryPoints(Range.START_TO_START, range) >= 0 &&
+              old.compareBoundaryPoints(Range.END_TO_END, range) <= 0
+            ) {
+              for (const highlight of highlights.values())
+                highlight.delete(old);
+              return false;
+            }
+            return true;
+          });
+          block.spans = block.spans.filter(
+            (span) => span.start !== start || span.end !== end,
+          );
+          const span = {
+            start,
+            end,
+            term: match[0],
+            ids: candidates.map((candidate) => candidate.id),
+            candidates,
+            state: candidates[0]!.state,
+            range,
+          };
+          updateSpanState(span);
+          block.spans.push(span);
+          block.ranges.push(range);
+          highlights.get(span.state)!.add(range);
+        }
   }
   function applyParsedOccurrence(
     occurrence: Occurrence,
@@ -157,7 +162,7 @@ export function createScanner(
     if (previous) {
       const { text, parts } = readBlock(element);
       if (text === previous.text) {
-        const result = parsed.get(text);
+        const result = parsed.get(JSON.stringify([previous.language, text]));
         if (result && (!result.retryAt || result.retryAt > Date.now())) {
           if (
             rebuildRanges ||
@@ -226,6 +231,7 @@ export function createScanner(
   ) {
     deleteBlock(element);
     const block: Block = {
+      language: result.language,
       text,
       parts,
       spans: [],
@@ -247,7 +253,7 @@ export function createScanner(
       getSettings().wordStyles.unparsed.mode !== "none"
     ) {
       let matched = 0;
-      for (const segment of new Intl.Segmenter(getSettings().studyLanguage, {
+      for (const segment of new Intl.Segmenter(block.language, {
         granularity: "word",
       }).segment(text)) {
         if (!segment.isWordLike) continue;
@@ -335,78 +341,60 @@ export function createScanner(
         ),
         elapsedMs: Math.round(performance.now() - started),
       });
-      let eligible = snapshots;
-      if (
-        !options.onLookup &&
-        getSettings().detectPageLanguage &&
-        snapshots.length
-      ) {
-        const detectionStarted = performance.now();
-        const pageText = languageSample(
-          [...pageTexts.values()].map(languageSample).join("\n"),
-        );
-        const [detectedPage, ...detectedBlocks] = await detectLanguages([
-          pageText,
-          ...snapshots.map((block) => block.text),
-        ]);
-        if (generation !== version || !isActive()) return;
-        const pageLanguage = detectedPage || languageTag(root);
-        eligible = snapshots.filter((block, index) => {
-          const detected =
-            detectedBlocks[index] || languageTag(block.element) || pageLanguage;
-          if (detected === getSettings().studyLanguage) return true;
-          deleteBlock(block.element);
-          return false;
-        });
-        console.info("[SrsReader] Language detection finished", {
-          scan,
-          pageLanguage,
-          elapsedMs: Math.round(performance.now() - detectionStarted),
-          eligibleBlocks: eligible.length,
-          skippedBlocks: snapshots.length - eligible.length,
-        });
-      }
+      const preferences = getSettings();
+      const [detectedPage, ...detectedBlocks] = snapshots.length
+        ? await detectLanguages([
+            languageSample(
+              [...pageTexts.values()].map(languageSample).join("\n"),
+            ),
+            ...snapshots.map((block) => block.text),
+          ])
+        : [];
       if (generation !== version || !isActive()) return;
-      eligible = eligible.filter(
-        (block) =>
-          block.element.isConnected &&
-          readBlock(block.element).text === block.text,
-      );
-      const uniqueTexts = [...new Set(eligible.map((block) => block.text))];
-      const missing = uniqueTexts.filter((text) => {
-        const hit = parsed.get(text);
-        return !hit || (!!hit.retryAt && hit.retryAt <= Date.now());
-      });
-      if (missing.length) {
-        const requestStarted = performance.now();
-        console.info("[SrsReader] Scan request started", {
-          scan,
-          blocks: missing.length,
-          readerCacheHits: uniqueTexts.length - missing.length,
-        });
-        const results = await readerClient({ action: "scan", texts: missing });
-        console.info("[SrsReader] Scan request finished", {
-          scan,
-          elapsedMs: Math.round(performance.now() - requestStarted),
-          blocksWithUDPipeAnnotations: results.filter((result) =>
-            result.spans.some((span) => span.occurrence),
-          ).length,
-          localFallbackBlocks: results.filter((result) => result.retryAt)
-            .length,
-        });
-        const retryAt = results.flatMap((result) =>
-          result.retryAt ? [result.retryAt] : [],
+      const pageLanguage = detectedPage || languageTag(root);
+      const eligible = snapshots.flatMap((snapshot, index) => {
+        const marked = snapshot.element.closest(
+          "[lang],[data-reading-language]",
         );
-        if (retryAt.length)
-          console.warn("[SrsReader] Using local fallback", {
-            scan,
-            blocks: retryAt.length,
-            retryAt: new Date(Math.min(...retryAt)).toISOString(),
-          });
-        if (generation !== version || !isActive()) return;
-        for (const [index, text] of missing.entries())
-          parsed.set(text, results[index]!);
+        const declared =
+          marked && root.contains(marked) && marked !== root
+            ? languageTag(marked)
+            : null;
+        const language =
+          declared || detectedBlocks[index] || options.language || pageLanguage;
+        if (!language || !preferences.studyLanguages.includes(language)) {
+          deleteBlock(snapshot.element);
+          return [];
+        }
+        return snapshot.element.isConnected &&
+          readBlock(snapshot.element).text === snapshot.text
+          ? [{ ...snapshot, language }]
+          : [];
+      });
+      const key = (language: string, text: string) =>
+        JSON.stringify([language, text]);
+      const groups = new Map<string, Set<string>>();
+      for (const snapshot of eligible) {
+        const hit = parsed.get(key(snapshot.language, snapshot.text));
+        if (hit && (!hit.retryAt || hit.retryAt > Date.now())) continue;
+        const texts = groups.get(snapshot.language) || new Set<string>();
+        texts.add(snapshot.text);
+        groups.set(snapshot.language, texts);
       }
+      await Promise.all(
+        [...groups].map(async ([language, texts]) => {
+          const missing = [...texts];
+          const results = await readerClient({
+            action: "scan",
+            language,
+            texts: missing,
+          });
+          if (generation !== version || !isActive()) return;
+          for (const [index, text] of missing.entries())
+            parsed.set(key(language, text), results[index]!);
+        }),
+      );
+      if (generation !== version || !isActive()) return;
       const renderStarted = performance.now();
       let coloredBlocks = 0;
       let coloredWords = 0;
@@ -415,7 +403,7 @@ export function createScanner(
         const current = readBlock(snapshot.element);
         if (!snapshot.element.isConnected || current.text !== snapshot.text)
           continue;
-        const result = parsed.get(snapshot.text);
+        const result = parsed.get(key(snapshot.language, snapshot.text));
         if (result) {
           render(
             snapshot.element,
@@ -437,7 +425,9 @@ export function createScanner(
         words: coloredWords,
         udpipeWords,
         colorsEnabled: getSettings().wordColorsEnabled,
-        readerCacheHits: uniqueTexts.length - missing.length,
+        readerCacheHits:
+          eligible.length -
+          [...groups.values()].reduce((count, texts) => count + texts.size, 0),
         renderMs: Math.round(performance.now() - renderStarted),
       });
       scheduleRetry();
@@ -462,7 +452,7 @@ export function createScanner(
     const source = block.parts[0]?.node.parentElement?.closest<HTMLElement>(
       "[data-reading-source-url]",
     );
-    const segments = new Intl.Segmenter(getSettings().studyLanguage, {
+    const segments = new Intl.Segmenter(block.language, {
       granularity: "sentence",
     }).segment(block.text);
     const segment = [...segments].find(
@@ -471,6 +461,7 @@ export function createScanner(
     const start = segment?.index || 0;
     const sentence = segment?.segment || block.text;
     return {
+      language: block.language,
       sentence,
       surface: block.text.slice(span.start, span.end),
       start: span.start - start,
@@ -511,7 +502,7 @@ export function createScanner(
     );
     if (!span) {
       const segment = [
-        ...new Intl.Segmenter(getSettings().studyLanguage, {
+        ...new Intl.Segmenter(block.language, {
           granularity: "word",
         }).segment(block.text),
       ].find(
@@ -528,9 +519,9 @@ export function createScanner(
         };
     }
     if (!span) return;
-    if (getSettings().studyLanguage === "cs" && !span.occurrence) {
+    if (block.language === "cs" && !span.occurrence) {
       const segments = [
-        ...new Intl.Segmenter(getSettings().studyLanguage, {
+        ...new Intl.Segmenter(block.language, {
           granularity: "word",
         }).segment(block.text),
       ].filter((segment) => segment.isWordLike);
@@ -615,6 +606,10 @@ export function createScanner(
             end: last.start + range.endOffset,
           })
         : {
+            language:
+              languageTag(range.startContainer.parentElement!) ||
+              options.language ||
+              getSettings().studyLanguages[0],
             sentence: term,
             surface: term,
             start: 0,

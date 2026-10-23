@@ -18,13 +18,10 @@ export const settingsSchema = z
   })
   .transform((settings) => ({
     ...settings,
-    studyLanguages: [
-      ...new Set([
-        ...settings.studyLanguages,
-        ...(settings.studyLanguage ? [settings.studyLanguage] : []),
-      ]),
-    ],
-    setupComplete: settings.setupComplete && !!settings.studyLanguage,
+    studyLanguages: [...new Set(settings.studyLanguages)],
+    // Default for language-specific tools; reading and reviews supply their language.
+    studyLanguage: settings.studyLanguages[0] || "",
+    setupComplete: settings.setupComplete && settings.studyLanguages.length > 0,
   }));
 
 export type Settings = z.infer<typeof settingsSchema>;

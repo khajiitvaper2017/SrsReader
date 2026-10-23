@@ -107,6 +107,7 @@ async function execute(request: Request, settings: Settings) {
       return saved;
     }
     case "defineWord": {
+      settings = { ...settings, studyLanguage: request.language };
       const lemma = folded(request.term.trim(), settings.studyLanguage);
       const word: LookupWord = request.id
         ? await snapshot(

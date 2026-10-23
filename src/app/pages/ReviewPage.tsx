@@ -1,3 +1,4 @@
+import { languageName } from "@/languages/codes";
 import {
   SegmentedControl,
   Badge,
@@ -28,11 +29,9 @@ import { Check, Eye, Pause, Undo2, Upload } from "lucide-react";
 
 export function ReviewPage({
   settings,
-  stats,
   deckId,
 }: {
   settings: Settings;
-  stats: { total: number; due: number; known: number; today: number };
   deckId?: string;
 }) {
   const {
@@ -63,6 +62,9 @@ export function ReviewPage({
       gap="xs"
     >
       <SrsProgress />
+      <Text variant="supporting" ta="center">
+        {languageName(settings.studyLanguage)}
+      </Text>
       <Group justify="center">
         {(
           [
@@ -70,7 +72,7 @@ export function ReviewPage({
             ["srs_queue_learning", queue?.learning],
             ["srs_queue_relearning", queue?.relearning],
             ["review", queue?.reviews],
-            ["reviewed_today", stats.today],
+            ["reviewed_today", queue?.today],
           ] as const
         ).map(([label, count]) => (
           <Text key={label}>
@@ -250,7 +252,7 @@ export function ReviewPage({
       ) : (
         <Paper flex={1}>
           <Empty
-            title={stats.total ? t("no_reviews_due") : t("no_saved_words")}
+            title={queue?.total ? t("no_reviews_due") : t("no_saved_words")}
           >
             {queue?.waiting && (
               <Text>
@@ -259,7 +261,7 @@ export function ReviewPage({
                 })}
               </Text>
             )}
-            {!stats.total && (
+            {!queue?.total && (
               <Stack>
                 <Text>{t("use_your_lookup_control_on_a_word_to")}</Text>
                 <Button

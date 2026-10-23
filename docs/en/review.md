@@ -4,7 +4,7 @@ Open **Study** to see your learning languages and frequency decks. The table sho
 
 Select **Mined words** under a language to review words you saved or rated while reading. Frequency imports do not add words to this deck. Mining a word from a frequency deck moves it to Mined words without resetting its progress. Click anywhere in a language or deck row to start reviewing.
 
-Use **Add language** to keep another language in this list.
+Manage the list under **Settings → General → Studied languages**, or use **Add language** in Study. Reading detects any listed language automatically. Review sessions contain one language each, so you can study different languages in separate tabs. Removing a language from the list keeps its words, decks, and progress.
 
 ## Frequency decks
 
@@ -22,7 +22,7 @@ After an app or dictionary update, open the deck’s three-dot menu in **Study**
 
 In **Study**, open a deck’s three-dot menu and select **View words**. The **Words** page opens with that language and deck selected.
 
-Use **Language** and **Deck** to browse another group. **All decks** combines mined words and frequency decks without duplicates. The list includes mastered and suspended words. Browsing a language does not change your reading language. Search by word or reading and use the status filter to narrow the list. Lists show 50 words per page. Select a word to open its details and edit its definition, mastery, suspension, or retention setting.
+Use **Language** and **Deck** to browse another group. **All decks** combines mined words and frequency decks without duplicates. The list includes mastered and suspended words. Browsing a language does not change your studied-languages list or other review sessions. Search by word or reading and use the status filter to narrow the list. Lists show 50 words per page. Select a word to open its details and edit its definition, mastery, suspension, or retention setting.
 
 ## Clear or delete a deck
 
@@ -62,7 +62,7 @@ Number keys work on the main keyboard and numeric keypad. In study sessions, **S
 
 The review header shows New, Learning, Relearning, and Review cards ready in the current queue. Learning and Relearning include cards available through learn-ahead. A note shows how many are available early. The card badge shows its current phase. Reviewed today counts answers, including repetitions of the same card and ratings while reading.
 
-The yearly calendar below the language list shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history for this language. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
+Choose **Statistics language** below the language list to view one language’s figures. The yearly calendar shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history for this language. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
 
 Open **Statistics** below the calendar to see saved-word counts and results for the last 30 study days. Recall measures successful answers on normal Review cards. It excludes learning, relearning, and undone answers. Study time includes only answers with a recorded duration.
 
@@ -137,7 +137,7 @@ The default targets are 90% up to rank 1,000, 85% up to 5,000, 80% up to 20,000,
 
 In **Words**, set **Retention for this word** to override the rules. Leave it empty for automatic retention. A word override also works when frequency rules are off.
 
-Settings affect future answers. To apply current retention and interval settings to existing cards, use **Maintenance → Reschedule existing cards**. This affects active Review cards in the current language. It skips new, learning, mastered, and suspended cards. It does not add reviews or advance memory. Overdue cards can remain overdue.
+Settings affect future answers. To apply current retention and interval settings to existing cards, use **Maintenance → Reschedule existing cards**. Choose the language with **Language-specific settings**. This affects active Review cards in that language. It skips new, learning, mastered, and suspended cards. It does not add reviews or advance memory. Overdue cards can remain overdue.
 
 ## Leeches and saved words
 

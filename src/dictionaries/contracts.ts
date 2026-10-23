@@ -25,6 +25,7 @@ export const requests = [
   z.object({ action: z.literal("deleteDictionary"), id: z.string() }),
   z.object({
     action: z.literal("lookup"),
+    language: languageSchema,
     term: selection.term,
     occurrence: selection.occurrence,
   }),

@@ -28,6 +28,7 @@ export const requests = [
   z.object({ action: z.literal("mine"), ...selection, id: z.string() }),
   z.object({
     action: z.literal("defineWord"),
+    language: languageSchema,
     ...selection,
     term: selection.term.trim().min(1),
     id: z.string().optional(),

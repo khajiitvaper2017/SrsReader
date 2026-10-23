@@ -160,7 +160,7 @@ export async function resolved(
       term,
       {
         ...settings,
-        studyLanguage: saved?.language || settings.studyLanguage,
+        studyLanguage: saved?.language || JSON.parse(id)[0],
       },
       false,
       occurrence,

@@ -52,7 +52,11 @@ export async function rescheduleModel() {
   return { count, cursor: result.cursor };
 }
 
-export async function rescheduleExisting(after = "", allCards = false) {
+export async function rescheduleExisting(
+  after = "",
+  allCards = false,
+  language?: string,
+) {
   const settings = await getSettings();
   if (settings.algorithm === "rwkv" && !(await rwkvStatus(settings)).ready)
     throw Object.assign(new Error(t("rwkv_not_ready")), {
@@ -68,9 +72,7 @@ export async function rescheduleExisting(after = "", allCards = false) {
     .filter(
       (word) =>
         (allCards ||
-          (word.language === settings.studyLanguage &&
-            !word.known &&
-            !word.suspended)) &&
+          (word.language === language && !word.known && !word.suspended)) &&
         word.card?.state === 2 &&
         word.card.last_review !== null,
     )

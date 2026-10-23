@@ -69,10 +69,14 @@ export function useReviewSession({
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const load = useCallback(() => {
     if (busyRef.current) return;
-    void srsClient({ action: "queue", deckId })
+    void srsClient({
+      action: "queue",
+      language: settings.studyLanguage,
+      deckId,
+    })
       .then((value) => setQueue(value))
       .catch((error) => setError(error.message));
-  }, [deckId]);
+  }, [deckId, settings.studyLanguage]);
   useEffect(load, [load]);
   useChanges(load, [
     "vocabulary",
@@ -131,11 +135,23 @@ export function useReviewSession({
       });
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
-      setQueue(await srsClient({ action: "queue", deckId }));
+      setQueue(
+        await srsClient({
+          action: "queue",
+          language: settings.studyLanguage,
+          deckId,
+        }),
+      );
       setRevealed(false);
     } catch (error) {
       setError((error as Error).message);
-      setQueue(await srsClient({ action: "queue", deckId }));
+      setQueue(
+        await srsClient({
+          action: "queue",
+          language: settings.studyLanguage,
+          deckId,
+        }),
+      );
     } finally {
       busyRef.current = false;
       setBusy(false);

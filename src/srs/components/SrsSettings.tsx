@@ -420,6 +420,7 @@ export function SrsSettings({
                     do {
                       const result = await srsClient({
                         action: "reschedule",
+                        language: settings.studyLanguage,
                         after,
                       });
                       count += result.count;

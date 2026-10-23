@@ -111,7 +111,7 @@ export function DefinitionEditor({
       setDefinition(
         await translateSentence(
           word?.lemma || term,
-          word?.language || settings.studyLanguage,
+          word?.language || context?.language || settings.studyLanguage,
           settings.nativeLanguage,
           setStatus,
         ),
@@ -129,6 +129,7 @@ export function DefinitionEditor({
     try {
       const saved = await vocabularyClient({
         action: "defineWord",
+        language: word?.language || context?.language || settings.studyLanguage,
         id: word?.id,
         term,
         context,

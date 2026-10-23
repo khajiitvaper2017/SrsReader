@@ -90,20 +90,7 @@ export function StudyPage({
   const source =
     sources.find((dictionary) => dictionary.id === dictionaryId) || sources[0];
   async function start(language: string, deckId?: string) {
-    setBusy(true);
-    setError("");
-    try {
-      const next = await settingsClient({
-        action: "setSettings",
-        value: { ...settings, studyLanguage: language },
-      });
-      setSettings(next);
-      location.hash = `review/session${deckId ? `/${encodeURIComponent(deckId)}` : ""}`;
-    } catch (error) {
-      setError((error as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    location.hash = `review/session/${language}${deckId ? `/${encodeURIComponent(deckId)}` : ""}`;
   }
   async function submit() {
     setBusy(true);
@@ -236,7 +223,7 @@ export function StudyPage({
           {t("study_overview_help")}
         </Text>
       </Paper>
-      <ReviewStatistics />
+      <ReviewStatistics settings={settings} />
       <Modal
         opened={modal !== null}
         onClose={() => {
@@ -251,12 +238,27 @@ export function StudyPage({
       >
         <Stack>
           <ErrorBox error={error} />
-          <LanguageSelect
-            label={t("study_language")}
-            value={language}
-            onChange={setLanguage}
-            disabled={busy}
-          />
+          {modal === "language" ? (
+            <LanguageSelect
+              label={t("language")}
+              value={language}
+              onChange={setLanguage}
+              disabled={busy}
+            />
+          ) : (
+            <Select
+              label={t("language")}
+              value={language}
+              data={settings.studyLanguages.map((value) => ({
+                value,
+                label: languageName(value),
+              }))}
+              onChange={(value) => {
+                if (value) setLanguage(value);
+              }}
+              disabled={busy}
+            />
+          )}
           {modal === "deck" && (
             <>
               <Select

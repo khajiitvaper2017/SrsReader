@@ -9,8 +9,8 @@ import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
 import type { Vocabulary } from "@/vocabulary/model";
 
-export async function reviewQueue(deckId?: string) {
-  const settings = await getSettings(),
+export async function reviewQueue(language: string, deckId?: string) {
+  const settings = { ...(await getSettings()), studyLanguage: language },
     now = Date.now();
   const [saved, decks] = await Promise.all([
     languageWords(settings.studyLanguage),
@@ -54,5 +54,9 @@ export async function reviewQueue(deckId?: string) {
         ? await orderNewWords(newWords, settings)
         : newWords.sort(gatherOrder[settings.newGatherOrder])
       : [];
-  return buildQueue(words, counts, settings, now, orderedNew, deckOrder);
+  return {
+    ...buildQueue(words, counts, settings, now, orderedNew, deckOrder),
+    today: counts.today,
+    total: saved.length,
+  };
 }

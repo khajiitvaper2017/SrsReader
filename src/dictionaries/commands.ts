@@ -42,6 +42,7 @@ async function execute(request: Request, settings: Settings) {
       await notify(undefined, "dictionaries");
       return;
     case "lookup": {
+      settings = { ...settings, studyLanguage: request.language };
       const result = await lookup(
         request.term,
         settings,

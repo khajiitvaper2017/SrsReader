@@ -10,11 +10,18 @@ export const handleReader = execute;
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "scan": {
-      if (settings.paused) return request.texts.map(() => ({ spans: [] }));
+      if (
+        settings.paused ||
+        !settings.studyLanguages.includes(request.language)
+      )
+        return request.texts.map(() => ({
+          language: request.language,
+          spans: [],
+        }));
       const started = performance.now();
       const udpipeAllowed =
         settings.udpipe &&
-        !!udpipeModel(settings.studyLanguage) &&
+        !!udpipeModel(request.language) &&
         (await udpipePermission());
       console.info("[SrsReader] Background scan started", {
         blocks: request.texts.length,
@@ -22,15 +29,15 @@ async function execute(request: Request, settings: Settings) {
           (count, text) => count + text.length,
           0,
         ),
-        studyLanguage: settings.studyLanguage,
+        studyLanguage: request.language,
         udpipeEnabled: settings.udpipe,
         udpipeAllowed,
       });
       const analyses = udpipeAllowed
         ? await analyzeTexts(
             request.texts,
-            settings.studyLanguage,
-            settings.udpipeModels[settings.studyLanguage],
+            request.language,
+            settings.udpipeModels[request.language],
           ).catch((error) => {
             console.warn("SrsReader: contextual analysis unavailable", error);
             return request.texts.map(() => ({
@@ -51,15 +58,16 @@ async function execute(request: Request, settings: Settings) {
       const dictionaryStarted = performance.now();
       const spans = await scanTexts(
         request.texts,
-        settings.studyLanguage,
+        request.language,
         settings,
         analyses.map((analysis) => analysis.surfaces),
       );
       const results = spans.map((spans, index) => ({
+        language: request.language,
         spans,
         retryAt: analyses[index]?.retryAt,
       }));
-      await cacheScannedTexts(request.texts, spans, settings.studyLanguage);
+      await cacheScannedTexts(request.texts, spans, request.language);
       console.info("[SrsReader] Background scan finished", {
         blocks: results.length,
         words: results.reduce(

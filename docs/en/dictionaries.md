@@ -6,7 +6,7 @@ Open the **Search** tab and choose a language. **Word or reading** finds diction
 
 Enter your text and press Enter or choose **Search**. Searches ignore letter case and use enabled, installed definition dictionaries. Online dictionaries and frequency-only dictionaries are not searched. Choose a result to expand its full definition. Choose **Load more** to see the next 50 entries. Large dictionaries can take longer to search.
 
-Install a dictionary or change its display option under **Settings → Dictionaries**. Both **Show** and **If needed** dictionaries are searched. Selecting a language here does not change your reading language.
+Install a dictionary or change its display option under **Settings → Dictionaries**. Both **Show** and **If needed** dictionaries are searched. Selecting a language here does not change your studied-languages list.
 
 ## Install and update
 
@@ -14,7 +14,7 @@ Open **Settings → Dictionaries**:
 
 - **Wiktionary dictionaries:** choose a study and definition language, then **Import**. **Definitions** contains full entries; **Translations** contains shorter glosses. Choose the same language on both sides for monolingual definitions.
 - **Frequency dictionaries:** choose a language and corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
-- **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Set your study language first if the ZIP lacks language information.
+- **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Choose **Language-specific settings** first if the ZIP lacks language information.
 
 Keep Settings open while downloading and importing. You can switch settings tabs while a download or import runs. Once installed, dictionaries work offline.
 

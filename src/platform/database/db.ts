@@ -42,7 +42,10 @@ class ReaderDatabase extends Dexie {
   vocabulary!: Table<Vocabulary, string>;
   reviews!: Table<Review, string>;
   audio!: Table<AudioRecord, string>;
-  settings!: Table<{ id: string; value: Settings }, string>;
+  settings!: Table<
+    { id: string; value: Omit<Settings, "studyLanguage"> },
+    string
+  >;
   nechybujte!: Table<{ term: string; result: LookupResult }, string>;
   exampleCorpora!: Table<
     { language: string; corpus: Blob; count: number; updated: number },

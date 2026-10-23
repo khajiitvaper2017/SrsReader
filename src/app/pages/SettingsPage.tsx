@@ -4,6 +4,7 @@ import {
   Button,
   Group,
   Paper,
+  Select,
   Tabs,
   Text,
   Stack,
@@ -16,7 +17,11 @@ import { dictionariesClient } from "@/dictionaries/client";
 import { DictionarySettings } from "@/dictionaries/components/DictionarySettings";
 import type { Dictionary } from "@/dictionaries/model";
 import { examplesClient } from "@/examples/client";
-import { languageIso3, morphologyLanguage } from "@/languages/codes";
+import {
+  languageIso3,
+  languageName,
+  morphologyLanguage,
+} from "@/languages/codes";
 import { LanguageDataSettings } from "@/languages/components/LanguageDataSettings";
 import { LanguageSettings } from "@/languages/components/LanguageSettings";
 import { useLanguageData } from "@/languages/hooks/useLanguageData";
@@ -44,9 +49,9 @@ import {
 import { WordColors } from "@/settings/components/WordColors";
 import { AppearanceSettings } from "@/settings/components/AppearanceSettings";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 export function SettingsPage({
-  settings,
+  settings: preferences,
   setSettings,
   setup = false,
   tab = "general",
@@ -56,6 +61,14 @@ export function SettingsPage({
   setup?: boolean;
   tab?: string;
 }) {
+  const [language, setLanguage] = useState(preferences.studyLanguage);
+  const selectedLanguage = preferences.studyLanguages.includes(language)
+    ? language
+    : preferences.studyLanguage;
+  const settings = useMemo(
+    () => ({ ...preferences, studyLanguage: selectedLanguage }),
+    [preferences, selectedLanguage],
+  );
   const tasks = useSettingsTask();
   const { error, setError, notice, busy, setBusy, progress, setProgress } =
     tasks;
@@ -69,7 +82,7 @@ export function SettingsPage({
   useEffect(load, [load]);
   useChanges(load, ["dictionaries"]);
   async function update(patch: Partial<Settings>) {
-    const next = { ...settings, ...patch };
+    const next = { ...preferences, ...patch };
     setSettings(next);
     try {
       setSettings(
@@ -82,7 +95,7 @@ export function SettingsPage({
       );
       setError("");
     } catch (error) {
-      setSettings(settings);
+      setSettings(preferences);
       setError((error as Error).message);
     }
   }
@@ -90,20 +103,23 @@ export function SettingsPage({
     setBusy(true);
     setError("");
     try {
-      if (
-        morphologyLanguage(settings.studyLanguage) &&
-        !(await installedMorphology(settings.studyLanguage))
-      )
-        await languageData.install("morphology");
-      if (
-        languageIso3(settings.studyLanguage) &&
-        !(await examplesClient({ action: "exampleCorpus" })).installed
-      )
-        await languageData.install("examples");
+      for (const language of settings.studyLanguages) {
+        if (
+          morphologyLanguage(language) &&
+          !(await installedMorphology(language))
+        )
+          await languageData.install("morphology", undefined, language);
+        if (
+          languageIso3(language) &&
+          !(await examplesClient({ action: "exampleCorpus", language }))
+            .installed
+        )
+          await languageData.install("examples", undefined, language);
+      }
       setSettings(
         await settingsClient({
           action: "setSettings",
-          value: { ...settings, setupComplete: true },
+          value: { ...preferences, setupComplete: true },
         }),
       );
       location.hash = "review";
@@ -183,6 +199,23 @@ export function SettingsPage({
           <TaskProgress progress={progress} />
         </Paper>
       )}
+      {(setup ||
+        ["reading", "dictionaries", "review", "audio"].includes(selected)) &&
+        settings.studyLanguages.length > 0 && (
+          <Select
+            label={t("language_settings_for")}
+            description={t("language_settings_for_help")}
+            value={selectedLanguage}
+            disabled={busy}
+            data={settings.studyLanguages.map((value) => ({
+              value,
+              label: languageName(value),
+            }))}
+            onChange={(value) => {
+              if (value) setLanguage(value);
+            }}
+          />
+        )}
       {setup ? (
         <>
           <LanguageSettings settings={settings} onChange={update} setup />
@@ -199,7 +232,7 @@ export function SettingsPage({
                 !dictionaries.some(
                   (dictionary) =>
                     dictionary.enabled &&
-                    dictionary.language === settings.studyLanguage &&
+                    settings.studyLanguages.includes(dictionary.language) &&
                     dictionary.count > 0,
                 )
               }

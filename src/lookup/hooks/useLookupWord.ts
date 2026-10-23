@@ -21,7 +21,7 @@ import {
   type ReadingContext,
   type Vocabulary,
 } from "@/vocabulary/model";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ContentScriptContext } from "wxt/utils/content-script-context";
 
 export function useLookupWord({
@@ -40,7 +40,18 @@ export function useLookupWord({
   ) => void;
   onBack?: () => void;
 }) {
-  const [settings, setSettings] = useSettings();
+  const [preferences, setSettings] = useSettings();
+  const settings = useMemo(
+    () => ({
+      ...preferences,
+      studyLanguage:
+        page.context?.language ||
+        (page.selected
+          ? JSON.parse(page.selected)[0]
+          : preferences.studyLanguage),
+    }),
+    [preferences, page.context?.language, page.selected],
+  );
   const readingRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<LookupResult>();
@@ -99,6 +110,7 @@ export function useLookupWord({
     const ctx = new ContentScriptContext("popup-reader");
     startReader(ctx, {
       root,
+      language: word.language,
       source: {
         url: word.meanings[0]?.sourceUrl || location.href,
         title: word.meanings[0]?.title || document.title,
@@ -119,7 +131,12 @@ export function useLookupWord({
   }, [word?.id]);
   useEffect(() => {
     let alive = true;
-    void dictionariesClient({ action: "lookup", term, occurrence })
+    void dictionariesClient({
+      action: "lookup",
+      language: settings.studyLanguage,
+      term,
+      occurrence,
+    })
       .then((lookup) => {
         if (!alive) return;
         const restored = lookup.words.find((word) => word.id === page.selected);
@@ -139,7 +156,7 @@ export function useLookupWord({
     return () => {
       alive = false;
     };
-  }, [term, occurrence]);
+  }, [term, occurrence, settings.studyLanguage]);
   const pending = useRef(0);
   const reload = useCallback(() => {
     const request = ++pending.current;
@@ -148,7 +165,12 @@ export function useLookupWord({
       vocabularyClient({ action: "word", id: selected }),
       srsClient({ action: "preview", id: selected, durationMs: duration() }),
       settingsClient({ action: "settings" }),
-      dictionariesClient({ action: "lookup", term, occurrence }),
+      dictionariesClient({
+        action: "lookup",
+        language: settings.studyLanguage,
+        term,
+        occurrence,
+      }),
     ])
       .then(([word, times, settings, result]) => {
         if (request !== pending.current) return;
@@ -161,7 +183,7 @@ export function useLookupWord({
       .catch((error) => {
         if (request === pending.current) setError(error.message);
       });
-  }, [selected, term, duration, occurrence]);
+  }, [selected, term, duration, occurrence, settings.studyLanguage]);
   useEffect(() => {
     reload();
     return () => {
@@ -296,7 +318,14 @@ export function useLookupWord({
     }
   }
   async function definitionSaved(saved?: Vocabulary) {
-    setResult(await dictionariesClient({ action: "lookup", term, occurrence }));
+    setResult(
+      await dictionariesClient({
+        action: "lookup",
+        language: settings.studyLanguage,
+        term,
+        occurrence,
+      }),
+    );
     if (saved) {
       setSelected(saved.id);
       setSaved(saved);

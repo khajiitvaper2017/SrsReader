@@ -1,7 +1,8 @@
+import type { Vocabulary } from "@/vocabulary/model";
+import type { reviewQueue } from "@/srs/queue";
 import type { ReviewStatistics } from "@/srs/statistics";
 import type { Settings } from "@/settings/model";
 import { selection } from "@/vocabulary/contracts";
-import type { Vocabulary } from "@/vocabulary/model";
 import type { ReadingContext } from "@/vocabulary/model";
 import type { studyOverview } from "@/srs/decks";
 import type { Deck } from "@/srs/deck-model";
@@ -20,7 +21,11 @@ export const requests = [
     version: z.number().int().nonnegative(),
   }),
   z.object({ action: z.literal("undo"), id: z.string() }),
-  z.object({ action: z.literal("queue"), deckId: z.string().optional() }),
+  z.object({
+    action: z.literal("queue"),
+    language: languageSchema,
+    deckId: z.string().optional(),
+  }),
   z.object({ action: z.literal("studyOverview") }),
   z.object({
     action: z.literal("manageDeck"),
@@ -49,10 +54,15 @@ export const requests = [
     rwkvMode: z.enum(["curve", "instant"]).optional(),
   }),
   z.object({ action: z.literal("rescheduleModel") }),
-  z.object({ action: z.literal("reschedule"), after: z.string().default("") }),
+  z.object({
+    action: z.literal("reschedule"),
+    language: languageSchema,
+    after: z.string().default(""),
+  }),
   z.object({ action: z.literal("stats") }),
   z.object({
     action: z.literal("reviewStats"),
+    language: languageSchema,
     year: z.number().int().min(1970).max(9998).optional(),
   }),
 ] as const;
@@ -65,17 +75,7 @@ export type Responses = {
   sentenceExamples: ReadingContext[];
   grade: { word: Vocabulary; reviewId: string };
   undo: void;
-  queue: {
-    words: Vocabulary[];
-    due: number;
-    learning: number;
-    relearning: number;
-    reviews: number;
-    ahead: number;
-    fresh: number;
-    waiting: number | null;
-    wakeAt: number;
-  };
+  queue: Awaited<ReturnType<typeof reviewQueue>>;
   preview: number[];
   rwkvStatus: {
     downloaded: boolean;

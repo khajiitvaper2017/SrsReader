@@ -1,8 +1,4 @@
-import type {
-  Part,
-  ReaderOptions,
-  ReaderConfiguration as Settings,
-} from "@/reader/types";
+import type { Part, ReaderConfiguration as Settings } from "@/reader/types";
 import { languageTag } from "@/languages/detection";
 
 export const blockSelector =
@@ -22,15 +18,13 @@ export function makeRange(parts: Part[], start: number, end: number) {
 export function createBlockReader(
   root: HTMLElement,
   excluded: string,
-  options: ReaderOptions,
   getSettings: () => Settings,
 ) {
   function matchesLanguage(element: Element) {
-    if (!options.onLookup && !getSettings().detectPageLanguage) return true;
     const marked = element.closest("[lang],[data-reading-language]");
     if (!marked || !root.contains(marked)) return true;
     const language = languageTag(marked);
-    return !language || language === getSettings().studyLanguage;
+    return !language || getSettings().studyLanguages.includes(language);
   }
   function readBlock(element: Element): { text: string; parts: Part[] } {
     const walker = document.createTreeWalker(

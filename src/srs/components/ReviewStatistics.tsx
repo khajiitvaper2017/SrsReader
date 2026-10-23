@@ -1,9 +1,12 @@
+import type { Settings } from "@/settings/model";
+import { languageName } from "@/languages/codes";
 import {
   Accordion,
   Group,
   Loader,
   Paper,
   SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Table,
@@ -15,8 +18,12 @@ import { ReviewCalendar } from "@/srs/components/ReviewCalendar";
 import { useReviewStatistics } from "@/srs/hooks/useReviewStatistics";
 import { useState } from "react";
 
-export function ReviewStatistics() {
-  const { data, error, loading, setYear } = useReviewStatistics();
+export function ReviewStatistics({ settings }: { settings: Settings }) {
+  const [language, setLanguage] = useState(settings.studyLanguage);
+  const selected = settings.studyLanguages.includes(language)
+    ? language
+    : settings.studyLanguage;
+  const { data, error, loading, setYear } = useReviewStatistics(selected);
   const [days, setDays] = useState("7");
   const locale = i18n.resolvedLanguage;
   const number = (value: number) => value.toLocaleString(locale);
@@ -26,6 +33,17 @@ export function ReviewStatistics() {
   });
   return (
     <Stack>
+      <Select
+        label={t("statistics_language")}
+        value={selected}
+        data={settings.studyLanguages.map((value) => ({
+          value,
+          label: languageName(value),
+        }))}
+        onChange={(value) => {
+          if (value) setLanguage(value);
+        }}
+      />
       <ErrorBox error={error} />
       {!data && !error && (
         <Loader size="sm" aria-label={t("srs_stats_loading")} />

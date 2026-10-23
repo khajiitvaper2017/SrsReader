@@ -6,6 +6,7 @@ import type { Occurrence } from "@/languages/analysis";
 
 export type Part = { node: Text; start: number; end: number };
 export type Block = {
+  language: string;
   text: string;
   parts: Part[];
   spans: (ScanSpan & { range: Range })[];
@@ -13,6 +14,7 @@ export type Block = {
   generation: number;
 };
 export type ReaderOptions = {
+  language?: string;
   root?: HTMLElement;
   onLookup?: (
     term: string,

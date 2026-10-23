@@ -1,9 +1,9 @@
 # Getting started
 
-1. Choose your **Study language** and confirm your **Native language**. The native language is suggested from your browser and is used for translations.
-2. Under **Dictionaries**, import a dictionary for your study language. The [dictionary guide](dictionaries.md) explains the available downloads.
+1. Add one or more **Studied languages** and confirm your **Native language**. The native language is suggested from your browser and is used for translations.
+2. Under **Dictionaries**, use **Language-specific settings** to choose a language and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
 3. Choose a lookup control, such as **Middle mouse** or **Shift + hover**. None is selected by default.
-4. Choose **Finish setup**. Available word forms and example sentences download for your study language.
+4. Choose **Finish setup**. Available word forms and example sentences download for each studied language.
 
 Open a website, use your lookup control on a word, and choose **Mine word**. Open **Review** to study saved words.
 

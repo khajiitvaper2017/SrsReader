@@ -30,7 +30,7 @@ export async function handle(request: Request) {
       return handleLanguages(request);
     case "examples":
     case "exampleCorpus":
-      return handleExamples(request, settings);
+      return handleExamples(request);
     case "createSession":
     case "session":
     case "closeLookup":

@@ -55,7 +55,8 @@ export function App() {
   const docs = page === "docs" || page.startsWith("docs/");
   const reviewing =
     page === "review/session" || page.startsWith("review/session/");
-  const deckId = reviewing ? page.split("/")[2] : undefined;
+  const reviewLanguage = page.split("/")[2] || settings.studyLanguage;
+  const deckId = reviewing ? page.split("/")[3] : undefined;
   const inSetup = page === "setup" || !settings.setupComplete;
   const setup = inSetup && !docs;
   return (
@@ -143,11 +144,10 @@ export function App() {
             />
           ) : page === "search" ? (
             <SearchPage settings={settings} />
-          ) : reviewing ? (
+          ) : reviewing && settings.studyLanguages.includes(reviewLanguage) ? (
             <ReviewPage
-              key={`${settings.studyLanguage}:${deckId || ""}`}
-              settings={settings}
-              stats={stats}
+              key={`${reviewLanguage}:${deckId || ""}`}
+              settings={{ ...settings, studyLanguage: reviewLanguage }}
               deckId={deckId}
             />
           ) : (
