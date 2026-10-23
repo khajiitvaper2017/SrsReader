@@ -82,7 +82,6 @@ async function processBatch(
     if (
       !settings.udpipe ||
       settings.paused ||
-      settings.studyLanguage !== language ||
       udpipeModel(language, settings.udpipeModels[language]) !== model ||
       !(await udpipePermission())
     ) {

@@ -22,7 +22,6 @@ export function useDictionarySettings({
 }) {
   const {
     busy,
-    progress,
     progressTarget,
     setProgressTarget,
     setProgress,
@@ -177,16 +176,9 @@ export function useDictionarySettings({
   }
   return {
     busy,
-    progress,
     progressTarget,
-    setProgressTarget,
-    setProgress,
-    setNotice,
-    task,
     updates,
-    setUpdates,
     fileInput,
-    importZip,
     downloadDictionary,
     fileImport,
     setDisplay,

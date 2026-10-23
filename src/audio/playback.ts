@@ -38,7 +38,10 @@ export function stopAudio() {
 }
 
 export async function speak(text: string, language: string, voiceName: string) {
+  stopAudio();
+  const version = playbackVersion;
   const voices = await localVoices();
+  if (version !== playbackVersion) return;
   const voice =
     voices.find(
       (v) => v.voiceURI === voiceName && v.lang.split("-")[0] === language,
@@ -49,7 +52,6 @@ export async function speak(text: string, language: string, voiceName: string) {
         value1: languageName(language),
       }),
     );
-  stopAudio();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.voice = voice;
   utterance.lang = voice.lang;

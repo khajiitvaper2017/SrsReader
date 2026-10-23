@@ -103,19 +103,26 @@ export async function sentenceExamples(
   const segmenter = new Intl.Segmenter(word.language, { granularity: "word" });
   const candidates = records
     .flatMap((record) => {
-      const length = [...segmenter.segment(record.sentence)].filter(
+      const parts = [...segmenter.segment(record.sentence)].filter(
         (part) => part.isWordLike,
-      ).length;
+      );
+      const length = parts.length;
       if (length <= 4) return [];
       const targets = record.tokens.filter((token) =>
         token.ids.includes(word.id),
       );
       if (!targets.length) return [];
-      const unknown = record.tokens.filter(
+      const understood = record.tokens.filter(
         (token) =>
-          !targets.some(
-            (target) => target.start < token.end && target.end > token.start,
-          ) && !token.ids.some((id) => known.has(id)),
+          token.ids.includes(word.id) || token.ids.some((id) => known.has(id)),
+      );
+      const unknown = parts.filter(
+        (part) =>
+          !understood.some(
+            (token) =>
+              token.start < part.index + part.segment.length &&
+              token.end > part.index,
+          ),
       ).length;
       return [{ record, targets, unknown, length }];
     })
