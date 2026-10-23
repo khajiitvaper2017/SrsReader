@@ -33,6 +33,7 @@ export function installInputPrevention(
 ) {
   const suppressedButtons = new Set<number>();
   const prevent = (event: MouseEvent) => {
+    if ((event.target as Element)?.closest("[data-binding-input]")) return;
     if (event.type === "mousedown") suppressedButtons.delete(event.button);
     const settings = getSettings();
     if (!settings?.setupComplete) return;

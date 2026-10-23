@@ -70,13 +70,24 @@ export function bindingLabel(binding: LookupBinding) {
   else if (binding.code) {
     const keyNames: Record<string, string> = {
       Space: t("space"),
+      Enter: t("key_enter"),
+      NumpadEnter: t("key_numpad_enter"),
+      Backspace: t("key_backspace"),
+      Delete: t("key_delete"),
+      Home: t("key_home"),
+      End: t("key_end"),
+      PageUp: t("key_page_up"),
+      PageDown: t("key_page_down"),
       ArrowUp: t("key_arrow_up"),
       ArrowDown: t("key_arrow_down"),
       ArrowLeft: t("key_arrow_left"),
       ArrowRight: t("key_arrow_right"),
     };
     keys.push(
-      keyNames[binding.code] || binding.code.replace(/^(Key|Digit)/, ""),
+      keyNames[binding.code] ||
+        (/^Numpad[0-9]$/.test(binding.code)
+          ? t("key_numpad_digit", { digit: binding.code.slice(-1) })
+          : binding.code.replace(/^(Key|Digit)/, "")),
     );
   }
   if (binding.type === "hover") keys.push(t("hover"));

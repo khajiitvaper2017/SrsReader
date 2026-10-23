@@ -30,11 +30,13 @@ import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { ReviewSettings } from "@/srs/components/ReviewSettings";
+import { ReviewControls } from "@/srs/components/ReviewControls";
 import {
   BookOpen,
   Check,
   Database,
   Languages,
+  Keyboard,
   MousePointer2,
   SlidersHorizontal,
   Volume2,
@@ -129,6 +131,11 @@ export function SettingsPage({
       icon: <BookOpen size={16} />,
     },
     { value: "review", label: t("review"), icon: <Check size={16} /> },
+    {
+      value: "controls",
+      label: t("settings_controls"),
+      icon: <Keyboard size={16} />,
+    },
     {
       value: "audio",
       label: t("settings_audio_translation"),
@@ -246,7 +253,6 @@ export function SettingsPage({
                 onChange={update}
                 dictionaries={dictionaries}
               />
-              <LookupSettings settings={settings} onChange={update} />
               <WordColors settings={settings} onChange={update} />
             </Stack>
           </Tabs.Panel>
@@ -263,6 +269,12 @@ export function SettingsPage({
               dictionaries={dictionaries}
               onError={setError}
             />
+          </Tabs.Panel>
+          <Tabs.Panel value="controls">
+            <Stack>
+              <LookupSettings settings={settings} onChange={update} />
+              <ReviewControls settings={settings} onChange={update} />
+            </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="audio">
             <Stack>

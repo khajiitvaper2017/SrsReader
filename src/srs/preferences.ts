@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/i18n";
+import { reviewBindingsSchema } from "@/srs/controls";
 import { z } from "zod";
 
 export const learningStepsSchema = z.array(
@@ -12,6 +13,7 @@ export const retentionBandSchema = z.object({
   retention: z.number().min(0.7).max(0.99),
 });
 export const srsPreferencesSchema = z.object({
+  reviewBindings: reviewBindingsSchema,
   front: z.enum(["word", "sentence"]).default("word"),
   retention: z.number().min(0.7).max(0.99).default(0.8),
   algorithm: z.enum(["fsrs", "rwkv"]).default("fsrs"),

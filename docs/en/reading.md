@@ -22,7 +22,7 @@ Enter each sense on a new line. Blank lines are skipped. The numbered preview sh
 
 ## Controls
 
-Under **Settings → Reading → Lookup controls**, enable presets or record a **Mouse button**, **Keyboard shortcut**, or **Hold key + hover** binding. Modifiers are supported; release the keys to finish a modifier-only hover binding. Escape cancels recording.
+Open **Settings → Controls → Lookup controls**. Enable a preset or select the **Keyboard or mouse shortcut** input. Press a key or mouse button over the input to add a binding. You can include Ctrl, Alt, Shift, or Meta. To use a key while hovering over text, select **Hold key + hover**. Press the key, or press and release modifiers to add a modifier-only hover binding. Escape cancels capture. Tab moves to the next input. Remove custom bindings with their trash buttons.
 
 Mouse and keyboard bindings can look up selected text. Some system and browser shortcuts cannot be overridden.
 

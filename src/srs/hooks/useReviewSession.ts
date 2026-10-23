@@ -6,6 +6,7 @@ import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
 import type { ReadingContext } from "@/vocabulary/model";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
+import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useReviewSession({
@@ -131,33 +132,20 @@ export function useReviewSession({
         else await speak(word.lemma, word.language, settings.voice);
       })().catch((error) => setError(error.message));
   }
-  useEffect(() => {
-    function key(event: KeyboardEvent) {
-      if ((event.target as HTMLElement).closest('[role="menu"]')) return;
-      if (
-        ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(
-          (event.target as HTMLElement).tagName,
-        ) ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey
-      )
-        return;
-      if (event.code === "Space" && word && !revealed) {
-        event.preventDefault();
-        reveal();
-      }
-      if (
-        revealed &&
-        /^[1-4]$/.test(event.key) &&
-        (!settings.onlyAgainGood || event.key === "1" || event.key === "3")
-      ) {
-        event.preventDefault();
-        void gradeWord(Number(event.key));
-      }
-    }
-    addEventListener("keydown", key);
-    return () => removeEventListener("keydown", key);
+  useReviewControls({
+    settings,
+    onGrade:
+      word && revealed && !busy
+        ? (rating) => void gradeWord(rating)
+        : undefined,
+    onFlip:
+      word && !busy
+        ? () => {
+            if (revealed) void gradeWord(3);
+            else reveal();
+          }
+        : undefined,
+    onUndo: last && !busy ? () => void undo() : undefined,
   });
   async function undo() {
     try {

@@ -12,6 +12,7 @@ import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
+import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { vocabularyClient } from "@/vocabulary/client";
 import {
   wordId,
@@ -175,31 +176,39 @@ export function useLookupWord({
         else void lookupClient({ action: "closeLookup" });
         return;
       }
-      if (
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(
-          (event.target as HTMLElement).tagName,
-        )
-      )
-        return;
-      const rating = Number(event.key);
-      if (
-        rating >= 1 &&
-        rating <= 4 &&
-        !unparsed &&
-        !busy &&
-        !saved?.known &&
-        (!settings.onlyAgainGood || rating === 1 || rating === 3)
-      ) {
-        event.preventDefault();
-        void act(rating);
-      }
     }
     document.addEventListener("keydown", key);
     return () => document.removeEventListener("keydown", key);
   });
+  const canGrade =
+    !!word &&
+    !candidateOpen &&
+    !unparsed &&
+    !busy &&
+    !saved?.known &&
+    !saved?.suspended &&
+    !reviewed;
+  useReviewControls({
+    settings,
+    onGrade: canGrade ? (rating) => void act(rating) : undefined,
+    onFlip: canGrade ? () => void act(3) : undefined,
+    onUndo:
+      lastReview && !candidateOpen && !busy ? () => void undo() : undefined,
+  });
+  async function undo() {
+    setBusy(true);
+    try {
+      await srsClient({ action: "undo", id: lastReview });
+      setLastReview("");
+      setReviewed(false);
+      setNotice(t("review_undone"));
+      reload();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function ignoreTag(tag: string) {
     try {
       const latest = await settingsClient({ action: "settings" });
@@ -355,6 +364,7 @@ export function useLookupWord({
     reload,
     ignoreTag,
     act,
+    undo,
     toggleMastery,
     definitionSaved,
     deleteDefinition,

@@ -37,9 +37,24 @@ Review sentences come from the permanent cache of texts you have parsed. Each se
 
 ## Review session
 
-Select a language or deck. Choose **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The keys are **1–4**. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
+Select a language or deck. Choose **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The default grading keys are **1–4**. After revealing the answer, **Space** grades Good. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
 
 **Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions and cached translations stay in place. Undone answers remain in the backup history but do not count as reviews.
+
+## Review controls
+
+Open **Settings → Controls → Review controls**. Each action has one binding. Select its input, then press a key or mouse button over it. You can include Ctrl, Alt, Shift, or Meta. Escape cancels capture. Tab moves to the next input. Select the clear button to disable a binding. Each review action must have a different binding.
+
+| Action                   | Default |
+| ------------------------ | ------- |
+| Again                    | 1       |
+| Hard                     | 2       |
+| Good                     | 3       |
+| Easy                     | 4       |
+| Show answer / Grade Good | Space   |
+| Undo                     | Z       |
+
+Number keys work on the main keyboard and numeric keypad. In study sessions, **Show answer / Grade Good** reveals the answer first and grades Good on the next press. In lookup popups, the answer is already visible, so it grades Good. **Undo** restores the latest review. Bindings do not run while you use an input, button, link, menu, or dialog. Holding a key does not repeat the action. **Use only Again and Good** disables the Hard and Easy bindings.
 
 ## Queue counts, statistics, and upcoming reviews
 

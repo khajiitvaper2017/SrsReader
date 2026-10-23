@@ -25,7 +25,6 @@ import { Grammar } from "@/lookup/components/Grammar";
 import type { LookupPage } from "@/lookup/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
-import { srsClient } from "@/srs/client";
 import { Ratings } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
@@ -124,6 +123,7 @@ function LookupEntry({
     reload,
     ignoreTag,
     act,
+    undo,
     toggleMastery,
     definitionSaved,
     deleteDefinition,
@@ -576,15 +576,7 @@ function LookupEntry({
                 title={notice}
                 aria-label={t("undo")}
                 disabled={busy}
-                onClick={() =>
-                  void srsClient({ action: "undo", id: lastReview })
-                    .then(() => {
-                      setLastReview("");
-                      setNotice(t("review_undone"));
-                      reload();
-                    })
-                    .catch((error) => setError(error.message))
-                }
+                onClick={() => void undo()}
                 variant="light"
                 h={40}
                 px={4}
