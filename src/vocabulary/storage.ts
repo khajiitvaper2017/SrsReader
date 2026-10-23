@@ -9,6 +9,7 @@ import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { cacheContext } from "@/examples/sentences";
 import { sentenceId } from "@/examples/sentence-model";
+import { meaningKey } from "@/vocabulary/definitions";
 
 export async function mine(word: LookupWord, context?: ReadingContext) {
   await cacheContext(word, context);
@@ -34,6 +35,22 @@ export function definePersonalWord(
   return db.transaction("rw", [db.vocabulary, db.sentences], async () => {
     const saved = await mine(word, request.context);
     const definitions = definitionSenses(request.definition);
+    if (request.dictionaryKey !== undefined) {
+      if (
+        !word.meanings.some(
+          (meaning) =>
+            meaning.dictionaryId !== "personal" &&
+            meaningKey(meaning) === request.dictionaryKey,
+        )
+      )
+        throw new Error(t("definition_not_found"));
+      saved.definitionOverrides = {
+        ...saved.definitionOverrides,
+        [request.dictionaryKey]: definitions,
+      };
+      await db.vocabulary.put(saved);
+      return saved;
+    }
     const personal = saved.meanings.filter(
       (meaning) => meaning.dictionaryId === "personal",
     );
@@ -70,7 +87,12 @@ export function replaceMeanings(id: string, meanings: Vocabulary["meanings"]) {
     .where("id")
     .equals(id)
     .modify((word) => {
-      word.meanings = meanings;
+      word.meanings = [
+        ...word.meanings.filter(
+          (meaning) => meaning.dictionaryId === "personal",
+        ),
+        ...meanings,
+      ];
       word.version++;
       word.updated = Date.now();
     });
@@ -164,30 +186,6 @@ export async function deleteWords(ids: string[]) {
       await db.srsMeta.update("main", { undo: undefined });
     },
   );
-  return;
-}
-export async function editWord(
-  request: Extract<Request, { action: "editWord" }>,
-) {
-  await db.vocabulary
-    .where("id")
-    .equals(request.id)
-    .modify((w) => {
-      if (request.definition)
-        w.meanings = [
-          {
-            dictionaryId: "personal",
-            title: "",
-            revision: "",
-            attribution: "",
-            sourceUrl: "",
-            tags: "",
-            definitions: [request.definition],
-          },
-        ];
-      w.version++;
-      w.updated = Date.now();
-    });
   return;
 }
 export async function setRetentionOverride(

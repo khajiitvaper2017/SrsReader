@@ -29,6 +29,7 @@ import { Ratings } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
 import { vocabularyClient } from "@/vocabulary/client";
+import { EditableMeanings } from "@/vocabulary/components/EditableMeanings";
 import { DefinitionEditor } from "@/vocabulary/components/DefinitionEditor";
 import { stateOf, type ReadingContext } from "@/vocabulary/model";
 import { wordStateLabels } from "@/vocabulary/state";
@@ -37,10 +38,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Pencil,
   Plus,
   Play,
-  Trash2,
   Undo2,
 } from "lucide-react";
 export function Lookup() {
@@ -105,6 +104,8 @@ function LookupEntry({
     setCandidateOpen,
     candidates,
     expandedDictionaries,
+    hiddenDictionaries,
+    toggleHiddenDictionary,
     toggleDictionary,
     editing,
     setEditing,
@@ -126,7 +127,6 @@ function LookupEntry({
     undo,
     toggleMastery,
     definitionSaved,
-    deleteDefinition,
   } = useLookupWord({ page, onLookup, onBack, onContext });
   const surface = result?.grammar?.group?.form || term;
   const hiddenCandidateDictionaries = new Map(
@@ -418,73 +418,35 @@ function LookupEntry({
                 </Text>
               )}
               <Stack ref={readingRef}>
-                {unparsed || editing !== null ? (
+                {unparsed ? (
                   <DefinitionEditor
-                    key={`${word.id}:${editing}`}
+                    key={word.id}
                     word={result?.words.length ? word : undefined}
                     term={term}
                     context={context}
                     occurrence={page.occurrence}
                     grammar={result?.grammar}
-                    definitionIndex={
-                      typeof editing === "number" ? editing : undefined
-                    }
                     settings={settings}
                     onSaved={definitionSaved}
                     onError={setError}
-                    onCancel={unparsed ? undefined : () => setEditing(null)}
                   />
                 ) : (
-                  <Meanings
-                    meanings={word.meanings}
-                    language={word.language}
+                  <EditableMeanings
+                    word={word}
+                    term={term}
+                    context={context}
+                    occurrence={page.occurrence}
                     settings={settings}
                     grammar={result?.grammar}
+                    editing={editing}
+                    onEditingChange={setEditing}
+                    onSaved={definitionSaved}
+                    onError={setError}
                     expandedDictionaries={expandedDictionaries}
+                    hiddenDictionaries={hiddenDictionaries}
                     onToggleDictionary={toggleDictionary}
+                    onToggleHiddenDictionary={toggleHiddenDictionary}
                     onIgnoreTag={(tag) => void ignoreTag(tag)}
-                    actions={(meaning) =>
-                      meaning.dictionaryId === "personal" && (
-                        <>
-                          <ActionIcon
-                            title={t("edit_definition")}
-                            aria-label={t("edit_definition")}
-                            disabled={busy}
-                            onClick={() => {
-                              setEditing(
-                                word.meanings
-                                  .filter(
-                                    (part) => part.dictionaryId === "personal",
-                                  )
-                                  .indexOf(meaning),
-                              );
-                              contentRef.current?.scrollTo({ top: 0 });
-                            }}
-                            variant="subtle"
-                          >
-                            <Pencil aria-hidden="true" size={16} />
-                          </ActionIcon>
-                          <ActionIcon
-                            title={t("delete_custom_definition")}
-                            aria-label={t("delete_custom_definition")}
-                            disabled={busy}
-                            onClick={() =>
-                              void deleteDefinition(
-                                word.meanings
-                                  .filter(
-                                    (part) => part.dictionaryId === "personal",
-                                  )
-                                  .indexOf(meaning),
-                              )
-                            }
-                            variant="subtle"
-                            color="red"
-                          >
-                            <Trash2 aria-hidden="true" size={16} />
-                          </ActionIcon>
-                        </>
-                      )
-                    }
                   />
                 )}
                 <WordExamples

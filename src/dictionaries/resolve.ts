@@ -16,6 +16,7 @@ import type { Occurrence } from "@/languages/analysis";
 import { listDictionaries } from "@/dictionaries/storage";
 import { dictionaryDisplay, displayedWords } from "@/dictionaries/display";
 import { wordId } from "@/vocabulary/model";
+import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
 export async function lookup(
   term: string,
@@ -65,11 +66,7 @@ export async function lookup(
         (!contextual ||
           folded(word.lemma, settings.studyLanguage) ===
             folded(terms[0]!, settings.studyLanguage)) &&
-        word.meanings.some(
-          (meaning) =>
-            meaning.dictionaryId === "personal" ||
-            higher.has(meaning.dictionaryId),
-        ),
+        word.meanings.some((meaning) => higher.has(meaning.dictionaryId)),
     ),
   );
   const preferred = matches.get(normalize(terms[0]!)) || {
@@ -126,6 +123,13 @@ export async function lookup(
     result.unresolved.push(...(match?.unresolved || []));
   }
   result.words = displayedWords(result.words, settings, dictionaries, bases);
+  const saved = await db.vocabulary.bulkGet(
+    result.words.map((word) => word.id),
+  );
+  result.words = result.words.map((word, index) => ({
+    ...word,
+    meanings: applyDefinitionOverrides(word.meanings, saved[index]),
+  }));
   for (const lemma of bases) {
     if (
       result.words.some(

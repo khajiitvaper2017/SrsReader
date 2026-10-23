@@ -27,8 +27,6 @@ export function useWords({
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState("");
   const [error, setError] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [definition, setDefinition] = useState("");
   const [page, setPage] = useState(1);
   const detailRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -100,17 +98,6 @@ export function useWords({
       setError((error as Error).message);
     }
   }
-  function saveDefinition() {
-    if (!word) return;
-    return void action(async () => {
-      await vocabularyClient({
-        action: "editWord",
-        id: word.id,
-        definition,
-      });
-      setEditing(false);
-    });
-  }
   function changeRetention(value: string | number) {
     if (!word) return;
     if (value === "" || (Number(value) >= 70 && Number(value) <= 99))
@@ -175,10 +162,6 @@ export function useWords({
     setSelected,
     error,
     setError,
-    editing,
-    setEditing,
-    definition,
-    setDefinition,
     detailRef,
     word,
     visible,
@@ -189,7 +172,6 @@ export function useWords({
     pages,
     setPage,
     action,
-    saveDefinition,
     contexts,
     changeRetention,
     refreshWord,

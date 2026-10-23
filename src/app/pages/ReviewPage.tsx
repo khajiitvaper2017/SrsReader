@@ -4,7 +4,6 @@ import {
   Box,
   Kbd,
   ActionIcon,
-  Anchor,
   Button,
   Group,
   Paper,
@@ -13,7 +12,9 @@ import {
   Title,
 } from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
-import { Meanings } from "@/dictionaries/components/Meanings";
+import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
+import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
+import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { Empty } from "@/shared/ui/Empty";
@@ -21,7 +22,6 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Ratings, intervalLabel } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { useReviewSession } from "@/srs/hooks/useReviewSession";
-import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
 import { Check, Eye, Pause, Undo2, Upload } from "lucide-react";
@@ -162,66 +162,49 @@ export function ReviewPage({
                   aria-hidden={!revealed}
                   inert={!revealed}
                 >
-                  <Group justify="center">
-                    <AudioButton
-                      word={word}
-                      settings={settings}
-                      onError={setError}
-                    />
-                  </Group>
-                  <Meanings
-                    meanings={word.meanings}
-                    language={word.language}
+                  <Stack align="center" ta="center" gap="xs">
+                    {front === "sentence" && (
+                      <Title order={2} lang={word.language}>
+                        {word.lemma}
+                      </Title>
+                    )}
+                    <Group justify="center" gap="xs">
+                      <FrequencyBadge word={{ ...word, forms: [] }} />
+                      <AudioButton
+                        word={word}
+                        settings={settings}
+                        onError={setError}
+                      />
+                    </Group>
+                  </Stack>
+                  <CardDefinitions
+                    key={word.id}
+                    id={word.id}
+                    context={context}
                     settings={settings}
+                    onError={setError}
                   />
                   {context && (
-                    <Stack>
-                      {settings.showSentenceTranslation ? (
-                        <SentenceTranslation
-                          key={`${word.id}:${example}`}
-                          context={context}
-                          language={word.language}
-                          settings={settings}
-                          wordId={word.id}
-                        />
-                      ) : (
-                        <Sentence context={context} language={word.language} />
-                      )}
-                      <Group justify="space-between" align="center">
-                        {context.url.startsWith("http") ? (
-                          <Anchor
-                            href={context.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {context.title || new URL(context.url).hostname}
-                          </Anchor>
-                        ) : (
-                          <Text variant="supporting">
-                            {context.title || t("study_cached_sentence")}
-                          </Text>
-                        )}
-                        <AudioButton
-                          word={word}
-                          sentence={context.sentence}
-                          settings={settings}
-                          onError={setError}
-                        />
-                      </Group>
-                      {contexts.length > 1 && (
-                        <Button
-                          onClick={() =>
-                            setExample((example + 1) % contexts.length)
-                          }
-                          variant="subtle"
-                        >
-                          {t("example_position", {
-                            current: example + 1,
-                            total: contexts.length,
-                          })}
-                        </Button>
-                      )}
-                    </Stack>
+                    <ContextSentence
+                      key={`${word.id}:${example}`}
+                      word={word}
+                      context={context}
+                      settings={settings}
+                      onError={setError}
+                      position={
+                        contexts.length > 1
+                          ? t("example_position", {
+                              current: example + 1,
+                              total: contexts.length,
+                            })
+                          : undefined
+                      }
+                      onNext={
+                        contexts.length > 1
+                          ? () => setExample((example + 1) % contexts.length)
+                          : undefined
+                      }
+                    />
                   )}
                 </Stack>
               </Box>

@@ -36,14 +36,16 @@ export async function handle(request: Request) {
     case "closeLookup":
       return handleLookup(request);
     case "word":
+    case "cardDefinitions":
     case "saveTranslation":
     case "mine":
     case "defineWord":
     case "deleteDefinition":
+    case "restoreDefinition":
+    case "dictionaryVisibility":
     case "known":
     case "suspend":
     case "deleteWord":
-    case "editWord":
     case "refreshWord":
     case "words":
     case "retentionOverride":

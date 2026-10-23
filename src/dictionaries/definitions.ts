@@ -80,7 +80,9 @@ export function definitionText(value: unknown, senseSeparator = "; "): string {
 export function shortDefinition(word: Vocabulary) {
   return word.meanings
     .map((m) =>
-      m.definitions.map((definition) => definitionText(definition)).join("; "),
+      (m.customDefinitions || m.definitions)
+        .map((definition) => definitionText(definition))
+        .join("; "),
     )
     .join("; ")
     .replace(/\s+/g, " ")

@@ -145,6 +145,12 @@ Use the **Leeches** filter in **Words** to find marked words. Word details show 
 
 **Master** excludes a word from SRS while preserving its history. **Unmaster** restores its schedule. **Suspend** pauses review until **Resume**. Neither action resets memory.
 
-**Refresh from dictionary** replaces saved definitions with current dictionary entries. Updating a dictionary does not replace card definitions automatically.
+Cards use current entries from your enabled dictionaries. Their order and **If needed** settings also apply to cards. When sentence parsing is enabled, definitions use the sentence’s part of speech and grammar, as in popups. Use **Show more** to reveal excluded meanings. Use the eye button to hide a dictionary for one card. Hidden dictionaries appear below visible ones. These choices are remembered for that word in cards and popups.
+
+The frequency badge beside the word shows its rank from enabled frequency dictionaries. Select it to see the individual ranks.
+
+Use **Add custom definition** (+) to add a definition. Use the pencil beside a dictionary definition to save a custom override. Both appear in popups too. **Restore dictionary definition** removes an override. **Refresh from dictionary** refreshes saved dictionary entries and keeps your custom definitions and overrides.
+
+The sentence’s translation, speaker, and next-example buttons sit beside it.
 
 Use **Maintenance → Rebuild RWKV state** to rebuild its cache from saved answers. This does not change due dates or remove history.

@@ -2,6 +2,8 @@ import type { Occurrence } from "@/languages/analysis";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
+import { useDictionaryVisibility } from "@/vocabulary/hooks/useDictionaryVisibility";
+import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings";
 import { folded } from "@/languages/text";
 import { lookupClient } from "@/lookup/client";
 import type { LookupPage } from "@/lookup/model";
@@ -46,22 +48,28 @@ export function useLookupWord({
   const { term, context, occurrence } = page;
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
-  const [expandedDictionaries, setExpandedDictionaries] = useState<string[]>(
-    [],
-  );
-  const [editing, setEditing] = useState<"add" | number | null>(null);
+  const [editing, setEditing] = useState<DefinitionEditing>(null);
   const [saved, setSaved] = useState<Vocabulary>();
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const visibility = useDictionaryVisibility(
+    selected,
+    saved?.id === selected ? saved : undefined,
+    setError,
+  );
+  const { expandedDictionaries, hiddenDictionaries, toggleHiddenDictionary } =
+    visibility;
   const [notice, setNotice] = useState("");
   const [lastReview, setLastReview] = useState("");
   const [reviewed, setReviewed] = useState(false);
   const duration = useReviewClock(`${selected}:${saved?.card?.reps}`);
   const noResults = result?.words.length === 0;
   const candidates =
-    result?.words.filter((candidate) =>
-      wordMatchesGrammar(candidate, result.grammar, expandedDictionaries),
+    result?.words.filter(
+      (candidate) =>
+        candidate.id === selected ||
+        wordMatchesGrammar(candidate, result.grammar, expandedDictionaries),
     ) || [];
   const word: LookupWord | undefined =
     result?.words.find((w) => w.id === selected) ||
@@ -80,9 +88,6 @@ export function useLookupWord({
         }
       : undefined);
   const unparsed = !!word && !word.meanings.length;
-  const hasPersonalDefinition =
-    word?.meanings.some((meaning) => meaning.dictionaryId === "personal") ||
-    false;
   useEffect(() => {
     if (!word) return;
     const root = readingRef.current!;
@@ -120,15 +125,6 @@ export function useLookupWord({
         if (!alive) return;
         const restored = lookup.words.find((word) => word.id === page.selected);
         setResult(lookup);
-        setExpandedDictionaries(
-          restored && !wordMatchesGrammar(restored, lookup.grammar)
-            ? [
-                ...new Set(
-                  restored.meanings.map((meaning) => meaning.dictionaryId),
-                ),
-              ]
-            : [],
-        );
         setError(lookup.warning || "");
         setSelected(
           (
@@ -290,37 +286,20 @@ export function useLookupWord({
       setBusy(false);
     }
   }
-  async function definitionSaved(saved: Vocabulary) {
+  async function definitionSaved(saved?: Vocabulary) {
     setResult(await dictionariesClient({ action: "lookup", term, occurrence }));
-    setSelected(saved.id);
-    setSaved(saved);
+    if (saved) {
+      setSelected(saved.id);
+      setSaved(saved);
+    }
     setEditing(null);
     setNotice("");
-  }
-  async function deleteDefinition(definitionIndex: number) {
-    if (!word || !hasPersonalDefinition || busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      await vocabularyClient({
-        action: "deleteDefinition",
-        id: word.id,
-        definitionIndex,
-      });
-      setEditing(null);
-      setNotice("");
-      reload();
-    } catch (error) {
-      setError((error as Error).message);
-    } finally {
-      setBusy(false);
-    }
   }
   function toggleDictionary(id: string) {
     const expanded = expandedDictionaries.includes(id)
       ? expandedDictionaries.filter((dictionary) => dictionary !== id)
       : [...expandedDictionaries, id];
-    setExpandedDictionaries(expanded);
+    visibility.toggleDictionary(id);
     const current = result?.words.find(
       (candidate) => candidate.id === selected,
     );
@@ -345,6 +324,8 @@ export function useLookupWord({
     setCandidateOpen,
     candidates,
     expandedDictionaries,
+    hiddenDictionaries,
+    toggleHiddenDictionary,
     toggleDictionary,
     editing,
     setEditing,
@@ -360,13 +341,11 @@ export function useLookupWord({
     setLastReview,
     unparsed,
     word,
-    hasPersonalDefinition,
     reload,
     ignoreTag,
     act,
     undo,
     toggleMastery,
     definitionSaved,
-    deleteDefinition,
   };
 }

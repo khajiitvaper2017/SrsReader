@@ -266,6 +266,7 @@
   "parse_websites_automatically": "Parse websites automatically",
   "personal_definition": "Personal definition",
   "custom": "Custom",
+  "edited": "edited",
   "show_original": "Show original",
   "play_audio_on_reveal": "Play audio on reveal",
   "play_word_pronunciation": "Play word pronunciation",
@@ -939,5 +940,9 @@
   "dictionary_search_count_other": "{{count}} entries shown",
   "dictionary_search_more": "Load more",
   "search": "Search",
-  "dictionary_search_action": "Search"
+  "dictionary_search_action": "Search",
+  "custom_definition_override_help": "This custom definition appears on this card and in popups. The dictionary entry stays unchanged.",
+  "restore_dictionary_definition": "Restore dictionary definition",
+  "hide_dictionary": "Hide dictionary for this card",
+  "show_dictionary": "Show dictionary for this card"
 }

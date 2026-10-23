@@ -41,6 +41,7 @@ export async function snapshot(word: LookupWord) {
     }
   }
   for (const meaning of copy.meanings) {
+    delete meaning.customDefinitions;
     const dictionary = dictionaries.find((d) => d.id === meaning.dictionaryId);
     if (dictionary) await embed(meaning.definitions, dictionary.revisionId);
   }

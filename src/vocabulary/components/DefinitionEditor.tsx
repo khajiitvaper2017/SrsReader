@@ -11,7 +11,12 @@ import {
   Textarea,
 } from "@mantine/core";
 import type { LookupWord, Meaning } from "@/dictionaries/model";
-import { definitionSenses } from "@/dictionaries/definitions";
+import {
+  definitionSenses,
+  definitionText,
+  mapDefinitionSenses,
+} from "@/dictionaries/definitions";
+import { meaningKey } from "@/vocabulary/definitions";
 import { dictionaryGrammarTags } from "@/dictionaries/grammar";
 import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
 import type { Settings } from "@/settings/model";
@@ -28,6 +33,7 @@ export function DefinitionEditor({
   occurrence,
   grammar,
   definitionIndex,
+  sourceMeaning,
   settings,
   onSaved,
   onError,
@@ -39,21 +45,28 @@ export function DefinitionEditor({
   occurrence?: Occurrence;
   grammar?: OccurrenceGrammar;
   definitionIndex?: number;
+  sourceMeaning?: Meaning;
   settings: Settings;
   onSaved: (word: Vocabulary) => Promise<void>;
   onError: (message: string) => void;
   onCancel?: () => void;
 }) {
-  const [definition, setDefinition] = useState(
-    (definitionIndex === undefined
-      ? []
-      : word?.meanings.filter((meaning) => meaning.dictionaryId === "personal")[
-          definitionIndex
-        ]?.definitions || []
-    )
-      .filter((value) => typeof value === "string")
-      .join("\n") || "",
-  );
+  const [definition, setDefinition] = useState(() => {
+    const meaning =
+      sourceMeaning ||
+      (definitionIndex === undefined
+        ? undefined
+        : word?.meanings.filter(
+            (meaning) => meaning.dictionaryId === "personal",
+          )[definitionIndex]);
+    if (meaning?.customDefinitions) return meaning.customDefinitions.join("\n");
+    const senses: string[] = [];
+    mapDefinitionSenses(meaning?.definitions || [], (text) => {
+      senses.push(definitionText(text));
+      return text;
+    });
+    return senses.join("\n");
+  });
   const [busy, setBusy] = useState(false);
   const senses = definitionSenses(definition);
   const [status, setStatus] = useState("");
@@ -61,7 +74,7 @@ export function DefinitionEditor({
   useEffect(() => {
     let alive = true;
     setTags(undefined);
-    if (!grammar) {
+    if (sourceMeaning || !grammar) {
       const existing =
         definitionIndex === undefined
           ? undefined
@@ -69,8 +82,9 @@ export function DefinitionEditor({
               (meaning) => meaning.dictionaryId === "personal",
             )[definitionIndex];
       setTags({
-        tags: existing?.tags || "",
-        tagDescriptions: existing?.tagDescriptions,
+        tags: sourceMeaning?.tags || existing?.tags || "",
+        tagDescriptions:
+          sourceMeaning?.tagDescriptions || existing?.tagDescriptions,
       });
       return;
     }
@@ -89,7 +103,7 @@ export function DefinitionEditor({
     return () => {
       alive = false;
     };
-  }, [grammar, settings, word, definitionIndex, onError]);
+  }, [grammar, settings, word, definitionIndex, sourceMeaning, onError]);
   async function translate() {
     setBusy(true);
     onError("");
@@ -97,7 +111,7 @@ export function DefinitionEditor({
       setDefinition(
         await translateSentence(
           word?.lemma || term,
-          settings.studyLanguage,
+          word?.language || settings.studyLanguage,
           settings.nativeLanguage,
           setStatus,
         ),
@@ -121,6 +135,7 @@ export function DefinitionEditor({
         occurrence,
         definition,
         definitionIndex,
+        dictionaryKey: sourceMeaning ? meaningKey(sourceMeaning) : undefined,
       });
       await onSaved(saved);
     } catch (error) {
@@ -131,6 +146,9 @@ export function DefinitionEditor({
   }
   return (
     <Stack data-srs-reader="">
+      {sourceMeaning && (
+        <Text variant="supporting">{t("custom_definition_override_help")}</Text>
+      )}
       <Group role="group" aria-label={t("definition_tags")}>
         <Text variant="supporting">{t("definition_tags")}</Text>
         {!tags ? (

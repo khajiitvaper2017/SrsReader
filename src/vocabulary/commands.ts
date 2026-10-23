@@ -5,7 +5,9 @@ import type { LookupWord } from "@/dictionaries/model";
 import { lookup, resolved } from "@/dictionaries/resolve";
 import { dictionaryGrammarTags } from "@/dictionaries/grammar";
 import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
-import { occurrenceAnalysis } from "@/languages/udpipe";
+import { analyzeTexts, occurrenceAnalysis } from "@/languages/udpipe";
+import { udpipeModel } from "@/languages/codes";
+import { udpipePermission } from "@/languages/udpipe-permission";
 import { folded } from "@/languages/text";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
@@ -16,11 +18,11 @@ import { t } from "@/shared/i18n/i18n";
 import type { Request } from "@/vocabulary/contracts";
 import { wordId } from "@/vocabulary/model";
 import { snapshot } from "@/vocabulary/snapshot";
+import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import {
   definePersonalWord,
   deleteDefinition,
   deleteWord,
-  editWord,
   getWord,
   languageWords,
   mine,
@@ -34,6 +36,9 @@ import {
 export function handleVocabulary(request: Request, settings: Settings) {
   return request.action === "mine" ||
     request.action === "defineWord" ||
+    request.action === "deleteDefinition" ||
+    request.action === "restoreDefinition" ||
+    request.action === "dictionaryVisibility" ||
     request.action === "known" ||
     request.action === "suspend" ||
     request.action === "deleteWord" ||
@@ -49,6 +54,45 @@ async function execute(request: Request, settings: Settings) {
       return;
     case "word":
       return getWord(request.id);
+    case "cardDefinitions": {
+      const saved = await getWord(request.id);
+      if (!saved) throw new Error(t("word_not_found"));
+      const context = request.context;
+      const analyses =
+        context &&
+        settings.udpipe &&
+        udpipeModel(saved.language) &&
+        (await udpipePermission())
+          ? await analyzeTexts(
+              [context.sentence],
+              saved.language,
+              settings.udpipeModels[saved.language],
+            ).catch((error) => {
+              console.warn("SrsReader: contextual analysis unavailable", error);
+              return [];
+            })
+          : [];
+      const occurrence = analyses[0]?.surfaces.find(
+        (surface) =>
+          surface.start === context?.start && surface.end === context.end,
+      )?.occurrence;
+      const result = await lookup(
+        occurrence ? context!.surface : saved.lemma,
+        { ...settings, studyLanguage: saved.language },
+        false,
+        occurrence,
+      );
+      return {
+        saved,
+        word: result.words.find((word) => word.id === saved.id) || {
+          ...saved,
+          meanings: applyDefinitionOverrides(saved.meanings, saved),
+          forms: [],
+        },
+        grammar: result.grammar,
+        occurrence,
+      };
+    }
     case "mine": {
       const word = await snapshot(
         await resolved(request.term, request.id, request.occurrence),
@@ -96,6 +140,31 @@ async function execute(request: Request, settings: Settings) {
       await deleteDefinition(request);
       await notify(request.id);
       return;
+    case "restoreDefinition":
+    case "dictionaryVisibility":
+      await db.vocabulary
+        .where("id")
+        .equals(request.id)
+        .modify((word) => {
+          if (request.action === "restoreDefinition") {
+            delete word.definitionOverrides?.[request.dictionaryKey];
+          } else {
+            word.hiddenDictionaries = (word.hiddenDictionaries || []).filter(
+              (id) => id !== request.dictionaryId,
+            );
+            word.expandedDictionaries = (
+              word.expandedDictionaries || []
+            ).filter((id) => id !== request.dictionaryId);
+            if (request.view === "hidden")
+              word.hiddenDictionaries.push(request.dictionaryId);
+            if (request.view === "all")
+              word.expandedDictionaries.push(request.dictionaryId);
+          }
+          word.version++;
+          word.updated = Date.now();
+        });
+      await notify(request.id);
+      return;
     case "known": {
       const word = await snapshot(
         await resolved(request.term, request.id, request.occurrence),
@@ -110,10 +179,6 @@ async function execute(request: Request, settings: Settings) {
       return;
     case "deleteWord":
       await deleteWord(request);
-      await notify(request.id);
-      return;
-    case "editWord":
-      await editWord(request);
       await notify(request.id);
       return;
     case "refreshWord": {
@@ -157,7 +222,11 @@ async function execute(request: Request, settings: Settings) {
         .filter((w) =>
           folded(w.lemma, language).includes(folded(request.query, language)),
         )
-        .sort((a, b) => b.updated - a.updated);
+        .sort((a, b) => b.updated - a.updated)
+        .map((word) => ({
+          ...word,
+          meanings: applyDefinitionOverrides(word.meanings, word),
+        }));
     }
     case "retentionOverride":
       await setRetentionOverride(request);

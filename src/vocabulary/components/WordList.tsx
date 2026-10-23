@@ -20,8 +20,7 @@ export function WordList({
   settings: Settings;
   controller: ReturnType<typeof useWords>;
 }) {
-  const { selected, setSelected, setEditing, pageWords, page, pages, setPage } =
-    controller;
+  const { selected, setSelected, pageWords, page, pages, setPage } = controller;
   return (
     <Stack>
       <Paper p={0}>
@@ -45,7 +44,6 @@ export function WordList({
             }
             onClick={() => {
               setSelected(w.id);
-              setEditing(false);
             }}
           />
         ))}
@@ -59,7 +57,6 @@ export function WordList({
             onChange={(value) => {
               setPage(value);
               setSelected("");
-              setEditing(false);
             }}
             aria-label={t("words_pages")}
             getControlProps={(control) => ({

@@ -52,6 +52,9 @@ export async function commitReview({
       // Metadata writes can finish while the model calculates an answer.
       if (current) {
         saved.meanings = current.meanings;
+        saved.definitionOverrides = current.definitionOverrides;
+        saved.hiddenDictionaries = current.hiddenDictionaries;
+        saved.expandedDictionaries = current.expandedDictionaries;
         saved.mined = current.mined !== false || saved.mined;
         saved.version = current.version + 1;
       }

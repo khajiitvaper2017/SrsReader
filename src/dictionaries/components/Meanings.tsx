@@ -17,7 +17,7 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { TextTranslation } from "@/translation/components/SentenceTranslation";
 import { Button, Menu } from "@mantine/core";
-import { ChevronDown, ChevronUp, EyeOff } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import type { ReactNode } from "react";
 export function Meanings({
   meanings,
@@ -27,7 +27,9 @@ export function Meanings({
   actions,
   grammar,
   expandedDictionaries = [],
+  hiddenDictionaries = [],
   onToggleDictionary,
+  onToggleHiddenDictionary,
 }: {
   meanings: Meaning[];
   language: string;
@@ -36,7 +38,9 @@ export function Meanings({
   actions?: (meaning: Meaning) => ReactNode;
   grammar?: OccurrenceGrammar;
   expandedDictionaries?: string[];
+  hiddenDictionaries?: string[];
   onToggleDictionary?: (id: string) => void;
+  onToggleHiddenDictionary?: (id: string) => void;
 }) {
   const {
     visible: displayed,
@@ -45,32 +49,60 @@ export function Meanings({
     monolingual,
     definitionLanguages,
   } = useMeanings({ meanings, language, settings, onIgnoreTag });
+  const dictionaries = [
+    ...new Set(displayed.map((meaning) => meaning.dictionaryId)),
+  ]
+    .map((dictionaryId) => {
+      const entries = displayed.filter(
+        (meaning) => meaning.dictionaryId === dictionaryId,
+      );
+      const expanded = expandedDictionaries.includes(dictionaryId);
+      const hidden = hiddenDictionaries.includes(dictionaryId);
+      const filtered = new Map(
+        entries.map((meaning) => [
+          meaning,
+          filterPrepositionSenses(meaning, grammar),
+        ]),
+      );
+      const title = entries[0]!.title;
+      const conflictsExist = entries.some(
+        (meaning) =>
+          filtered.get(meaning) !== meaning ||
+          Object.keys(grammarConflicts(meaning, grammar)).length,
+      );
+      const visible = hidden
+        ? []
+        : expanded
+          ? entries
+          : entries.filter(
+              (meaning) =>
+                !Object.keys(grammarConflicts(meaning, grammar)).length,
+            );
+      return {
+        dictionaryId,
+        entries,
+        expanded,
+        hidden,
+        filtered,
+        title,
+        conflictsExist,
+        visible,
+      };
+    })
+    .sort((a, b) => Number(!a.visible.length) - Number(!b.visible.length));
   return (
     <Stack>
-      {[...new Set(displayed.map((meaning) => meaning.dictionaryId))].map(
-        (dictionaryId) => {
-          const entries = displayed.filter(
-            (meaning) => meaning.dictionaryId === dictionaryId,
-          );
-          const expanded = expandedDictionaries.includes(dictionaryId);
-          const filtered = new Map(
-            entries.map((meaning) => [
-              meaning,
-              filterPrepositionSenses(meaning, grammar),
-            ]),
-          );
-          const title = entries[0]!.title;
-          const conflictsExist = entries.some(
-            (meaning) =>
-              filtered.get(meaning) !== meaning ||
-              Object.keys(grammarConflicts(meaning, grammar)).length,
-          );
-          const visible = expanded
-            ? entries
-            : entries.filter(
-                (meaning) =>
-                  !Object.keys(grammarConflicts(meaning, grammar)).length,
-              );
+      {dictionaries.map(
+        ({
+          dictionaryId,
+          entries,
+          expanded,
+          hidden,
+          filtered,
+          title,
+          conflictsExist,
+          visible,
+        }) => {
           const toggle = conflictsExist && onToggleDictionary && (
             <ActionIcon
               title={t(expanded ? "show_less" : "show_more")}
@@ -83,6 +115,21 @@ export function Meanings({
                 <ChevronUp aria-hidden="true" size={16} />
               ) : (
                 <ChevronDown aria-hidden="true" size={16} />
+              )}
+            </ActionIcon>
+          );
+          const visibility = onToggleHiddenDictionary && (
+            <ActionIcon
+              title={t(hidden ? "show_dictionary" : "hide_dictionary")}
+              aria-label={`${t(hidden ? "show_dictionary" : "hide_dictionary")}: ${title}`}
+              aria-expanded={!hidden}
+              onClick={() => onToggleHiddenDictionary(dictionaryId)}
+              variant="subtle"
+            >
+              {hidden ? (
+                <Eye aria-hidden size={16} />
+              ) : (
+                <EyeOff aria-hidden size={16} />
               )}
             </ActionIcon>
           );
@@ -150,15 +197,18 @@ export function Meanings({
                       <Group key={index}>{renderTags(meaning)}</Group>
                     ))}
                   </Group>
-                  {toggle}
+                  <Group gap={0} wrap="nowrap">
+                    {toggle}
+                    {visibility}
+                  </Group>
                 </Group>
               )}
               {visible.map((meaning, i) => {
                 const index = displayed.indexOf(meaning);
                 const meaningActions = actions?.(meaning);
-                const definitions = (
-                  expanded ? meaning : filtered.get(meaning)!
-                ).definitions;
+                const definitions =
+                  meaning.customDefinitions ||
+                  (expanded ? meaning : filtered.get(meaning)!).definitions;
                 const senses: string[] = [];
                 mapDefinitionSenses(definitions, (text) => {
                   senses.push(text);
@@ -168,10 +218,11 @@ export function Meanings({
                   <Stack
                     data-meaning={index}
                     data-reading-language={
-                      meaning.dictionaryId === "nechybujte"
-                        ? "cs"
-                        : meaning.dictionaryId === "personal"
-                          ? settings.nativeLanguage
+                      meaning.dictionaryId === "personal" ||
+                      meaning.customDefinitions
+                        ? settings.nativeLanguage
+                        : meaning.dictionaryId === "nechybujte"
+                          ? "cs"
                           : definitionLanguages[meaning.dictionaryId] || ""
                     }
                     className="dictionary-content"
@@ -179,7 +230,8 @@ export function Meanings({
                       settings.hideDictionarySources || undefined
                     }
                   >
-                    {["nechybujte", "personal"].includes(
+                    {meaning.customDefinitions ||
+                    ["nechybujte", "personal"].includes(
                       meaning.dictionaryId,
                     ) ? (
                       <ol data-sc-content="glosses">
@@ -218,12 +270,17 @@ export function Meanings({
                             : meaning.title}
                         </Text>
                         {renderTags(meaning)}
+                        {meaning.customDefinitions && (
+                          <Badge>{t("edited")}</Badge>
+                        )}
                       </Group>
                       {((i === 0 && toggle) ||
+                        (i === 0 && visibility) ||
                         meaningActions ||
                         translationButton) && (
-                        <Group wrap="nowrap" style={{ flexShrink: 0 }}>
+                        <Group gap={0} wrap="nowrap" style={{ flexShrink: 0 }}>
                           {i === 0 && toggle}
+                          {i === 0 && visibility}
                           {meaningActions}
                           {translationButton}
                         </Group>
@@ -263,8 +320,9 @@ export function Meanings({
                       )}
                   </Stack>
                 );
-                return (monolingual.includes(meaning.dictionaryId) ||
-                  meaning.dictionaryId === "nechybujte") &&
+                return !meaning.customDefinitions &&
+                  (monolingual.includes(meaning.dictionaryId) ||
+                    meaning.dictionaryId === "nechybujte") &&
                   language !== settings.nativeLanguage ? (
                   <TextTranslation
                     compact

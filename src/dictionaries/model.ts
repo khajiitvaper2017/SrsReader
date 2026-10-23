@@ -146,6 +146,7 @@ export const meaningSchema = z.object({
   sourceUrl: z.string(),
   tags: z.string(),
   definitions: z.array(definitionSchema),
+  customDefinitions: z.array(z.string()).optional(),
   tagDescriptions: z.record(z.string(), z.string()).optional(),
   grammar: z
     .array(z.object({ text: z.string(), title: z.string().optional() }))

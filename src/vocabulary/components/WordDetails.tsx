@@ -6,27 +6,17 @@ import {
   Paper,
   Stack,
   Text,
-  Textarea,
   Title,
 } from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
-import { Meanings } from "@/dictionaries/components/Meanings";
-import { shortDefinition } from "@/dictionaries/definitions";
+import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
+import { ContextSentence } from "@/vocabulary/components/ContextSentence";
+import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { WordExamples } from "@/examples/components/WordExamples";
 import type { Settings } from "@/settings/model";
 import { i18n, number, t } from "@/shared/i18n/i18n";
-import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
 import { useWords } from "@/vocabulary/hooks/useWords";
-import {
-  Check,
-  Pause,
-  Pencil,
-  Play,
-  RefreshCw,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Check, Pause, Play, RefreshCw, Trash2, X } from "lucide-react";
 export function WordDetails({
   settings,
   controller,
@@ -37,13 +27,8 @@ export function WordDetails({
   const {
     setSelected,
     setError,
-    editing,
-    setEditing,
-    definition,
-    setDefinition,
     detailRef,
     word,
-    saveDefinition,
     contexts,
     changeRetention,
     refreshWord,
@@ -69,47 +54,18 @@ export function WordDetails({
           <Title lang={word.language} order={2}>
             {word.lemma}
           </Title>
-          <AudioButton word={word} settings={settings} onError={setError} />
+          <Group gap="xs">
+            <FrequencyBadge word={{ ...word, forms: [] }} />
+            <AudioButton word={word} settings={settings} onError={setError} />
+          </Group>
         </Group>
-        {editing ? (
-          <Stack>
-            <Group justify="space-between" align="center">
-              {t("definition")}{" "}
-              <Textarea
-                rows={7}
-                value={definition}
-                onChange={(event) => setDefinition(event.target.value)}
-                aria-label={t("definition")}
-              />
-            </Group>
-            <Text variant="supporting">
-              {t("saving_replaces_the_dictionary_snapshot_for_this_card")}{" "}
-            </Text>
-            <Group align="center">
-              <Button
-                disabled={!definition.trim()}
-                onClick={() => saveDefinition()}
-                variant="filled"
-              >
-                <Save aria-hidden="true" size={16} /> {t("save_definition")}
-              </Button>
-              <ActionIcon
-                title={t("cancel")}
-                aria-label={t("cancel")}
-                onClick={() => setEditing(false)}
-                variant="subtle"
-              >
-                <X aria-hidden="true" size={16} />
-              </ActionIcon>
-            </Group>
-          </Stack>
-        ) : (
-          <Meanings
-            meanings={word.meanings}
-            language={word.language}
-            settings={settings}
-          />
-        )}
+        <CardDefinitions
+          key={word.id}
+          id={word.id}
+          context={contexts[0]}
+          settings={settings}
+          onError={setError}
+        />
         <WordExamples
           key={word.id}
           word={word}
@@ -117,25 +73,13 @@ export function WordDetails({
           surface={contexts[0]?.surface}
         />
         {contexts.map((context, i) => (
-          <Stack key={`${word.id}:${i}`}>
-            <SentenceTranslation
-              context={context}
-              language={word.language}
-              settings={settings}
-              wordId={word.id}
-            />
-            <Group align="center" justify="space-between">
-              <Text component="span" inherit>
-                {context.title}
-              </Text>
-              <AudioButton
-                word={word}
-                sentence={context.sentence}
-                settings={settings}
-                onError={setError}
-              />
-            </Group>
-          </Stack>
+          <ContextSentence
+            key={`${word.id}:${i}`}
+            word={word}
+            context={context}
+            settings={settings}
+            onError={setError}
+          />
         ))}
         <Group justify="space-between" align="center" wrap="nowrap">
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -184,17 +128,6 @@ export function WordDetails({
           </Stack>
         )}
         <Group align="center">
-          <ActionIcon
-            title={t("edit_definition")}
-            aria-label={t("edit_definition")}
-            onClick={() => {
-              setDefinition(shortDefinition(word));
-              setEditing(true);
-            }}
-            variant="subtle"
-          >
-            <Pencil aria-hidden="true" size={16} />
-          </ActionIcon>
           <ActionIcon
             title={t("refresh_from_dictionary")}
             aria-label={t("refresh_from_dictionary")}

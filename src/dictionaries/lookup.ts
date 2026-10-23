@@ -17,6 +17,7 @@ import { wordId } from "@/vocabulary/model";
 import { getSettings } from "@/settings/store";
 import { listDictionaries } from "@/dictionaries/storage";
 import { displayedMeanings } from "@/dictionaries/display";
+import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
 type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
@@ -279,11 +280,12 @@ export async function lookupMany(
     .filter(
       (word) =>
         word.language === language &&
-        word.meanings.some(
-          (meaning) =>
-            meaning.dictionaryId === "personal" ||
-            meaning.dictionaryId === "nechybujte",
-        ),
+        (!!word.definitionOverrides ||
+          word.meanings.some(
+            (meaning) =>
+              meaning.dictionaryId === "personal" ||
+              meaning.dictionaryId === "nechybujte",
+          )),
     )
     .toArray();
   const savedQueryFinished = performance.now();
@@ -315,7 +317,12 @@ export async function lookupMany(
     });
     for (const word of byLemma.get(folded(term, language)) || []) {
       if (words.some((candidate) => candidate.id === word.id)) continue;
-      words.unshift({ ...word, forms: [] });
+      const meanings = word.meanings.filter(
+        (meaning) =>
+          meaning.dictionaryId === "personal" ||
+          meaning.dictionaryId === "nechybujte",
+      );
+      if (meanings.length) words.unshift({ ...word, meanings, forms: [] });
     }
     results.set(term, {
       words,
@@ -337,7 +344,11 @@ export async function lookupMany(
   }
   for (const result of results.values())
     result.words = result.words.flatMap((word) => {
-      const meanings = displayedMeanings(word.meanings, settings, ordered);
+      const meanings = displayedMeanings(
+        applyDefinitionOverrides(word.meanings, byId.get(word.id)),
+        settings,
+        ordered,
+      );
       return meanings.length ? [{ ...word, meanings }] : [];
     });
   console.info("[SrsReader] Dictionary lookup finished", {

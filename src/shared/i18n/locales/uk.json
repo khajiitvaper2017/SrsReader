@@ -272,6 +272,7 @@
   "parse_websites_automatically": "Автоматично розпізнавати текст на сайтах",
   "personal_definition": "Власне визначення",
   "custom": "Власне",
+  "edited": "відредаговано",
   "show_original": "Показати оригінал",
   "play_audio_on_reveal": "Озвучувати після відкриття відповіді",
   "play_word_pronunciation": "Прослухати вимову слова",
@@ -986,5 +987,9 @@
   "dictionary_search_count_other": "Показано {{count}} статті",
   "dictionary_search_more": "Завантажити ще",
   "search": "Пошук",
-  "dictionary_search_action": "Шукати"
+  "dictionary_search_action": "Шукати",
+  "custom_definition_override_help": "Це власне визначення відображається на цій картці й у спливних вікнах. Словникова стаття залишається без змін.",
+  "restore_dictionary_definition": "Відновити словникове визначення",
+  "hide_dictionary": "Приховати словник для цієї картки",
+  "show_dictionary": "Показати словник для цієї картки"
 }

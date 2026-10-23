@@ -25,7 +25,7 @@ export function displayedMeanings(
   );
   const order = (id: string) =>
     id === "personal"
-      ? -1
+      ? Number.MAX_SAFE_INTEGER
       : (settings.dictionaryPreferences[id]?.order ??
         metadata.get(id)?.order ??
         Number.MAX_SAFE_INTEGER - (id === "nechybujte" ? 0 : 1));

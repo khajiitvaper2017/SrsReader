@@ -3,6 +3,8 @@ import { contextSchema, type Vocabulary } from "@/vocabulary/model";
 import { z } from "zod";
 import { occurrenceSchema } from "@/languages/analysis";
 import { languageSchema } from "@/languages/model";
+import type { LookupWord } from "@/dictionaries/model";
+import type { Occurrence, OccurrenceGrammar } from "@/languages/analysis";
 
 export const selection = {
   term: z.string().min(1).max(1000),
@@ -11,6 +13,11 @@ export const selection = {
 };
 export const requests = [
   z.object({ action: z.literal("word"), id: z.string() }),
+  z.object({
+    action: z.literal("cardDefinitions"),
+    id: z.string(),
+    context: selection.context,
+  }),
   z.object({
     action: z.literal("saveTranslation"),
     id: z.string(),
@@ -26,6 +33,18 @@ export const requests = [
     id: z.string().optional(),
     definition: z.string().trim().min(1),
     definitionIndex: z.number().int().nonnegative().optional(),
+    dictionaryKey: z.string().optional(),
+  }),
+  z.object({
+    action: z.literal("restoreDefinition"),
+    id: z.string(),
+    dictionaryKey: z.string(),
+  }),
+  z.object({
+    action: z.literal("dictionaryVisibility"),
+    id: z.string(),
+    dictionaryId: z.string(),
+    view: z.enum(["hidden", "matched", "all"]),
   }),
   z.object({
     action: z.literal("deleteDefinition"),
@@ -45,11 +64,6 @@ export const requests = [
     value: z.boolean(),
   }),
   z.object({ action: z.literal("deleteWord"), id: z.string() }),
-  z.object({
-    action: z.literal("editWord"),
-    id: z.string(),
-    definition: z.string().min(1).optional(),
-  }),
   z.object({ action: z.literal("refreshWord"), id: z.string() }),
   z.object({
     action: z.literal("words"),
@@ -68,13 +82,20 @@ export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
   saveTranslation: void;
   word: Vocabulary | undefined;
+  cardDefinitions: {
+    word: LookupWord;
+    saved: Vocabulary;
+    grammar?: OccurrenceGrammar;
+    occurrence?: Occurrence;
+  };
   mine: Vocabulary;
   defineWord: Vocabulary;
   deleteDefinition: void;
+  restoreDefinition: void;
+  dictionaryVisibility: void;
   known: Vocabulary;
   suspend: void;
   deleteWord: void;
-  editWord: void;
   refreshWord: void;
   words: Vocabulary[];
   retentionOverride: void;
