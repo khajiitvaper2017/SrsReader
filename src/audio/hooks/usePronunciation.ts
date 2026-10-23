@@ -13,7 +13,7 @@ export function usePronunciation({
   settings,
   onError,
 }: {
-  word: Pick<LookupWord, "id" | "lemma" | "language">;
+  word?: Pick<LookupWord, "id" | "lemma" | "language">;
   sentence?: string;
   settings: Settings;
   onError: (message: string) => void;
@@ -36,9 +36,9 @@ export function usePronunciation({
       clearTimeout(hold.current);
       playback.current++;
     };
-  }, [word.id, sentence]);
+  }, [word?.id, sentence]);
   useEffect(() => {
-    if (!open) return;
+    if (!open || !word) return;
     let alive = true;
     setDiscoveryError("");
     void localVoices().then((voices) => {
@@ -73,13 +73,15 @@ export function usePronunciation({
     return () => {
       alive = false;
     };
-  }, [open, word.id, word.language, sentence, settings.audioSources]);
+  }, [open, word?.id, word?.language, sentence, settings.audioSources]);
   function playVoice(voice: string) {
+    if (!word) return;
     void speak(sentence || word.lemma, word.language, voice).catch((error) =>
       onError(error instanceof Error ? error.message : String(error)),
     );
   }
   async function play(source?: AudioInfo | { voice: string }) {
+    if (!word) return;
     const attempt = ++playback.current;
     stopAudio();
     setBusy(true);

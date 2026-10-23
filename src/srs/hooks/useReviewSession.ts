@@ -1,5 +1,5 @@
-import { playBlob, speak, stopAudio } from "@/audio/playback";
-import { getAudio } from "@/audio/storage";
+import { usePronunciation } from "@/audio/hooks/usePronunciation";
+import { stopAudio } from "@/audio/playback";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { srsClient } from "@/srs/client";
@@ -26,6 +26,11 @@ export function useReviewSession({
   const [front, setFront] = useState(settings.front);
   const [example, setExample] = useState(0);
   const word = queue?.words[0];
+  const { play: playAudio } = usePronunciation({
+    word,
+    settings,
+    onError: setError,
+  });
   const [sentences, setSentences] = useState<{
     id: string;
     contexts: ReadingContext[];
@@ -125,12 +130,7 @@ export function useReviewSession({
   }
   function reveal() {
     setRevealed(true);
-    if (settings.autoplay && word)
-      void (async () => {
-        const recording = await getAudio(word.id);
-        if (recording) await playBlob(recording.blob, settings.normalizeAudio);
-        else await speak(word.lemma, word.language, settings.voice);
-      })().catch((error) => setError(error.message));
+    if (settings.autoplay && word) void playAudio();
   }
   useReviewControls({
     settings,
