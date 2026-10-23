@@ -31,7 +31,7 @@
 
 ## UI standards
 
-The project uses Mantine. These standards apply to all UI work.
+Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI patterns form the project's design system. These standards apply to all UI work.
 
 - Use Mantine for all UI controls and layouts. Import its components directly. Do not add another UI library or wrap Mantine components just to rename their props.
 - Before implementing UI behavior, check the installed Mantine version and official documentation.
@@ -48,6 +48,16 @@ The project uses Mantine. These standards apply to all UI work.
 - Prevent accidental horizontal overflow. Let pages scroll vertically. Keep floating popups on screen and let long popup content scroll. Ensure menus and overlays work in their page or iframe.
 - Preserve labels, keyboard access, visible focus, numeric limits, empty values, loading states, disabled states, and save errors. Give icon-only actions accessible names.
 - Keep all UI text localized in English and Ukrainian. Allow room for longer translations and narrow screens.
+- Use Mantine MCP and skills when relevant.
+
+### UI consistency
+
+- Before adding UI, use Graft to find existing shared and feature components. Reuse established patterns for page headers, forms, tables, navigation, and action placement.
+- Express visual purpose with semantic variants and theme tokens. Add repeated visual roles to the shared theme. Do not bypass it with styling classes, raw colors, or repeated local overrides.
+- Use heading components for headings instead of increasing text sizes. Use sentence case for interface labels.
+- Keep reusable visual components independent of routing, storage, and network requests. Put feature behavior in feature hooks and services.
+- Keep reusable component APIs small. Document their intended use and supported variants when adding or changing them.
+- Review UI changes for duplicated controls, inconsistent patterns, and theme overrides. Use existing lint rules to catch violations.
 
 <!-- graft:start -->
 
