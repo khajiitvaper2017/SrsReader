@@ -26,6 +26,7 @@ export function ImmersionWeight({
   }
   return (
     <NumberInput
+      mt="sm"
       label={t("immersion_secondary_weight")}
       description={t("immersion_score_help")}
       min={0}
