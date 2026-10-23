@@ -34,11 +34,11 @@ Under **Settings → Reading → Word colors**, choose text or background colors
 
 The toolbar pauses parsing or disables the current site. **Only parse the reading language** scans text identified as your study language. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
 
-## Czech grammar analysis
+## Grammar analysis with UDPipe
 
-Open **Settings → Reading → Use UDPipe for Czech** to enable contextual Czech analysis. It is off by default and works only when Czech is your study language. Firefox also asks for permission to send website content. Without that permission, parsing stays local.
+Open **Settings → Reading → Use UDPipe** to enable grammar analysis in context. It is off by default. The switch is available when UDPipe supports your study language. SrsReader selects the model for that language automatically. Firefox also asks for permission to send website content. Without that permission, parsing stays local.
 
-UDPipe sends eligible Czech text to [LINDAT](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php). It groups uncached text into one request per stable page where size permits. Page changes send only uncached text. Successful results stay in this browser permanently and are reused on other pages and after a restart. Clearing extension data removes them. Parser results are not included in learning or settings exports.
+UDPipe sends eligible text in your study language to [LINDAT](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php). It groups uncached text into one request per stable page where size permits. Page changes send only uncached text. Successful results stay in this browser permanently and are reused on other pages and after a restart. Clearing extension data removes them. Parser results are not included in learning or settings exports.
 
 Each attempt can take up to 30 seconds. If a request fails, SrsReader retries after 500 milliseconds and then after 1 second. After three failed attempts, it uses local parsing for 10 minutes. Open pages retry after that time. Other pages retry when opened again.
 

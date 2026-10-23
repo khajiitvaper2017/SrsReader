@@ -1,5 +1,6 @@
 import { analyzeTexts } from "@/languages/udpipe";
 import { udpipePermission } from "@/languages/udpipe-permission";
+import { udpipeModel } from "@/languages/codes";
 import { scanTexts } from "@/reader/scan";
 import type { Request } from "@/reader/contracts";
 import type { Settings } from "@/settings/model";
@@ -12,7 +13,7 @@ async function execute(request: Request, settings: Settings) {
       const started = performance.now();
       const udpipeAllowed =
         settings.udpipe &&
-        settings.studyLanguage === "cs" &&
+        !!udpipeModel(settings.studyLanguage) &&
         (await udpipePermission());
       console.info("[SrsReader] Background scan started", {
         blocks: request.texts.length,
@@ -25,13 +26,15 @@ async function execute(request: Request, settings: Settings) {
         udpipeAllowed,
       });
       const analyses = udpipeAllowed
-        ? await analyzeTexts(request.texts).catch((error) => {
-            console.warn("SrsReader: contextual analysis unavailable", error);
-            return request.texts.map(() => ({
-              surfaces: [],
-              retryAt: Date.now() + 10 * 60 * 1000,
-            }));
-          })
+        ? await analyzeTexts(request.texts, settings.studyLanguage).catch(
+            (error) => {
+              console.warn("SrsReader: contextual analysis unavailable", error);
+              return request.texts.map(() => ({
+                surfaces: [],
+                retryAt: Date.now() + 10 * 60 * 1000,
+              }));
+            },
+          )
         : [];
       const analysisMs = Math.round(performance.now() - started);
       console.info("[SrsReader] Analysis finished", {

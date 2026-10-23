@@ -1,6 +1,7 @@
 {
   "af": {
-    "iso3": "afr"
+    "iso3": "afr",
+    "udpipe": "afrikaans-afribooms-ud-2.17-251125"
   },
   "am": {
     "iso3": "amh"
@@ -10,7 +11,8 @@
   },
   "ar": {
     "iso3": "ara",
-    "morphology": "ar"
+    "morphology": "ar",
+    "udpipe": "arabic-padt-ud-2.17-251125"
   },
   "as": {
     "iso3": "asm"
@@ -26,11 +28,13 @@
     "iso3": "aze"
   },
   "be": {
-    "iso3": "bel"
+    "iso3": "bel",
+    "udpipe": "belarusian-hse-ud-2.17-251125"
   },
   "bg": {
     "iso3": "bul",
-    "morphology": "bg"
+    "morphology": "bg",
+    "udpipe": "bulgarian-btb-ud-2.17-251125"
   },
   "bho": {
     "iso3": "bho"
@@ -41,6 +45,10 @@
   "bn": {
     "iso3": "ben"
   },
+  "bor": {
+    "udpipe": "bororo-bdt-ud-2.17-251125",
+    "iso3": "bor"
+  },
   "br": {
     "iso3": "bre"
   },
@@ -50,7 +58,8 @@
   },
   "ca": {
     "iso3": "cat",
-    "morphology": "ca"
+    "morphology": "ca",
+    "udpipe": "catalan-ancora-ud-2.17-251125"
   },
   "ceb": {
     "iso3": "ceb"
@@ -64,21 +73,32 @@
   "co": {
     "iso3": "cos"
   },
+  "cop": {
+    "udpipe": "coptic-scriptorium-ud-2.17-251125",
+    "iso3": "cop"
+  },
   "cs": {
     "iso3": "ces",
-    "morphology": "cs"
+    "morphology": "cs",
+    "udpipe": "czech-fictree-ud-2.17-251125"
+  },
+  "cu": {
+    "udpipe": "old_church_slavonic-proiel-ud-2.17-251125"
   },
   "cy": {
     "iso3": "cym",
-    "morphology": "cy"
+    "morphology": "cy",
+    "udpipe": "welsh-ccg-ud-2.17-251125"
   },
   "da": {
     "iso3": "dan",
-    "morphology": "da"
+    "morphology": "da",
+    "udpipe": "danish-ddt-ud-2.17-251125"
   },
   "de": {
     "iso3": "deu",
-    "morphology": "de"
+    "morphology": "de",
+    "udpipe": "german-hdt-ud-2.17-251125"
   },
   "dv": {
     "iso3": "div"
@@ -86,13 +106,19 @@
   "ee": {
     "iso3": "ewe"
   },
+  "egy": {
+    "udpipe": "egyptian-ujaen-ud-2.17-251125",
+    "iso3": "egy"
+  },
   "el": {
     "iso3": "ell",
-    "morphology": "el"
+    "morphology": "el",
+    "udpipe": "greek-gud-ud-2.17-251125"
   },
   "en": {
     "iso3": "eng",
-    "morphology": "en"
+    "morphology": "en",
+    "udpipe": "english-lines-ud-2.17-251125"
   },
   "eo": {
     "iso3": "epo",
@@ -100,54 +126,83 @@
   },
   "es": {
     "iso3": "spa",
-    "morphology": "es"
+    "morphology": "es",
+    "udpipe": "spanish-ancora-ud-2.17-251125"
   },
   "et": {
     "iso3": "est",
-    "morphology": "et"
+    "morphology": "et",
+    "udpipe": "estonian-edt-ud-2.17-251125"
   },
   "eu": {
-    "iso3": "eus"
+    "iso3": "eus",
+    "udpipe": "basque-bdt-ud-2.17-251125"
   },
   "fa": {
     "iso3": "pes",
-    "morphology": "fa"
+    "morphology": "fa",
+    "udpipe": "persian-perdt-ud-2.17-251125"
   },
   "fi": {
     "iso3": "fin",
-    "morphology": "fi"
+    "morphology": "fi",
+    "udpipe": "finnish-tdt-ud-2.17-251125"
   },
   "fil": {
     "iso3": "tgl",
     "morphology": "tl"
   },
   "fo": {
-    "iso3": "fao"
+    "iso3": "fao",
+    "udpipe": "faroese-farpahc-ud-2.17-251125"
   },
   "fr": {
     "iso3": "fra",
-    "morphology": "fr"
+    "morphology": "fr",
+    "udpipe": "french-gsd-ud-2.17-251125"
+  },
+  "frm": {
+    "udpipe": "middle_french-profiterole-ud-2.17-251125",
+    "iso3": "frm"
+  },
+  "fro": {
+    "udpipe": "old_french-profiterole-ud-2.17-251125",
+    "iso3": "fro"
   },
   "fy": {
     "iso3": "fry"
   },
   "ga": {
     "iso3": "gle",
-    "morphology": "ga"
+    "morphology": "ga",
+    "udpipe": "irish-idt-ud-2.17-251125"
   },
   "gd": {
     "iso3": "gla",
-    "morphology": "gd"
+    "morphology": "gd",
+    "udpipe": "scottish_gaelic-arcosg-ud-2.17-251125"
   },
   "gl": {
     "iso3": "glg",
-    "morphology": "gl"
+    "morphology": "gl",
+    "udpipe": "galician-ctg-ud-2.17-251125"
   },
   "gn": {
     "iso3": "grn"
   },
+  "got": {
+    "udpipe": "gothic-proiel-ud-2.17-251125",
+    "iso3": "got"
+  },
+  "grc": {
+    "udpipe": "ancient_greek-perseus-ud-2.17-251125",
+    "iso3": "grc"
+  },
   "gu": {
     "iso3": "guj"
+  },
+  "gv": {
+    "udpipe": "manx-cadhan-ud-2.17-251125"
   },
   "ha": {
     "iso3": "hau"
@@ -155,35 +210,50 @@
   "haw": {
     "iso3": "haw"
   },
+  "hbo": {
+    "udpipe": "ancient_hebrew-ptnk-ud-2.17-251125",
+    "iso3": "hbo"
+  },
   "he": {
     "iso3": "heb",
-    "morphology": "he"
+    "morphology": "he",
+    "udpipe": "hebrew-iahltknesset-ud-2.17-251125"
   },
   "hi": {
     "iso3": "hin",
-    "morphology": "hi"
+    "morphology": "hi",
+    "udpipe": "hindi-hdtb-ud-2.17-251125"
   },
   "hr": {
     "iso3": "hrv",
-    "morphology": "hbs"
+    "morphology": "hbs",
+    "udpipe": "croatian-set-ud-2.17-251125"
   },
   "ht": {
-    "iso3": "hat"
+    "iso3": "hat",
+    "udpipe": "haitian_creole-adolphe-ud-2.17-251125"
   },
   "hu": {
     "iso3": "hun",
-    "morphology": "hu"
+    "morphology": "hu",
+    "udpipe": "hungarian-szeged-ud-2.17-251125"
   },
   "hy": {
     "iso3": "hye",
-    "morphology": "hy"
+    "morphology": "hy",
+    "udpipe": "armenian-armtdp-ud-2.17-251125"
+  },
+  "hyw": {
+    "udpipe": "western_armenian-armtdp-ud-2.17-251125",
+    "iso3": "hyw"
   },
   "ia": {
     "iso3": "ina"
   },
   "id": {
     "iso3": "ind",
-    "morphology": "id"
+    "morphology": "id",
+    "udpipe": "indonesian-csui-ud-2.17-251125"
   },
   "ig": {
     "iso3": "ibo"
@@ -193,24 +263,29 @@
   },
   "is": {
     "iso3": "isl",
-    "morphology": "is"
+    "morphology": "is",
+    "udpipe": "icelandic-gc-ud-2.17-251125"
   },
   "it": {
     "iso3": "ita",
-    "morphology": "it"
+    "morphology": "it",
+    "udpipe": "italian-partut-ud-2.17-251125"
   },
   "ja": {
-    "iso3": "jpn"
+    "iso3": "jpn",
+    "udpipe": "japanese-gsd-ud-2.17-251125"
   },
   "jv": {
     "iso3": "jav"
   },
   "ka": {
     "iso3": "kat",
-    "morphology": "ka"
+    "morphology": "ka",
+    "udpipe": "georgian-gnc-ud-2.17-251125"
   },
   "kk": {
-    "iso3": "kaz"
+    "iso3": "kaz",
+    "udpipe": "kazakh-ud-2.0-170801"
   },
   "km": {
     "iso3": "khm"
@@ -219,7 +294,8 @@
     "iso3": "kan"
   },
   "ko": {
-    "iso3": "kor"
+    "iso3": "kor",
+    "udpipe": "korean-kaist-ud-2.17-251125"
   },
   "kok": {
     "iso3": "gom"
@@ -228,11 +304,13 @@
     "iso3": "kmr"
   },
   "ky": {
-    "iso3": "kir"
+    "iso3": "kir",
+    "udpipe": "kyrgyz-ktmu-ud-2.17-251125"
   },
   "la": {
     "iso3": "lat",
-    "morphology": "la"
+    "morphology": "la",
+    "udpipe": "latin-perseus-ud-2.17-251125"
   },
   "lb": {
     "iso3": "ltz",
@@ -249,11 +327,17 @@
   },
   "lt": {
     "iso3": "lit",
-    "morphology": "lt"
+    "morphology": "lt",
+    "udpipe": "lithuanian-alksnis-ud-2.17-251125"
   },
   "lv": {
     "iso3": "lvs",
-    "morphology": "lv"
+    "morphology": "lv",
+    "udpipe": "latvian-lvtb-ud-2.17-251125"
+  },
+  "lzh": {
+    "udpipe": "classical_chinese-kyoto-ud-2.17-251125",
+    "iso3": "lzh"
   },
   "mai": {
     "iso3": "mai"
@@ -279,41 +363,60 @@
     "iso3": "mni"
   },
   "mr": {
-    "iso3": "mar"
+    "iso3": "mar",
+    "udpipe": "marathi-ufal-ud-2.17-251125"
   },
   "ms": {
     "iso3": "zsm",
     "morphology": "ms"
   },
   "mt": {
-    "iso3": "mlt"
+    "iso3": "mlt",
+    "udpipe": "maltese-mudt-ud-2.17-251125"
   },
   "my": {
     "iso3": "mya"
   },
+  "myv": {
+    "udpipe": "erzya-jr-ud-2.17-251125",
+    "iso3": "myv"
+  },
+  "naq": {
+    "udpipe": "khoekhoe-kdt-ud-2.17-251125",
+    "iso3": "naq"
+  },
   "nb": {
     "iso3": "nob",
-    "morphology": "nb"
+    "morphology": "nb",
+    "udpipe": "norwegian-bokmaal-ud-2.17-251125"
+  },
+  "nds": {
+    "udpipe": "low_saxon-lsdc-ud-2.17-251125",
+    "iso3": "nds"
   },
   "ne": {
     "iso3": "npi"
   },
   "nl": {
     "iso3": "nld",
-    "morphology": "nl"
+    "morphology": "nl",
+    "udpipe": "dutch-lassysmall-ud-2.17-251125"
   },
   "nn": {
     "iso3": "nno",
-    "morphology": "nn"
+    "morphology": "nn",
+    "udpipe": "norwegian-nynorsk-ud-2.17-251125"
   },
   "no": {
-    "morphology": "nb"
+    "morphology": "nb",
+    "udpipe": "norwegian-bokmaal-ud-2.17-251125"
   },
   "ny": {
     "iso3": "nya"
   },
   "oc": {
-    "iso3": "oci"
+    "iso3": "oci",
+    "udpipe": "occitan-ttb-ud-2.17-251125"
   },
   "om": {
     "iso3": "gaz"
@@ -321,19 +424,46 @@
   "or": {
     "iso3": "ori"
   },
+  "orv": {
+    "udpipe": "old_east_slavic-birchbark-ud-2.17-251125",
+    "iso3": "orv"
+  },
+  "ota": {
+    "udpipe": "ottoman_turkish-boun-ud-2.17-251125",
+    "iso3": "ota"
+  },
   "pa": {
     "iso3": "pan"
   },
+  "pcm": {
+    "udpipe": "naija-nsc-ud-2.17-251125",
+    "iso3": "pcm"
+  },
   "pl": {
     "iso3": "pol",
-    "morphology": "pl"
+    "morphology": "pl",
+    "udpipe": "polish-pdb-ud-2.17-251125"
+  },
+  "pro": {
+    "udpipe": "old_occitan-corag-ud-2.17-251125",
+    "iso3": "pro"
   },
   "ps": {
     "iso3": "pus"
   },
   "pt": {
     "iso3": "por",
-    "morphology": "pt"
+    "morphology": "pt",
+    "udpipe": "portuguese-cintil-ud-2.17-251125"
+  },
+  "qaf": {
+    "udpipe": "maghrebi_arabic_french-arabizi-ud-2.17-251125"
+  },
+  "qpm": {
+    "udpipe": "pomak-philotis-ud-2.17-251125"
+  },
+  "qtd": {
+    "udpipe": "turkish_german-sagt-ud-2.17-251125"
   },
   "qu": {
     "iso3": "que"
@@ -343,31 +473,48 @@
   },
   "ro": {
     "iso3": "ron",
-    "morphology": "ro"
+    "morphology": "ro",
+    "udpipe": "romanian-rrt-ud-2.17-251125"
   },
   "ru": {
     "iso3": "rus",
-    "morphology": "ru"
+    "morphology": "ru",
+    "udpipe": "russian-taiga-ud-2.17-251125"
   },
   "rw": {
     "iso3": "kin"
   },
   "sa": {
-    "iso3": "san"
+    "iso3": "san",
+    "udpipe": "sanskrit-vedic-ud-2.17-251125"
+  },
+  "say": {
+    "udpipe": "zaar-autogramm-ud-2.17-251125",
+    "iso3": "say"
   },
   "sd": {
-    "iso3": "snd"
+    "iso3": "snd",
+    "udpipe": "sindhi-isra-ud-2.17-251125"
+  },
+  "sdh": {
+    "udpipe": "southern_kurdish-garrusi-ud-2.17-251125",
+    "iso3": "sdh"
+  },
+  "se": {
+    "udpipe": "north_sami-giella-ud-2.17-251125"
   },
   "si": {
     "iso3": "sin"
   },
   "sk": {
     "iso3": "slk",
-    "morphology": "sk"
+    "morphology": "sk",
+    "udpipe": "slovak-snk-ud-2.17-251125"
   },
   "sl": {
     "iso3": "slv",
-    "morphology": "sl"
+    "morphology": "sl",
+    "udpipe": "slovenian-ssj-ud-2.17-251125"
   },
   "sm": {
     "iso3": "smo"
@@ -380,11 +527,13 @@
   },
   "sq": {
     "iso3": "sqi",
-    "morphology": "sq"
+    "morphology": "sq",
+    "udpipe": "albanian-staf-ud-2.17-251125"
   },
   "sr": {
     "iso3": "srp",
-    "morphology": "hbs"
+    "morphology": "hbs",
+    "udpipe": "serbian-set-ud-2.17-251125"
   },
   "st": {
     "iso3": "sot"
@@ -394,23 +543,27 @@
   },
   "sv": {
     "iso3": "swe",
-    "morphology": "sv"
+    "morphology": "sv",
+    "udpipe": "swedish-lines-ud-2.17-251125"
   },
   "sw": {
     "iso3": "swc",
     "morphology": "sw"
   },
   "ta": {
-    "iso3": "tam"
+    "iso3": "tam",
+    "udpipe": "tamil-ttb-ud-2.17-251125"
   },
   "te": {
-    "iso3": "tel"
+    "iso3": "tel",
+    "udpipe": "telugu-mtg-ud-2.17-251125"
   },
   "tg": {
     "iso3": "tgk"
   },
   "th": {
-    "iso3": "tha"
+    "iso3": "tha",
+    "udpipe": "thai-tud-ud-2.17-251125"
   },
   "ti": {
     "iso3": "tir"
@@ -426,7 +579,8 @@
   },
   "tr": {
     "iso3": "tur",
-    "morphology": "tr"
+    "morphology": "tr",
+    "udpipe": "turkish-boun-ud-2.17-251125"
   },
   "ts": {
     "iso3": "tso"
@@ -435,41 +589,61 @@
     "iso3": "tat"
   },
   "ug": {
-    "iso3": "uig"
+    "iso3": "uig",
+    "udpipe": "uyghur-udt-ud-2.17-251125"
   },
   "uk": {
     "iso3": "ukr",
-    "morphology": "uk"
+    "morphology": "uk",
+    "udpipe": "ukrainian-iu-ud-2.17-251125"
   },
   "ur": {
-    "iso3": "urd"
+    "iso3": "urd",
+    "udpipe": "urdu-udtb-ud-2.17-251125"
   },
   "uz": {
-    "iso3": "uzb"
+    "iso3": "uzb",
+    "udpipe": "uzbek-uzudt-ud-2.17-251125"
   },
   "vi": {
-    "iso3": "vie"
+    "iso3": "vie",
+    "udpipe": "vietnamese-vtb-ud-2.17-251125"
   },
   "wa": {
     "iso3": "wln"
   },
   "wo": {
-    "iso3": "wol"
+    "iso3": "wol",
+    "udpipe": "wolof-wtb-ud-2.17-251125"
+  },
+  "wuu": {
+    "udpipe": "shanghainese-shud-ud-2.17-251125",
+    "iso3": "wuu"
+  },
+  "xcl": {
+    "udpipe": "classical_armenian-caval-ud-2.17-251125",
+    "iso3": "xcl"
   },
   "xh": {
     "iso3": "xho"
   },
   "yi": {
-    "iso3": "yid"
+    "iso3": "yid",
+    "udpipe": "yiddish-yitb-ud-2.17-251125"
   },
   "yo": {
     "iso3": "yor"
+  },
+  "yrl": {
+    "udpipe": "nheengatu-complin-ud-2.17-251125",
+    "iso3": "yrl"
   },
   "yue": {
     "iso3": "yue"
   },
   "zh": {
-    "iso3": "cmn"
+    "iso3": "cmn",
+    "udpipe": "chinese-gsdsimp-ud-2.17-251125"
   },
   "zu": {
     "iso3": "zul"

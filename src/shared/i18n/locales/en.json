@@ -452,8 +452,8 @@
   "settings_review_session": "Review cards",
   "settings_daily_study": "New words",
   "settings_scheduling": "Scheduling",
-  "use_udpipe_for_czech": "Use UDPipe for Czech",
-  "udpipe_help": "Sends Czech page text to LINDAT for grammar analysis. Successful results stay cached in this browser. If the service fails, local parsing is used for 10 minutes. LINDAT may use submitted text to improve its systems. Models are for noncommercial use.",
+  "use_udpipe": "Use UDPipe",
+  "udpipe_help": "Sends page text in your study language to LINDAT for grammar analysis. Available for languages supported by UDPipe. Successful results stay cached in this browser. If the service fails, local parsing is used for 10 minutes. LINDAT may use submitted text to improve its systems. Models are for noncommercial use.",
   "udpipe_permission_denied": "Permission to send page text was not granted. Local parsing remains active.",
   "automatically_ignore_proper_names": "Automatically ignore proper names",
   "ignore_proper_names_help": "Uses the Ignored appearance for names recognized by UDPipe. Saved word states take priority. Nationality words are excluded. Names remain searchable and are not saved as ignored.",
@@ -785,5 +785,15 @@
   "definition_preview": "Preview",
   "definition_tags": "Tags",
   "no_definition_tags": "No tags available",
-  "loading_definition_tags": "Loading tags…"
+  "loading_definition_tags": "Loading tags…",
+  "language_name_hbo": "Ancient Hebrew",
+  "language_name_bor": "Bororo",
+  "language_name_xcl": "Classical Armenian",
+  "language_name_lzh": "Classical Chinese",
+  "language_name_qaf": "Maghrebi Arabic and French",
+  "language_name_orv": "Old East Slavic",
+  "language_name_qpm": "Pomak",
+  "language_name_qtd": "Turkish and German",
+  "language_name_hyw": "Western Armenian",
+  "language_name_say": "Zaar"
 }

@@ -7,17 +7,17 @@ import {
   type TextAnalysis,
 } from "@/languages/analysis";
 import { parseConllu } from "@/languages/conllu";
+import { udpipeModel } from "@/languages/codes";
 import { udpipePermission } from "@/languages/udpipe-permission";
 import { db } from "@/platform/database/db";
 import { getSettings } from "@/settings/store";
 
-const model = "czech-fictree-ud-2.17-251125";
 const budget = 512 * 1024;
 const timeoutMs = 30_000;
 const encoder = new TextEncoder();
 const inFlight = new Map<string, Promise<AnalysisRecord>>();
 
-export function analysisChunks(text: string) {
+export function analysisChunks(text: string, language: string) {
   const chunks: { text: string; start: number }[] = [];
   let start = 0;
   let current = "";
@@ -34,7 +34,7 @@ export function analysisChunks(text: string) {
     current += piece;
     size += length;
   }
-  for (const { segment } of new Intl.Segmenter("cs", {
+  for (const { segment } of new Intl.Segmenter(language, {
     granularity: "sentence",
   }).segment(text)) {
     const length = encoder.encode(segment).length;
@@ -55,17 +55,21 @@ export function analysisChunks(text: string) {
   return chunks;
 }
 
-async function cacheKey(text: string) {
+async function cacheKey(text: string, language: string, model: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
-    encoder.encode(JSON.stringify(["udpipe", model, "ranges", "cs", text])),
+    encoder.encode(JSON.stringify(["udpipe", model, "ranges", language, text])),
   );
   return [...new Uint8Array(digest)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
 }
 
-async function processBatch(records: AnalysisRecord[]) {
+async function processBatch(
+  records: AnalysisRecord[],
+  language: string,
+  model: string,
+) {
   const started = performance.now();
   const batch = records[0]!.key.slice(0, 8);
   const text = records.map((record) => record.text).join("\n\n");
@@ -78,7 +82,7 @@ async function processBatch(records: AnalysisRecord[]) {
     if (
       !settings.udpipe ||
       settings.paused ||
-      settings.studyLanguage !== "cs" ||
+      settings.studyLanguage !== language ||
       !(await udpipePermission())
     ) {
       console.info("[SrsReader] UDPipe request cancelled", {
@@ -224,14 +228,19 @@ async function processBatch(records: AnalysisRecord[]) {
   return records;
 }
 
-export async function analyzeTexts(texts: string[]) {
+export async function analyzeTexts(texts: string[], language: string) {
+  const model = udpipeModel(language);
+  if (!model) return [];
   const started = performance.now();
-  const chunks = texts.map(analysisChunks);
+  const chunks = texts.map((text) => analysisChunks(text, language));
   const unique = [
     ...new Set(chunks.flatMap((parts) => parts.map((part) => part.text))),
   ];
   const records = await Promise.all(
-    unique.map(async (text) => ({ key: await cacheKey(text), text })),
+    unique.map(async (text) => ({
+      key: await cacheKey(text, language, model),
+      text,
+    })),
   );
   const stored = await db.analyses.bulkGet(records.map((record) => record.key));
   const results = new Map<string, Promise<AnalysisRecord>>();
@@ -288,7 +297,7 @@ export async function analyzeTexts(texts: string[]) {
     elapsedMs: Math.round(performance.now() - started),
   });
   for (const batch of batches) {
-    void processBatch(batch)
+    void processBatch(batch, language, model)
       .then(
         (values) => {
           for (const value of values) complete.get(value.key)!(value);

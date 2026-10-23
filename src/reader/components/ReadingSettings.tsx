@@ -14,6 +14,7 @@ import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { udpipePermission } from "@/languages/udpipe-permission";
+import { udpipeModel } from "@/languages/codes";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { useState } from "react";
 
@@ -64,10 +65,10 @@ export function ReadingSettings({
             }
           />
           <Switch
-            label={t("use_udpipe_for_czech")}
+            label={t("use_udpipe")}
             description={t("udpipe_help")}
             checked={settings.udpipe}
-            disabled={settings.studyLanguage !== "cs" || parserBusy}
+            disabled={!udpipeModel(settings.studyLanguage) || parserBusy}
             onChange={(event) => void changeParser(event.currentTarget.checked)}
           />
           <ErrorBox error={parserError} />
@@ -75,7 +76,7 @@ export function ReadingSettings({
             label={t("automatically_ignore_proper_names")}
             description={t("ignore_proper_names_help")}
             checked={settings.ignoreProperNames}
-            disabled={settings.studyLanguage !== "cs" || !settings.udpipe}
+            disabled={!udpipeModel(settings.studyLanguage) || !settings.udpipe}
             onChange={(event) =>
               void update({ ignoreProperNames: event.currentTarget.checked })
             }
