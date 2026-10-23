@@ -387,7 +387,7 @@
   "rwkv_mode": "RWKV scheduling mode",
   "rwkv_mode_curve": "Curve",
   "rwkv_mode_instant": "Instant",
-  "rwkv_mode_help": "Curve uses the forgetting curve saved after an answer. Instant queries recall at future review dates and can take longer. Both use your desired retention. A change affects future answers. Use Reschedule existing cards to update current due dates.",
+  "rwkv_mode_help": "Curve uses the forgetting curve saved after an answer. Instant queries recall at future review dates and can take longer. Its interval cannot exceed the Curve interval. Both use your desired retention. A change affects future answers. Use Reschedule existing cards to update current due dates.",
   "rwkv_ready": "RWKV is ready for offline reviews.",
   "rwkv_rebuild": "Rebuild RWKV state",
   "srs_learning": "Learning and review days",

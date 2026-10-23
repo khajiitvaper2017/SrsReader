@@ -75,7 +75,7 @@ export async function commitReview({
         scheduler:
           settings.algorithm === "fsrs"
             ? "ts-fsrs@5.4.2/FSRS-6"
-            : "rwkv-sm40v2-w8-s8",
+            : "rwkv-sm55-w8-s8",
         retention: result.retention,
         durationMs,
         sequence,

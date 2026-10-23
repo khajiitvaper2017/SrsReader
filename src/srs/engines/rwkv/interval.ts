@@ -17,23 +17,24 @@ export function rwkvInterval(
   settings: SchedulingPreferences,
   now = memory.card.features.lastTime,
 ) {
-  if (settings.rwkvMode === "curve")
-    return model.interval(memory.card.curve, retention);
+  const curveInterval = model.interval(memory.card.curve, retention);
+  if (settings.rwkvMode === "curve") return curveInterval;
 
   const card = memory.card.features;
   const global = memory.meta.features;
   const states: EntityStates = new Map(
     memory.entities.map((entity) => [entity.id, unpack(entity.state)]),
   );
-  const maximum = 36500;
   const minimum = Math.min(
-    maximum,
+    36500,
     Math.max(
       settings.minimumInterval,
       studyDay(now, settings.rolloverHour) - card.lastDay,
       (global.previousDay ?? card.lastDay) - card.lastDay,
     ),
   );
+  // Instant predictions need not decay to the target; the curve bounds the search.
+  const maximum = Math.max(minimum, Math.ceil(curveInterval));
   const recall = (days: number) => {
     const day = card.lastDay + days;
     const row = buildFeatures(
@@ -59,7 +60,7 @@ export function rwkvInterval(
   let high = minimum;
   // shortcut: sampled dates can miss brief recall dips; use a full day grid if exact first crossings are needed.
   while (recall(high) > retention) {
-    if (high === maximum) return maximum;
+    if (high === maximum) return Math.max(minimum, curveInterval);
     low = high;
     high = Math.min(maximum, Math.max(high + 1, Math.ceil(high * 1.5)));
   }
@@ -68,5 +69,5 @@ export function rwkvInterval(
     if (recall(middle) > retention) low = middle;
     else high = middle;
   }
-  return high;
+  return Math.max(minimum, Math.min(high, curveInterval));
 }

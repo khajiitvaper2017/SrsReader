@@ -19,7 +19,11 @@ export const reviewSchema = z.object({
     z.string(),
     z.union([z.number().finite(), z.string(), z.null()]),
   ),
-  scheduler: z.enum(["ts-fsrs@5.4.2/FSRS-6", "rwkv-sm40v2-w8-s8"]),
+  scheduler: z.enum([
+    "ts-fsrs@5.4.2/FSRS-6",
+    "rwkv-sm40v2-w8-s8",
+    "rwkv-sm55-w8-s8",
+  ]),
   sequence: z.number().int().nonnegative().default(0),
   active: z.boolean().default(true),
   durationMs: z.number().finite().nonnegative().nullable().default(null),
