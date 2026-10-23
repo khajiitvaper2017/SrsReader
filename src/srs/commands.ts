@@ -71,7 +71,7 @@ async function execute(request: Request, settings: Settings) {
     }
     case "sentenceExamples": {
       const word = await getWord(request.id);
-      return word ? sentenceExamples(word) : [];
+      return word ? sentenceExamples(word, settings) : [];
     }
     case "grade": {
       const word = await snapshot(

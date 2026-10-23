@@ -46,8 +46,10 @@ export function useReviewSession({
     if (word)
       void srsClient({ action: "sentenceExamples", id: word.id })
         .then((value) => {
-          if (alive)
+          if (alive) {
             setSentences({ id: word.id, contexts: value, loading: false });
+            setExample(0);
+          }
         })
         .catch((error) => {
           if (alive) {
@@ -58,7 +60,7 @@ export function useReviewSession({
     return () => {
       alive = false;
     };
-  }, [word?.id, settings.nativeLanguage]);
+  }, [word?.id, word?.version, settings]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const load = useCallback(() => {
     if (busyRef.current) return;

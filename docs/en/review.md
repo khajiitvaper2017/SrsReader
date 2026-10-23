@@ -33,7 +33,7 @@ Confirm the action in the dialog. These actions cannot be undone. Cached sentenc
 
 ## Sentences from reading
 
-Review sentences come from the permanent cache of texts you have parsed. Each sentence has more than four words. Sentences where all words except the target word are known come first. If none are available, sentences with fewer other unknown words come next. Mark words as mastered to improve this selection. Parse more pages to add examples. Sentences and their translations stay in the reading cache, not in cards.
+Review sentences come from the permanent cache of texts you have parsed. Each sentence has more than four words. With **Settings → Reading → Use UDPipe** enabled, sentences with a different part of speech for the target word are excluded. If a sentence contains several matches, a matching occurrence is used. Sentences where all words except the target word are known come first. If none are available, sentences with fewer other unknown words come next. Mark words as mastered to improve this selection. Parse more pages to add examples. Sentences and their translations stay in the reading cache, not in cards.
 
 ## Review session
 

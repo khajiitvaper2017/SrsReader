@@ -242,3 +242,30 @@ export function wordMatchesGrammar(
     )
   );
 }
+
+export function meaningsMatchPartOfSpeech(
+  meanings: Meaning[],
+  grammar?: OccurrenceGrammar,
+) {
+  const expected = new Set(
+    meanings.flatMap((meaning) =>
+      meaningTags(meaning).flatMap((tag) => {
+        const explicit = tag.match(/^UPOS=(.+)$/u);
+        if (explicit) return explicit[1]!.split(",");
+        const rule = tagFeatures.get(tag.toLowerCase());
+        if (rule?.[0] === "UPOS") return rule[1];
+        return tag.toLowerCase() === "vr" ? ["VERB", "AUX"] : [];
+      }),
+    ),
+  );
+  if (!grammar || !expected.size) return true;
+  const parsed = grammar.group
+    ? ["VERB"]
+    : grammar.sentence.tokens
+        .filter((token) => grammar.tokenIds.includes(token.id))
+        .map((token) => token.upos);
+  return (
+    !parsed.length ||
+    parsed.some((pos) => !pos || pos === "_" || expected.has(pos))
+  );
+}
