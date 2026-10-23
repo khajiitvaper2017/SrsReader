@@ -865,5 +865,19 @@
   "study_clear_deck_title": "Clear {{name}}?",
   "study_delete_deck_title": "Delete {{name}}?",
   "study_clear_deck_confirm": "This deletes all saved words in this deck, their review history, and their downloaded recordings, including mastered and suspended words. The empty deck and cached sentences are kept. This cannot be undone.",
-  "study_delete_deck_confirm": "This deletes the deck and all its saved words, their review history, and their downloaded recordings, including mastered and suspended words. Cached sentences are kept. This cannot be undone."
+  "study_delete_deck_confirm": "This deletes the deck and all its saved words, their review history, and their downloaded recordings, including mastered and suspended words. Cached sentences are kept. This cannot be undone.",
+  "study_view_words": "View words",
+  "words_deck": "Deck",
+  "words_all_decks": "All decks",
+  "words_result_count_one": "{{count}} word",
+  "words_result_count_other": "{{count}} words",
+  "words_scope": "{{language}} · {{deck}}",
+  "words_empty_deck": "This group has no saved words. Add words while reading or create a frequency deck in Study.",
+  "words_no_matching_filters": "Change the search or status filter to see more words.",
+  "words_pages": "Word list pages",
+  "pagination_first": "First page",
+  "pagination_previous": "Previous page",
+  "pagination_next": "Next page",
+  "pagination_last": "Last page",
+  "words_page": "Page {{page}}"
 }

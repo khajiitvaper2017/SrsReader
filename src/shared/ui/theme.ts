@@ -21,6 +21,7 @@ import {
   NativeSelect,
   NumberInput,
   Paper,
+  Pagination,
   Radio,
   Select,
   SegmentedControl,
@@ -245,6 +246,9 @@ export function createUITheme(
         },
       }),
       Paper: Paper.extend({ defaultProps: { withBorder: true, p: "md" } }),
+      Pagination: Pagination.extend({
+        defaultProps: { size: `input-${controlSize}` },
+      }),
       FileButton: FileButton.extend({
         defaultProps: {
           inputProps: {

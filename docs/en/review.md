@@ -16,6 +16,12 @@ Use **Add language** to keep another language in this list.
 
 The deck checks the first N unique entries. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
 
+## Browse words in a deck
+
+In **Study**, open a deck’s three-dot menu and select **View words**. The **Words** page opens with that language and deck selected.
+
+Use **Language** and **Deck** to browse another group. **All decks** combines mined words and frequency decks without duplicates. The list includes mastered and suspended words. Browsing a language does not change your reading language. Search by word or reading and use the status filter to narrow the list. Lists show 50 words per page. Select a word to open its details and edit its definition, mastery, suspension, or retention setting.
+
 ## Clear or delete a deck
 
 Open the three-dot menu at the end of a deck row in **Study**.

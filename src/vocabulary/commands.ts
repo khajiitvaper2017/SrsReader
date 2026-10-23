@@ -9,6 +9,8 @@ import { occurrenceAnalysis } from "@/languages/udpipe";
 import { folded } from "@/languages/text";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
+import { db } from "@/platform/database/db";
+import { studyGroups, wordsInDeck } from "@/srs/deck-words";
 import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import type { Request } from "@/vocabulary/contracts";
@@ -145,14 +147,18 @@ async function execute(request: Request, settings: Settings) {
       await notify(saved.id);
       return;
     }
-    case "words":
-      return (await languageWords(settings.studyLanguage))
+    case "words": {
+      const language = request.language || settings.studyLanguage;
+      const [words, decks] = await Promise.all([
+        languageWords(language),
+        db.decks.where("language").equals(language).toArray(),
+      ]);
+      return wordsInDeck(studyGroups(words, decks), request.deckId)
         .filter((w) =>
-          folded(w.lemma, settings.studyLanguage).includes(
-            folded(request.query, settings.studyLanguage),
-          ),
+          folded(w.lemma, language).includes(folded(request.query, language)),
         )
         .sort((a, b) => b.updated - a.updated);
+    }
     case "retentionOverride":
       await setRetentionOverride(request);
       await notify(request.id);

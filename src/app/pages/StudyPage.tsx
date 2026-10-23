@@ -26,7 +26,14 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { srsClient } from "@/srs/client";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
 import type { Responses } from "@/srs/contracts";
-import { BookOpen, Eraser, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  Eraser,
+  List,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type DeckAction = {
@@ -393,6 +400,14 @@ function StudyRows({
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+                  <Menu.Item
+                    component="a"
+                    href={`#words/${row.language}/${deck.id}`}
+                    leftSection={<List size={16} />}
+                  >
+                    {t("study_view_words")}
+                  </Menu.Item>
+                  <Menu.Divider />
                   <Menu.Item
                     color="red"
                     leftSection={<Eraser size={16} />}

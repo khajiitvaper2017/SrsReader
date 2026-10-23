@@ -153,11 +153,19 @@ export async function resolved(
   occurrence?: Occurrence,
 ): Promise<LookupWord> {
   const settings = await getSettings();
-  const match = (await lookup(term, settings, false, occurrence)).words.find(
-    (w) => w.id === id,
-  );
-  if (match) return match;
   const saved = await db.vocabulary.get(id);
+  const match = (
+    await lookup(
+      term,
+      {
+        ...settings,
+        studyLanguage: saved?.language || settings.studyLanguage,
+      },
+      false,
+      occurrence,
+    )
+  ).words.find((w) => w.id === id);
+  if (match) return match;
   if (saved)
     return {
       id: saved.id,

@@ -70,7 +70,7 @@ export function App() {
                 {t("study_end_session")}
               </Button>
             ) : (
-              <Group component="nav" aria-label={t("pages")}>
+              <Group component="nav" aria-label={t("pages")} align="stretch">
                 {(inSetup
                   ? [
                       ["setup", t("setup")],
@@ -130,8 +130,13 @@ export function App() {
               setSettings={setSettings}
               tab={page.split("/")[1]}
             />
-          ) : page === "words" ? (
-            <WordsPage settings={settings} />
+          ) : page === "words" || page.startsWith("words/") ? (
+            <WordsPage
+              key={page}
+              settings={settings}
+              language={page.split("/")[1] || settings.studyLanguage}
+              deckId={page.split("/")[2]}
+            />
           ) : reviewing ? (
             <ReviewPage
               key={`${settings.studyLanguage}:${deckId || ""}`}

@@ -2,6 +2,7 @@ import { translationSchema } from "@/translation/model";
 import { contextSchema, type Vocabulary } from "@/vocabulary/model";
 import { z } from "zod";
 import { occurrenceSchema } from "@/languages/analysis";
+import { languageSchema } from "@/languages/model";
 
 export const selection = {
   term: z.string().min(1).max(1000),
@@ -50,7 +51,12 @@ export const requests = [
     definition: z.string().min(1).optional(),
   }),
   z.object({ action: z.literal("refreshWord"), id: z.string() }),
-  z.object({ action: z.literal("words"), query: z.string().default("") }),
+  z.object({
+    action: z.literal("words"),
+    query: z.string().default(""),
+    language: languageSchema.optional(),
+    deckId: z.string().optional(),
+  }),
   z.object({
     action: z.literal("retentionOverride"),
     id: z.string(),
