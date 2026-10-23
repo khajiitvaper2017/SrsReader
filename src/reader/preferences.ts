@@ -20,6 +20,7 @@ export const readerPreferencesSchema = z.object({
   scanPopups: z.boolean().default(true),
   detectPageLanguage: z.boolean().default(true),
   udpipe: z.boolean().default(false),
+  udpipeModels: z.record(z.string(), z.string()).default({}),
   ignoreProperNames: z.boolean().default(false),
   wordColorsEnabled: z.boolean().default(true),
   wordStyles: wordStylesSchema,

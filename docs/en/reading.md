@@ -38,6 +38,23 @@ The toolbar pauses parsing or disables the current site. **Only parse the readin
 
 Open **Settings → Reading → Use UDPipe** to enable grammar analysis in context. It is off by default. The switch is available when UDPipe supports your study language. SrsReader selects the model for that language automatically. Firefox also asks for permission to send website content. Without that permission, parsing stays local.
 
+Under **Settings → Reading → UDPipe model**, choose the corpus that best matches your reading. Each option shows the corpus name and its main text types. The default favors fiction or literary text. Some default corpora also contain other text types. Your choice is saved separately for each study language.
+
+The selector appears for these languages:
+
+| Study language | Default model                       | Other model                       |
+| -------------- | ----------------------------------- | --------------------------------- |
+| Czech          | FicTree                             | Czech Academic Corpus (CAC)       |
+| Irish          | Irish Dependency Treebank (IDT)     | TwittIrish                        |
+| Korean         | KAIST Tree-Tagging Corpus           | Korean as a Second Language (KSL) |
+| Latin          | Perseus                             | Index Thomisticus Treebank (ITTB) |
+| Portuguese     | CINTIL-UDep                         | Porttinari                        |
+| Romanian       | Romanian Reference Treebank (RRT)   | SiMoNERo                          |
+| Russian        | Taiga                               | Russian National Corpus: Poetry   |
+| Ukrainian      | Institute for Ukrainian corpus (IU) | ParlaMint                         |
+
+Enable **Use UDPipe** to change the model. Each model has its own cached results.
+
 UDPipe sends eligible text in your study language to [LINDAT](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php). It groups uncached text into one request per stable page where size permits. Page changes send only uncached text. Successful results stay in this browser permanently and are reused on other pages and after a restart. Clearing extension data removes them. Parser results are not included in learning or settings exports.
 
 Each attempt can take up to 30 seconds. If a request fails, SrsReader retries after 500 milliseconds and then after 1 second. After three failed attempts, it uses local parsing for 10 minutes. Open pages retry after that time. Other pages retry when opened again.

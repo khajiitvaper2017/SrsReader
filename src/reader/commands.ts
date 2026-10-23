@@ -26,15 +26,17 @@ async function execute(request: Request, settings: Settings) {
         udpipeAllowed,
       });
       const analyses = udpipeAllowed
-        ? await analyzeTexts(request.texts, settings.studyLanguage).catch(
-            (error) => {
-              console.warn("SrsReader: contextual analysis unavailable", error);
-              return request.texts.map(() => ({
-                surfaces: [],
-                retryAt: Date.now() + 10 * 60 * 1000,
-              }));
-            },
-          )
+        ? await analyzeTexts(
+            request.texts,
+            settings.studyLanguage,
+            settings.udpipeModels[settings.studyLanguage],
+          ).catch((error) => {
+            console.warn("SrsReader: contextual analysis unavailable", error);
+            return request.texts.map(() => ({
+              surfaces: [],
+              retryAt: Date.now() + 10 * 60 * 1000,
+            }));
+          })
         : [];
       const analysisMs = Math.round(performance.now() - started);
       console.info("[SrsReader] Analysis finished", {

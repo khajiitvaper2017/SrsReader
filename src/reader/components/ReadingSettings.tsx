@@ -3,6 +3,7 @@ import {
   Divider,
   Group,
   Paper,
+  Radio,
   Select,
   Stack,
   Switch,
@@ -14,7 +15,7 @@ import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { udpipePermission } from "@/languages/udpipe-permission";
-import { udpipeModel } from "@/languages/codes";
+import { udpipeModel, udpipeModels } from "@/languages/codes";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { useState } from "react";
 
@@ -29,6 +30,7 @@ export function ReadingSettings({
 }) {
   const [parserError, setParserError] = useState("");
   const [parserBusy, setParserBusy] = useState(false);
+  const models = udpipeModels(settings.studyLanguage);
   async function changeParser(enabled: boolean) {
     setParserBusy(true);
     setParserError("");
@@ -72,6 +74,42 @@ export function ReadingSettings({
             onChange={(event) => void changeParser(event.currentTarget.checked)}
           />
           <ErrorBox error={parserError} />
+          {models.length > 1 && (
+            <Radio.Group
+              label={t("udpipe_model")}
+              description={t("udpipe_model_help")}
+              value={udpipeModel(
+                settings.studyLanguage,
+                settings.udpipeModels[settings.studyLanguage],
+              )}
+              onChange={(value) =>
+                void update({
+                  udpipeModels: {
+                    ...settings.udpipeModels,
+                    [settings.studyLanguage]: value,
+                  },
+                })
+              }
+            >
+              <Stack gap="xs" mt="xs">
+                {models.map((model, index) => {
+                  const corpus = model.split("-ud-")[0]!;
+                  const name = t(`udpipe_model_${corpus}`);
+                  return (
+                    <Radio
+                      key={model}
+                      value={model}
+                      label={
+                        index === 0 ? t("udpipe_model_default", { name }) : name
+                      }
+                      description={t(`udpipe_corpus_${corpus}`)}
+                      disabled={!settings.udpipe || parserBusy}
+                    />
+                  );
+                })}
+              </Stack>
+            </Radio.Group>
+          )}
           <Switch
             label={t("automatically_ignore_proper_names")}
             description={t("ignore_proper_names_help")}

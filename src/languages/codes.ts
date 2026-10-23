@@ -7,6 +7,7 @@ const languages: Record<
     iso3?: string;
     morphology?: string;
     udpipe?: string;
+    udpipeAlternative?: string;
   }
 > = catalog;
 export const supportedLanguages = [
@@ -22,8 +23,15 @@ export function languageIso3(code: string) {
 export function morphologyLanguage(code: string) {
   return code ? languages[languageCode(code)]?.morphology : undefined;
 }
-export function udpipeModel(code: string) {
-  return code ? languages[languageCode(code)]?.udpipe : undefined;
+export function udpipeModels(code: string) {
+  const language = code ? languages[languageCode(code)] : undefined;
+  return [language?.udpipe, language?.udpipeAlternative].filter(
+    (model) => model !== undefined,
+  );
+}
+export function udpipeModel(code: string, selected?: string) {
+  const models = udpipeModels(code);
+  return models.find((model) => model === selected) ?? models[0];
 }
 export function languageName(code: string) {
   return i18n.t(`language_name_${code}`, {

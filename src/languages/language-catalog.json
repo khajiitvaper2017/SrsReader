@@ -80,7 +80,8 @@
   "cs": {
     "iso3": "ces",
     "morphology": "cs",
-    "udpipe": "czech-fictree-ud-2.17-251125"
+    "udpipe": "czech-fictree-ud-2.17-251125",
+    "udpipeAlternative": "czech-cac-ud-2.17-251125"
   },
   "cu": {
     "udpipe": "old_church_slavonic-proiel-ud-2.17-251125"
@@ -175,7 +176,8 @@
   "ga": {
     "iso3": "gle",
     "morphology": "ga",
-    "udpipe": "irish-idt-ud-2.17-251125"
+    "udpipe": "irish-idt-ud-2.17-251125",
+    "udpipeAlternative": "irish-twittirish-ud-2.17-251125"
   },
   "gd": {
     "iso3": "gla",
@@ -295,7 +297,8 @@
   },
   "ko": {
     "iso3": "kor",
-    "udpipe": "korean-kaist-ud-2.17-251125"
+    "udpipe": "korean-kaist-ud-2.17-251125",
+    "udpipeAlternative": "korean-ksl-ud-2.17-251125"
   },
   "kok": {
     "iso3": "gom"
@@ -310,7 +313,8 @@
   "la": {
     "iso3": "lat",
     "morphology": "la",
-    "udpipe": "latin-perseus-ud-2.17-251125"
+    "udpipe": "latin-perseus-ud-2.17-251125",
+    "udpipeAlternative": "latin-ittb-ud-2.17-251125"
   },
   "lb": {
     "iso3": "ltz",
@@ -454,7 +458,8 @@
   "pt": {
     "iso3": "por",
     "morphology": "pt",
-    "udpipe": "portuguese-cintil-ud-2.17-251125"
+    "udpipe": "portuguese-cintil-ud-2.17-251125",
+    "udpipeAlternative": "portuguese-porttinari-ud-2.17-251125"
   },
   "qaf": {
     "udpipe": "maghrebi_arabic_french-arabizi-ud-2.17-251125"
@@ -474,12 +479,14 @@
   "ro": {
     "iso3": "ron",
     "morphology": "ro",
-    "udpipe": "romanian-rrt-ud-2.17-251125"
+    "udpipe": "romanian-rrt-ud-2.17-251125",
+    "udpipeAlternative": "romanian-simonero-ud-2.17-251125"
   },
   "ru": {
     "iso3": "rus",
     "morphology": "ru",
-    "udpipe": "russian-taiga-ud-2.17-251125"
+    "udpipe": "russian-taiga-ud-2.17-251125",
+    "udpipeAlternative": "russian-poetry-ud-2.17-251125"
   },
   "rw": {
     "iso3": "kin"
@@ -595,7 +602,8 @@
   "uk": {
     "iso3": "ukr",
     "morphology": "uk",
-    "udpipe": "ukrainian-iu-ud-2.17-251125"
+    "udpipe": "ukrainian-iu-ud-2.17-251125",
+    "udpipeAlternative": "ukrainian-parlamint-ud-2.17-251125"
   },
   "ur": {
     "iso3": "urd",

@@ -83,6 +83,7 @@ async function processBatch(
       !settings.udpipe ||
       settings.paused ||
       settings.studyLanguage !== language ||
+      udpipeModel(language, settings.udpipeModels[language]) !== model ||
       !(await udpipePermission())
     ) {
       console.info("[SrsReader] UDPipe request cancelled", {
@@ -228,8 +229,12 @@ async function processBatch(
   return records;
 }
 
-export async function analyzeTexts(texts: string[], language: string) {
-  const model = udpipeModel(language);
+export async function analyzeTexts(
+  texts: string[],
+  language: string,
+  selectedModel?: string,
+) {
+  const model = udpipeModel(language, selectedModel);
   if (!model) return [];
   const started = performance.now();
   const chunks = texts.map((text) => analysisChunks(text, language));
