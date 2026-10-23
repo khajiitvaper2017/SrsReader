@@ -26,12 +26,15 @@ export function wordsInDeck(
   groups: ReturnType<typeof studyGroups>,
   deckId?: string,
 ) {
-  if (deckId === "mined") return groups.mined;
-  const words = !deckId
-    ? [...groups.mined, ...groups.decks.flatMap((deck) => deck.words)]
-    : groups.decks.find((deck) => deck.id === deckId)?.words;
+  const words =
+    deckId === "mined"
+      ? groups.mined
+      : !deckId
+        ? [...groups.mined, ...groups.decks.flatMap((deck) => deck.words)]
+        : groups.decks.find((deck) => deck.id === deckId)?.words;
   if (!words) throw new Error(t("study_deck_not_found"));
+  const frequencyIds = new Set(groups.decks.flatMap((deck) => deck.wordIds));
   return words.filter(
-    (word) => word.mined !== false || isFrequencyWord(word.lemma),
+    (word) => !frequencyIds.has(word.id) || isFrequencyWord(word.lemma),
   );
 }

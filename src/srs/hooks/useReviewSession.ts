@@ -74,7 +74,13 @@ export function useReviewSession({
       .catch((error) => setError(error.message));
   }, [deckId]);
   useEffect(load, [load]);
-  useChanges(load, ["vocabulary", "srs", "settings", "dictionaries"]);
+  useChanges(load, [
+    "vocabulary",
+    "srs",
+    "settings",
+    "dictionaries",
+    "collection",
+  ]);
   useEffect(() => {
     setFront(settings.front);
   }, [settings.front]);

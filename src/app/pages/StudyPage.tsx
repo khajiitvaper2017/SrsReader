@@ -32,6 +32,7 @@ import {
   List,
   MoreHorizontal,
   Plus,
+  RefreshCw,
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -40,7 +41,7 @@ type DeckAction = {
   language: string;
   deckId: string;
   name: string;
-  operation: "clear" | "delete";
+  operation: "refresh" | "clear" | "delete";
 };
 
 export function StudyPage({
@@ -53,6 +54,7 @@ export function StudyPage({
   const [languages, setLanguages] = useState<Responses["studyOverview"]>();
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<"language" | "deck" | null>(null);
   const [confirmation, setConfirmation] = useState<DeckAction | null>(null);
@@ -140,20 +142,27 @@ export function StudyPage({
       setBusy(false);
     }
   }
-  async function manageDeck() {
-    if (!confirmation) return;
+  async function manageDeck(action: DeckAction | null) {
+    if (!action) return;
     setBusy(true);
     setError("");
+    setNotice(action.operation === "refresh" ? t("study_refreshing_deck") : "");
     try {
       await srsClient({
         action: "manageDeck",
-        language: confirmation.language,
-        deckId: confirmation.deckId,
-        operation: confirmation.operation,
+        language: action.language,
+        deckId: action.deckId,
+        operation: action.operation,
       });
       setConfirmation(null);
+      setNotice(
+        action.operation === "refresh"
+          ? t("study_deck_refreshed", { name: action.name })
+          : "",
+      );
       load();
     } catch (error) {
+      setNotice("");
       setError((error as Error).message);
     } finally {
       setBusy(false);
@@ -189,6 +198,11 @@ export function StudyPage({
         </Group>
       </Group>
       <ErrorBox error={error} />
+      {notice && (
+        <Text variant="supporting" role="status">
+          {notice}
+        </Text>
+      )}
       <Paper>
         {!languages && !error && <Loader />}
         <Table.ScrollContainer minWidth={480}>
@@ -209,7 +223,10 @@ export function StudyPage({
                   row={row}
                   busy={busy}
                   start={start}
-                  manage={setConfirmation}
+                  manage={(action) => {
+                    if (action.operation === "refresh") void manageDeck(action);
+                    else setConfirmation(action);
+                  }}
                 />
               ))}
             </Table.Tbody>
@@ -330,7 +347,7 @@ export function StudyPage({
             <Button
               color="red"
               variant="filled"
-              onClick={() => void manageDeck()}
+              onClick={() => void manageDeck(confirmation)}
               loading={busy}
             >
               {t(
@@ -407,6 +424,21 @@ function StudyRows({
                   >
                     {t("study_view_words")}
                   </Menu.Item>
+                  {deck.id !== "mined" && (
+                    <Menu.Item
+                      leftSection={<RefreshCw size={16} />}
+                      onClick={() =>
+                        manage({
+                          language: row.language,
+                          deckId: deck.id!,
+                          name: deck.name,
+                          operation: "refresh",
+                        })
+                      }
+                    >
+                      {t("study_refresh_deck")}
+                    </Menu.Item>
+                  )}
                   <Menu.Divider />
                   <Menu.Item
                     color="red"

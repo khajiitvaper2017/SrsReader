@@ -60,7 +60,13 @@ export function useWords({
       pending.current++;
     };
   }, [load]);
-  useChanges(load, ["vocabulary", "srs", "settings", "dictionaries"]);
+  useChanges(load, [
+    "vocabulary",
+    "srs",
+    "settings",
+    "dictionaries",
+    "collection",
+  ]);
   const search = folded(query.trim(), language);
   const visible = words.filter(
     (w) =>

@@ -26,7 +26,7 @@ export const requests = [
     action: z.literal("manageDeck"),
     language: languageSchema,
     deckId: z.string().min(1),
-    operation: z.enum(["clear", "delete"]),
+    operation: z.enum(["refresh", "clear", "delete"]),
   }),
   z.object({ action: z.literal("sentenceExamples"), id: z.string() }),
   z.object({

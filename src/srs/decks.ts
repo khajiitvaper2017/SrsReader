@@ -1,4 +1,5 @@
-import { lookupMany } from "@/dictionaries/lookup";
+import type { LookupWord } from "@/dictionaries/model";
+import { clearLookupCache, lookupMany } from "@/dictionaries/lookup";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -9,7 +10,7 @@ import type { Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { snapshot } from "@/vocabulary/snapshot";
 import { isFrequencyWord, studyGroups, wordsInDeck } from "@/srs/deck-words";
-import { deleteWords } from "@/vocabulary/storage";
+import { deleteWords, replaceMeanings } from "@/vocabulary/storage";
 import Dexie from "dexie";
 
 export async function studyOverview(settings: Settings) {
@@ -55,7 +56,7 @@ export async function studyOverview(settings: Settings) {
       return {
         language,
         ...summary(wordsInDeck(groups)),
-        mined: summary(groups.mined),
+        mined: summary(wordsInDeck(groups, "mined")),
         decks: groups.decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
@@ -69,8 +70,9 @@ export async function studyOverview(settings: Settings) {
 export async function manageStudyDeck(
   language: string,
   deckId: string,
-  operation: "clear" | "delete",
+  operation: "refresh" | "clear" | "delete",
 ) {
+  if (operation === "refresh") return refreshFrequencyDeck(language, deckId);
   await db.transaction(
     "rw",
     [
@@ -104,11 +106,7 @@ export async function manageStudyDeck(
   );
 }
 
-export async function createFrequencyDeck(
-  dictionaryId: string,
-  limit: number,
-  name: string,
-) {
+async function frequencyDeckWords(dictionaryId: string, limit: number) {
   const dictionary = await db.dictionaries.get(dictionaryId);
   if (!dictionary?.enabled || !dictionary.frequencyCount)
     throw new Error(t("frequency_deck_dictionary_missing"));
@@ -126,8 +124,7 @@ export async function createFrequencyDeck(
       if (!entries.has(key)) entries.set(key, row);
     });
   const selected = [...entries.values()];
-  const vocabulary: Vocabulary[] = [];
-  const ids = new Set<string>();
+  const words = new Map<string, LookupWord>();
   for (let offset = 0; offset < selected.length; offset += 100) {
     const batch = selected.slice(offset, offset + 100);
     const results = await lookupMany(
@@ -142,24 +139,39 @@ export async function createFrequencyDeck(
             isFrequencyWord(word.lemma) &&
             (entry.reading === null || word.reading === entry.reading),
         );
-      if (!result?.meanings.length || ids.has(result.id)) continue;
-      if (await db.vocabulary.get(result.id)) continue;
-      ids.add(result.id);
-      const word = freshWord(await snapshot(result));
-      word.mined = false;
-      word.card = emptySchedule();
-      word.srsVersion++;
-      vocabulary.push(word);
+      if (result?.meanings.length) words.set(result.id, result);
     }
   }
-  if (!ids.size) throw new Error(t("frequency_deck_no_new_words"));
+  return { dictionary, words: [...words.values()] };
+}
+
+function frequencyCard(word: LookupWord) {
+  const saved = freshWord(word);
+  saved.mined = false;
+  saved.card = emptySchedule();
+  saved.srsVersion++;
+  return saved;
+}
+
+export async function createFrequencyDeck(
+  dictionaryId: string,
+  limit: number,
+  name: string,
+) {
+  const { dictionary, words } = await frequencyDeckWords(dictionaryId, limit);
+  const vocabulary: Vocabulary[] = [];
+  for (const word of words) {
+    if (!(await db.vocabulary.get(word.id)))
+      vocabulary.push(frequencyCard(await snapshot(word)));
+  }
+  if (!vocabulary.length) throw new Error(t("frequency_deck_no_new_words"));
   const deck = {
     id: crypto.randomUUID(),
     language: dictionary.language,
     name,
     dictionaryId,
     limit,
-    wordIds: [...ids],
+    wordIds: vocabulary.map((word) => word.id),
     created: Date.now(),
   };
   await db.transaction("rw", [db.vocabulary, db.decks], async () => {
@@ -167,4 +179,45 @@ export async function createFrequencyDeck(
     await db.decks.add(deck);
   });
   return deck;
+}
+
+async function refreshFrequencyDeck(language: string, deckId: string) {
+  const deck = await db.decks.get(deckId);
+  if (!deck || deck.language !== language)
+    throw new Error(t("study_deck_not_found"));
+  clearLookupCache();
+  const { words } = await frequencyDeckWords(deck.dictionaryId, deck.limit);
+  const [saved, decks] = await Promise.all([
+    db.vocabulary.where("language").equals(language).toArray(),
+    db.decks.where("language").equals(language).toArray(),
+  ]);
+  const byId = new Map(saved.map((word) => [word.id, word]));
+  const assigned = new Set(
+    decks
+      .filter((other) => other.id !== deckId)
+      .flatMap((other) => other.wordIds),
+  );
+  const selected = words.filter((word) => {
+    const existing = byId.get(word.id);
+    return !assigned.has(word.id) && (!existing || existing.mined === false);
+  });
+  const snapshots = await Promise.all(selected.map(snapshot));
+  await db.transaction("rw", [db.vocabulary, db.decks], async () => {
+    for (const word of snapshots) {
+      if (byId.has(word.id))
+        await replaceMeanings(
+          word.id,
+          word.meanings.filter(
+            (meaning) => meaning.dictionaryId !== "personal",
+          ),
+        );
+      else await db.vocabulary.add(frequencyCard(word));
+    }
+    await db.vocabulary
+      .where("id")
+      .anyOf(deck.wordIds)
+      .filter((word) => !isFrequencyWord(word.lemma))
+      .modify({ mined: false });
+    await db.decks.update(deckId, { wordIds: selected.map((word) => word.id) });
+  });
 }

@@ -16,6 +16,8 @@ Use **Add language** to keep another language in this list.
 
 The deck checks the first N unique entries that contain letters. Punctuation, symbols, and number-only entries are skipped. These entries are also hidden in existing frequency decks. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
 
+After an app or dictionary update, open the deck’s three-dot menu in **Study** and select **Refresh deck**. This rebuilds the deck with its original word limit and the current frequency dictionary. It removes entries that do not pass the word filters and updates definitions. New matching words start as new cards. Review history, custom definitions, mastered words, and suspended words are kept. Words you mined stay in **Mined words**. Removed words keep their saved progress if they return in a later refresh.
+
 ## Browse words in a deck
 
 In **Study**, open a deck’s three-dot menu and select **View words**. The **Words** page opens with that language and deck selected.
