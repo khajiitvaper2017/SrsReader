@@ -1,15 +1,21 @@
 import {
+  CheckIcon,
+  Group,
   Paper,
   MultiSelect,
   Select,
   SimpleGrid,
   Stack,
+  Text,
   Title,
 } from "@mantine/core";
 import {
+  languageIso3,
   languageName,
+  morphologyLanguage,
   supportedLanguages,
   systemLanguage,
+  udpipeModel,
 } from "@/languages/codes";
 import { LanguageSelect } from "@/languages/components/LanguageSelect";
 import type { Settings } from "@/settings/model";
@@ -24,6 +30,23 @@ export function LanguageSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
   setup?: boolean;
 }) {
+  const languages = supportedLanguages
+    .map((language) => ({
+      value: language,
+      label: languageName(language),
+      features: [
+        udpipeModel(language) && t("language_feature_grammar"),
+        morphologyLanguage(language) && t("language_feature_word_forms"),
+        language === "cs" && t("language_feature_online_dictionary"),
+        languageIso3(language) && t("language_feature_examples"),
+      ].filter(Boolean),
+    }))
+    .sort(
+      (a, b) =>
+        b.features.length - a.features.length ||
+        a.label.localeCompare(b.label, i18n.resolvedLanguage),
+    );
+
   return (
     <Paper>
       <Stack>
@@ -31,17 +54,26 @@ export function LanguageSettings({
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
           <MultiSelect
             label={t("studied_languages")}
-            description={t("studied_languages_help")}
+            description={`${t("studied_languages_help")} ${t("studied_languages_features_help")}`}
             searchable
             value={settings.studyLanguages}
-            data={supportedLanguages
-              .map((language) => ({
-                value: language,
-                label: languageName(language),
-              }))
-              .sort((a, b) =>
-                a.label.localeCompare(b.label, i18n.resolvedLanguage),
-              )}
+            data={languages}
+            renderOption={({ option, checked }) => {
+              const { features } = languages.find(
+                (language) => language.value === option.value,
+              )!;
+              return (
+                <Group gap="sm" wrap="nowrap" flex={1} miw={0}>
+                  {checked && <CheckIcon size={12} aria-hidden="true" />}
+                  <Stack gap={0} flex={1} miw={0}>
+                    <Text>{option.label}</Text>
+                    {features.length > 0 && (
+                      <Text variant="supporting">{features.join(" · ")}</Text>
+                    )}
+                  </Stack>
+                </Group>
+              );
+            }}
             nothingFoundMessage={t("settings_no_languages")}
             onChange={(studyLanguages) => void update({ studyLanguages })}
           />

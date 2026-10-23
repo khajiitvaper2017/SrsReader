@@ -9,6 +9,8 @@ Open a website, use your lookup control on a word, and choose **Mine word**. Ope
 
 Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as native language**; other native languages use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
 
+The **Studied languages** list shows supported features below each language: grammar analysis with UDPipe, extra word forms, the Nechybujte online dictionary, and downloadable example sentences. Languages with more features appear first. Languages with the same number of features are in alphabetical order for your interface language. Labels show support even if a feature is disabled or its data has not been downloaded. Text-to-speech depends on voices installed on your device and does not affect the order.
+
 ## Appearance
 
 Open **Settings → General → Appearance**. Choose **Light**, **Dark**, **OLED (black)**, or **System** to follow your device. Dark uses near-black surfaces. OLED uses black backgrounds. Both keep secondary labels close to the main text color.
