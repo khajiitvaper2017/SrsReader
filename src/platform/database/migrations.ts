@@ -159,4 +159,8 @@ export function installMigrations(database: Dexie) {
       const { studyLanguage: _language, ...value } = settings;
       await tx.table("settings").put({ id: "main", value });
     });
+  database.version(11).stores({
+    immersionWords: "id, dictionaryId, [dictionaryId+score]",
+    immersionPassages: "id, dictionaryId",
+  });
 }

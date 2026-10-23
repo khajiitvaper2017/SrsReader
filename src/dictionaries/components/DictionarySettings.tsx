@@ -1,3 +1,4 @@
+import { ImmersionWeight } from "@/dictionaries/components/ImmersionWeight";
 import { useState, type ReactNode } from "react";
 import {
   ActionIcon,
@@ -50,6 +51,8 @@ export function DictionarySettings({
 }) {
   const {
     busy,
+    addImmersion,
+    updateImmersionWeight,
     progressTarget,
     updates,
     fileInput,
@@ -72,7 +75,7 @@ export function DictionarySettings({
       (dictionary) =>
         dictionary.language === settings.studyLanguage &&
         (role === "frequency"
-          ? dictionary.frequencyCount > 0
+          ? dictionary.frequencyCount > 0 || !!dictionary.immersion
           : dictionary.count > 0 || dictionary.id === "nechybujte"),
     )
     .sort((a, b) =>
@@ -149,7 +152,10 @@ export function DictionarySettings({
                     <ActionIcon
                       title={t("export_zip")}
                       aria-label={t("export_zip")}
-                      disabled={busy}
+                      disabled={
+                        busy ||
+                        (!!dictionary.immersion && !dictionary.frequencyCount)
+                      }
                       onClick={() => exportDictionary(dictionary)}
                       variant="subtle"
                     >
@@ -189,6 +195,15 @@ export function DictionarySettings({
                 />
               </Group>
             </Group>
+            {dictionary.immersion && (
+              <ImmersionWeight
+                dictionary={dictionary}
+                disabled={busy}
+                onSave={(weight) =>
+                  updateImmersionWeight(dictionary.id, weight)
+                }
+              />
+            )}
           </Paper>
         )}
       </SortableList>
@@ -284,8 +299,21 @@ export function DictionarySettings({
             </Tabs.Panel>
             <Tabs.Panel value="frequency">
               <Stack>
+                {!dictionaries.some(
+                  (dictionary) =>
+                    dictionary.language === settings.studyLanguage &&
+                    dictionary.immersion,
+                ) && (
+                  <Button
+                    disabled={busy || !settings.studyLanguage}
+                    onClick={addImmersion}
+                  >
+                    {t("add_immersion_frequency")}
+                  </Button>
+                )}
                 {dictionaryControls}
                 <FrequencyBrowser
+                  key={settings.studyLanguage}
                   language={settings.studyLanguage}
                   busy={busy}
                   onImport={(entry) =>
@@ -295,7 +323,7 @@ export function DictionarySettings({
                       `${languageName(entry.code)} ${entry.source}`,
                     )
                   }
-                />{" "}
+                />
               </Stack>
             </Tabs.Panel>
           </Tabs>

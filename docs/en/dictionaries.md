@@ -16,8 +16,8 @@ Install a dictionary or change its display option under **Settings → Dictionar
 
 Open **Settings → Dictionaries**:
 
-- **Wiktionary dictionaries:** choose a study and definition language, then **Import**. **Definitions** contains full entries; **Translations** contains shorter glosses. Choose the same language on both sides for monolingual definitions.
-- **Frequency dictionaries:** choose a language and corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
+- **Vocabulary → Wiktionary dictionaries:** choose a definition language, then **Import**. **Definitions** contains full entries; **Translations** contains shorter glosses. Choose the same language on both sides for monolingual definitions.
+- **Frequency:** choose a corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
 - **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Choose **Language-specific settings** first if the ZIP lacks language information.
 
 Keep Settings open while downloading and importing. You can switch settings tabs while a download or import runs. Once installed, dictionaries work offline.
@@ -39,6 +39,20 @@ Under **Settings → Reading → Ignore words by tag**, check tags to mark match
 Lower ranks mean more common words. The popup’s **Freq.** badge combines enabled frequency dictionaries; hover or click for individual ranks. Dictionary order does not change the combined rank.
 
 New cards start with the most frequent words. Under **Settings → Review → Words without frequency**, choose **Introduce last** or **Assign random frequency**. Existing review schedules are unaffected.
+
+## Immersion Frequency
+
+Open **Settings → Dictionaries**, choose a language, then open **Frequency** and select **Add Immersion Frequency**. One live immersion dictionary is available per language. It builds rankings from website text parsed while you read. Popup definitions and review text do not add hits. It does not create review cards automatically.
+
+The first candidate for each word receives a primary hit. Other candidates receive secondary hits. Inflected forms and duplicate candidates share their base word's count. A word without a dictionary entry still counts when the parser identifies its base word. Punctuation and unidentified words do not count.
+
+The score is **primary hits + multiplier × secondary hits**. **Secondary-hit multiplier** defaults to **0.3**. Enter **0–1** with up to two decimal places, then select **Save**. Changing it recalculates scores from saved counts. Higher scores receive lower frequency ranks. Equal scores share a rank. Click a word's frequency badge to see its primary hits, secondary hits, score, and rank.
+
+Each exact text block counts only once per language, including across websites, tabs, reloads, and browser restarts. Repeated words within a new block each add a hit. Parser changes do not recount old blocks or revise their contributions.
+
+Use **Show** to combine its ranks with other enabled frequency dictionaries, or hide the other dictionaries to use it alone. **If needed** uses its rank when sources above it have no match. **Hide** stops using its ranks but continues collecting hits. **Remove** stops collection and deletes this language's counts and counted-block history. Adding it again starts empty.
+
+**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Visibility and ordering are included in the settings export.
 
 ## Missing words
 

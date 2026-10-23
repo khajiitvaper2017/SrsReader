@@ -94,6 +94,24 @@ export async function deleteDictionary(
   await navigator.locks.request("srs-reader-dictionary-write", async () => {
     const dictionary = await db.dictionaries.get(request.id);
     if (!dictionary) return;
+    if (dictionary.immersion) {
+      await db.transaction(
+        "rw",
+        [db.dictionaries, db.immersionWords, db.immersionPassages],
+        async () => {
+          await db.immersionWords
+            .where("dictionaryId")
+            .equals(dictionary.id)
+            .delete();
+          await db.immersionPassages
+            .where("dictionaryId")
+            .equals(dictionary.id)
+            .delete();
+          await db.dictionaries.delete(dictionary.id);
+        },
+      );
+      return;
+    }
     await db.dictionaries.delete(request.id);
     await removeRevision(dictionary.revisionId);
   });
@@ -119,7 +137,17 @@ export async function listDictionaries(settings?: Settings) {
     imported: 0,
     styles: "",
   };
-  return [...dictionaries, online].sort((a, b) => a.order - b.order);
+  return [
+    ...dictionaries.map((dictionary) =>
+      dictionary.immersion
+        ? {
+            ...dictionary,
+            index: { ...dictionary.index, title: t("immersion_frequency") },
+          }
+        : dictionary,
+    ),
+    online,
+  ].sort((a, b) => a.order - b.order);
 }
 export const dictionaryTags = (revisions: string[]) =>
   db.tags.where("revisionId").anyOf(revisions).toArray();
@@ -136,9 +164,14 @@ export async function listFrequencyDictionaries(settings?: Settings) {
   settings ??= await getSettings();
   const preferences = settings.frequencyPreferences;
   return (await db.dictionaries.toArray())
-    .filter((dictionary) => dictionary.frequencyCount > 0)
+    .filter(
+      (dictionary) => dictionary.frequencyCount > 0 || dictionary.immersion,
+    )
     .map((dictionary) => ({
       ...dictionary,
+      index: dictionary.immersion
+        ? { ...dictionary.index, title: t("immersion_frequency") }
+        : dictionary.index,
       enabled:
         dictionaryDisplay(dictionary.id, settings, "frequency") !== "hide",
       order: preferences[dictionary.id]?.order ?? dictionary.order,

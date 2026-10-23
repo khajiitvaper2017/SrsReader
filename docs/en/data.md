@@ -4,13 +4,15 @@
 
 Open **Settings** and keep these exports:
 
-- **Dictionaries → Export ZIP:** each original dictionary file.
+- **Dictionaries → Export ZIP:** each original dictionary file, or a snapshot of Immersion Frequency ranks.
 - **Import & export → Settings → Export JSON:** languages, controls, appearance, review settings, and dictionary ordering.
-- **Import & export → Words & progress → Export ZIP:** words, definitions, decks, cached sentences and translations, review history, mastered states, and downloaded recordings.
+- **Import & export → Words & progress → Export ZIP:** words, definitions, decks, cached sentences and translations, review history, mastered states, downloaded recordings, and live immersion dictionaries with hit counts, multipliers, and counted-block history.
 
 Import each file into its matching section. Settings and learning imports replace that category after confirmation; they do not merge. Dictionaries may be imported before or after settings. Saved cards can be reviewed without their original dictionaries.
 
 RWKV model files and saved model states are not included. After restore, RWKV downloads its model if needed and rebuilds its state from review history. Undone answers are included in the history but do not affect scheduling.
+
+Immersion hit counts and text fingerprints stay on this device. Fingerprints identify counted text without storing another copy of the page text. Settings exports preserve dictionary visibility and order.
 
 Word-form tables and Tatoeba corpora are not included in these exports. Download them again under **Settings → Dictionaries → Word forms** and **Example sentences** after moving to another browser.
 
@@ -18,7 +20,7 @@ Export before uninstalling, clearing browser data, or moving to another browser.
 
 ## What stays local
 
-Local parsing, reviews, and translation run on your device. Optional UDPipe analysis sends Czech page text to LINDAT. LINDAT may use that text to improve its systems. Page URLs are not added to these requests. Successful analyses stay cached in this browser until extension data is cleared. The parser cache is not included in exports. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers, and GitHub for the RWKV model. Optional pronunciation downloads send the word to Wikimedia Commons, LanguagePod101, or Forvo. These requests do not include your sentences or website URLs. Opening **Audio sources** also sends the word to enabled providers. Disable a provider under **Settings → Audio & translation → Pronunciation → Audio sources** to stop requests to it.
+Local parsing, reviews, and translation run on your device. Optional UDPipe analysis sends page text in supported studied languages to LINDAT. LINDAT may use that text to improve its systems. Page URLs are not added to these requests. Successful analyses stay cached in this browser until extension data is cleared. The parser cache is not included in exports. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers, and GitHub for the RWKV model. Optional pronunciation downloads send the word to Wikimedia Commons, LanguagePod101, or Forvo. These requests do not include your sentences or website URLs. Opening **Audio sources** also sends the word to enabled providers. Disable a provider under **Settings → Audio & translation → Pronunciation → Audio sources** to stop requests to it.
 
 ## Sources
 

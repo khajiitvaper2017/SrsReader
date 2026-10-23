@@ -3,7 +3,12 @@ import type { Occurrence } from "@/languages/analysis";
 import type { WordState } from "@/vocabulary/state";
 
 export type ChangeScope =
-  "collection" | "vocabulary" | "settings" | "dictionaries" | "srs";
+  | "frequency"
+  | "collection"
+  | "vocabulary"
+  | "settings"
+  | "dictionaries"
+  | "srs";
 export type ChangeMessage = {
   event: "changed";
   scope: ChangeScope;

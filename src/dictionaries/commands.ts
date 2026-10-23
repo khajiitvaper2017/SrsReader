@@ -1,3 +1,7 @@
+import {
+  addImmersionDictionary,
+  setImmersionWeight,
+} from "@/dictionaries/immersion";
 import { broadcast, notify } from "@/background/events";
 import type { Request } from "@/dictionaries/contracts";
 import { meaningTags } from "@/dictionaries/model";
@@ -17,7 +21,9 @@ import { stateOf } from "@/vocabulary/model";
 import { getWords } from "@/vocabulary/storage";
 
 export function handleDictionaries(request: Request, settings: Settings) {
-  return request.action === "setDictionary" ||
+  return request.action === "addImmersion" ||
+    request.action === "setImmersionWeight" ||
+    request.action === "setDictionary" ||
     request.action === "moveDictionary" ||
     request.action === "deleteDictionary"
     ? srsWrite(async () => execute(request, await getSettings()))
@@ -25,6 +31,14 @@ export function handleDictionaries(request: Request, settings: Settings) {
 }
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
+    case "addImmersion":
+      await addImmersionDictionary(request.language);
+      await notify(undefined, "dictionaries");
+      return;
+    case "setImmersionWeight":
+      await setImmersionWeight(request.id, request.weight);
+      await broadcast({ event: "changed", scope: "frequency" });
+      return;
     case "dictionaries":
       return listDictionaries(settings);
     case "searchDictionaries":

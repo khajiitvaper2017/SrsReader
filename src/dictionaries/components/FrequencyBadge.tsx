@@ -54,7 +54,18 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
           {rows.map((row) => (
             <Group key={row.title} justify="space-between">
               <span title={row.title}>{row.title}</span>
-              <strong>{number(row.rank)}</strong>
+              <Stack gap={0}>
+                <strong>{number(row.rank)}</strong>
+                {row.primaryHits !== undefined && (
+                  <Text variant="supporting">
+                    {t("immersion_hit_details", {
+                      primary: number(row.primaryHits),
+                      secondary: number(row.secondaryHits!),
+                      score: number(row.score!),
+                    })}
+                  </Text>
+                )}
+              </Stack>
             </Group>
           ))}
           {rows.length > 1 && (

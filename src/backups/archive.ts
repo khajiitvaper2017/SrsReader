@@ -1,3 +1,7 @@
+import {
+  immersionArchiveSchema,
+  immersionScore,
+} from "@/dictionaries/immersion-model";
 import { audioInfoSchema } from "@/audio/model";
 import { db } from "@/platform/database/db";
 import { settingsSchema } from "@/settings/model";
@@ -62,7 +66,8 @@ const archivedWordSchema = vocabularySchema.extend({
 });
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
-  version: z.union([z.literal(1), z.literal(2)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  immersion: z.array(immersionArchiveSchema).default([]),
   vocabulary: z.array(archivedWordSchema),
   decks: z.array(deckSchema).default([]),
   sentences: z.array(sentenceSchema).default([]),
@@ -86,8 +91,33 @@ const learningSchema = z.object({
 export async function exportLearning() {
   const snapshot = await db.transaction(
     "r",
-    [db.vocabulary, db.reviews, db.audio, db.decks, db.sentences],
+    [
+      db.vocabulary,
+      db.reviews,
+      db.audio,
+      db.decks,
+      db.sentences,
+      db.dictionaries,
+      db.immersionWords,
+      db.immersionPassages,
+    ],
     async () => ({
+      immersion: await Promise.all(
+        (await db.dictionaries.toArray())
+          .filter((dictionary) => dictionary.immersion)
+          .map(async (dictionary) => ({
+            language: dictionary.language,
+            secondaryWeight: dictionary.immersion!.secondaryWeight,
+            words: await db.immersionWords
+              .where("dictionaryId")
+              .equals(dictionary.id)
+              .toArray(),
+            passages: await db.immersionPassages
+              .where("dictionaryId")
+              .equals(dictionary.id)
+              .toArray(),
+          })),
+      ),
       vocabulary: await db.vocabulary.toArray(),
       reviews: await db.reviews.toArray(),
       audio: await db.audio.toArray(),
@@ -106,7 +136,8 @@ export async function exportLearning() {
     new TextReader(
       JSON.stringify({
         format: "srs-reader-learning",
-        version: 2,
+        version: 3,
+        immersion: snapshot.immersion,
         vocabulary: snapshot.vocabulary,
         decks: snapshot.decks,
         sentences: snapshot.sentences,
@@ -133,6 +164,14 @@ export async function readLearning(file: File) {
     const data = learningSchema.parse(
       JSON.parse(await json.getData(new TextWriter())),
     );
+    if (
+      new Set(data.immersion.map((source) => source.language)).size !==
+      data.immersion.length
+    )
+      throw new Error(t("invalid_immersion_archive"));
+    for (const source of data.immersion)
+      for (const word of source.words)
+        word.score = immersionScore(word, source.secondaryWeight);
     const ids = new Set(data.vocabulary.map((w) => w.id));
     const words = new Map(data.vocabulary.map((word) => [word.id, word]));
     if (

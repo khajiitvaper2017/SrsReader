@@ -27,6 +27,7 @@ export type AnalysisSentence = {
   tokens: AnalysisToken[];
 };
 export type SurfaceAnalysis = {
+  lemma?: string;
   start: number;
   end: number;
   terms: string[];
@@ -201,6 +202,7 @@ export function analysisTerms(
         terms.push(...predicateTerms(predicateOf(part, tokens), tokens));
         if (part.lemma !== "_") terms.push(part.lemma);
       }
+      const lemma = terms[0];
       terms.push(text.slice(token.start, token.end));
       const related = new Set(
         components
@@ -225,6 +227,7 @@ export function analysisTerms(
           start: token.start,
           end: token.end,
           terms: [...new Set(terms)],
+          lemma,
           properName: components.some(
             (part) =>
               !part.feats.NameType?.split(",").includes("Nat") &&

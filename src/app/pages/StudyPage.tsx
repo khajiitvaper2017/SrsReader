@@ -79,6 +79,7 @@ export function StudyPage({
     "srs",
     "settings",
     "dictionaries",
+    "frequency",
     "collection",
   ]);
   const sources = dictionaries.filter(

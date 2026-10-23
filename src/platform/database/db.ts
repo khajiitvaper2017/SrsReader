@@ -1,3 +1,7 @@
+import type {
+  ImmersionWord,
+  ImmersionPassage,
+} from "@/dictionaries/immersion-model";
 import type { AudioRecord } from "@/audio/model";
 import type {
   Dictionary,
@@ -24,6 +28,8 @@ import type { Vocabulary } from "@/vocabulary/model";
 import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
+  immersionWords!: Table<ImmersionWord, string>;
+  immersionPassages!: Table<ImmersionPassage, string>;
   sentences!: Table<CachedSentence, string>;
   decks!: Table<Deck, string>;
   analyses!: Table<AnalysisRecord, string>;

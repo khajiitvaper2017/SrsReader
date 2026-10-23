@@ -1,3 +1,4 @@
+import { analyzeWords } from "@/languages/morphology";
 import { lookupMany } from "@/dictionaries/lookup";
 import { listDictionaries } from "@/dictionaries/storage";
 import { displayedWords } from "@/dictionaries/display";
@@ -27,7 +28,8 @@ export async function scanTexts(
   language: string,
   settings: Settings,
   analyses: SurfaceAnalysis[][] = [],
-): Promise<ScanSpan[][]> {
+  collectImmersion = false,
+) {
   const started = performance.now();
   const ordered = await listDictionaries(settings);
   const dictionaries = ordered.filter(
@@ -151,6 +153,22 @@ export async function scanTexts(
     false,
   );
   const lookupFinished = performance.now();
+  const unmatched = collectImmersion
+    ? [
+        ...new Set(
+          blocks.flatMap((candidates) =>
+            candidates
+              .filter(
+                (candidate) =>
+                  !candidate.analysis &&
+                  !matches.get(normalize(candidate.term))?.words.length,
+              )
+              .map((candidate) => candidate.term),
+          ),
+        ),
+      ]
+    : [];
+  const localLemmas = await analyzeWords(unmatched, language);
   const ids = [
     ...new Set([...matches.values()].flatMap((m) => m.words.map((w) => w.id))),
   ];
@@ -162,6 +180,7 @@ export async function scanTexts(
   const vocabularyFinished = performance.now();
   const results = blocks.map((candidates) => {
     const spans: ScanSpan[] = [];
+    const lemmas: string[][] = [];
     let end = -1;
     for (const candidate of candidates.sort(
       (a, b) => a.start - b.start || b.end - a.end,
@@ -176,6 +195,13 @@ export async function scanTexts(
         ordered,
         candidate.analysis?.terms.slice(0, -1),
       );
+      if (collectImmersion) {
+        const found = words.map((word) => word.lemma);
+        const base =
+          candidate.analysis?.lemma || localLemmas.get(candidate.term);
+        if (found.length) lemmas.push(found);
+        else if (base && /\p{L}/u.test(base)) lemmas.push([base]);
+      }
       if (!words.length && !candidate.analysis) continue;
       const state = words.length
         ? stateOf(vocabulary.get(words[0]!.id), settings.matureIntervalDays)
@@ -197,7 +223,7 @@ export async function scanTexts(
       });
       end = candidate.end;
     }
-    return spans;
+    return { spans, lemmas };
   });
   console.info("[SrsReader] Dictionary scan finished", {
     blocks: texts.length,

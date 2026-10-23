@@ -1,9 +1,16 @@
+import { immersionWeightSchema } from "@/dictionaries/immersion-model";
 import type { Dictionary, LookupResult, Meaning } from "@/dictionaries/model";
 import { languageSchema } from "@/languages/model";
 import { selection } from "@/vocabulary/contracts";
 import { z } from "zod";
 
 export const requests = [
+  z.object({ action: z.literal("addImmersion"), language: languageSchema }),
+  z.object({
+    action: z.literal("setImmersionWeight"),
+    id: z.string(),
+    weight: immersionWeightSchema,
+  }),
   z.object({ action: z.literal("dictionaries") }),
   z.object({
     action: z.literal("searchDictionaries"),
@@ -35,6 +42,8 @@ export const requests = [
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
+  addImmersion: void;
+  setImmersionWeight: void;
   dictionaries: Dictionary[];
   searchDictionaries: {
     entries: { id: string; key: string; reading: string; meaning: Meaning }[];

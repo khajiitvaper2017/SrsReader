@@ -6,6 +6,7 @@ export const requests = [
   z.object({
     action: z.literal("scan"),
     language: languageSchema,
+    source: z.enum(["website", "popup"]),
     texts: z.array(z.string()),
   }),
 ] as const;

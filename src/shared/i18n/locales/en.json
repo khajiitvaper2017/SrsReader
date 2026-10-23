@@ -153,7 +153,7 @@
   "imports_replace_the_selected_category_export_your_progress": "Imports replace the selected category. Export your progress before uninstalling.",
   "in_context": "In context",
   "in_lookup_popups": "In lookup popups.",
-  "includes_sentences_review_history_and_saved_audio": "Includes sentences, review history, and saved audio.",
+  "includes_sentences_review_history_and_saved_audio": "Includes sentences, review history, saved audio, and immersion hit counts.",
   "indexing_examples": "Indexing examples",
   "input_action_prevention": "Input action prevention",
   "interface_language": "Interface: {{language}}. English is used when a translation is unavailable.",
@@ -288,7 +288,7 @@
   "remove": "Remove",
   "remove_2": "Remove {{value1}}",
   "remove_your_saved_words_and_reviews_will_stay": "Remove {{title}}? Your saved words and reviews will stay.",
-  "replace_your_learning_data_with_words_reviews_and": "Replace your learning data with {{length}} words, {{length1}} reviews, and {{length2}} recordings? Export your current learning data first if you want to keep it.",
+  "replace_your_learning_data_with_words_reviews_and": "Replace your learning data with {{length}} words, {{length1}} reviews, {{length2}} recordings, and {{immersion}} immersion dictionaries? This also replaces immersion hit counts and counted-block history. Export your current learning data first if you want to keep it.",
   "replace_your_settings_with_this_file_dictionaries_words": "Replace your settings with this file? Dictionaries, words, and review history will stay on this device. If the scheduling model changes, review dates will be recalculated in all languages.",
   "reset_colors": "Reset colors",
   "resume": "Resume",
@@ -953,5 +953,13 @@
   "statistics_language": "Statistics language",
   "studied_reading_help": "Automatically detects and parses text in your studied languages. Short passages can use the page language. Text in other or unidentified languages is skipped.",
   "dictionary_types": "Dictionary types",
-  "vocabulary_dictionaries": "Vocabulary"
+  "vocabulary_dictionaries": "Vocabulary",
+  "immersion_frequency": "Immersion Frequency",
+  "add_immersion_frequency": "Add Immersion Frequency",
+  "immersion_secondary_weight": "Secondary-hit multiplier",
+  "immersion_collection_help": "Counts words parsed on websites, even while this dictionary is hidden. Each text block counts once across tabs, reloads, and browser restarts. Removing this dictionary deletes its counts.",
+  "immersion_score_help": "Score = primary hits + multiplier × secondary hits. Use 0–1, with up to two decimal places. Default: 0.3.",
+  "immersion_hit_details": "Primary: {{primary}} · Secondary: {{secondary}} · Score: {{score}}",
+  "invalid_immersion_archive": "The learning archive contains invalid immersion counts or passage records.",
+  "remove_immersion_confirmation": "Remove {{title}}? Its hit counts and counted-passage history will be deleted. Saved words and reviews will stay."
 }

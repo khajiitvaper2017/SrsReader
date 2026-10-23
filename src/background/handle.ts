@@ -17,6 +17,8 @@ export async function handle(request: Request) {
     case "settings":
     case "setSettings":
       return handleSettings(request, settings);
+    case "addImmersion":
+    case "setImmersionWeight":
     case "dictionaries":
     case "searchDictionaries":
     case "setDictionary":
@@ -75,4 +77,5 @@ export async function handle(request: Request) {
       await notify();
       return;
   }
+  request satisfies never;
 }

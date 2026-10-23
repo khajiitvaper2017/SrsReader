@@ -1,3 +1,4 @@
+import { immersionDictionary } from "@/dictionaries/immersion";
 import { saveSettings } from "@/settings/store";
 import { readLearning } from "@/backups/archive";
 import { db } from "@/platform/database/db";
@@ -47,12 +48,45 @@ export async function restoreLearning(
         db.audio,
         db.decks,
         db.sentences,
+        db.dictionaries,
+        db.settings,
+        db.immersionWords,
+        db.immersionPassages,
         db.srsMeta,
         db.rwkvMeta,
         db.rwkvEntities,
         db.rwkvCards,
       ],
       async () => {
+        const settings = settingsSchema.parse(
+          (await db.settings.get("main"))?.value || {},
+        );
+        await db.dictionaries
+          .filter((dictionary) => !!dictionary.immersion)
+          .delete();
+        await db.immersionWords.clear();
+        await db.immersionPassages.clear();
+        let order =
+          ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1;
+        for (const source of data.immersion) {
+          const dictionary = immersionDictionary(
+            source.language,
+            source.secondaryWeight,
+          );
+          dictionary.order =
+            settings.frequencyPreferences[dictionary.id]?.order ?? order++;
+          dictionary.frequencyCount = source.words.length;
+          dictionary.maxFrequency = source.words.length;
+          settings.frequencyPreferences[dictionary.id] ??= {
+            enabled: true,
+            fallback: false,
+            order: dictionary.order,
+          };
+          await db.dictionaries.add(dictionary);
+          await db.immersionWords.bulkAdd(source.words);
+          await db.immersionPassages.bulkAdd(source.passages);
+        }
+        await saveSettings(settings);
         await invalidateRwkv();
         await db.srsMeta.put({
           id: "main",

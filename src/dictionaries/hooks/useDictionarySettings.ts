@@ -1,3 +1,4 @@
+import { exportImmersionDictionary } from "@/dictionaries/immersion";
 import { dictionariesClient } from "@/dictionaries/client";
 import ImportWorker from "@/dictionaries/import.worker?worker";
 import { checkUpdate } from "@/dictionaries/management";
@@ -159,6 +160,13 @@ export function useDictionarySettings({
   }
   function exportDictionary(dictionary: Dictionary) {
     return void task(async () => {
+      if (dictionary.immersion) {
+        saveBlob(
+          await exportImmersionDictionary(dictionary),
+          `${dictionary.index.title}.zip`,
+        );
+        return;
+      }
       const archive = await dictionaryArchive(dictionary.revisionId);
       if (!archive) throw new Error(t("dictionary_archive_unavailable"));
       saveBlob(archive.blob, `${dictionary.index.title}.zip`);
@@ -167,9 +175,14 @@ export function useDictionarySettings({
   function removeDictionary(dictionary: Dictionary) {
     if (
       confirm(
-        t("remove_your_saved_words_and_reviews_will_stay", {
-          title: dictionary.index.title,
-        }),
+        t(
+          dictionary.immersion
+            ? "remove_immersion_confirmation"
+            : "remove_your_saved_words_and_reviews_will_stay",
+          {
+            title: dictionary.index.title,
+          },
+        ),
       )
     )
       void task(async () => {
@@ -180,7 +193,24 @@ export function useDictionarySettings({
         load();
       });
   }
+  function addImmersion() {
+    return void task(async () => {
+      await dictionariesClient({
+        action: "addImmersion",
+        language: settings.studyLanguage,
+      });
+      load();
+    });
+  }
+  function updateImmersionWeight(id: string, weight: number) {
+    return void task(async () => {
+      await dictionariesClient({ action: "setImmersionWeight", id, weight });
+      load();
+    });
+  }
   return {
+    addImmersion,
+    updateImmersionWeight,
     busy,
     progressTarget,
     updates,

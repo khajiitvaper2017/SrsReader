@@ -37,6 +37,7 @@ export function useBackups({
               length: data.vocabulary.length,
               length1: data.reviews.length,
               length2: data.audio.length,
+              immersion: data.immersion.length,
             }),
           )
         )

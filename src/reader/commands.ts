@@ -1,3 +1,7 @@
+import { recordImmersion } from "@/dictionaries/immersion";
+import { immersionId } from "@/dictionaries/immersion-model";
+import { db } from "@/platform/database/db";
+import { broadcast } from "@/background/events";
 import { analyzeTexts } from "@/languages/udpipe";
 import { udpipePermission } from "@/languages/udpipe-permission";
 import { udpipeModel } from "@/languages/codes";
@@ -56,12 +60,31 @@ async function execute(request: Request, settings: Settings) {
           .length,
       });
       const dictionaryStarted = performance.now();
-      const spans = await scanTexts(
+      const immersion =
+        request.source === "website" &&
+        !!(await db.dictionaries.get(immersionId(request.language)))?.immersion;
+      const parsed = await scanTexts(
         request.texts,
         request.language,
         settings,
         analyses.map((analysis) => analysis.surfaces),
+        immersion,
       );
+      const spans = parsed.map((result) => result.spans);
+      if (immersion) {
+        try {
+          if (
+            await recordImmersion(
+              request.language,
+              request.texts,
+              parsed.map((result) => result.lemmas),
+            )
+          )
+            await broadcast({ event: "changed", scope: "frequency" });
+        } catch (error) {
+          console.warn("SrsReader: immersion counts could not be saved", error);
+        }
+      }
       const results = spans.map((spans, index) => ({
         language: request.language,
         spans,

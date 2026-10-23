@@ -386,6 +386,7 @@ export function createScanner(
           const missing = [...texts];
           const results = await readerClient({
             action: "scan",
+            source: options.onLookup ? "popup" : "website",
             language,
             texts: missing,
           });

@@ -1,3 +1,4 @@
+import { immersionFrequency, immersionRanks } from "@/dictionaries/immersion";
 import type { Dictionary, Frequency, LookupWord } from "@/dictionaries/model";
 import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
@@ -26,32 +27,106 @@ function frequencyRank(rows: Frequency[], lemma: string, reading: string) {
   );
 }
 
-export async function wordFrequencies(
-  word: Pick<LookupWord, "lemma" | "reading" | "language">,
+type FrequencyRow = Frequency & {
+  primaryHits?: number;
+  secondaryHits?: number;
+  score?: number;
+};
+type RankedFrequency = {
+  id: string;
+  title: string;
+  rank: number;
+  primaryHits?: number;
+  secondaryHits?: number;
+  score?: number;
+};
+
+async function frequencyData(
+  words: Pick<LookupWord, "lemma" | "reading" | "language">[],
+  settings: Settings,
 ) {
-  const settings = await getSettings();
+  const language = words[0]?.language ?? settings.studyLanguage;
   const dictionaries = (await listFrequencyDictionaries(settings)).filter(
-    (d) => d.enabled && d.language === word.language && d.frequencyCount > 0,
+    (dictionary) =>
+      dictionary.enabled &&
+      dictionary.language === language &&
+      dictionary.frequencyCount > 0,
   );
-  if (!dictionaries.length) return [];
-  const rows = await db.frequencies
-    .where("[revisionId+folded]")
-    .anyOf(
-      dictionaries.map((d) => [
-        d.revisionId,
-        folded(word.lemma, word.language),
-      ]),
-    )
-    .toArray();
-  return dictionaries
-    .flatMap((dictionary) => {
-      const rank = frequencyRank(
-        rows.filter((row) => row.revisionId === dictionary.revisionId),
-        word.lemma,
-        word.reading,
+  const keys = new Set(words.map((word) => folded(word.lemma, language)));
+  const imported = dictionaries.filter((dictionary) => !dictionary.immersion);
+  const rows: FrequencyRow[] = imported.length
+    ? await db.frequencies
+        .where("[revisionId+folded]")
+        .anyOf(
+          imported.flatMap((dictionary) =>
+            [...keys].map((key) => [dictionary.revisionId, key]),
+          ),
+        )
+        .toArray()
+    : [];
+  for (const dictionary of dictionaries.filter(
+    (dictionary) => dictionary.immersion,
+  )) {
+    const values =
+      words.length === 1
+        ? await immersionFrequency(
+            dictionary.id,
+            words[0]!.lemma,
+            language,
+          ).then((value) =>
+            value ? [{ ...value, lemma: words[0]!.lemma }] : [],
+          )
+        : await immersionRanks(dictionary.id);
+    for (const value of values) {
+      const key = folded(value.lemma, language);
+      if (keys.has(key))
+        rows.push({
+          ...value,
+          id: JSON.stringify([dictionary.id, key]),
+          revisionId: dictionary.revisionId,
+          key: value.lemma,
+          folded: key,
+          reading: null,
+        });
+    }
+  }
+  const byKey = new Map<string, FrequencyRow[]>();
+  for (const row of rows) {
+    const group = byKey.get(row.folded) || [];
+    group.push(row);
+    byKey.set(row.folded, group);
+  }
+  return { dictionaries, byKey };
+}
+
+function matchingFrequencies(
+  word: Pick<LookupWord, "lemma" | "reading" | "language">,
+  data: Awaited<ReturnType<typeof frequencyData>>,
+  settings: Settings,
+): RankedFrequency[] {
+  const matching = data.byKey.get(folded(word.lemma, word.language)) || [];
+  return data.dictionaries
+    .flatMap((dictionary): RankedFrequency[] => {
+      const rows = matching.filter(
+        (row) => row.revisionId === dictionary.revisionId,
       );
+      const rank = frequencyRank(rows, word.lemma, word.reading);
+      const counts = dictionary.immersion ? rows[0] : undefined;
       return Number.isFinite(rank)
-        ? [{ id: dictionary.id, title: dictionary.index.title, rank }]
+        ? [
+            {
+              id: dictionary.id,
+              title: dictionary.index.title,
+              rank,
+              ...(counts
+                ? {
+                    primaryHits: counts.primaryHits,
+                    secondaryHits: counts.secondaryHits,
+                    score: counts.score,
+                  }
+                : {}),
+            },
+          ]
         : [];
     })
     .filter(
@@ -60,57 +135,29 @@ export async function wordFrequencies(
     );
 }
 
-export async function orderNewWords(words: Vocabulary[], settings: Settings) {
-  const dictionaries = (await listFrequencyDictionaries(settings)).filter(
-    (d) =>
-      d.enabled &&
-      d.language === settings.studyLanguage &&
-      d.frequencyCount > 0,
+export async function wordFrequencies(
+  word: Pick<LookupWord, "lemma" | "reading" | "language">,
+) {
+  const settings = await getSettings();
+  return matchingFrequencies(
+    word,
+    await frequencyData([word], settings),
+    settings,
   );
-  const keys = [
-    ...new Set(words.map((word) => folded(word.lemma, word.language))),
-  ];
-  const rows = dictionaries.length
-    ? await db.frequencies
-        .where("[revisionId+folded]")
-        .anyOf(
-          dictionaries.flatMap((dictionary) =>
-            keys.map((key) => [dictionary.revisionId, key]),
-          ),
-        )
-        .toArray()
-    : [];
-  const byKey = new Map<string, Frequency[]>();
-  for (const row of rows) {
-    const group = byKey.get(row.folded) || [];
-    group.push(row);
-    byKey.set(row.folded, group);
-  }
+}
+
+export async function orderNewWords(words: Vocabulary[], settings: Settings) {
+  if (!words.length) return words;
+  const data = await frequencyData(words, settings);
+  const { dictionaries } = data;
   const ranks = new Map<string, number>();
   const maxFrequency = dictionaries.length
     ? Math.max(...dictionaries.map((dictionary) => dictionary.maxFrequency))
     : words.length;
   await Promise.all(
     words.map(async (word) => {
-      const matching = byKey.get(folded(word.lemma, word.language)) || [];
-      const matchingRanks = dictionaries
-        .map((dictionary) => ({
-          dictionary,
-          rank: frequencyRank(
-            matching.filter((row) => row.revisionId === dictionary.revisionId),
-            word.lemma,
-            word.reading,
-          ),
-        }))
-        .filter((row) => Number.isFinite(row.rank));
       const rank = harmonicRank(
-        matchingRanks
-          .filter(
-            (row, index) =>
-              !settings.frequencyPreferences[row.dictionary.id]?.fallback ||
-              index === 0,
-          )
-          .map((row) => row.rank),
+        matchingFrequencies(word, data, settings).map((row) => row.rank),
       );
       if (Number.isFinite(rank)) ranks.set(word.id, rank);
       else if (settings.missingFrequency === "random") {
