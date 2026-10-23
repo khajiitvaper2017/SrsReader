@@ -40,6 +40,8 @@ export type ReviewSummary = Pick<Review, "time" | "rating" | "durationMs"> & {
 export type SrsMeta = {
   id: string;
   sequence: number;
+  scheduledModel?: string;
+  reschedule?: { model: string; after: string; count: number };
   undo?: {
     reviewId: string;
     entities: RwkvEntity[];

@@ -55,7 +55,7 @@ export async function undoReview(id: string) {
         else await db.rwkvCards.delete(review.wordId);
         await db.rwkvMeta.put({ ...undo.meta, cursor: meta.sequence });
       } else await invalidateRwkv();
-      if (meta) await db.srsMeta.put({ id: "main", sequence: meta.sequence });
+      if (meta) await db.srsMeta.put({ ...meta, undo: undefined });
       return review.wordId;
     },
   );

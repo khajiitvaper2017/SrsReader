@@ -28,7 +28,9 @@ export const requests = [
   z.object({
     action: z.literal("activateAlgorithm"),
     algorithm: z.enum(["fsrs", "rwkv"]),
+    rwkvMode: z.enum(["curve", "instant"]).optional(),
   }),
+  z.object({ action: z.literal("rescheduleModel") }),
   z.object({ action: z.literal("reschedule"), after: z.string().default("") }),
   z.object({ action: z.literal("stats") }),
   z.object({
@@ -62,6 +64,7 @@ export type Responses = {
   prepareRwkv: Responses["rwkvStatus"];
   resetRwkv: void;
   activateAlgorithm: Settings;
+  rescheduleModel: { count: number; cursor: string | null };
   reschedule: { count: number; cursor: string | null };
   reviewStats: ReviewStatistics;
   stats: { total: number; known: number; due: number; today: number };

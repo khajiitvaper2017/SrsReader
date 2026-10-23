@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   Group,
+  Modal,
   Select,
   SimpleGrid,
   NumberInput,
@@ -18,7 +19,9 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
 import { useSrsSettings } from "@/srs/hooks/useSrsSettings";
+import { SrsProgress } from "@/srs/components/SrsProgress";
 import { learningStepsSchema } from "@/srs/preferences";
+import { useState } from "react";
 function NumberSetting({
   label,
   value,
@@ -68,6 +71,10 @@ export function SrsSettings({
 }) {
   const { busy, message, setMessage, status, bands, setBands, task, prepare } =
     useSrsSettings({ settings, dictionaries, onChange, onError });
+  const [pendingModel, setPendingModel] = useState<{
+    algorithm: Settings["algorithm"];
+    rwkvMode: Settings["rwkvMode"];
+  } | null>(null);
   const number = (
     label: string,
     key:
@@ -94,6 +101,36 @@ export function SrsSettings({
   );
   return (
     <Stack>
+      <Modal
+        opened={pendingModel !== null}
+        onClose={() => setPendingModel(null)}
+        title={t("srs_switch_model")}
+      >
+        <Stack>
+          <Text>{t("srs_switch_model_confirm")}</Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setPendingModel(null)}>
+              {t("cancel")}
+            </Button>
+            <Button
+              onClick={() => {
+                const next = pendingModel!;
+                setPendingModel(null);
+                void task(async () => {
+                  if (next.algorithm === "rwkv") await prepare();
+                  await onChange(
+                    await srsClient({ action: "activateAlgorithm", ...next }),
+                  );
+                  setMessage(t("srs_algorithm_ready"));
+                });
+              }}
+            >
+              {t("srs_switch_and_reschedule")}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      <SrsProgress />
       <Select
         label={t("srs_algorithm")}
         description={t("rwkv_download_help")}
@@ -104,16 +141,11 @@ export function SrsSettings({
           { value: "rwkv", label: "RWKV w64 (SM55)" },
         ]}
         onChange={(algorithm) => {
-          return void task(async () => {
-            if (algorithm === "rwkv") await prepare();
-            await onChange(
-              await srsClient({
-                action: "activateAlgorithm",
-                algorithm: algorithm as Settings["algorithm"],
-              }),
-            );
-            setMessage(t("srs_algorithm_ready"));
-          });
+          if (
+            (algorithm === "fsrs" || algorithm === "rwkv") &&
+            algorithm !== settings.algorithm
+          )
+            setPendingModel({ algorithm, rwkvMode: settings.rwkvMode });
         }}
       />
       {settings.algorithm === "rwkv" && (
@@ -127,8 +159,14 @@ export function SrsSettings({
             { value: "instant", label: t("rwkv_mode_instant") },
           ]}
           onChange={(value) => {
-            if (value === "curve" || value === "instant")
-              void task(() => onChange({ rwkvMode: value }));
+            if (
+              (value === "curve" || value === "instant") &&
+              value !== settings.rwkvMode
+            )
+              setPendingModel({
+                algorithm: settings.algorithm,
+                rwkvMode: value,
+              });
           }}
         />
       )}

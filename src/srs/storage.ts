@@ -58,7 +58,8 @@ export async function commitReview({
         addContext(saved, context);
         saved.version = current.version + 1;
       }
-      const sequence = ((await db.srsMeta.get("main"))?.sequence ?? 0) + 1;
+      const meta = await db.srsMeta.get("main");
+      const sequence = (meta?.sequence ?? 0) + 1;
       await db.vocabulary.put(saved);
       await db.reviews.put({
         id,
@@ -89,6 +90,7 @@ export async function commitReview({
         await db.rwkvMeta.put({ ...answer.meta, cursor: sequence });
       }
       await db.srsMeta.put({
+        ...meta,
         id: "main",
         sequence,
         undo: neural ? { reviewId: id, ...neural.before } : undefined,

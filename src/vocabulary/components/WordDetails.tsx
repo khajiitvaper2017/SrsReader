@@ -177,7 +177,11 @@ export function WordDetails({
           <Stack>
             <span>{t("next_review")}</span>
             <strong>
-              {new Date(word.card.due).toLocaleString(i18n.resolvedLanguage)}
+              {word.card.state === 2 || word.card.interday
+                ? new Date(word.card.due).toLocaleDateString(
+                    i18n.resolvedLanguage,
+                  )
+                : new Date(word.card.due).toLocaleString(i18n.resolvedLanguage)}
             </strong>
             <span>
               {t("review_history_counts", {

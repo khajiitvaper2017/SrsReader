@@ -57,6 +57,7 @@ export async function handle(request: Request) {
     case "rwkvStatus":
     case "prepareRwkv":
     case "activateAlgorithm":
+    case "rescheduleModel":
     case "reschedule":
       return handleSrs(request, settings);
     case "audio":

@@ -218,7 +218,10 @@ export function ReviewPage({
                 <Text>
                   {queue?.waiting
                     ? t("next_review_in", {
-                        value1: intervalLabel(queue.waiting),
+                        value1: intervalLabel(
+                          queue.waiting,
+                          settings.rolloverHour,
+                        ),
                       })
                     : stats.total
                       ? ""

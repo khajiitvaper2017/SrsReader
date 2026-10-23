@@ -12,7 +12,11 @@ import { replayBatch } from "@/srs/engines/rwkv/replay";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 import { grade } from "@/srs/grading";
 import { reviewQueue } from "@/srs/queue";
-import { rescheduleExisting } from "@/srs/reschedule";
+import {
+  requireScheduledModel,
+  rescheduleExisting,
+  rescheduleModel,
+} from "@/srs/reschedule";
 import { reviewStatistics } from "@/srs/statistics";
 import { clearUndo } from "@/srs/storage";
 import { undoReview } from "@/srs/undo";
@@ -29,11 +33,14 @@ export function handleSrs(request: Request, settings: Settings) {
     request.action === "resetRwkv" ||
     request.action === "prepareRwkv" ||
     request.action === "activateAlgorithm" ||
+    request.action === "rescheduleModel" ||
     request.action === "reschedule"
     ? srsWrite(async () => execute(request, await getSettings()))
     : execute(request, settings);
 }
 async function execute(request: Request, settings: Settings) {
+  if (["queue", "preview", "grade", "stats"].includes(request.action))
+    await requireScheduledModel(settings);
   switch (request.action) {
     case "grade": {
       const word = await snapshot(
@@ -83,10 +90,19 @@ async function execute(request: Request, settings: Settings) {
     case "activateAlgorithm": {
       if (request.algorithm === "rwkv" && !(await rwkvStatus(settings)).ready)
         throw new Error(t("rwkv_not_ready"));
-      const value = { ...settings, algorithm: request.algorithm };
+      const value = {
+        ...settings,
+        algorithm: request.algorithm,
+        rwkvMode: request.rwkvMode ?? settings.rwkvMode,
+      };
       await saveSettings(value);
       await notify(undefined, "settings");
       return value;
+    }
+    case "rescheduleModel": {
+      const result = await rescheduleModel();
+      if (result.cursor === null) await notify(undefined, "srs");
+      return result;
     }
     case "reschedule": {
       const result = await rescheduleExisting(request.after);
