@@ -97,8 +97,8 @@ export function LookupControls({
       ),
   );
   return (
-    <Stack gap="xs">
-      <Group gap="md" align="center">
+    <Stack>
+      <Group align="center">
         {lookupPresets.map((binding) => {
           const key = bindingKey(binding);
           const selected = value.some((b) => bindingKey(b) === key);
@@ -120,7 +120,7 @@ export function LookupControls({
         })}
       </Group>
       {custom.map((binding) => (
-        <Group key={bindingKey(binding)} gap="xs" align="center">
+        <Group key={bindingKey(binding)} align="center">
           <span>{bindingLabel(binding)}</span>
           <ActionIcon
             title={t("remove_2", { value1: bindingLabel(binding) })}
@@ -136,7 +136,7 @@ export function LookupControls({
           </ActionIcon>
         </Group>
       ))}
-      <Group gap="xs" align="center">
+      <Group align="center">
         <Select
           aria-label={t("custom_binding_type")}
           value={type}

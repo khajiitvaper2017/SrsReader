@@ -36,6 +36,8 @@ The project uses Mantine. These standards apply to all UI work.
 - Use Mantine for all UI controls and layouts. Import its components directly. Do not add another UI library or wrap Mantine components just to rename their props.
 - Keep layouts compact and consistent with the shared theme.
 - Reuse the shared theme's control sizes, variants, typography, and spacing. Use Mantine spacing and color tokens. Do not invent styles for each screen.
+- Use `<Text variant="supporting">` for help text, descriptions, and metadata. The shared theme defines its smaller size and dimmed color.
+- Do not set `size`, `fz`, `c="dimmed"`, `component="small"`, or local CSS to style supporting text. Change its appearance in `src/shared/ui/theme.ts`.
 - Use Mantine layout components and style props before writing CSS. Add custom CSS only for behavior or content that Mantine cannot provide. Keep it small and scoped. Do not override Mantine globally or build a separate style system.
 - Do not recreate buttons, inputs, selects, menus, switches, alerts, or progress bars with custom HTML and CSS. Native markup is allowed for structured dictionary content and Markdown.
 - Keep the saved appearance setting as the source of truth. Support light, dark, and system appearance across all entry points. Do not add separate theme storage.

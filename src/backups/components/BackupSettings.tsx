@@ -25,12 +25,12 @@ export function BackupSettings({
   const { busy, task, fileImport } = useBackups({ setSettings, tasks });
   return (
     <Paper>
-      <Stack gap="md">
+      <Stack>
         <Title order={2}>{t("import_export")}</Title>
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Stack gap="xs">
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <Stack>
             <Title order={3}>{t("settings")}</Title>
-            <Group gap="xs" align="center">
+            <Group align="center">
               <Button
                 disabled={busy}
                 onClick={() => void task(exportSettings)}
@@ -55,12 +55,12 @@ export function BackupSettings({
               </FileButton>
             </Group>
           </Stack>
-          <Stack gap="xs">
+          <Stack>
             <Title order={3}>{t("words_progress")}</Title>
             <Text>
               {t("includes_sentences_review_history_and_saved_audio")}
             </Text>
-            <Group gap="xs" align="center">
+            <Group align="center">
               <Button
                 disabled={busy}
                 onClick={() => void task(exportLearning)}

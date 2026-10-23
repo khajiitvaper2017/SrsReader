@@ -5,7 +5,7 @@ import { UIProvider } from "@/shared/ui/UIProvider";
 import { createRoot } from "react-dom/client";
 
 createRoot(document.getElementById("root")!).render(
-  <UIProvider scope="popups">
+  <UIProvider scope="popups" popup>
     <Lookup />
   </UIProvider>,
 );

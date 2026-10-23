@@ -13,10 +13,10 @@ export function TaskProgress({ progress }: { progress: ImportProgress }) {
           ? number(done)
           : "";
   return (
-    <Stack gap={4}>
-      <Group justify="space-between" gap="xs">
-        <Text size="xs">{phase}</Text>
-        <Text size="xs" c="dimmed">
+    <Stack>
+      <Group justify="space-between">
+        <Text variant="supporting">{phase}</Text>
+        <Text variant="supporting">
           {detail}
           {percent !== undefined &&
             ` · ${number(percent / 100, { style: "percent", maximumFractionDigits: 0 })}`}

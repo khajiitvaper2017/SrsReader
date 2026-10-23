@@ -57,11 +57,11 @@ export function App() {
     <AppShell header={{ height: { base: 100, sm: 58 } }} padding="md">
       <AppShell.Header>
         <Container size="lg" h="100%">
-          <Group h="100%" justify="space-between" gap="xs">
+          <Group h="100%" justify="space-between">
             <Anchor href="#review" underline="never" c="inherit">
               <Logo small />
             </Anchor>
-            <Group component="nav" aria-label={t("pages")} gap={4}>
+            <Group component="nav" aria-label={t("pages")}>
               {(inSetup
                 ? [
                     ["setup", t("setup")],

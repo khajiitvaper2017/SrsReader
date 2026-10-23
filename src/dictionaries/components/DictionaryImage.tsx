@@ -30,7 +30,7 @@ export function ImageContent({
       loading="lazy"
     />
   ) : (
-    <Text component="span" inherit c="dimmed">
+    <Text variant="supporting" component="span" inherit>
       {alt || t("image_unavailable")}
     </Text>
   );

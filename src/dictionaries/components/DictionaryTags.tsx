@@ -30,10 +30,8 @@ export function DictionaryTags({
       <Accordion.Item value="settings">
         <Accordion.Control>{t("dictionary_tags")}</Accordion.Control>
         <Accordion.Panel>
-          <Stack gap="sm">
-            <Text c="dimmed" fz="xs">
-              {t("dictionary_tags_help")}
-            </Text>
+          <Stack>
+            <Text variant="supporting">{t("dictionary_tags_help")}</Text>
             <ErrorBox error={error} />
             <TextInput
               type="search"
@@ -42,7 +40,7 @@ export function DictionaryTags({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <Stack gap="xs" mah={240} style={{ overflowY: "auto" }}>
+            <Stack mah={240} style={{ overflowY: "auto" }}>
               {entries.map(({ name, description }) => (
                 <Checkbox
                   key={name}
@@ -60,9 +58,7 @@ export function DictionaryTags({
                 />
               ))}
               {!entries.length && (
-                <Text c="dimmed" fz="xs">
-                  {t("no_matching_tags")}
-                </Text>
+                <Text variant="supporting">{t("no_matching_tags")}</Text>
               )}
             </Stack>
           </Stack>

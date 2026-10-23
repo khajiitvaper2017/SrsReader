@@ -25,7 +25,7 @@ export function ReviewStatistics() {
     day: "numeric",
   });
   return (
-    <Stack gap="xs">
+    <Stack>
       <ErrorBox error={error} />
       {!data && !error && (
         <Loader size="sm" aria-label={t("srs_stats_loading")} />
@@ -42,8 +42,8 @@ export function ReviewStatistics() {
             <Accordion.Item value="statistics">
               <Accordion.Control>{t("srs_statistics")}</Accordion.Control>
               <Accordion.Panel>
-                <Stack gap="sm">
-                  <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
+                <Stack>
+                  <SimpleGrid cols={{ base: 2, sm: 3 }}>
                     {(
                       [
                         ["srs_saved_words", data.total],
@@ -56,23 +56,19 @@ export function ReviewStatistics() {
                       ] as const
                     ).map(([label, value]) => (
                       <Paper key={label} withBorder p="xs">
-                        <Text size="xs" c="dimmed">
-                          {t(label)}
-                        </Text>
+                        <Text variant="supporting">{t(label)}</Text>
                         <Text fw={700}>{number(value)}</Text>
                       </Paper>
                     ))}
                   </SimpleGrid>
-                  <Text fw={600} size="sm">
-                    {t("srs_last_30_days")}
-                  </Text>
-                  <Text size="sm">
+                  <Text fw={600}>{t("srs_last_30_days")}</Text>
+                  <Text>
                     {t("srs_period_answers", {
                       answers: number(data.answers),
                       days: number(data.studyDays),
                     })}
                   </Text>
-                  <Text size="sm">
+                  <Text>
                     {t("srs_period_recall", {
                       value:
                         data.recall === null
@@ -81,10 +77,8 @@ export function ReviewStatistics() {
                       count: data.normalAnswers,
                     })}
                   </Text>
-                  <Text size="sm" c="dimmed">
-                    {t("srs_recall_help")}
-                  </Text>
-                  <Text size="sm">
+                  <Text variant="supporting">{t("srs_recall_help")}</Text>
+                  <Text>
                     {t("srs_period_time", {
                       minutes: (data.durationMs / 60000).toLocaleString(
                         locale,
@@ -95,9 +89,9 @@ export function ReviewStatistics() {
                       count: data.timedAnswers,
                     })}
                   </Text>
-                  <Group gap="sm">
+                  <Group>
                     {["again", "hard", "good", "easy"].map((rating, index) => (
-                      <Text key={rating} size="sm">
+                      <Text key={rating}>
                         {t(rating)}: {number(data.ratings[index]!)}
                       </Text>
                     ))}
@@ -108,10 +102,8 @@ export function ReviewStatistics() {
             <Accordion.Item value="forecast">
               <Accordion.Control>{t("srs_forecast")}</Accordion.Control>
               <Accordion.Panel>
-                <Stack gap="sm">
-                  <Text size="sm" c="dimmed">
-                    {t("srs_forecast_help")}
-                  </Text>
+                <Stack>
+                  <Text variant="supporting">{t("srs_forecast_help")}</Text>
                   <SegmentedControl
                     value={days}
                     onChange={setDays}

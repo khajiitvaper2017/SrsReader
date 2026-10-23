@@ -130,11 +130,9 @@ export function DefinitionEditor({
     }
   }
   return (
-    <Stack data-srs-reader="" gap="xs">
-      <Group gap={4} role="group" aria-label={t("definition_tags")}>
-        <Text size="xs" c="dimmed">
-          {t("definition_tags")}
-        </Text>
+    <Stack data-srs-reader="">
+      <Group role="group" aria-label={t("definition_tags")}>
+        <Text variant="supporting">{t("definition_tags")}</Text>
         {!tags ? (
           <Loader size="xs" aria-label={t("loading_definition_tags")} />
         ) : tags.tags ? (
@@ -144,9 +142,7 @@ export function DefinitionEditor({
             </Badge>
           ))
         ) : (
-          <Text size="xs" c="dimmed">
-            {t("no_definition_tags")}
-          </Text>
+          <Text variant="supporting">{t("no_definition_tags")}</Text>
         )}
       </Group>
       <Textarea
@@ -159,18 +155,16 @@ export function DefinitionEditor({
         onChange={(event) => setDefinition(event.target.value)}
       />
       {senses.length > 0 && (
-        <Stack gap={4}>
-          <Text size="xs" c="dimmed">
-            {t("definition_preview")}
-          </Text>
-          <List type="ordered" size="sm" withPadding>
+        <Stack>
+          <Text variant="supporting">{t("definition_preview")}</Text>
+          <List type="ordered" withPadding>
             {senses.map((sense, index) => (
               <List.Item key={index}>{sense}</List.Item>
             ))}
           </List>
         </Stack>
       )}
-      <Group gap="xs" align="center">
+      <Group align="center">
         <Button
           disabled={busy || !tags || !definition.trim()}
           onClick={() => void save()}
@@ -204,7 +198,7 @@ export function DefinitionEditor({
         )}
       </Group>
       {status && (
-        <Text role="status" c="dimmed" fz="xs">
+        <Text variant="supporting" role="status">
           {status}
         </Text>
       )}

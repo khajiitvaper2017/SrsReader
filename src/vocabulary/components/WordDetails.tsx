@@ -54,8 +54,8 @@ export function WordDetails({
   if (!word) return null;
   return (
     <Paper ref={detailRef} mb="md">
-      <Stack gap="md">
-        <Group gap="xs" align="center" justify="space-between">
+      <Stack>
+        <Group align="center" justify="space-between">
           <ActionIcon
             title={t("close_word_details")}
             aria-label={t("close_word_details")}
@@ -65,15 +65,15 @@ export function WordDetails({
             <X aria-hidden="true" size={16} />
           </ActionIcon>
         </Group>
-        <Group gap="xs" align="center" justify="space-between">
+        <Group align="center" justify="space-between">
           <Title lang={word.language} order={2}>
             {word.lemma}
           </Title>
           <AudioButton word={word} settings={settings} onError={setError} />
         </Group>
         {editing ? (
-          <Stack gap="xs">
-            <Group gap="xs" justify="space-between" align="center">
+          <Stack>
+            <Group justify="space-between" align="center">
               {t("definition")}{" "}
               <Textarea
                 rows={7}
@@ -82,10 +82,10 @@ export function WordDetails({
                 aria-label={t("definition")}
               />
             </Group>
-            <Text c="dimmed" fz="xs">
+            <Text variant="supporting">
               {t("saving_replaces_the_dictionary_snapshot_for_this_card")}{" "}
             </Text>
-            <Group gap="xs" align="center">
+            <Group align="center">
               <Button
                 disabled={!definition.trim()}
                 onClick={() => saveDefinition()}
@@ -117,14 +117,14 @@ export function WordDetails({
           surface={word.contexts[0]?.surface}
         />
         {word.contexts.map((context, i) => (
-          <Stack key={`${word.id}:${i}`} gap="xs">
+          <Stack key={`${word.id}:${i}`}>
             <SentenceTranslation
               context={context}
               language={word.language}
               settings={settings}
               wordId={word.id}
             />
-            <Group gap="xs" align="center" justify="space-between">
+            <Group align="center" justify="space-between">
               <Text component="span" inherit>
                 {context.title}
               </Text>
@@ -145,10 +145,10 @@ export function WordDetails({
             </Group>
           </Stack>
         ))}
-        <Group gap="xs" justify="space-between" align="center" wrap="nowrap">
+        <Group justify="space-between" align="center" wrap="nowrap">
           <span style={{ flex: 1, minWidth: 0 }}>
             <strong>{t("srs_word_retention")}</strong>
-            <Text component="small" size="xs" c="dimmed" display="block">
+            <Text variant="supporting" component="span" display="block">
               {t("srs_override_help")}
             </Text>
           </span>
@@ -168,13 +168,13 @@ export function WordDetails({
           />
         </Group>
         {word.card && (
-          <Text c="dimmed">
+          <Text variant="supporting">
             {t("srs_lapses", { count: word.card.lapses })}
             {word.leech ? ` · ${t("srs_leech")}` : ""}
           </Text>
         )}
         {word.card && !word.known && (
-          <Stack gap="xs">
+          <Stack>
             <span>{t("next_review")}</span>
             <strong>
               {new Date(word.card.due).toLocaleString(i18n.resolvedLanguage)}
@@ -187,7 +187,7 @@ export function WordDetails({
             </span>
           </Stack>
         )}
-        <Group gap="xs" align="center">
+        <Group align="center">
           <ActionIcon
             title={t("edit_definition")}
             aria-label={t("edit_definition")}

@@ -24,7 +24,7 @@ export function AppearanceSettings({
   useEffect(() => setAccentColor(settings.accentColor), [settings.accentColor]);
   return (
     <Paper>
-      <Stack gap="sm">
+      <Stack>
         <Title order={2}>{t("appearance")}</Title>
         <SegmentedControl
           w="100%"

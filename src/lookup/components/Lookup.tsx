@@ -147,15 +147,14 @@ function LookupEntry({
       <>
         <Stack
           component="header"
-          gap="xs"
           pos="sticky"
           top={0}
           bg="var(--mantine-color-body)"
           style={{ zIndex: 2 }}
           data-srs-reader
         >
-          <Group gap="xs" align="center" justify="space-between">
-            <Stack gap="xs" miw={0} maw="100%">
+          <Group align="center" justify="space-between">
+            <Stack miw={0} maw="100%">
               <Group gap={4} wrap="nowrap">
                 <HoverCard
                   disabled={
@@ -199,8 +198,8 @@ function LookupEntry({
                       scrollbarGutter: "stable",
                     }}
                   >
-                    <Stack gap="xs">
-                      <Text lang={word.language} size="sm" fw={500}>
+                    <Stack>
+                      <Text lang={word.language} fw={500}>
                         {surface}
                       </Text>
                       {result?.grammar && <Grammar grammar={result.grammar} />}
@@ -216,7 +215,6 @@ function LookupEntry({
                   >
                     <Menu.Target>
                       <ActionIcon
-                        size="sm"
                         variant="subtle"
                         disabled={busy}
                         aria-label={`${t("choose_word")}: ${word.lemma}`}
@@ -287,7 +285,7 @@ function LookupEntry({
                 )}
               </Group>
               {word.reading && (
-                <Text component="span" inherit c="dimmed">
+                <Text variant="supporting" component="span" inherit>
                   {word.reading}
                 </Text>
               )}
@@ -303,7 +301,6 @@ function LookupEntry({
                 }}
                 disabled={busy}
                 variant="subtle"
-                size="sm"
               >
                 <Plus aria-hidden="true" size={16} />
               </ActionIcon>
@@ -335,7 +332,7 @@ function LookupEntry({
           scrollbarGutter: "stable",
         }}
       >
-        <Stack gap="xs" p="sm">
+        <Stack p="sm">
           {onBack && (
             <ActionIcon
               onClick={onBack}
@@ -349,9 +346,11 @@ function LookupEntry({
           )}
           <ErrorBox error={error} />
           <SrsProgress />
-          {!result && !error && <Text c="dimmed">{t("looking_up")}</Text>}
+          {!result && !error && (
+            <Text variant="supporting">{t("looking_up")}</Text>
+          )}
           {!word && !!result?.words.length && (
-            <Stack gap="xs">
+            <Stack>
               <Title order={1}>{term}</Title>
               <Meanings
                 meanings={result.words.flatMap(
@@ -399,7 +398,7 @@ function LookupEntry({
                 (form) => !form.startsWith("redirected from "),
               ).length > 0 ||
                 word.meanings.some((meaning) => meaning.grammar?.length)) && (
-                <Text c="dimmed" size="xs">
+                <Text variant="supporting">
                   {[
                     ...new Set(
                       word.forms.filter(
@@ -427,7 +426,7 @@ function LookupEntry({
                     ))}
                 </Text>
               )}
-              <Stack ref={readingRef} gap="xs">
+              <Stack ref={readingRef}>
                 {unparsed || editing !== null ? (
                   <DefinitionEditor
                     key={`${word.id}:${editing}`}
@@ -471,7 +470,6 @@ function LookupEntry({
                               contentRef.current?.scrollTo({ top: 0 });
                             }}
                             variant="subtle"
-                            size="sm"
                           >
                             <Pencil aria-hidden="true" size={16} />
                           </ActionIcon>
@@ -489,7 +487,6 @@ function LookupEntry({
                               )
                             }
                             variant="subtle"
-                            size="sm"
                             color="red"
                           >
                             <Trash2 aria-hidden="true" size={16} />
@@ -511,7 +508,6 @@ function LookupEntry({
       </Stack>
       {word && !unparsed && (
         <Stack
-          gap="xs"
           p="xs"
           data-srs-reader
           style={{

@@ -73,20 +73,14 @@ export function WordExamples({
         <Stack
           data-reading-source-url={example.context.url}
           data-reading-source-title={example.context.title}
-          gap="xs"
         >
-          <Group gap={4} wrap="nowrap" align="flex-start">
+          <Group wrap="nowrap" align="flex-start">
             <Box style={{ flex: 1, minWidth: 0 }}>
               {translation || (
                 <Sentence context={example.context} language={word.language} />
               )}
             </Box>
-            <Group
-              gap={4}
-              wrap="nowrap"
-              data-srs-reader
-              style={{ flexShrink: 0 }}
-            >
+            <Group wrap="nowrap" data-srs-reader style={{ flexShrink: 0 }}>
               {examples.length > 1 && (
                 <ActionIcon
                   title={t("another_example")}
@@ -102,12 +96,7 @@ export function WordExamples({
           </Group>
           {failure}
           {!settings.hideDictionarySources && (
-            <Group
-              data-srs-reader=""
-              gap="xs"
-              align="center"
-              justify="space-between"
-            >
+            <Group data-srs-reader="" align="center" justify="space-between">
               <Anchor
                 href={example.context.url}
                 target="_blank"

@@ -60,7 +60,7 @@ export function ReviewPage({
   return (
     <>
       <SrsProgress />
-      <Group gap="xs" mb="sm" justify="center">
+      <Group mb="sm" justify="center">
         {(
           [
             ["new", queue?.fresh],
@@ -70,7 +70,7 @@ export function ReviewPage({
             ["reviewed_today", stats.today],
           ] as const
         ).map(([label, count]) => (
-          <Text key={label} size="sm">
+          <Text key={label}>
             {t(label)}{" "}
             <Text span fw={700}>
               {count ?? "—"}
@@ -79,18 +79,16 @@ export function ReviewPage({
         ))}
       </Group>
       {!!queue?.ahead && (
-        <Text size="xs" c="dimmed" mb="sm">
+        <Text variant="supporting" mb="sm">
           {t("srs_queue_ahead", { count: queue.ahead })}
         </Text>
       )}
       <ErrorBox error={error} />
-      <Stack gap="xs">
+      <Stack>
         <Paper mb="md">
-          <Stack gap="md">
+          <Stack>
             <Group justify="center" mb="lg">
               <SegmentedControl
-                size="xs"
-                styles={{ label: { whiteSpace: "nowrap" } }}
                 value={front}
                 onChange={(value) => setFront(value as typeof front)}
                 data={[
@@ -101,7 +99,7 @@ export function ReviewPage({
             </Group>
             {word ? (
               <>
-                <Stack gap="xs" align="center" ta="center" py="lg">
+                <Stack align="center" ta="center" py="lg">
                   <Badge variant="light">
                     {t(
                       [
@@ -113,23 +111,23 @@ export function ReviewPage({
                     )}
                   </Badge>
                   {front === "sentence" && context ? (
-                    <Stack gap="xs">
+                    <Stack>
                       <Sentence context={context} language={word.language} />
                     </Stack>
                   ) : (
-                    <Title lang={word.language} order={2} fz={32}>
+                    <Title lang={word.language} order={1}>
                       {word.lemma}
                     </Title>
                   )}
                   {word.reading && (
-                    <Text component="span" inherit c="dimmed">
+                    <Text variant="supporting" component="span" inherit>
                       {word.reading}
                     </Text>
                   )}
                 </Stack>
                 {revealed ? (
-                  <Stack gap="xs">
-                    <Group gap="xs" align="center" justify="space-between">
+                  <Stack>
+                    <Group align="center" justify="space-between">
                       <AudioButton
                         word={word}
                         settings={settings}
@@ -142,7 +140,7 @@ export function ReviewPage({
                       settings={settings}
                     />
                     {context && (
-                      <Stack gap="xs">
+                      <Stack>
                         {settings.showSentenceTranslation ? (
                           <SentenceTranslation
                             key={`${word.id}:${example}`}
@@ -157,7 +155,7 @@ export function ReviewPage({
                             language={word.language}
                           />
                         )}
-                        <Group gap="xs" align="center" justify="space-between">
+                        <Group align="center" justify="space-between">
                           {context.url.startsWith("http") ? (
                             <Anchor
                               href={context.url}
@@ -199,10 +197,10 @@ export function ReviewPage({
                     />
                   </Stack>
                 ) : (
-                  <Stack gap="xs">
+                  <Stack>
                     <Button onClick={reveal} variant="filled">
                       <Eye aria-hidden="true" size={16} /> {t("show_answer")}{" "}
-                      <Kbd size="xs">{t("space")}</Kbd>
+                      <Kbd>{t("space")}</Kbd>
                     </Button>
                   </Stack>
                 )}
@@ -234,7 +232,7 @@ export function ReviewPage({
                 )}
               </Empty>
             )}
-            <Stack gap="xs" component="footer">
+            <Stack component="footer">
               <ActionIcon
                 title={t("undo_last_review")}
                 aria-label={t("undo_last_review")}

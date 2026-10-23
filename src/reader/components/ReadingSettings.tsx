@@ -49,7 +49,7 @@ export function ReadingSettings({
   return (
     <>
       <Paper>
-        <Stack gap="md">
+        <Stack>
           <Title order={2}>{t("settings_page_reading")}</Title>
           <Switch
             label={t("parse_websites_automatically")}
@@ -91,7 +91,7 @@ export function ReadingSettings({
                 })
               }
             >
-              <Stack gap="xs" mt="xs">
+              <Stack mt="xs">
                 {models.map((model, index) => {
                   const corpus = model.split("-ud-")[0]!;
                   const name = t(`udpipe_model_${corpus}`);
@@ -122,7 +122,7 @@ export function ReadingSettings({
           {!!settings.disabledHosts.length && (
             <>
               <Divider />
-              <Stack gap="xs">
+              <Stack>
                 <Text fw={500}>{t("disabled_websites")}</Text>
                 {settings.disabledHosts.map((host) => (
                   <Group key={host} justify="space-between" wrap="nowrap">
@@ -144,13 +144,13 @@ export function ReadingSettings({
               </Stack>
             </>
           )}
-          <Text size="xs" c="dimmed">
+          <Text variant="supporting">
             {t("disable_individual_sites_from_the_toolbar")}
           </Text>
         </Stack>
       </Paper>
       <Paper>
-        <Stack gap="md">
+        <Stack>
           <Title order={2}>{t("lookup_popups")}</Title>
           <Select
             label={t("popup_position")}

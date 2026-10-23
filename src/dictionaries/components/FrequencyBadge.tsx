@@ -50,15 +50,15 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
         mah="calc(100dvh - 8px)"
         style={{ overflowY: "auto" }}
       >
-        <Stack gap="xs">
+        <Stack>
           {rows.map((row) => (
-            <Group key={row.title} gap="xs" justify="space-between">
+            <Group key={row.title} justify="space-between">
               <span title={row.title}>{row.title}</span>
               <strong>{number(row.rank)}</strong>
             </Group>
           ))}
           {rows.length > 1 && (
-            <Text component="small" size="xs" c="dimmed" display="block">
+            <Text variant="supporting">
               {t("combined_using_the_harmonic_mean")}
             </Text>
           )}

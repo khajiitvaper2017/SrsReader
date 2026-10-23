@@ -20,7 +20,7 @@ export function AudioSettings({
   );
   return (
     <Paper>
-      <Stack gap="md">
+      <Stack>
         <Title order={2}>{t("pronunciation")}</Title>
         <Select
           searchable

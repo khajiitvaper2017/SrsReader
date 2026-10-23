@@ -24,7 +24,7 @@ export function WordColors({
 }) {
   return (
     <Paper>
-      <Stack gap="md">
+      <Stack>
         <Title order={2}>{t("word_colors")}</Title>
         <Switch
           label={t("color_words")}
@@ -33,7 +33,7 @@ export function WordColors({
             onChange({ wordColorsEnabled: event.target.checked })
           }
         />
-        <Stack gap="sm">
+        <Stack>
           {wordStyleStates.map((state) => {
             const style = settings.wordStyles[state];
             const label = t(wordStateLabels[state]);
@@ -45,10 +45,9 @@ export function WordColors({
                 },
               });
             return (
-              <Grid key={state} align="center" gap="xs">
+              <Grid key={state} align="center">
                 <Grid.Col span={{ base: 12, xs: 4 }}>
                   <Text
-                    size="sm"
                     c={
                       settings.wordColorsEnabled && style.mode === "text"
                         ? style.color

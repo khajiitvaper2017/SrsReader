@@ -93,7 +93,7 @@ export function SrsSettings({
     />
   );
   return (
-    <Stack gap="md">
+    <Stack>
       <Select
         label={t("srs_algorithm")}
         description={t("rwkv_download_help")}
@@ -133,7 +133,7 @@ export function SrsSettings({
         />
       )}
       {settings.algorithm === "rwkv" && status && (
-        <Text c="dimmed">
+        <Text variant="supporting">
           {status.ready
             ? t("rwkv_ready")
             : t("rwkv_replaying", {
@@ -166,7 +166,7 @@ export function SrsSettings({
         <Accordion.Item value="learning">
           <Accordion.Control>{t("srs_learning")}</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            <Stack>
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 {(["learningSteps", "relearningSteps"] as const).map((key) => (
                   <TextInput
@@ -198,9 +198,7 @@ export function SrsSettings({
                   "srs_learn_ahead_help",
                 )}
               </SimpleGrid>
-              <Text c="dimmed" fz="xs">
-                {t("srs_single_step_help")}
-              </Text>
+              <Text variant="supporting">{t("srs_single_step_help")}</Text>
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
@@ -208,7 +206,7 @@ export function SrsSettings({
         <Accordion.Item value="workload">
           <Accordion.Control>{t("srs_workload")}</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            <Stack>
               {number(
                 "srs_review_limit",
                 "reviewLimit",
@@ -231,7 +229,7 @@ export function SrsSettings({
         <Accordion.Item value="dynamic-retention">
           <Accordion.Control>{t("srs_dynamic_retention")}</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            <Stack>
               <Switch
                 checked={settings.dynamicRetention}
                 onChange={(event) =>
@@ -240,9 +238,7 @@ export function SrsSettings({
                 aria-label={t("srs_frequency_retention")}
                 label={t("srs_frequency_retention")}
               />
-              <Text c="dimmed" fz="xs">
-                {t("srs_rank_help")}
-              </Text>
+              <Text variant="supporting">{t("srs_rank_help")}</Text>
               {dictionaries
                 .filter((dictionary) => dictionary.frequencyCount > 0)
                 .map((dictionary) => (
@@ -260,17 +256,11 @@ export function SrsSettings({
                     key={dictionary.id}
                   />
                 ))}
-              <Stack gap="xs">
+              <Stack>
                 {bands.map((band, index) => (
-                  <SimpleGrid
-                    key={index}
-                    cols={{ base: 1, sm: 3 }}
-                    spacing="xs"
-                  >
+                  <SimpleGrid key={index} cols={{ base: 1, sm: 3 }}>
                     {band.upTo === null ? (
-                      <Text size="sm" pt="xl">
-                        {t("srs_rank_above")}
-                      </Text>
+                      <Text pt="xl">{t("srs_rank_above")}</Text>
                     ) : (
                       <NumberInput
                         label={t("srs_rank_up_to")}
@@ -319,7 +309,7 @@ export function SrsSettings({
                     )}
                   </SimpleGrid>
                 ))}
-                <Group gap="xs" align="center">
+                <Group align="center">
                   <Button
                     type="button"
                     onClick={() =>
@@ -352,7 +342,7 @@ export function SrsSettings({
         <Accordion.Item value="leeches">
           <Accordion.Control>{t("srs_leeches")}</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
+            <Stack>
               {number(
                 "srs_leech_threshold",
                 "leechThreshold",
@@ -380,10 +370,8 @@ export function SrsSettings({
         <Accordion.Item value="maintenance">
           <Accordion.Control>{t("srs_maintenance")}</Accordion.Control>
           <Accordion.Panel>
-            <Stack gap="md">
-              <Text c="dimmed" fz="xs">
-                {t("srs_reschedule_help")}
-              </Text>
+            <Stack>
+              <Text variant="supporting">{t("srs_reschedule_help")}</Text>
               <Button
                 type="button"
                 disabled={busy}

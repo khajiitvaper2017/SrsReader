@@ -14,13 +14,18 @@ import {
   lighten,
   Fieldset,
   FileButton,
+  Group,
   Input,
+  Kbd,
   Menu,
   NativeSelect,
   NumberInput,
   Paper,
+  Radio,
   Select,
   SegmentedControl,
+  SimpleGrid,
+  Stack,
   Tabs,
   Switch,
   Text,
@@ -34,6 +39,7 @@ import type { Settings } from "@/settings/model";
 
 export function createUITheme(
   settings: Pick<Settings, "theme" | "accentColor">,
+  popup = false,
 ) {
   const oled = settings.theme === "oled";
   return createTheme({
@@ -65,55 +71,59 @@ export function createUITheme(
     },
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    fontSizes: { xs: "0.6875rem", sm: "0.8125rem", md: "0.875rem" },
+    fontSizes: { md: "0.875rem" },
     defaultRadius: "sm",
     radius: { xs: "0.1875rem", sm: "0.3125rem", md: "0.5rem" },
-    headings: {
-      sizes: {
-        h1: { fontSize: "1.5rem" },
-        h2: { fontSize: "1.125rem" },
-        h3: { fontSize: "0.9375rem" },
-      },
-    },
     components: {
+      ...(popup
+        ? {
+            Stack: Stack.extend({ defaultProps: { gap: "xs" } }),
+            Group: Group.extend({ defaultProps: { gap: "xs" } }),
+            SimpleGrid: SimpleGrid.extend({ defaultProps: { spacing: "xs" } }),
+          }
+        : {}),
       Button: Button.extend({
         defaultProps: {
-          size: "xs",
+          size: "md",
           variant: "default",
           "data-srs-reader": true,
         },
         styles: {
-          label: { gap: 6, whiteSpace: "normal" },
-          root: { height: "auto", minHeight: 30, paddingBlock: 5 },
+          label: { gap: "var(--mantine-spacing-xs)", whiteSpace: "normal" },
+          root: {
+            height: "auto",
+            minHeight: "var(--button-height)",
+            paddingBlock: "var(--mantine-spacing-xs)",
+          },
         },
       }),
       ActionIcon: ActionIcon.extend({
         defaultProps: {
-          size: "sm",
           variant: "subtle",
           color: "gray",
           "data-srs-reader": true,
         },
       }),
-      Input: Input.extend({ defaultProps: { size: "xs" } }),
+      Input: Input.extend({ defaultProps: { size: "md" } }),
       InputWrapper: Input.Wrapper.extend({
         defaultProps: {
+          size: "md",
           inputWrapperOrder: ["label", "input", "description", "error"],
         },
       }),
       TextInput: TextInput.extend({
-        defaultProps: { size: "xs", "data-srs-reader": true },
+        defaultProps: { size: "md", "data-srs-reader": true },
       }),
       NumberInput: NumberInput.extend({
         defaultProps: {
-          size: "xs",
+          size: "md",
           allowDecimal: false,
           "data-srs-reader": true,
         },
       }),
       Textarea: Textarea.extend({
         defaultProps: {
-          size: "xs",
+          size: "md",
           autosize: true,
           minRows: 3,
           "data-srs-reader": true,
@@ -123,23 +133,29 @@ export function createUITheme(
         defaultProps: { variant: "pills" },
         styles: {
           list: { flexWrap: "wrap" },
-          tab: { fontSize: "var(--mantine-font-size-sm)", minHeight: 34 },
+          tab: { fontSize: "var(--mantine-font-size-md)" },
         },
       }),
       SegmentedControl: SegmentedControl.extend({
-        defaultProps: { size: "xs", "data-srs-reader": true },
+        defaultProps: { size: "md", "data-srs-reader": true },
         styles: { label: { whiteSpace: "normal" } },
       }),
-      NavLink: NavLink.extend({ defaultProps: { "data-srs-reader": true } }),
+      NavLink: NavLink.extend({
+        defaultProps: { "data-srs-reader": true },
+        styles: {
+          label: { fontSize: "var(--mantine-font-size-md)" },
+          description: { fontSize: "var(--mantine-font-size-xs)" },
+        },
+      }),
       ComboboxDropdown: Combobox.Dropdown.extend({
         defaultProps: { "data-srs-reader": true },
       }),
       NativeSelect: NativeSelect.extend({
-        defaultProps: { size: "xs", "data-srs-reader": true },
+        defaultProps: { size: "md", "data-srs-reader": true },
       }),
       Select: Select.extend({
         defaultProps: {
-          size: "xs",
+          size: "md",
           allowDeselect: false,
           maxDropdownHeight: 200,
           comboboxProps: {
@@ -160,7 +176,7 @@ export function createUITheme(
       }),
       ColorInput: ColorInput.extend({
         defaultProps: {
-          size: "xs",
+          size: "md",
           format: "hex",
           disallowInput: true,
           withEyeDropper: false,
@@ -181,7 +197,7 @@ export function createUITheme(
       }),
       Switch: Switch.extend({
         defaultProps: {
-          size: "xs",
+          size: "md",
           labelPosition: "left",
           w: "100%",
           "data-srs-reader": true,
@@ -192,7 +208,16 @@ export function createUITheme(
         },
       }),
       Checkbox: Checkbox.extend({
-        defaultProps: { size: "xs", "data-srs-reader": true },
+        defaultProps: { size: "md", "data-srs-reader": true },
+      }),
+      Radio: Radio.extend({
+        defaultProps: { size: "md", "data-srs-reader": true },
+      }),
+      RadioGroup: Radio.Group.extend({
+        defaultProps: { size: "md" },
+        styles: {
+          description: { marginTop: "var(--mantine-spacing-md)" },
+        },
       }),
       Paper: Paper.extend({ defaultProps: { withBorder: true, p: "md" } }),
       FileButton: FileButton.extend({
@@ -205,14 +230,27 @@ export function createUITheme(
         },
       }),
       Fieldset: Fieldset.extend({ defaultProps: { p: "sm" } }),
-      Badge: Badge.extend({ defaultProps: { size: "sm", variant: "light" } }),
-      Text: Text.extend({ defaultProps: { size: "sm" } }),
+      Badge: Badge.extend({
+        defaultProps: { size: "lg", fz: "xs", variant: "light" },
+      }),
+      Kbd: Kbd.extend({ defaultProps: { size: "md" } }),
+      Text: Text.extend({
+        styles: (theme, { variant }) => ({
+          root:
+            variant === "supporting"
+              ? {
+                  fontSize: theme.fontSizes.xs,
+                  color: "var(--mantine-color-dimmed)",
+                }
+              : {},
+        }),
+      }),
       Title: Title.extend({ defaultProps: { order: 2 } }),
       Accordion: Accordion.extend({
         defaultProps: { variant: "default", chevronSize: 14 },
         styles: {
           control: { paddingInline: 0, paddingBlock: 8 },
-          label: { padding: 0, fontSize: "var(--mantine-font-size-sm)" },
+          label: { padding: 0 },
           content: { paddingInline: 0 },
         },
       }),

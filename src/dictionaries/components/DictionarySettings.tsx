@@ -74,9 +74,9 @@ export function DictionarySettings({
   });
   return (
     <Paper>
-      <Stack gap="md">
-        <Group gap="xs" align="center" justify="space-between">
-          <Stack gap="xs">
+      <Stack>
+        <Group align="center" justify="space-between">
+          <Stack>
             <Title order={2}>{t("dictionaries")}</Title>
           </Stack>
           <Badge>
@@ -87,19 +87,14 @@ export function DictionarySettings({
             })}
           </Badge>
         </Group>
-        <Stack gap="xs">
+        <Stack>
           {dictionaries.map((dictionary, i) => (
             <Paper key={dictionary.id} p="sm">
-              <Stack gap="xs">
+              <Stack>
                 <Group justify="space-between" align="flex-start">
-                  <Stack gap={4} miw={160} style={{ flex: 1 }}>
+                  <Stack miw={160} style={{ flex: 1 }}>
                     <strong>{dictionary.index.title}</strong>
-                    <Text
-                      component="small"
-                      size="xs"
-                      c="dimmed"
-                      display="block"
-                    >
+                    <Text variant="supporting">
                       {dictionary.id === "nechybujte" ? (
                         t("nechybujte_online_help")
                       ) : (
@@ -144,7 +139,7 @@ export function DictionarySettings({
                     ]}
                   />
                 </Group>
-                <Group gap={4} justify="flex-end">
+                <Group justify="flex-end">
                   <ActionIcon
                     disabled={busy || i === 0}
                     title={t("move_dictionary_up")}
@@ -215,9 +210,7 @@ export function DictionarySettings({
           ))}
         </Stack>
         <Divider />
-        <Text size="xs" c="dimmed">
-          {t("dictionary_display_help")}
-        </Text>
+        <Text variant="supporting">{t("dictionary_display_help")}</Text>
         <Stack
           aria-busy={busy && progressTarget === "dictionary"}
           onDragOver={(event) => {
@@ -227,9 +220,8 @@ export function DictionarySettings({
             event.preventDefault();
             void fileImport(event.dataTransfer.files[0]);
           }}
-          gap="xs"
         >
-          <Text size="sm">{t("drop_a_yomitan_format_3_zip")}</Text>
+          <Text>{t("drop_a_yomitan_format_3_zip")}</Text>
           <Group>
             <Button
               disabled={busy}
@@ -251,7 +243,7 @@ export function DictionarySettings({
             }}
           />
         </Stack>
-        <Stack gap="xs">
+        <Stack>
           <Anchor
             href="https://yomitan.wiki/dictionaries/"
             target="_blank"

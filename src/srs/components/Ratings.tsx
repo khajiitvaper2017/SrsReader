@@ -36,14 +36,13 @@ export function Ratings({
           variant="light"
           color={["red", "orange", "green", "blue"][i]}
           px={4}
-          h={compact ? 40 : undefined}
           miw={0}
         >
-          <Stack gap={0} align="center">
+          <Stack align="center">
             <Text span inherit>
               {label}
             </Text>
-            <Text span size="xs" c="dimmed">
+            <Text variant="supporting" span>
               {times[i] ? intervalLabel(times[i]!) : "—"}
             </Text>
           </Stack>
@@ -53,8 +52,6 @@ export function Ratings({
   return compact ? (
     <>{buttons}</>
   ) : (
-    <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing={4}>
-      {buttons}
-    </SimpleGrid>
+    <SimpleGrid cols={onlyAgainGood ? 2 : 4}>{buttons}</SimpleGrid>
   );
 }

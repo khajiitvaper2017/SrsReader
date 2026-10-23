@@ -127,13 +127,8 @@ export function WiktionaryBrowser({
         <Accordion.Panel>
           {open && (
             <>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                <Group
-                  gap="xs"
-                  justify="space-between"
-                  align="center"
-                  wrap="nowrap"
-                >
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <Group justify="space-between" align="center" wrap="nowrap">
                   {t("study_language")}
                   <NativeSelect
                     aria-label={t("dictionary_study_language")}
@@ -158,12 +153,7 @@ export function WiktionaryBrowser({
                       ))}
                   </NativeSelect>
                 </Group>
-                <Group
-                  gap="xs"
-                  justify="space-between"
-                  align="center"
-                  wrap="nowrap"
-                >
+                <Group justify="space-between" align="center" wrap="nowrap">
                   {t("definition_language")}
                   <NativeSelect
                     aria-label={t("definition_language")}
@@ -184,12 +174,7 @@ export function WiktionaryBrowser({
                     ))}
                   </NativeSelect>
                 </Group>
-                <Group
-                  gap="xs"
-                  justify="space-between"
-                  align="center"
-                  wrap="nowrap"
-                >
+                <Group justify="space-between" align="center" wrap="nowrap">
                   {t("type")}
                   <NativeSelect
                     aria-label={t("dictionary_type")}
@@ -213,12 +198,7 @@ export function WiktionaryBrowser({
                       ))}
                   </NativeSelect>
                 </Group>
-                <Group
-                  gap="xs"
-                  justify="space-between"
-                  align="center"
-                  wrap="nowrap"
-                >
+                <Group justify="space-between" align="center" wrap="nowrap">
                   {t("sort_by")}
                   <NativeSelect
                     aria-label={t("sort_dictionaries")}
@@ -246,21 +226,15 @@ export function WiktionaryBrowser({
                 aria-label={t("available_wiktionary_dictionaries")}
                 mah={280}
                 style={{ overflowY: "auto" }}
-                gap="xs"
               >
                 {entries.map((entry) => (
-                  <Group key={wiktionaryName(entry)} gap="xs" align="center">
-                    <Stack gap="xs">
+                  <Group key={wiktionaryName(entry)} align="center">
+                    <Stack>
                       <strong>
                         {languageName(languageCode(entry.source))} →{" "}
                         {languageName(languageCode(entry.target))}
                       </strong>
-                      <Text
-                        component="small"
-                        size="xs"
-                        c="dimmed"
-                        display="block"
-                      >
+                      <Text variant="supporting">
                         {t(typeLabels[entry.type])} · {downloadSize(entry.size)}{" "}
                         · {wiktionaryName(entry)}
                       </Text>

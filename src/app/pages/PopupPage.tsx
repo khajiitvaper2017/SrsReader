@@ -70,7 +70,7 @@ export function Popup() {
   if (!ready) return null;
   return (
     <Stack gap="md" p="md">
-      <Group gap="xs" align="center" justify="space-between" component="header">
+      <Group align="center" justify="space-between" component="header">
         <Logo small />
       </Group>
       <ErrorBox error={error} />
@@ -79,7 +79,7 @@ export function Popup() {
           <SlidersHorizontal aria-hidden="true" size={16} /> {t("setup")}{" "}
         </Button>
       ) : !dictionaryCount ? (
-        <Group gap="xs" align="center">
+        <Group align="center">
           <Text>{t("no_dictionary_installed")}</Text>
           <Button onClick={() => open("settings")} variant="filled">
             <Upload aria-hidden="true" size={16} />{" "}
@@ -92,7 +92,7 @@ export function Popup() {
           <span>{stats.due}</span>
         </Button>
       )}
-      <Group gap="xs" align="center">
+      <Group align="center">
         <Switch
           aria-label={t("parse_websites")}
           checked={!settings.paused}
@@ -112,7 +112,7 @@ export function Popup() {
           />
         )}
       </Group>
-      <Group gap="xs" align="center" justify="space-between" component="footer">
+      <Group align="center" justify="space-between" component="footer">
         <Button onClick={() => open("words")} variant="subtle">
           <BookMarked aria-hidden="true" size={16} /> {t("words")}{" "}
         </Button>

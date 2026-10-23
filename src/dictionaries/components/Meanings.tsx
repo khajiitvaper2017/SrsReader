@@ -46,7 +46,7 @@ export function Meanings({
     definitionLanguages,
   } = useMeanings({ meanings, language, settings, onIgnoreTag });
   return (
-    <Stack gap="xs">
+    <Stack>
       {[...new Set(displayed.map((meaning) => meaning.dictionaryId))].map(
         (dictionaryId) => {
           const entries = displayed.filter(
@@ -78,7 +78,6 @@ export function Meanings({
               aria-expanded={expanded}
               onClick={() => onToggleDictionary(dictionaryId)}
               variant="subtle"
-              size="sm"
             >
               {expanded ? (
                 <ChevronUp aria-hidden="true" size={16} />
@@ -105,12 +104,6 @@ export function Meanings({
                       <Menu.Target>
                         <Button
                           variant="light"
-                          size="compact-xs"
-                          h={18}
-                          mih={0}
-                          px={4}
-                          py={0}
-                          radius="xl"
                           data-srs-reader=""
                           color={conflicts[tag] ? "red" : undefined}
                           title={tagTitle(tag)}
@@ -128,7 +121,6 @@ export function Meanings({
                     </Menu>
                   ) : (
                     <Badge
-                      size="sm"
                       px={4}
                       radius="xl"
                       key={j}
@@ -143,17 +135,13 @@ export function Meanings({
             );
           };
           return (
-            <Stack key={dictionaryId} gap="xs" data-dictionary={dictionaryId}>
+            <Stack key={dictionaryId} data-dictionary={dictionaryId}>
               {!visible.length && (
                 <Group justify="space-between" data-srs-reader>
-                  <Group gap={4} style={{ flex: 1, minWidth: 0 }}>
-                    <Text size="xs" c="dimmed">
-                      {title}
-                    </Text>
+                  <Group style={{ flex: 1, minWidth: 0 }}>
+                    <Text variant="supporting">{title}</Text>
                     {entries.map((meaning, index) => (
-                      <Group key={index} gap={4}>
-                        {renderTags(meaning)}
-                      </Group>
+                      <Group key={index}>{renderTags(meaning)}</Group>
                     ))}
                   </Group>
                   {toggle}
@@ -180,7 +168,6 @@ export function Meanings({
                           ? settings.nativeLanguage
                           : definitionLanguages[meaning.dictionaryId] || ""
                     }
-                    gap="xs"
                     className="dictionary-content"
                     data-hide-sources={
                       settings.hideDictionarySources || undefined
@@ -201,7 +188,7 @@ export function Meanings({
                       </ol>
                     ) : (
                       values.map((definition: Definition, j) => (
-                        <Stack key={j} gap="xs">
+                        <Stack key={j}>
                           <Structured
                             value={definition}
                             dictionaryId={meaning.dictionaryId}
@@ -216,15 +203,10 @@ export function Meanings({
                   translation?: ReactNode,
                   failure?: ReactNode,
                 ) => (
-                  <Stack key={`${meaning.dictionaryId}:${i}`} gap="xs">
-                    <Group
-                      gap={4}
-                      wrap="nowrap"
-                      align="flex-start"
-                      data-srs-reader
-                    >
-                      <Group gap={4} style={{ flex: 1, minWidth: 0 }}>
-                        <Text component="span" size="xs" c="dimmed">
+                  <Stack key={`${meaning.dictionaryId}:${i}`}>
+                    <Group wrap="nowrap" align="flex-start" data-srs-reader>
+                      <Group style={{ flex: 1, minWidth: 0 }}>
+                        <Text variant="supporting" component="span">
                           {meaning.dictionaryId === "personal"
                             ? t("custom")
                             : meaning.title}
@@ -234,7 +216,7 @@ export function Meanings({
                       {((i === 0 && toggle) ||
                         meaningActions ||
                         translationButton) && (
-                        <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+                        <Group wrap="nowrap" style={{ flexShrink: 0 }}>
                           {i === 0 && toggle}
                           {meaningActions}
                           {translationButton}
@@ -255,7 +237,7 @@ export function Meanings({
                           safeUrl(meaning.attribution) ||
                           safeUrl(meaning.sourceUrl)
                         )) && (
-                        <Group gap={4} data-srs-reader>
+                        <Group data-srs-reader>
                           {safeUrl(meaning.attribution) ||
                           safeUrl(meaning.sourceUrl) ? (
                             <Anchor

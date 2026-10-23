@@ -8,9 +8,9 @@ export function Empty({
   children: ReactNode;
 }) {
   return (
-    <Stack align="center" ta="center" gap="sm" py="xl">
+    <Stack align="center" ta="center" py="xl">
       <Title order={2}>{title}</Title>
-      <Text component="div" c="dimmed">
+      <Text variant="supporting" component="div">
         {children}
       </Text>
     </Stack>

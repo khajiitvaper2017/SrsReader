@@ -45,7 +45,6 @@ export function AudioButton({
           <Box component="span" display="inline-flex">
             <Control
               variant="subtle"
-              size={sentence ? "compact-xs" : "sm"}
               color="gray"
               aria-haspopup="menu"
               aria-expanded={open}
@@ -112,7 +111,7 @@ export function AudioButton({
               <Menu.Label>{t("recordings")}</Menu.Label>
               {loading && <Text role="status">{t("finding_recordings")}</Text>}
               {sources.map((source) => (
-                <Stack key={source.url} gap="xs">
+                <Stack key={source.url}>
                   <Menu.Item
                     onClick={(event) => {
                       event.preventDefault();
@@ -131,9 +130,8 @@ export function AudioButton({
                           : "Wikimedia Commons"}
                       </strong>
                       <Text
-                        component="small"
-                        size="xs"
-                        c="dimmed"
+                        variant="supporting"
+                        component="span"
                         display="block"
                       >
                         {source.name}

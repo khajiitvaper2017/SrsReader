@@ -6,7 +6,7 @@ import { UIProvider } from "@/shared/ui/UIProvider";
 import { createRoot } from "react-dom/client";
 
 createRoot(document.getElementById("root")!).render(
-  <UIProvider scope="extensionPages">
+  <UIProvider scope="extensionPages" popup>
     <Popup />
   </UIProvider>,
 );

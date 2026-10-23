@@ -152,10 +152,10 @@ export function SettingsPage({
     />
   );
   return (
-    <Stack gap="md">
-      <Stack gap={4}>
+    <Stack>
+      <Stack>
         <Title order={1}>{t(setup ? "setup" : "settings")}</Title>
-        {setup && <Text c="dimmed">{t("settings_setup_intro")}</Text>}
+        {setup && <Text variant="supporting">{t("settings_setup_intro")}</Text>}
       </Stack>
       <ErrorBox error={error} />
       {notice && (
@@ -215,12 +215,12 @@ export function SettingsPage({
             ))}
           </Tabs.List>
           <Tabs.Panel value="general">
-            <Stack gap="md">
+            <Stack>
               <LanguageSettings settings={settings} onChange={update} />
               <AppearanceSettings settings={settings} onChange={update} />
               <Paper>
-                <Group justify="space-between" gap="sm">
-                  <Group gap="xs">
+                <Group justify="space-between">
+                  <Group>
                     <Languages size={18} />
                     <Text>{t("settings_setup_help")}</Text>
                   </Group>
@@ -232,7 +232,7 @@ export function SettingsPage({
             </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="reading">
-            <Stack gap="md">
+            <Stack>
               <ReadingSettings
                 settings={settings}
                 onChange={update}
@@ -243,7 +243,7 @@ export function SettingsPage({
             </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="dictionaries">
-            <Stack gap="md">
+            <Stack>
               {dictionarySettings}
               {dataSettings}
             </Stack>
@@ -257,12 +257,12 @@ export function SettingsPage({
             />
           </Tabs.Panel>
           <Tabs.Panel value="audio">
-            <Stack gap="md">
+            <Stack>
               <AudioSettings settings={settings} onChange={update} />
               <Paper>
-                <Stack gap="sm">
+                <Stack>
                   <Title order={2}>{t("translation")}</Title>
-                  <Text c="dimmed">
+                  <Text variant="supporting">
                     {t("translation_stays_on_your_device_models_download_on")}
                   </Text>
                   <Anchor href="#docs/reading">{t("docs_reading")}</Anchor>

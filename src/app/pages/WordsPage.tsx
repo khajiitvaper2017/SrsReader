@@ -21,7 +21,7 @@ export function WordsPage({ settings }: { settings: Settings }) {
   return (
     <>
       <ErrorBox error={error} />
-      <Group gap="xs" align="center" mb="md" wrap="nowrap">
+      <Group align="center" mb="md" wrap="nowrap">
         <TextInput
           style={{ flex: 1, minWidth: 160 }}
           type="search"

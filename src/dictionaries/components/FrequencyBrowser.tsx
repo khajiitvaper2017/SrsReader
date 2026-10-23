@@ -94,8 +94,8 @@ export function FrequencyBrowser({
       <Accordion.Item value="settings">
         <Accordion.Control>{t("frequency_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-            <Group gap="xs" justify="space-between" align="center">
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Group justify="space-between" align="center">
               {t("language")}{" "}
               <NativeSelect
                 aria-label={t("frequency_language")}
@@ -122,7 +122,7 @@ export function FrequencyBrowser({
                   ))}
               </NativeSelect>
             </Group>
-            <Group gap="xs" justify="space-between" align="center">
+            <Group justify="space-between" align="center">
               {t("type")}{" "}
               <NativeSelect
                 aria-label={t("corpus_type")}
@@ -140,7 +140,7 @@ export function FrequencyBrowser({
                 ))}
               </NativeSelect>
             </Group>
-            <Group gap="xs" justify="space-between" align="center">
+            <Group justify="space-between" align="center">
               {t("sort_by")}{" "}
               <NativeSelect
                 aria-label={t("sort_frequency_dictionaries")}
@@ -167,15 +167,14 @@ export function FrequencyBrowser({
             aria-label={t("available_frequency_dictionaries")}
             mah={280}
             style={{ overflowY: "auto" }}
-            gap="xs"
           >
             {entries.map((entry) => (
-              <Group key={entry.file} gap="xs" align="center">
-                <Stack gap="xs">
+              <Group key={entry.file} align="center">
+                <Stack>
                   <strong>
                     {languageName(entry.code)} · {entry.source}
                   </strong>
-                  <Text component="small" size="xs" c="dimmed" display="block">
+                  <Text variant="supporting">
                     {entry.region && `${entry.region} · `}
                     {downloadSize(entry.size)}
                   </Text>

@@ -86,7 +86,7 @@ function describeVerb(feats: Record<string, string>, pos = "VERB") {
 function Features({ feats }: { feats: Record<string, string> }) {
   const entries = Object.entries(feats);
   return (
-    <Group gap={4} fz="xs">
+    <Group>
       {entries.map(([feature, value], index) => {
         const name = label("features", feature);
         const translated = value
@@ -99,6 +99,7 @@ function Features({ feats }: { feats: Record<string, string> }) {
           );
         return (
           <Text
+            variant="supporting"
             component="span"
             key={feature}
             inherit
@@ -126,17 +127,19 @@ export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
     const head = sentence.tokens.find((part) => part.id === token.head);
     const verb = /^(VERB|AUX)$/u.test(token.upos);
     return (
-      <Stack key={token.id} gap={4}>
-        <Text size="xs" c="dimmed">
+      <Stack key={token.id}>
+        <Text variant="supporting">
           {token.form} → {token.lemma}
           {!verb && ` · ${label("pos", token.upos)}`}
         </Text>
         {verb ? (
-          <Text size="xs">{describeVerb(token.feats, token.upos)}</Text>
+          <Text variant="supporting">
+            {describeVerb(token.feats, token.upos)}
+          </Text>
         ) : (
           <Features feats={token.feats} />
         )}
-        <Text size="xs" c="dimmed">
+        <Text variant="supporting">
           {label("relations", token.deprel)}
           {head ? ` → ${head.form} (${head.lemma})` : ""}
         </Text>
@@ -144,8 +147,8 @@ export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
     );
   });
   return (
-    <Stack gap="xs" data-srs-reader>
-      {group && <Text size="xs">{describeVerb(group.feats)}</Text>}
+    <Stack data-srs-reader>
+      {group && <Text variant="supporting">{describeVerb(group.feats)}</Text>}
       {wordForms}
     </Stack>
   );

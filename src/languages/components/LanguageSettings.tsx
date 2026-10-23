@@ -15,9 +15,9 @@ export function LanguageSettings({
 }) {
   return (
     <Paper>
-      <Stack gap="md">
+      <Stack>
         <Title order={2}>{t("languages")}</Title>
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
           <LanguageSelect
             label={t("study_language")}
             value={settings.studyLanguage}

@@ -20,7 +20,7 @@ export function LookupSettings({
 }) {
   return (
     <Paper id="controls">
-      <Stack gap="md">
+      <Stack>
         <Title order={2}>{t("lookup_controls")}</Title>
         <LookupControls
           value={settings.lookupBindings}
@@ -32,8 +32,8 @@ export function LookupSettings({
               {t("input_action_prevention")}
             </Accordion.Control>
             <Accordion.Panel>
-              <Stack gap="md">
-                <Text c="dimmed">
+              <Stack>
+                <Text variant="supporting">
                   {t(
                     "active_only_for_matching_mouse_lookup_bindings_block",
                   )}{" "}
@@ -58,7 +58,7 @@ export function LookupSettings({
                       }
                       legend={label}
                     >
-                      <Stack gap="sm">
+                      <Stack>
                         {(
                           [
                             ["textHover", t("text_hover")],

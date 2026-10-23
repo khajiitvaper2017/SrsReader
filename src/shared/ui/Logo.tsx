@@ -2,13 +2,13 @@ import { Group, Text, ThemeIcon } from "@mantine/core";
 import { BookOpen } from "lucide-react";
 export function Logo({ small = false }: { small?: boolean }) {
   return (
-    <Group gap="xs" wrap="nowrap">
+    <Group wrap="nowrap">
       <ThemeIcon size={small ? 26 : 32} variant="light">
         <BookOpen size={18} />
       </ThemeIcon>
-      <Text fw={700} size={small ? "sm" : "md"}>
+      <Text fw={700}>
         Srs
-        <Text span inherit c="dimmed">
+        <Text span inherit>
           Reader
         </Text>
       </Text>

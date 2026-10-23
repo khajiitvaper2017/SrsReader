@@ -46,9 +46,11 @@ document.documentElement.dataset.mantineColorScheme = initialScheme;
 
 export function UIProvider({
   scope,
+  popup = false,
   children,
 }: {
   scope: PageScope;
+  popup?: boolean;
   children: ReactNode;
 }) {
   useTranslation(undefined, { i18n });
@@ -95,7 +97,7 @@ export function UIProvider({
   return (
     <SettingsContext.Provider value={[settings, setSettings, true]}>
       <MantineProvider
-        theme={createUITheme(settings)}
+        theme={createUITheme(settings, popup)}
         colorSchemeManager={colorSchemeManager}
         forceColorScheme={
           settings.theme === "system"

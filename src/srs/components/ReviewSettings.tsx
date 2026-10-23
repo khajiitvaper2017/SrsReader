@@ -25,12 +25,12 @@ export function ReviewSettings({
   onError: (message: string) => void;
 }) {
   return (
-    <Stack gap="md">
+    <Stack>
       <Paper>
-        <Stack gap="md">
+        <Stack>
           <Title order={2}>{t("settings_review_session")}</Title>
-          <Stack gap={4}>
-            <Text size="sm" fw={500} id="card-front-label">
+          <Stack>
+            <Text fw={500} id="card-front-label">
               {t("default_card_front")}
             </Text>
             <SegmentedControl
@@ -65,7 +65,7 @@ export function ReviewSettings({
         </Stack>
       </Paper>
       <Paper>
-        <Stack gap="md">
+        <Stack>
           <Title order={2}>{t("settings_daily_study")}</Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <NumberInput
@@ -92,13 +92,13 @@ export function ReviewSettings({
               ]}
             />
           </SimpleGrid>
-          <Text size="xs" c="dimmed">
+          <Text variant="supporting">
             {t("new_words_follow_combined_frequency_ranks_from_most")}
           </Text>
         </Stack>
       </Paper>
       <Paper>
-        <Stack gap="md">
+        <Stack>
           <Title order={2}>{t("settings_scheduling")}</Title>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <NumberInput

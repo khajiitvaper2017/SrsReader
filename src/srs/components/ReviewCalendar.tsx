@@ -68,8 +68,8 @@ export function ReviewCalendar({
   ] as const;
   return (
     <Paper p="sm" data-srs-reader="true">
-      <Stack gap="sm">
-        <Text size="sm" ta="center">
+      <Stack>
+        <Text ta="center">
           {t(
             today.timedAnswers === today.answers
               ? "srs_heatmap_today"
@@ -86,11 +86,10 @@ export function ReviewCalendar({
             },
           )}
         </Text>
-        <Group gap={4} justify="center">
+        <Group justify="center">
           <Tooltip label={t("srs_heatmap_previous")}>
             <ActionIcon
               variant="default"
-              size="sm"
               aria-label={t("srs_heatmap_previous")}
               disabled={loading || calendar.year <= 1970}
               onClick={() => onYear(calendar.year - 1)}
@@ -101,7 +100,6 @@ export function ReviewCalendar({
           <Tooltip label={t("srs_heatmap_this_year")}>
             <ActionIcon
               variant="default"
-              size="sm"
               aria-label={t("srs_heatmap_this_year")}
               disabled={loading}
               onClick={() => onYear(calendar.currentYear)}
@@ -112,7 +110,6 @@ export function ReviewCalendar({
           <Tooltip label={t("srs_heatmap_next")}>
             <ActionIcon
               variant="default"
-              size="sm"
               aria-label={t("srs_heatmap_next")}
               disabled={loading || calendar.year >= 9998}
               onClick={() => onYear(calendar.year + 1)}
@@ -132,7 +129,6 @@ export function ReviewCalendar({
             gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`,
             gridTemplateRows: "repeat(7, 1fr)",
             gridAutoFlow: "column",
-            gap: 2,
           }}
         >
           {Array.from({ length: offset }, (_, index) => (
@@ -153,9 +149,9 @@ export function ReviewCalendar({
               <Tooltip
                 key={day.time}
                 label={
-                  <Stack gap={2}>
-                    <Text size="xs">{date.format(day.time)}</Text>
-                    <Text size="xs">
+                  <Stack>
+                    <Text>{date.format(day.time)}</Text>
+                    <Text>
                       {t(
                         day.day > calendar.today
                           ? "srs_heatmap_due"
@@ -168,7 +164,7 @@ export function ReviewCalendar({
                       )}
                     </Text>
                     {day.day === calendar.today && (
-                      <Text size="xs">
+                      <Text>
                         {t("srs_heatmap_due", { value: format(day.due) })}
                       </Text>
                     )}
@@ -219,12 +215,12 @@ export function ReviewCalendar({
             );
           })}
         </Box>
-        <Text size="xs" c="dimmed" ta="center">
+        <Text variant="supporting" ta="center">
           {calendar.year}
         </Text>
-        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="xs">
+        <SimpleGrid cols={{ base: 2, sm: 4 }}>
           {metrics.map(([label, value]) => (
-            <Text key={label} size="xs" ta="center">
+            <Text variant="supporting" key={label} ta="center">
               {t(label)}:{" "}
               <Text span c="accent" fw={700}>
                 {value}

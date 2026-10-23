@@ -119,7 +119,6 @@ export function TextTranslation({
       disabled={busy}
       onClick={() => (showingTranslation ? setShown(false) : void translate())}
       variant="subtle"
-      size={compact ? "sm" : "compact-xs"}
       color={compact ? "gray" : undefined}
     >
       {busy ? (
@@ -139,7 +138,7 @@ export function TextTranslation({
   );
   if (children) return children(button, translated, failure);
   return (
-    <Stack data-srs-reader="" gap="xs" align={compact ? "flex-end" : undefined}>
+    <Stack data-srs-reader="" align={compact ? "flex-end" : undefined}>
       {translated}
       {button}
       {failure}
@@ -195,7 +194,7 @@ export function SentenceTranslation({
     >
       {children ||
         ((button, translation, failure) => (
-          <Stack gap="xs">
+          <Stack>
             {translation || <Sentence context={context} language={language} />}
             {button}
             {failure}
