@@ -101,6 +101,8 @@ export function DictionarySettings({
                 <Text variant="supporting">
                   {dictionary.id === "nechybujte" ? (
                     t("nechybujte_online_help")
+                  ) : dictionary.immersion ? (
+                    t("immersion_collection_help")
                   ) : (
                     <>
                       {dictionary.count > 0

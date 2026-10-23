@@ -1,4 +1,4 @@
-import { NumberInput, Stack, Text } from "@mantine/core";
+import { NumberInput } from "@mantine/core";
 import type { Dictionary } from "@/dictionaries/model";
 import { t } from "@/shared/i18n/i18n";
 import { useEffect, useState } from "react";
@@ -25,24 +25,21 @@ export function ImmersionWeight({
     }
   }
   return (
-    <Stack gap="xs">
-      <Text variant="supporting">{t("immersion_collection_help")}</Text>
-      <NumberInput
-        label={t("immersion_secondary_weight")}
-        description={t("immersion_score_help")}
-        min={0}
-        max={1}
-        step={0.1}
-        allowDecimal
-        decimalScale={2}
-        value={weight}
-        onChange={setWeight}
-        onBlur={save}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-        }}
-        disabled={disabled}
-      />
-    </Stack>
+    <NumberInput
+      label={t("immersion_secondary_weight")}
+      description={t("immersion_score_help")}
+      min={0}
+      max={1}
+      step={0.1}
+      allowDecimal
+      decimalScale={2}
+      value={weight}
+      onChange={setWeight}
+      onBlur={save}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+      }}
+      disabled={disabled}
+    />
   );
 }
