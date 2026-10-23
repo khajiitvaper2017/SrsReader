@@ -10,6 +10,7 @@ import { ReviewPage } from "@/app/pages/ReviewPage";
 import { StudyPage } from "@/app/pages/StudyPage";
 import { SettingsPage } from "@/app/pages/SettingsPage";
 import { WordsPage } from "@/app/pages/WordsPage";
+import { SearchPage } from "@/app/pages/SearchPage";
 import { stopAudio } from "@/audio/playback";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
@@ -19,6 +20,7 @@ import { srsClient } from "@/srs/client";
 import {
   BookMarked,
   BookOpen,
+  Search,
   Settings as SettingsIcon,
   SlidersHorizontal,
 } from "lucide-react";
@@ -79,6 +81,7 @@ export function App() {
                   : [
                       ["review", t("study_languages")],
                       ["words", t("words")],
+                      ["search", t("search")],
                       ["settings", t("settings")],
                       ["docs", t("docs")],
                     ]
@@ -96,6 +99,8 @@ export function App() {
                         <BookOpen size={16} />
                       ) : id === "words" ? (
                         <BookMarked size={16} />
+                      ) : id === "search" ? (
+                        <Search size={16} />
                       ) : id === "settings" ? (
                         <SettingsIcon size={16} />
                       ) : (
@@ -137,6 +142,8 @@ export function App() {
               language={page.split("/")[1] || settings.studyLanguage}
               deckId={page.split("/")[2]}
             />
+          ) : page === "search" ? (
+            <SearchPage settings={settings} />
           ) : reviewing ? (
             <ReviewPage
               key={`${settings.studyLanguage}:${deckId || ""}`}

@@ -1,5 +1,13 @@
 # Dictionaries
 
+## Search
+
+Open the **Search** tab and choose a language. **Word or reading** finds dictionary words and readings that contain your text. **Definition** finds words whose definitions contain your text. For example, search English definitions for **animal** to find words with that meaning in the selected language.
+
+Enter your text and press Enter or choose **Search**. Searches ignore letter case and use enabled, installed definition dictionaries. Online dictionaries and frequency-only dictionaries are not searched. Choose a result to expand its full definition. Choose **Load more** to see the next 50 entries. Large dictionaries can take longer to search.
+
+Install a dictionary or change its display option under **Settings → Dictionaries**. Both **Show** and **If needed** dictionaries are searched. Selecting a language here does not change your reading language.
+
 ## Install and update
 
 Open **Settings → Dictionaries**:

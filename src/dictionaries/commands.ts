@@ -3,6 +3,7 @@ import type { Request } from "@/dictionaries/contracts";
 import { meaningTags } from "@/dictionaries/model";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { lookup } from "@/dictionaries/resolve";
+import { searchDictionaries } from "@/dictionaries/search";
 import {
   deleteDictionary,
   listDictionaries,
@@ -26,6 +27,8 @@ async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "dictionaries":
       return listDictionaries(settings);
+    case "searchDictionaries":
+      return searchDictionaries(request);
     case "setDictionary":
       await setDictionaryDisplay(request, settings);
       await notify(undefined, "dictionaries");

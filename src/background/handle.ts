@@ -18,6 +18,7 @@ export async function handle(request: Request) {
     case "setSettings":
       return handleSettings(request, settings);
     case "dictionaries":
+    case "searchDictionaries":
     case "setDictionary":
     case "moveDictionary":
     case "deleteDictionary":

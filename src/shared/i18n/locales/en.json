@@ -879,5 +879,18 @@
   "pagination_previous": "Previous page",
   "pagination_next": "Next page",
   "pagination_last": "Last page",
-  "words_page": "Page {{page}}"
+  "words_page": "Page {{page}}",
+  "dictionary_search": "Dictionary search",
+  "dictionary_search_by": "Search by",
+  "dictionary_search_word": "Word or reading",
+  "dictionary_search_definition": "Definition",
+  "dictionary_search_query": "Search text",
+  "dictionary_search_help": "Search enabled, installed dictionaries. Match part of a word or reading, or choose Definition to search by meaning. Press Enter or Search.",
+  "dictionary_search_no_dictionaries": "No enabled definition dictionaries for this language. Install or enable one in",
+  "dictionary_search_no_matches": "No matching entries. Try different text or another language.",
+  "dictionary_search_count_one": "{{count}} entry shown",
+  "dictionary_search_count_other": "{{count}} entries shown",
+  "dictionary_search_more": "Load more",
+  "search": "Search",
+  "dictionary_search_action": "Search"
 }

@@ -924,5 +924,20 @@
   "pagination_previous": "Попередня сторінка",
   "pagination_next": "Наступна сторінка",
   "pagination_last": "Остання сторінка",
-  "words_page": "Сторінка {{page}}"
+  "words_page": "Сторінка {{page}}",
+  "dictionary_search": "Пошук у словниках",
+  "dictionary_search_by": "Шукати за",
+  "dictionary_search_word": "Слово або читання",
+  "dictionary_search_definition": "Визначення",
+  "dictionary_search_query": "Текст для пошуку",
+  "dictionary_search_help": "Пошук у ввімкнених встановлених словниках. Введіть частину слова чи його читання або виберіть «Визначення», щоб шукати за значенням. Натисніть Enter або «Шукати».",
+  "dictionary_search_no_dictionaries": "Для цієї мови немає ввімкнених словників із визначеннями. Установіть або ввімкніть словник у розділі",
+  "dictionary_search_no_matches": "Статей не знайдено. Введіть інший текст або виберіть іншу мову.",
+  "dictionary_search_count_one": "Показано {{count}} статтю",
+  "dictionary_search_count_few": "Показано {{count}} статті",
+  "dictionary_search_count_many": "Показано {{count}} статей",
+  "dictionary_search_count_other": "Показано {{count}} статті",
+  "dictionary_search_more": "Завантажити ще",
+  "search": "Пошук",
+  "dictionary_search_action": "Шукати"
 }
