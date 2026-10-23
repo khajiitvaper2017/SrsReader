@@ -4,12 +4,8 @@ import {
   sentenceId,
   type CachedSentence,
 } from "@/examples/sentence-model";
-import { analysisTerms } from "@/languages/analysis";
-import { udpipeModels } from "@/languages/codes";
-import { cacheKey } from "@/languages/udpipe";
 import { db } from "@/platform/database/db";
-import { scanTexts, type ScanSpan } from "@/reader/scan";
-import type { Settings } from "@/settings/model";
+import type { ScanSpan } from "@/reader/scan";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 
 async function storeSentences(records: CachedSentence[]) {
@@ -87,44 +83,9 @@ export async function cacheScannedTexts(
   await storeSentences(records);
 }
 
-const indexing = new Map<string, Promise<void>>();
-async function indexPreviousTexts(settings: Settings) {
-  const language = settings.studyLanguage;
-  if (!indexing.has(language)) {
-    const pending = (async () => {
-      const models = udpipeModels(language);
-      for (const record of await db.analyses.toArray()) {
-        if (
-          !record.analysis ||
-          (record.language && record.language !== language)
-        )
-          continue;
-        if (!record.language) {
-          const keys = await Promise.all(
-            models.map((model) => cacheKey(record.text, language, model)),
-          );
-          if (!keys.includes(record.key)) continue;
-          await db.analyses.update(record.key, { language });
-        }
-        const scans = await scanTexts([record.text], language, settings, [
-          analysisTerms(record.analysis.sentences, record.text, record.key),
-        ]);
-        await cacheScannedTexts([record.text], scans, language);
-      }
-    })().catch((error) => {
-      indexing.delete(language);
-      throw error;
-    });
-    indexing.set(language, pending);
-  }
-  await indexing.get(language);
-}
-
 export async function sentenceExamples(
   word: Vocabulary,
-  settings: Settings,
 ): Promise<ReadingContext[]> {
-  await indexPreviousTexts({ ...settings, studyLanguage: word.language });
   const [records, vocabulary] = await Promise.all([
     db.sentences.where("wordIds").equals(word.id).toArray(),
     db.vocabulary.where("language").equals(word.language).toArray(),
