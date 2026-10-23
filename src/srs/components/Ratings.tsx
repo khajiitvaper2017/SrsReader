@@ -48,7 +48,7 @@ export function Ratings({
           px={4}
           miw={0}
         >
-          <Stack gap={compact ? 0 : undefined} align="center">
+          <Stack gap={0} align="center">
             <Text span inherit>
               {label}
             </Text>

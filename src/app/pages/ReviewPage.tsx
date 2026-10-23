@@ -58,7 +58,10 @@ export function ReviewPage({
   } = useReviewSession({ settings, deckId });
   if (!queue && !error) return <SrsProgress />;
   return (
-    <Stack mih="calc(100dvh - 100px)">
+    <Stack
+      h="calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
+      gap="xs"
+    >
       <SrsProgress />
       <Group justify="center">
         {(
@@ -86,7 +89,12 @@ export function ReviewPage({
       <ErrorBox error={error} />
       {word ? (
         <>
-          <Paper flex={1}>
+          <Paper
+            key={`${word.id}:${word.card?.reps}`}
+            flex={1}
+            mih={0}
+            style={{ overflowY: "auto" }}
+          >
             <Stack h="100%">
               <Group justify="center">
                 <SegmentedControl
