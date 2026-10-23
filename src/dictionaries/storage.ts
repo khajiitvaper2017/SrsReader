@@ -6,7 +6,6 @@ import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { getSettings, saveSettings } from "@/settings/store";
-import { dictionaryDisplay } from "@/dictionaries/display";
 import type { Dictionary } from "@/dictionaries/model";
 
 export async function setDictionaryDisplay(
@@ -26,11 +25,17 @@ export async function setDictionaryDisplay(
     request.role === "frequency"
       ? settings.frequencyPreferences
       : settings.dictionaryPreferences;
-  preferences[dictionary.id] = {
+  const preference = {
     enabled,
     order: preferences[dictionary.id]?.order ?? dictionary.order,
-    fallback: request.display === "fallback",
   };
+  if (request.role === "frequency")
+    settings.frequencyPreferences[dictionary.id] = preference;
+  else
+    settings.dictionaryPreferences[dictionary.id] = {
+      ...preference,
+      fallback: request.display === "fallback",
+    };
   await saveSettings(settings);
   return;
 }
@@ -70,20 +75,19 @@ export async function reorderDictionary(
       dictionaries.splice(target, 0, dictionary!);
       const currentSettings =
         (await db.settings.get("main"))?.value || settings;
-      const preferences =
-        request.role === "frequency"
-          ? currentSettings.frequencyPreferences
-          : currentSettings.dictionaryPreferences;
       for (const [order, dictionary] of dictionaries.entries()) {
         if (request.role === "vocabulary" && dictionary.id !== "nechybujte")
           await db.dictionaries.update(dictionary.id, { order });
-        preferences[dictionary.id] = {
-          fallback:
-            preferences[dictionary.id]?.fallback ??
-            dictionary.id === "nechybujte",
-          enabled: dictionary.enabled,
-          order,
-        };
+        const preference = { enabled: dictionary.enabled, order };
+        if (request.role === "frequency")
+          currentSettings.frequencyPreferences[dictionary.id] = preference;
+        else
+          currentSettings.dictionaryPreferences[dictionary.id] = {
+            ...preference,
+            fallback:
+              currentSettings.dictionaryPreferences[dictionary.id]?.fallback ??
+              dictionary.id === "nechybujte",
+          };
       }
       await saveSettings(currentSettings);
     }),
@@ -186,8 +190,7 @@ export async function listFrequencyDictionaries(settings?: Settings) {
     )
     .map((dictionary) => ({
       ...dictionary,
-      enabled:
-        dictionaryDisplay(dictionary.id, settings, "frequency") !== "hide",
+      enabled: preferences[dictionary.id]?.enabled !== false,
       order: preferences[dictionary.id]?.order ?? dictionary.order,
     }))
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));

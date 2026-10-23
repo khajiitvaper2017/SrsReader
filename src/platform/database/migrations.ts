@@ -152,8 +152,6 @@ export function installMigrations(database: Dexie) {
           settings.frequencyPreferences[dictionary.id] = {
             enabled: dictionary.enabled,
             order: dictionary.order,
-            fallback:
-              settings.dictionaryPreferences[dictionary.id]?.fallback ?? false,
           };
       }
       const { studyLanguage: _language, ...value } = settings;

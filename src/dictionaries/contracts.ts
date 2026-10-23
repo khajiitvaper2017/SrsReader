@@ -6,11 +6,6 @@ import { z } from "zod";
 
 export const requests = [
   z.object({
-    action: z.literal("setImmersionCollection"),
-    language: languageSchema,
-    enabled: z.boolean(),
-  }),
-  z.object({
     action: z.literal("setImmersionWeight"),
     language: languageSchema,
     weight: immersionWeightSchema,
@@ -46,7 +41,6 @@ export const requests = [
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
-  setImmersionCollection: void;
   setImmersionWeight: void;
   dictionaries: Dictionary[];
   searchDictionaries: {

@@ -1,3 +1,4 @@
+import { immersionId } from "@/dictionaries/immersion-model";
 import { recordImmersion } from "@/dictionaries/immersion";
 import { broadcast } from "@/background/events";
 import { analyzeTexts } from "@/languages/udpipe";
@@ -60,7 +61,8 @@ async function execute(request: Request, settings: Settings) {
       const dictionaryStarted = performance.now();
       const immersion =
         request.source === "website" &&
-        settings.immersionCollection[request.language] === true;
+        settings.frequencyPreferences[immersionId(request.language)]
+          ?.enabled !== false;
       const parsed = await scanTexts(
         request.texts,
         request.language,

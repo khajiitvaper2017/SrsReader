@@ -79,7 +79,6 @@ export async function restoreLearning(
           dictionary.maxFrequency = source.words.length;
           settings.frequencyPreferences[dictionary.id] ??= {
             enabled: true,
-            fallback: false,
             order: dictionary.order,
           };
           await db.dictionaries.add(dictionary);

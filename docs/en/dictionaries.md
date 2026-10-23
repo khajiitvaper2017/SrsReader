@@ -2,7 +2,7 @@
 
 Open **Settings → Dictionaries** and choose a language. The selector includes studied languages and languages with installed dictionaries. **Vocabulary** contains definitions, word forms, and example sentences. **Frequency** contains word rankings. Download catalogs use the selected language.
 
-A ZIP that contains definitions and rankings appears in both tabs. Each part has its own **Show**, **If needed**, **Hide**, and order settings. Removing the ZIP removes both parts. Other languages keep their own settings.
+A ZIP that contains definitions and rankings appears in both tabs. Vocabulary uses **Show**, **If needed**, and **Hide**. Frequency uses **Enabled** and **Disabled**. Each part has its own order. Removing the ZIP removes both parts. Other languages keep their own settings.
 
 ## Search
 
@@ -22,13 +22,13 @@ Open **Settings → Dictionaries**:
 
 Keep Settings open while downloading and importing. You can switch settings tabs while a download or import runs. Once installed, dictionaries work offline.
 
-Drag a dictionary by its handle to change the order, including Nechybujte. You can also focus the handle and press Up or Down. Higher dictionaries appear first in the popup. Each dictionary has three display options:
+Drag a dictionary by its handle to change the order, including Nechybujte. You can also focus the handle and press Up or Down. Higher dictionaries appear first in the popup. Each vocabulary dictionary has three display options:
 
 - **Show:** include its entries even when another dictionary has a match.
 - **If needed:** include its entries only when dictionaries above it have no match.
 - **Hide:** disable its entries, including cached entries.
 
-Frequency dictionaries use the same rule for ranks. These choices and the order are included in settings exports.
+Frequency dictionaries use **Enabled** to contribute ranks and **Disabled** to exclude them. These choices and the order are included in settings exports.
 
 Choose **Check updates**, then **Update** when a release is available. Checks are manual. Without an update source, import a newer ZIP with the same title and languages.
 
@@ -42,17 +42,17 @@ New cards start with the most frequent words. Under **Settings → Review → Wo
 
 ## Immersion Frequency
 
-Open **Settings → Dictionaries**, choose a language, then open **Frequency**. The built-in **Immersion Frequency** row is always available. Turn on **Collect word hits** to build rankings from website text parsed while you read. Collection is off by default and can be enabled separately for each language. Popup definitions and review text do not add hits. It does not create review cards automatically.
+Open **Settings → Dictionaries**, choose a language, then open **Frequency**. The built-in **Immersion Frequency** row is always available. Select **Enabled** to build rankings from website text parsed while you read. It is enabled by default. Each language has its own setting. Popup definitions and review text do not add hits. It does not create review cards automatically.
 
 The first candidate for each word receives a primary hit. Other candidates receive secondary hits. Inflected forms and duplicate candidates share their base word's count. A word without a dictionary entry still counts when the parser identifies its base word. Punctuation and unidentified words do not count.
 
-The score is **primary hits + multiplier × secondary hits**. **Secondary-hit multiplier** defaults to **0.3**. Enter **0–1** with up to two decimal places, then select **Save**. Changing it recalculates scores from saved counts. Higher scores receive lower frequency ranks. Equal scores share a rank. Click a word's frequency badge to see its primary hits, secondary hits, score, and rank.
+The score is **primary hits + multiplier × secondary hits**. **Secondary-hit multiplier** defaults to **0.3**. Enter **0–1** with up to two decimal places, then leave the field or press Enter to save. Changing it recalculates scores from saved counts. Higher scores receive lower frequency ranks. Equal scores share a rank. Click a word's frequency badge to see its primary hits, secondary hits, score, and rank.
 
 Each exact text block counts only once per language, including across websites, tabs, reloads, and browser restarts. Repeated words within a new block each add a hit. Parser changes do not recount old blocks or revise their contributions.
 
-Use **Show** to combine its ranks with other enabled frequency dictionaries, or hide the other dictionaries to use it alone. **If needed** uses its rank when sources above it have no match. **Hide** stops using its ranks without changing collection. Turn off **Collect word hits** to stop collection. Saved counts, ranks, and counted-block history stay available. Turn the switch on again to resume collection.
+Select **Enabled** to collect hits and combine its ranks with other enabled frequency dictionaries. Disable the other frequency dictionaries to use it alone. Select **Disabled** to stop counting and exclude its ranks. Saved counts, ranks, and counted-block history stay available. Select **Enabled** again to resume counting.
 
-**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Collection switches, visibility, and ordering are included in the settings export.
+**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Enabled states, vocabulary display options, and ordering are included in the settings export.
 
 ## Missing words
 

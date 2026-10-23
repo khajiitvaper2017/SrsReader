@@ -188,16 +188,6 @@ export function useDictionarySettings({
         load();
       });
   }
-  function setImmersionCollection(enabled: boolean) {
-    return void task(async () => {
-      await dictionariesClient({
-        action: "setImmersionCollection",
-        enabled,
-        language: settings.studyLanguage,
-      });
-      load();
-    });
-  }
   function updateImmersionWeight(language: string, weight: number) {
     return void task(async () => {
       await dictionariesClient({
@@ -209,7 +199,6 @@ export function useDictionarySettings({
     });
   }
   return {
-    setImmersionCollection,
     updateImmersionWeight,
     busy,
     progressTarget,

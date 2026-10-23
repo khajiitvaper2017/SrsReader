@@ -102,48 +102,38 @@ async function frequencyData(
 function matchingFrequencies(
   word: Pick<LookupWord, "lemma" | "reading" | "language">,
   data: Awaited<ReturnType<typeof frequencyData>>,
-  settings: Settings,
 ): RankedFrequency[] {
   const matching = data.byKey.get(folded(word.lemma, word.language)) || [];
-  return data.dictionaries
-    .flatMap((dictionary): RankedFrequency[] => {
-      const rows = matching.filter(
-        (row) => row.revisionId === dictionary.revisionId,
-      );
-      const rank = frequencyRank(rows, word.lemma, word.reading);
-      const counts = dictionary.immersion ? rows[0] : undefined;
-      return Number.isFinite(rank)
-        ? [
-            {
-              id: dictionary.id,
-              title: dictionary.index.title,
-              rank,
-              ...(counts
-                ? {
-                    primaryHits: counts.primaryHits,
-                    secondaryHits: counts.secondaryHits,
-                    score: counts.score,
-                  }
-                : {}),
-            },
-          ]
-        : [];
-    })
-    .filter(
-      (row, index) =>
-        !settings.frequencyPreferences[row.id]?.fallback || index === 0,
+  return data.dictionaries.flatMap((dictionary): RankedFrequency[] => {
+    const rows = matching.filter(
+      (row) => row.revisionId === dictionary.revisionId,
     );
+    const rank = frequencyRank(rows, word.lemma, word.reading);
+    const counts = dictionary.immersion ? rows[0] : undefined;
+    return Number.isFinite(rank)
+      ? [
+          {
+            id: dictionary.id,
+            title: dictionary.index.title,
+            rank,
+            ...(counts
+              ? {
+                  primaryHits: counts.primaryHits,
+                  secondaryHits: counts.secondaryHits,
+                  score: counts.score,
+                }
+              : {}),
+          },
+        ]
+      : [];
+  });
 }
 
 export async function wordFrequencies(
   word: Pick<LookupWord, "lemma" | "reading" | "language">,
 ) {
   const settings = await getSettings();
-  return matchingFrequencies(
-    word,
-    await frequencyData([word], settings),
-    settings,
-  );
+  return matchingFrequencies(word, await frequencyData([word], settings));
 }
 
 export async function orderNewWords(words: Vocabulary[], settings: Settings) {
@@ -157,7 +147,7 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
   await Promise.all(
     words.map(async (word) => {
       const rank = harmonicRank(
-        matchingFrequencies(word, data, settings).map((row) => row.rank),
+        matchingFrequencies(word, data).map((row) => row.rank),
       );
       if (Number.isFinite(rank)) ranks.set(word.id, rank);
       else if (settings.missingFrequency === "random") {

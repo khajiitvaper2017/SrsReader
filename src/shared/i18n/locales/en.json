@@ -784,7 +784,7 @@
   "dictionary_show": "Show",
   "dictionary_if_needed": "If needed",
   "dictionary_hide": "Hide",
-  "dictionary_display_help": "Show always includes the dictionary. If needed includes it only when dictionaries above have no entry. Hide disables it. Frequency dictionaries use the same rule for ranks.",
+  "dictionary_display_help": "Show always includes the dictionary. If needed includes it only when dictionaries above have no entry. Hide disables it.",
   "srs_queue_learning": "Learning",
   "srs_queue_relearning": "Relearning",
   "srs_queue_ahead": "Ready early: {{count}}. Included in Learning and Relearning.",
@@ -956,9 +956,11 @@
   "vocabulary_dictionaries": "Vocabulary",
   "immersion_frequency": "Immersion Frequency",
   "immersion_secondary_weight": "Secondary-hit multiplier",
-  "immersion_collection_help": "Collection is optional for each language. Turning it off keeps saved hits and ranks. Show, If needed, and Hide control ranking use separately.",
-  "immersion_score_help": "Score = primary hits + multiplier × secondary hits. Use 0–1, with up to two decimal places. Default: 0.3.",
+  "immersion_collection_help": "Counts website words while enabled. Disabling stops counting and keeps saved hits and ranks.",
+  "immersion_score_help": "Score = primary hits + multiplier × secondary hits. Use 0–1, with up to two decimal places. Default: 0.3. Changes save when you leave the field or press Enter.",
   "immersion_hit_details": "Primary: {{primary}} · Secondary: {{secondary}} · Score: {{score}}",
   "invalid_immersion_archive": "The learning archive contains invalid immersion counts or passage records.",
-  "immersion_collect_hits": "Collect word hits"
+  "dictionary_enabled": "Enabled",
+  "dictionary_disabled": "Disabled",
+  "frequency_enabled_help": "Enabled dictionaries contribute word ranks. Disabling Immersion Frequency also stops counting and keeps saved hits."
 }

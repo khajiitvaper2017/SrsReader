@@ -316,7 +316,6 @@ async function importRevision(
           settings.frequencyPreferences[id] ??= {
             enabled: true,
             order: dictionary.order,
-            fallback: false,
           };
           await saveSettings(settings);
         }

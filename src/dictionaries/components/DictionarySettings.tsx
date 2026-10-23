@@ -51,7 +51,6 @@ export function DictionarySettings({
 }) {
   const {
     busy,
-    setImmersionCollection,
     updateImmersionWeight,
     progressTarget,
     updates,
@@ -181,19 +180,34 @@ export function DictionarySettings({
                     title: dictionary.index.title,
                   })}
                   value={
-                    role === "frequency" || dictionary.enabled
-                      ? dictionaryDisplay(dictionary.id, settings, role)
-                      : "hide"
+                    role === "frequency"
+                      ? settings.frequencyPreferences[dictionary.id]
+                          ?.enabled !== false
+                        ? "show"
+                        : "hide"
+                      : dictionary.enabled
+                        ? dictionaryDisplay(dictionary.id, settings)
+                        : "hide"
                   }
                   disabled={busy}
                   onChange={(value) =>
                     setDisplay(dictionary, value as DictionaryDisplay, role)
                   }
-                  data={[
-                    { value: "show", label: t("dictionary_show") },
-                    { value: "fallback", label: t("dictionary_if_needed") },
-                    { value: "hide", label: t("dictionary_hide") },
-                  ]}
+                  data={
+                    role === "frequency"
+                      ? [
+                          { value: "show", label: t("dictionary_enabled") },
+                          { value: "hide", label: t("dictionary_disabled") },
+                        ]
+                      : [
+                          { value: "show", label: t("dictionary_show") },
+                          {
+                            value: "fallback",
+                            label: t("dictionary_if_needed"),
+                          },
+                          { value: "hide", label: t("dictionary_hide") },
+                        ]
+                  }
                 />
               </Group>
             </Group>
@@ -201,8 +215,6 @@ export function DictionarySettings({
               <ImmersionWeight
                 dictionary={dictionary}
                 disabled={busy}
-                collecting={!!settings.immersionCollection[dictionary.language]}
-                onCollectionChange={setImmersionCollection}
                 onSave={(weight) =>
                   updateImmersionWeight(dictionary.language, weight)
                 }
@@ -212,7 +224,13 @@ export function DictionarySettings({
         )}
       </SortableList>
       <Divider />
-      <Text variant="supporting">{t("dictionary_display_help")}</Text>
+      <Text variant="supporting">
+        {t(
+          role === "frequency"
+            ? "frequency_enabled_help"
+            : "dictionary_display_help",
+        )}
+      </Text>
       <Stack
         aria-busy={busy && progressTarget === "dictionary"}
         onDragOver={(event) => {

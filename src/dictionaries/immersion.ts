@@ -8,7 +8,6 @@ import {
 import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import { settingsSchema } from "@/settings/model";
-import { saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { BlobWriter, TextReader, ZipWriter } from "@zip.js/zip.js";
 import Dexie from "dexie";
@@ -38,30 +37,6 @@ export function immersionDictionary(
     styles: "",
     immersion: { secondaryWeight },
   };
-}
-
-export async function setImmersionCollection(
-  language: string,
-  enabled: boolean,
-) {
-  await db.transaction("rw", [db.dictionaries, db.settings], async () => {
-    const existing = await db.dictionaries.get(immersionId(language));
-    const dictionary = existing ?? immersionDictionary(language);
-    if (!existing)
-      dictionary.order =
-        ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1;
-    const settings = settingsSchema.parse(
-      (await db.settings.get("main"))?.value || {},
-    );
-    settings.immersionCollection[language] = enabled;
-    settings.frequencyPreferences[dictionary.id] ??= {
-      enabled: true,
-      fallback: false,
-      order: dictionary.order,
-    };
-    await db.dictionaries.put(dictionary);
-    await saveSettings(settings);
-  });
 }
 
 export async function setImmersionWeight(
@@ -116,7 +91,8 @@ export async function recordImmersion(
       const settings = settingsSchema.parse(
         (await db.settings.get("main"))?.value || {},
       );
-      if (!settings.immersionCollection[language]) return false;
+      if (settings.frequencyPreferences[dictionaryId]?.enabled === false)
+        return false;
       const dictionary =
         (await db.dictionaries.get(dictionaryId)) ??
         immersionDictionary(language);
