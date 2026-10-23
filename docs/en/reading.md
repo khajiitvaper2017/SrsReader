@@ -48,6 +48,8 @@ Hover over the popup heading or focus it with the keyboard to see grammar below 
 
 Each dictionary has its own **Show more** arrow when it contains grammar mismatches. Click it to reveal excluded meanings for the current word. To reveal hidden word candidates, open the word selector and use that dictionary’s **Show more** item. Conflicting tags are red; hover over a tag for an explanation. Meanings with missing or unknown tags stay visible.
 
+For prepositions, the parsed case also filters individual senses with leading case labels, such as **(na + akuzativ)** or **(na + lokál)**. A sense stays visible if its label includes the parsed case. Senses without a recognized case label stay visible. Use the dictionary’s **Show more** arrow to see all senses.
+
 Enable **Automatically ignore proper names** to give recognized names the Ignored appearance. Names stay searchable. This does not save them as ignored. Saved vocabulary states take priority. Words annotated as nationalities are excluded. Name recognition can make mistakes.
 
 LINDAT may use submitted text to improve its systems. Its models have noncommercial use restrictions. See the [service terms](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php).

@@ -63,7 +63,7 @@ export function useLookupWord({
       wordMatchesGrammar(candidate, result.grammar, expandedDictionaries),
     ) || [];
   const word: LookupWord | undefined =
-    candidates.find((w) => w.id === selected) ||
+    result?.words.find((w) => w.id === selected) ||
     (noResults && settings.studyLanguage
       ? {
           id: wordId(

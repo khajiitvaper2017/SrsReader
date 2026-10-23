@@ -2,7 +2,10 @@ import { ActionIcon, Group, Anchor, Badge, Stack, Text } from "@mantine/core";
 import { Structured } from "@/dictionaries/components/StructuredContent";
 import { definitionText } from "@/dictionaries/definitions";
 import { useMeanings } from "@/dictionaries/hooks/useMeanings";
-import { grammarConflicts } from "@/dictionaries/grammar";
+import {
+  filterPrepositionSenses,
+  grammarConflicts,
+} from "@/dictionaries/grammar";
 import type { OccurrenceGrammar } from "@/languages/analysis";
 import {
   meaningTags,
@@ -50,9 +53,17 @@ export function Meanings({
             (meaning) => meaning.dictionaryId === dictionaryId,
           );
           const expanded = expandedDictionaries.includes(dictionaryId);
+          const filtered = new Map(
+            entries.map((meaning) => [
+              meaning,
+              filterPrepositionSenses(meaning, grammar),
+            ]),
+          );
           const title = entries[0]!.title;
           const conflictsExist = entries.some(
-            (meaning) => Object.keys(grammarConflicts(meaning, grammar)).length,
+            (meaning) =>
+              filtered.get(meaning) !== meaning ||
+              Object.keys(grammarConflicts(meaning, grammar)).length,
           );
           const visible = expanded
             ? entries
@@ -89,6 +100,9 @@ export function Meanings({
               {visible.map((meaning, i) => {
                 const index = displayed.indexOf(meaning);
                 const meaningActions = actions?.(meaning);
+                const definitions = (
+                  expanded ? meaning : filtered.get(meaning)!
+                ).definitions;
                 const conflicts = grammarConflicts(meaning, grammar);
                 const tagTitle = (tag: string) =>
                   [
@@ -186,7 +200,7 @@ export function Meanings({
                         meaning.dictionaryId,
                       ) ? (
                         <ol data-sc-content="glosses">
-                          {meaning.definitions.map((definition, j) => (
+                          {definitions.map((definition, j) => (
                             <li key={j}>
                               <Structured
                                 value={definition}
@@ -196,7 +210,7 @@ export function Meanings({
                           ))}
                         </ol>
                       ) : (
-                        meaning.definitions.map((definition: Definition, j) => (
+                        definitions.map((definition: Definition, j) => (
                           <Stack key={j} gap="xs">
                             <Structured
                               value={definition}
@@ -239,7 +253,7 @@ export function Meanings({
                   <TextTranslation
                     compact
                     key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}`}
-                    text={meaning.definitions
+                    text={definitions
                       .map((definition, index) => {
                         const text = definitionText(definition)
                           .replace(/[ \t]+/g, " ")

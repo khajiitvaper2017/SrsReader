@@ -1,6 +1,7 @@
 import {
   meaningTags,
   type LookupWord,
+  type Definition,
   type Meaning,
 } from "@/dictionaries/model";
 import type { OccurrenceGrammar } from "@/languages/analysis";
@@ -116,6 +117,73 @@ export function grammarConflicts(
     });
   }
   return conflicts;
+}
+
+export function filterPrepositionSenses(
+  meaning: Meaning,
+  grammar?: OccurrenceGrammar,
+): Meaning {
+  const cases = grammar?.sentence.tokens
+    .filter(
+      (token) => grammar.tokenIds.includes(token.id) && token.upos === "ADP",
+    )
+    .flatMap((token) => token.feats.Case?.split(",") || []);
+  if (!cases?.length || meaning.dictionaryId === "personal") return meaning;
+  const caseNames: Record<string, string> = {
+    nominativ: "Nom",
+    nominative: "Nom",
+    genitiv: "Gen",
+    genitive: "Gen",
+    dativ: "Dat",
+    dative: "Dat",
+    akuzativ: "Acc",
+    accusative: "Acc",
+    vokativ: "Voc",
+    vocative: "Voc",
+    lokál: "Loc",
+    locative: "Loc",
+    instrumentál: "Ins",
+    instrumental: "Ins",
+  };
+  function text(value: unknown): string {
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) return value.map(text).join("");
+    if (!value || typeof value !== "object") return "";
+    const node = value as Record<string, unknown>;
+    return node.tag === "details" ? "" : text(node.content || node.text);
+  }
+  function matchesCase(sense: unknown) {
+    // Only leading case labels describe government; examples can use other cases.
+    const labels = text(sense).match(/^(?:\s*\([^)]*\)[\s,]*)+/u)?.[0] || "";
+    const allowed = [...labels.toLowerCase().matchAll(/\p{L}+/gu)].flatMap(
+      ([name]) => (caseNames[name] ? [caseNames[name]] : []),
+    );
+    return !allowed.length || cases!.some((value) => allowed.includes(value));
+  }
+  let changed = false;
+  function filter(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(filter);
+    if (!value || typeof value !== "object") return value;
+    const node = value as Record<string, unknown>;
+    if (
+      node.tag === "ol" &&
+      (node.data as Record<string, unknown> | undefined)?.content ===
+        "glosses" &&
+      Array.isArray(node.content)
+    ) {
+      const content = node.content.filter(matchesCase);
+      if (content.length !== node.content.length) changed = true;
+      return { ...node, content: content.map(filter) };
+    }
+    return { ...node, content: filter(node.content) };
+  }
+  const senses =
+    meaning.dictionaryId === "nechybujte"
+      ? meaning.definitions.filter(matchesCase)
+      : meaning.definitions;
+  if (senses.length !== meaning.definitions.length) changed = true;
+  const definitions = senses.map(filter) as Definition[];
+  return changed ? { ...meaning, definitions } : meaning;
 }
 
 export function dictionaryGrammarTags(
