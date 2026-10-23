@@ -1,6 +1,4 @@
 import { recordImmersion } from "@/dictionaries/immersion";
-import { immersionId } from "@/dictionaries/immersion-model";
-import { db } from "@/platform/database/db";
 import { broadcast } from "@/background/events";
 import { analyzeTexts } from "@/languages/udpipe";
 import { udpipePermission } from "@/languages/udpipe-permission";
@@ -62,7 +60,7 @@ async function execute(request: Request, settings: Settings) {
       const dictionaryStarted = performance.now();
       const immersion =
         request.source === "website" &&
-        !!(await db.dictionaries.get(immersionId(request.language)))?.immersion;
+        settings.immersionCollection[request.language] === true;
       const parsed = await scanTexts(
         request.texts,
         request.language,

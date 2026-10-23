@@ -1,3 +1,4 @@
+import { languageSchema } from "@/languages/model";
 import { z } from "zod";
 
 const preferenceSchema = z.object({
@@ -7,6 +8,7 @@ const preferenceSchema = z.object({
 });
 
 export const dictionariesPreferencesSchema = z.object({
+  immersionCollection: z.record(languageSchema, z.boolean()).default({}),
   dictionaryPreferences: z.record(z.string(), preferenceSchema).default({}),
   frequencyPreferences: z.record(z.string(), preferenceSchema).default({}),
 });

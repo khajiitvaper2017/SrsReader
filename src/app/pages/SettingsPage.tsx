@@ -90,7 +90,7 @@ export function SettingsPage({
       .catch((error) => setError(error.message));
   }, []);
   useEffect(load, [load]);
-  useChanges(load, ["dictionaries", "frequency"]);
+  useChanges(load, ["dictionaries", "frequency", "settings"]);
   async function update(patch: Partial<Settings>) {
     const next = { ...preferences, ...patch };
     setSettings(next);

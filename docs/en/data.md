@@ -12,7 +12,7 @@ Import each file into its matching section. Settings and learning imports replac
 
 RWKV model files and saved model states are not included. After restore, RWKV downloads its model if needed and rebuilds its state from review history. Undone answers are included in the history but do not affect scheduling.
 
-Immersion hit counts and text fingerprints stay on this device. Fingerprints identify counted text without storing another copy of the page text. Settings exports preserve dictionary visibility and order.
+Immersion hit counts and text fingerprints stay on this device. Fingerprints identify counted text without storing another copy of the page text. Settings exports preserve collection switches, dictionary visibility, and order.
 
 Word-form tables and Tatoeba corpora are not included in these exports. Download them again under **Settings → Dictionaries → Word forms** and **Example sentences** after moving to another browser.
 

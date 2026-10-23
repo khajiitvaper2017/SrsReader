@@ -175,14 +175,9 @@ export function useDictionarySettings({
   function removeDictionary(dictionary: Dictionary) {
     if (
       confirm(
-        t(
-          dictionary.immersion
-            ? "remove_immersion_confirmation"
-            : "remove_your_saved_words_and_reviews_will_stay",
-          {
-            title: dictionary.index.title,
-          },
-        ),
+        t("remove_your_saved_words_and_reviews_will_stay", {
+          title: dictionary.index.title,
+        }),
       )
     )
       void task(async () => {
@@ -193,23 +188,28 @@ export function useDictionarySettings({
         load();
       });
   }
-  function addImmersion() {
+  function setImmersionCollection(enabled: boolean) {
     return void task(async () => {
       await dictionariesClient({
-        action: "addImmersion",
+        action: "setImmersionCollection",
+        enabled,
         language: settings.studyLanguage,
       });
       load();
     });
   }
-  function updateImmersionWeight(id: string, weight: number) {
+  function updateImmersionWeight(language: string, weight: number) {
     return void task(async () => {
-      await dictionariesClient({ action: "setImmersionWeight", id, weight });
+      await dictionariesClient({
+        action: "setImmersionWeight",
+        language,
+        weight,
+      });
       load();
     });
   }
   return {
-    addImmersion,
+    setImmersionCollection,
     updateImmersionWeight,
     busy,
     progressTarget,

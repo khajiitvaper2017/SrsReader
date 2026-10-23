@@ -1,3 +1,5 @@
+import { immersionDictionary } from "@/dictionaries/immersion";
+import { immersionId } from "@/dictionaries/immersion-model";
 import type { Request } from "@/dictionaries/contracts";
 import { removeRevision } from "@/dictionaries/management";
 import { db } from "@/platform/database/db";
@@ -122,6 +124,21 @@ export const loadDictionaries = (ids: string[]) => db.dictionaries.bulkGet(ids);
 export async function listDictionaries(settings?: Settings) {
   settings ??= await getSettings();
   const dictionaries = await db.dictionaries.orderBy("order").toArray();
+  const languages = new Set([
+    ...settings.studyLanguages,
+    ...dictionaries.map((dictionary) => dictionary.language),
+  ]);
+  for (const language of languages) {
+    if (
+      !dictionaries.some(
+        (dictionary) => dictionary.id === immersionId(language),
+      )
+    )
+      dictionaries.push({
+        ...immersionDictionary(language),
+        order: (dictionaries.at(-1)?.order ?? -1) + 1,
+      });
+  }
   const preference = settings.dictionaryPreferences.nechybujte;
   const online: Dictionary = {
     id: "nechybujte",
@@ -163,15 +180,12 @@ export async function dictionaryImage(id: string, path: string) {
 export async function listFrequencyDictionaries(settings?: Settings) {
   settings ??= await getSettings();
   const preferences = settings.frequencyPreferences;
-  return (await db.dictionaries.toArray())
+  return (await listDictionaries(settings))
     .filter(
       (dictionary) => dictionary.frequencyCount > 0 || dictionary.immersion,
     )
     .map((dictionary) => ({
       ...dictionary,
-      index: dictionary.immersion
-        ? { ...dictionary.index, title: t("immersion_frequency") }
-        : dictionary.index,
       enabled:
         dictionaryDisplay(dictionary.id, settings, "frequency") !== "hide",
       order: preferences[dictionary.id]?.order ?? dictionary.order,

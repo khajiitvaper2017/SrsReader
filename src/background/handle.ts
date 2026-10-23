@@ -17,7 +17,7 @@ export async function handle(request: Request) {
     case "settings":
     case "setSettings":
       return handleSettings(request, settings);
-    case "addImmersion":
+    case "setImmersionCollection":
     case "setImmersionWeight":
     case "dictionaries":
     case "searchDictionaries":

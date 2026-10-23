@@ -1,4 +1,4 @@
-import { Button, Group, NumberInput, Stack, Text } from "@mantine/core";
+import { Button, Group, NumberInput, Stack, Switch, Text } from "@mantine/core";
 import type { Dictionary } from "@/dictionaries/model";
 import { t } from "@/shared/i18n/i18n";
 import { useEffect, useState } from "react";
@@ -6,10 +6,14 @@ import { useEffect, useState } from "react";
 export function ImmersionWeight({
   dictionary,
   disabled,
+  collecting,
+  onCollectionChange,
   onSave,
 }: {
   dictionary: Dictionary;
   disabled: boolean;
+  collecting: boolean;
+  onCollectionChange: (enabled: boolean) => void;
   onSave: (weight: number) => void;
 }) {
   const saved = dictionary.immersion!.secondaryWeight;
@@ -17,6 +21,12 @@ export function ImmersionWeight({
   useEffect(() => setWeight(saved), [saved]);
   return (
     <Stack gap="xs">
+      <Switch
+        label={t("immersion_collect_hits")}
+        checked={collecting}
+        disabled={disabled}
+        onChange={(event) => onCollectionChange(event.currentTarget.checked)}
+      />
       <Text variant="supporting">{t("immersion_collection_help")}</Text>
       <Group align="end">
         <NumberInput

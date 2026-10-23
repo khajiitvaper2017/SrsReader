@@ -1,5 +1,5 @@
 import {
-  addImmersionDictionary,
+  setImmersionCollection,
   setImmersionWeight,
 } from "@/dictionaries/immersion";
 import { broadcast, notify } from "@/background/events";
@@ -21,7 +21,7 @@ import { stateOf } from "@/vocabulary/model";
 import { getWords } from "@/vocabulary/storage";
 
 export function handleDictionaries(request: Request, settings: Settings) {
-  return request.action === "addImmersion" ||
+  return request.action === "setImmersionCollection" ||
     request.action === "setImmersionWeight" ||
     request.action === "setDictionary" ||
     request.action === "moveDictionary" ||
@@ -31,12 +31,12 @@ export function handleDictionaries(request: Request, settings: Settings) {
 }
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
-    case "addImmersion":
-      await addImmersionDictionary(request.language);
+    case "setImmersionCollection":
+      await setImmersionCollection(request.language, request.enabled);
       await notify(undefined, "dictionaries");
       return;
     case "setImmersionWeight":
-      await setImmersionWeight(request.id, request.weight);
+      await setImmersionWeight(request.language, request.weight);
       await broadcast({ event: "changed", scope: "frequency" });
       return;
     case "dictionaries":

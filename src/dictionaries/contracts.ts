@@ -5,10 +5,14 @@ import { selection } from "@/vocabulary/contracts";
 import { z } from "zod";
 
 export const requests = [
-  z.object({ action: z.literal("addImmersion"), language: languageSchema }),
+  z.object({
+    action: z.literal("setImmersionCollection"),
+    language: languageSchema,
+    enabled: z.boolean(),
+  }),
   z.object({
     action: z.literal("setImmersionWeight"),
-    id: z.string(),
+    language: languageSchema,
     weight: immersionWeightSchema,
   }),
   z.object({ action: z.literal("dictionaries") }),
@@ -42,7 +46,7 @@ export const requests = [
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
-  addImmersion: void;
+  setImmersionCollection: void;
   setImmersionWeight: void;
   dictionaries: Dictionary[];
   searchDictionaries: {

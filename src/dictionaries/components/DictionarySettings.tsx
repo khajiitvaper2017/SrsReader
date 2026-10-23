@@ -51,7 +51,7 @@ export function DictionarySettings({
 }) {
   const {
     busy,
-    addImmersion,
+    setImmersionCollection,
     updateImmersionWeight,
     progressTarget,
     updates,
@@ -161,16 +161,18 @@ export function DictionarySettings({
                     >
                       <Download aria-hidden="true" size={16} />
                     </ActionIcon>
-                    <ActionIcon
-                      title={t("remove")}
-                      aria-label={t("remove")}
-                      disabled={busy}
-                      onClick={() => removeDictionary(dictionary)}
-                      variant="subtle"
-                      color="red"
-                    >
-                      <Trash2 aria-hidden="true" size={16} />
-                    </ActionIcon>
+                    {!dictionary.immersion && (
+                      <ActionIcon
+                        title={t("remove")}
+                        aria-label={t("remove")}
+                        disabled={busy}
+                        onClick={() => removeDictionary(dictionary)}
+                        variant="subtle"
+                        color="red"
+                      >
+                        <Trash2 aria-hidden="true" size={16} />
+                      </ActionIcon>
+                    )}
                   </>
                 )}
                 <Select
@@ -199,8 +201,10 @@ export function DictionarySettings({
               <ImmersionWeight
                 dictionary={dictionary}
                 disabled={busy}
+                collecting={!!settings.immersionCollection[dictionary.language]}
+                onCollectionChange={setImmersionCollection}
                 onSave={(weight) =>
-                  updateImmersionWeight(dictionary.id, weight)
+                  updateImmersionWeight(dictionary.language, weight)
                 }
               />
             )}
@@ -261,7 +265,8 @@ export function DictionarySettings({
             <Badge>
               {t("dictionaries_installed", {
                 count: visible.filter(
-                  (dictionary) => dictionary.id !== "nechybujte",
+                  (dictionary) =>
+                    dictionary.id !== "nechybujte" && !dictionary.immersion,
                 ).length,
               })}
             </Badge>
@@ -299,18 +304,6 @@ export function DictionarySettings({
             </Tabs.Panel>
             <Tabs.Panel value="frequency">
               <Stack>
-                {!dictionaries.some(
-                  (dictionary) =>
-                    dictionary.language === settings.studyLanguage &&
-                    dictionary.immersion,
-                ) && (
-                  <Button
-                    disabled={busy || !settings.studyLanguage}
-                    onClick={addImmersion}
-                  >
-                    {t("add_immersion_frequency")}
-                  </Button>
-                )}
                 {dictionaryControls}
                 <FrequencyBrowser
                   key={settings.studyLanguage}

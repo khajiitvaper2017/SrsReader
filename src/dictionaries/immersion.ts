@@ -40,36 +40,51 @@ export function immersionDictionary(
   };
 }
 
-export async function addImmersionDictionary(language: string) {
+export async function setImmersionCollection(
+  language: string,
+  enabled: boolean,
+) {
   await db.transaction("rw", [db.dictionaries, db.settings], async () => {
-    const dictionary = immersionDictionary(language);
-    if (await db.dictionaries.get(dictionary.id)) return;
-    dictionary.order =
-      ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1;
+    const existing = await db.dictionaries.get(immersionId(language));
+    const dictionary = existing ?? immersionDictionary(language);
+    if (!existing)
+      dictionary.order =
+        ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1;
     const settings = settingsSchema.parse(
       (await db.settings.get("main"))?.value || {},
     );
-    settings.frequencyPreferences[dictionary.id] = {
+    settings.immersionCollection[language] = enabled;
+    settings.frequencyPreferences[dictionary.id] ??= {
       enabled: true,
       fallback: false,
       order: dictionary.order,
     };
-    await db.dictionaries.add(dictionary);
+    await db.dictionaries.put(dictionary);
     await saveSettings(settings);
   });
 }
 
-export async function setImmersionWeight(id: string, secondaryWeight: number) {
+export async function setImmersionWeight(
+  language: string,
+  secondaryWeight: number,
+) {
   await db.transaction("rw", [db.dictionaries, db.immersionWords], async () => {
-    const dictionary = await db.dictionaries.get(id);
-    if (!dictionary?.immersion) throw new Error(t("dictionary_not_found"));
+    const id = immersionId(language);
+    const existing = await db.dictionaries.get(id);
+    const dictionary = existing ?? immersionDictionary(language);
+    if (!existing)
+      dictionary.order =
+        ((await db.dictionaries.orderBy("order").last())?.order ?? -1) + 1;
     await db.immersionWords
       .where("dictionaryId")
       .equals(id)
       .modify((word) => {
         word.score = immersionScore(word, secondaryWeight);
       });
-    await db.dictionaries.update(id, { immersion: { secondaryWeight } });
+    await db.dictionaries.put({
+      ...dictionary,
+      immersion: { secondaryWeight },
+    });
   });
 }
 
@@ -96,10 +111,17 @@ export async function recordImmersion(
   );
   return db.transaction(
     "rw",
-    [db.dictionaries, db.immersionWords, db.immersionPassages],
+    [db.dictionaries, db.immersionWords, db.immersionPassages, db.settings],
     async () => {
-      const dictionary = await db.dictionaries.get(dictionaryId);
-      if (!dictionary?.immersion) return false;
+      const settings = settingsSchema.parse(
+        (await db.settings.get("main"))?.value || {},
+      );
+      if (!settings.immersionCollection[language]) return false;
+      const dictionary =
+        (await db.dictionaries.get(dictionaryId)) ??
+        immersionDictionary(language);
+      dictionary.order =
+        settings.frequencyPreferences[dictionaryId]?.order ?? dictionary.order;
       const increments = new Map<
         string,
         { lemma: string; primaryHits: number; secondaryHits: number }
@@ -152,7 +174,8 @@ export async function recordImmersion(
         await db.immersionWords.bulkPut(words);
         const count =
           dictionary.frequencyCount + previous.filter((word) => !word).length;
-        await db.dictionaries.update(dictionaryId, {
+        await db.dictionaries.put({
+          ...dictionary,
           frequencyCount: count,
           maxFrequency: count,
         });

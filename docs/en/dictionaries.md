@@ -42,7 +42,7 @@ New cards start with the most frequent words. Under **Settings → Review → Wo
 
 ## Immersion Frequency
 
-Open **Settings → Dictionaries**, choose a language, then open **Frequency** and select **Add Immersion Frequency**. One live immersion dictionary is available per language. It builds rankings from website text parsed while you read. Popup definitions and review text do not add hits. It does not create review cards automatically.
+Open **Settings → Dictionaries**, choose a language, then open **Frequency**. The built-in **Immersion Frequency** row is always available. Turn on **Collect word hits** to build rankings from website text parsed while you read. Collection is off by default and can be enabled separately for each language. Popup definitions and review text do not add hits. It does not create review cards automatically.
 
 The first candidate for each word receives a primary hit. Other candidates receive secondary hits. Inflected forms and duplicate candidates share their base word's count. A word without a dictionary entry still counts when the parser identifies its base word. Punctuation and unidentified words do not count.
 
@@ -50,9 +50,9 @@ The score is **primary hits + multiplier × secondary hits**. **Secondary-hit mu
 
 Each exact text block counts only once per language, including across websites, tabs, reloads, and browser restarts. Repeated words within a new block each add a hit. Parser changes do not recount old blocks or revise their contributions.
 
-Use **Show** to combine its ranks with other enabled frequency dictionaries, or hide the other dictionaries to use it alone. **If needed** uses its rank when sources above it have no match. **Hide** stops using its ranks but continues collecting hits. **Remove** stops collection and deletes this language's counts and counted-block history. Adding it again starts empty.
+Use **Show** to combine its ranks with other enabled frequency dictionaries, or hide the other dictionaries to use it alone. **If needed** uses its rank when sources above it have no match. **Hide** stops using its ranks without changing collection. Turn off **Collect word hits** to stop collection. Saved counts, ranks, and counted-block history stay available. Turn the switch on again to resume collection.
 
-**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Visibility and ordering are included in the settings export.
+**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Collection switches, visibility, and ordering are included in the settings export.
 
 ## Missing words
 
