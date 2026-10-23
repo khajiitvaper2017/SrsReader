@@ -5,7 +5,14 @@ import { getSettings } from "@/settings/store";
 import { saveBlob } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import { reviewSchema } from "@/srs/history";
-import { vocabularySchema, wordId } from "@/vocabulary/model";
+import { contextSchema, vocabularySchema, wordId } from "@/vocabulary/model";
+import { deckSchema } from "@/srs/deck-model";
+import {
+  mergeSentence,
+  sentenceFromContext,
+  sentenceId,
+  sentenceSchema,
+} from "@/examples/sentence-model";
 import {
   BlobReader,
   BlobWriter,
@@ -50,11 +57,18 @@ export async function readSettings(file: File) {
     .parse(JSON.parse(await file.text())).settings;
 }
 
+const archivedWordSchema = vocabularySchema.extend({
+  contexts: z.array(contextSchema).optional(),
+});
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
   version: z.union([z.literal(1), z.literal(2)]),
-  vocabulary: z.array(vocabularySchema),
-  reviews: z.array(reviewSchema),
+  vocabulary: z.array(archivedWordSchema),
+  decks: z.array(deckSchema).default([]),
+  sentences: z.array(sentenceSchema).default([]),
+  reviews: z.array(
+    reviewSchema.extend({ before: archivedWordSchema.nullable() }),
+  ),
   audio: z.array(
     audioInfoSchema.extend({ path: z.string(), mime: z.string() }),
   ),
@@ -63,11 +77,13 @@ const learningSchema = z.object({
 export async function exportLearning() {
   const snapshot = await db.transaction(
     "r",
-    [db.vocabulary, db.reviews, db.audio],
+    [db.vocabulary, db.reviews, db.audio, db.decks, db.sentences],
     async () => ({
       vocabulary: await db.vocabulary.toArray(),
       reviews: await db.reviews.toArray(),
       audio: await db.audio.toArray(),
+      decks: await db.decks.toArray(),
+      sentences: await db.sentences.toArray(),
     }),
   );
   const writer = new ZipWriter(new BlobWriter("application/zip"));
@@ -83,6 +99,8 @@ export async function exportLearning() {
         format: "srs-reader-learning",
         version: 2,
         vocabulary: snapshot.vocabulary,
+        decks: snapshot.decks,
+        sentences: snapshot.sentences,
         reviews: snapshot.reviews,
         audio,
       }),
@@ -107,6 +125,44 @@ export async function readLearning(file: File) {
       JSON.parse(await json.getData(new TextWriter())),
     );
     const ids = new Set(data.vocabulary.map((w) => w.id));
+    const words = new Map(data.vocabulary.map((word) => [word.id, word]));
+    if (
+      new Set(data.decks.map((deck) => deck.id)).size !== data.decks.length ||
+      data.decks.some((deck) =>
+        deck.wordIds.some((id) => words.get(id)?.language !== deck.language),
+      )
+    )
+      throw new Error(t("study_invalid_decks"));
+    if (
+      data.sentences.some(
+        (sentence) =>
+          sentence.id !== sentenceId(sentence.language, sentence.sentence) ||
+          sentence.tokens.some(
+            (token) =>
+              token.end <= token.start || token.end > sentence.sentence.length,
+          ),
+      )
+    )
+      throw new Error(t("study_invalid_sentences"));
+    const sentences = new Map(
+      data.sentences.map((sentence) => [sentence.id, sentence]),
+    );
+    for (const word of [
+      ...data.vocabulary,
+      ...data.reviews.flatMap((review) =>
+        review.before ? [review.before] : [],
+      ),
+    ]) {
+      for (const context of word.contexts || []) {
+        const sentence = sentenceFromContext(word.language, context, word.id);
+        sentences.set(
+          sentence.id,
+          mergeSentence(sentences.get(sentence.id), sentence),
+        );
+      }
+      delete word.contexts;
+    }
+    data.sentences = [...sentences.values()];
     if (
       ids.size !== data.vocabulary.length ||
       data.vocabulary.some(

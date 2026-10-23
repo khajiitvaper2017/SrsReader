@@ -48,7 +48,6 @@ export const requests = [
     action: z.literal("editWord"),
     id: z.string(),
     definition: z.string().min(1).optional(),
-    contexts: z.array(contextSchema),
   }),
   z.object({ action: z.literal("refreshWord"), id: z.string() }),
   z.object({ action: z.literal("words"), query: z.string().default("") }),

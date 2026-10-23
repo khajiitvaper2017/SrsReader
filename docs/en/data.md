@@ -6,7 +6,7 @@ Open **Settings** and keep these exports:
 
 - **Dictionaries → Export ZIP:** each original dictionary file.
 - **Import & export → Settings → Export JSON:** languages, controls, appearance, review settings, and dictionary ordering.
-- **Import & export → Words & progress → Export ZIP:** words, definitions, sentences, translations, review history, mastered states, and downloaded recordings.
+- **Import & export → Words & progress → Export ZIP:** words, definitions, decks, cached sentences and translations, review history, mastered states, and downloaded recordings.
 
 Import each file into its matching section. Settings and learning imports replace that category after confirmation; they do not merge. Dictionaries may be imported before or after settings. Saved cards can be reviewed without their original dictionaries.
 

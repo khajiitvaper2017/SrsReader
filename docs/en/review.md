@@ -1,14 +1,45 @@
-# Review and saved words
+# Study and saved words
 
-Open **Review**. Choose **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The keys are **1–4**. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
+Open **Study** to see your learning languages and frequency decks. The table shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. **Back to decks** ends the session. Each word belongs to one group. Daily limits apply to the language.
 
-**Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions, sentences, and translations stay in place. Undone answers remain in the backup history but do not count as reviews.
+Select **Mined words** under a language to review words you saved or rated while reading. Frequency imports do not add words to this deck. Mining a word from a frequency deck moves it to Mined words without resetting its progress. Click anywhere in a language or deck row to start reviewing.
+
+Use **Add language** to keep another language in this list.
+
+## Frequency decks
+
+1. Select **Add frequency deck**.
+2. Select a language and an installed, enabled frequency dictionary with ranks, where lower ranks mean more frequent words.
+3. Enter how many entries to include, from 1 to 10,000.
+4. Enter a deck name, or leave it empty for an automatic name.
+5. Select **Add frequency deck**.
+
+The deck checks the first N unique entries. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
+
+## Clear or delete a deck
+
+Open the three-dot menu at the end of a deck row in **Study**.
+
+- **Clear deck** deletes all words in that deck, their review history, and downloaded recordings. This includes mastered and suspended words. The empty deck remains in the list. Use this action to empty **Mined words**.
+- **Delete deck** also removes the frequency deck from the list.
+
+Confirm the action in the dialog. These actions cannot be undone. Cached sentences, dictionaries, and words in other groups are kept. Export **Words & progress** in **Settings → Backups** if you want a copy first.
+
+## Sentences from reading
+
+Review sentences come from the permanent cache of texts you have parsed. Each sentence has more than four words. Sentences where all words except the target word are known come first. If none are available, sentences with fewer other unknown words come next. Mark words as mastered to improve this selection. Parse more pages to add examples. Sentences and their translations stay in the reading cache, not in cards.
+
+## Review session
+
+Select a language or deck. Choose **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The keys are **1–4**. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
+
+**Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions and cached translations stay in place. Undone answers remain in the backup history but do not count as reviews.
 
 ## Queue counts, statistics, and upcoming reviews
 
 The review header shows New, Learning, Relearning, and Review cards ready in the current queue. Learning and Relearning include cards available through learn-ahead. A note shows how many are available early. The card badge shows its current phase. Reviewed today counts answers, including repetitions of the same card and ratings while reading.
 
-The yearly calendar below the review card shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history for this language. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
+The yearly calendar below the language list shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history for this language. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
 
 Open **Statistics** below the calendar to see saved-word counts and results for the last 30 study days. Recall measures successful answers on normal Review cards. It excludes learning, relearning, and undone answers. Study time includes only answers with a recorded duration.
 
@@ -60,7 +91,7 @@ Settings affect future answers. To apply current retention and interval settings
 
 A leech is a word you repeatedly forget. The default threshold is eight lapses. Only Again from normal Review counts as a lapse. Repeated Again during relearning does not add lapses. Choose **Suspend** or **Mark only**. Set the threshold to 0 to disable detection. With threshold eight, detection repeats at 12, 16, and later matching lapses after you resume a word.
 
-Use the **Leeches** filter in **Words** to find marked words. Word details show lapse counts. You can edit definitions and sentences, change retention, or delete a word and its history.
+Use the **Leeches** filter in **Words** to find marked words. Word details show lapse counts. You can edit definitions, change retention, or delete a word and its history.
 
 **Master** excludes a word from SRS while preserving its history. **Unmaster** restores its schedule. **Suspend** pauses review until **Resume**. Neither action resets memory.
 

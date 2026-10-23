@@ -7,6 +7,7 @@ import {
   Group,
 } from "@mantine/core";
 import { ReviewPage } from "@/app/pages/ReviewPage";
+import { StudyPage } from "@/app/pages/StudyPage";
 import { SettingsPage } from "@/app/pages/SettingsPage";
 import { WordsPage } from "@/app/pages/WordsPage";
 import { stopAudio } from "@/audio/playback";
@@ -50,6 +51,9 @@ export function App() {
     return () => removeEventListener("hashchange", hash);
   }, []);
   const docs = page === "docs" || page.startsWith("docs/");
+  const reviewing =
+    page === "review/session" || page.startsWith("review/session/");
+  const deckId = reviewing ? page.split("/")[2] : undefined;
   const inSetup = page === "setup" || !settings.setupComplete;
   const setup = inSetup && !docs;
   if (!ready || !stats) return null;
@@ -61,51 +65,59 @@ export function App() {
             <Anchor href="#review" underline="never" c="inherit">
               <Logo small />
             </Anchor>
-            <Group component="nav" aria-label={t("pages")}>
-              {(inSetup
-                ? [
-                    ["setup", t("setup")],
-                    ["docs", t("docs")],
-                  ]
-                : [
-                    ["review", t("review")],
-                    ["words", t("words")],
-                    ["settings", t("settings")],
-                    ["docs", t("docs")],
-                  ]
-              ).map(([id, label]) => (
-                <Button
-                  component="a"
-                  key={id}
-                  href={`#${id}`}
-                  variant={page.split("/")[0] === id ? "light" : "subtle"}
-                  aria-current={page.split("/")[0] === id ? "page" : undefined}
-                  leftSection={
-                    id === "review" || id === "docs" ? (
-                      <BookOpen size={16} />
-                    ) : id === "words" ? (
-                      <BookMarked size={16} />
-                    ) : id === "settings" ? (
-                      <SettingsIcon size={16} />
-                    ) : (
-                      <SlidersHorizontal size={16} />
-                    )
-                  }
-                  rightSection={
-                    id === "review" && stats.due > 0 ? (
-                      <Badge>{stats.due}</Badge>
-                    ) : undefined
-                  }
-                >
-                  {label}
-                </Button>
-              ))}
-            </Group>
+            {reviewing ? (
+              <Button component="a" href="#review">
+                {t("study_end_session")}
+              </Button>
+            ) : (
+              <Group component="nav" aria-label={t("pages")}>
+                {(inSetup
+                  ? [
+                      ["setup", t("setup")],
+                      ["docs", t("docs")],
+                    ]
+                  : [
+                      ["review", t("study_languages")],
+                      ["words", t("words")],
+                      ["settings", t("settings")],
+                      ["docs", t("docs")],
+                    ]
+                ).map(([id, label]) => (
+                  <Button
+                    component="a"
+                    key={id}
+                    href={`#${id}`}
+                    variant={page.split("/")[0] === id ? "light" : "subtle"}
+                    aria-current={
+                      page.split("/")[0] === id ? "page" : undefined
+                    }
+                    leftSection={
+                      id === "review" || id === "docs" ? (
+                        <BookOpen size={16} />
+                      ) : id === "words" ? (
+                        <BookMarked size={16} />
+                      ) : id === "settings" ? (
+                        <SettingsIcon size={16} />
+                      ) : (
+                        <SlidersHorizontal size={16} />
+                      )
+                    }
+                    rightSection={
+                      id === "review" && stats.due > 0 ? (
+                        <Badge>{stats.due}</Badge>
+                      ) : undefined
+                    }
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </Group>
+            )}
           </Group>
         </Container>
       </AppShell.Header>
       <AppShell.Main>
-        <Container size={page === "review" ? "sm" : "lg"} px={0}>
+        <Container size={reviewing ? "sm" : "lg"} px={0}>
           {docs ? (
             <React.Suspense fallback={null}>
               <DocsPage topic={page.split("/")[1] || "getting-started"} />
@@ -120,8 +132,15 @@ export function App() {
             />
           ) : page === "words" ? (
             <WordsPage settings={settings} />
+          ) : reviewing ? (
+            <ReviewPage
+              key={`${settings.studyLanguage}:${deckId || ""}`}
+              settings={settings}
+              stats={stats}
+              deckId={deckId}
+            />
           ) : (
-            <ReviewPage settings={settings} stats={stats} />
+            <StudyPage settings={settings} setSettings={setSettings} />
           )}
         </Container>
       </AppShell.Main>

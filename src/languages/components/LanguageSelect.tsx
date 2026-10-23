@@ -7,15 +7,18 @@ export function LanguageSelect({
   label,
   description,
   onChange,
+  disabled = false,
 }: {
   value: string;
   label: string;
   description?: string;
   onChange: (language: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <Select
       searchable
+      disabled={disabled}
       label={label}
       description={description}
       value={value || null}

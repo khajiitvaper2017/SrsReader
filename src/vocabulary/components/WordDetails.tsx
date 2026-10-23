@@ -44,7 +44,7 @@ export function WordDetails({
     detailRef,
     word,
     saveDefinition,
-    editSentence,
+    contexts,
     changeRetention,
     refreshWord,
     toggleMastery,
@@ -114,9 +114,9 @@ export function WordDetails({
           key={word.id}
           word={word}
           settings={settings}
-          surface={word.contexts[0]?.surface}
+          surface={contexts[0]?.surface}
         />
-        {word.contexts.map((context, i) => (
+        {contexts.map((context, i) => (
           <Stack key={`${word.id}:${i}`}>
             <SentenceTranslation
               context={context}
@@ -128,14 +128,6 @@ export function WordDetails({
               <Text component="span" inherit>
                 {context.title}
               </Text>
-              <ActionIcon
-                title={t("edit_sentence")}
-                aria-label={t("edit_sentence")}
-                onClick={() => editSentence(context, i)}
-                variant="subtle"
-              >
-                <Pencil aria-hidden="true" size={16} />
-              </ActionIcon>
               <AudioButton
                 word={word}
                 sentence={context.sentence}

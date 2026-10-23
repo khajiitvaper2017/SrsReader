@@ -50,6 +50,7 @@ export type OccurrenceGrammar = {
 };
 export type AnalysisRecord = {
   key: string;
+  language?: string;
   text: string;
   analysis?: TextAnalysis;
   retryAt?: number;

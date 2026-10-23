@@ -1,12 +1,14 @@
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
+import { srsClient } from "@/srs/client";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { ReadingContext } from "@/vocabulary/model";
 import { stateOf, type Vocabulary } from "@/vocabulary/model";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useWords({ settings }: { settings: Settings }) {
+  const [contexts, setContexts] = useState<ReadingContext[]>([]);
   const [words, setWords] = useState<Vocabulary[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -27,6 +29,21 @@ export function useWords({ settings }: { settings: Settings }) {
   useEffect(load, [load]);
   useChanges(load, ["vocabulary", "settings", "dictionaries"]);
   const word = words.find((w) => w.id === selected);
+  useEffect(() => {
+    let alive = true;
+    setContexts([]);
+    if (word)
+      void srsClient({ action: "sentenceExamples", id: word.id })
+        .then((value) => {
+          if (alive) setContexts(value);
+        })
+        .catch((error) => {
+          if (alive) setError(error.message);
+        });
+    return () => {
+      alive = false;
+    };
+  }, [word]);
   const visible = words.filter(
     (w) =>
       filter === "all" ||
@@ -50,45 +67,9 @@ export function useWords({ settings }: { settings: Settings }) {
         action: "editWord",
         id: word.id,
         definition,
-        contexts: word.contexts,
       });
       setEditing(false);
     });
-  }
-  function editSentence(context: ReadingContext, i: number) {
-    if (!word) return;
-    const sentence = prompt(
-      t("edit_this_sentence_the_encountered_word_must_remain"),
-      context.sentence,
-    );
-    if (sentence === null) return;
-    const start = sentence.indexOf(context.surface);
-    if (start < 0) {
-      setError(
-        t("keep_in_the_sentence", {
-          surface: context.surface,
-        }),
-      );
-      return;
-    }
-    const contexts = word.contexts.map((c, j) =>
-      j === i
-        ? {
-            ...c,
-            sentence,
-            translation: sentence === c.sentence ? c.translation : undefined,
-            start,
-            end: start + c.surface.length,
-          }
-        : c,
-    );
-    void action(() =>
-      vocabularyClient({
-        action: "editWord",
-        id: word.id,
-        contexts,
-      }),
-    );
   }
   function changeRetention(value: string | number) {
     if (!word) return;
@@ -163,7 +144,7 @@ export function useWords({ settings }: { settings: Settings }) {
     visible,
     action,
     saveDefinition,
-    editSentence,
+    contexts,
     changeRetention,
     refreshWord,
     toggleMastery,

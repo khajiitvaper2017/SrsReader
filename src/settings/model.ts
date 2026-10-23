@@ -18,6 +18,12 @@ export const settingsSchema = z
   })
   .transform((settings) => ({
     ...settings,
+    studyLanguages: [
+      ...new Set([
+        ...settings.studyLanguages,
+        ...(settings.studyLanguage ? [settings.studyLanguage] : []),
+      ]),
+    ],
     setupComplete: settings.setupComplete && !!settings.studyLanguage,
   }));
 

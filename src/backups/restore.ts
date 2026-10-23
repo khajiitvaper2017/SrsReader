@@ -44,6 +44,8 @@ export async function restoreLearning(
         db.vocabulary,
         db.reviews,
         db.audio,
+        db.decks,
+        db.sentences,
         db.srsMeta,
         db.rwkvMeta,
         db.rwkvEntities,
@@ -61,9 +63,13 @@ export async function restoreLearning(
         await db.vocabulary.clear();
         await db.reviews.clear();
         await db.audio.clear();
+        await db.decks.clear();
+        await db.sentences.clear();
         await db.vocabulary.bulkAdd(data.vocabulary);
         await db.reviews.bulkAdd(data.reviews);
         await db.audio.bulkAdd(data.audio);
+        await db.decks.bulkAdd(data.decks);
+        await db.sentences.bulkAdd(data.sentences);
       },
     ),
   );

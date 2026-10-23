@@ -11,6 +11,8 @@ import type {
 } from "@/dictionaries/model";
 import { installMigrations } from "@/platform/database/migrations";
 import type { AnalysisRecord } from "@/languages/analysis";
+import type { CachedSentence } from "@/examples/sentence-model";
+import type { Deck } from "@/srs/deck-model";
 import type { Settings } from "@/settings/model";
 import type {
   RwkvCard,
@@ -22,6 +24,8 @@ import type { Vocabulary } from "@/vocabulary/model";
 import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
+  sentences!: Table<CachedSentence, string>;
+  decks!: Table<Deck, string>;
   analyses!: Table<AnalysisRecord, string>;
   srsMeta!: Table<SrsMeta, string>;
   rwkvMeta!: Table<RwkvMeta, string>;

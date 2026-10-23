@@ -55,7 +55,7 @@ export function analysisChunks(text: string, language: string) {
   return chunks;
 }
 
-async function cacheKey(text: string, language: string, model: string) {
+export async function cacheKey(text: string, language: string, model: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     encoder.encode(JSON.stringify(["udpipe", model, "ranges", language, text])),
@@ -244,6 +244,7 @@ export async function analyzeTexts(
   const records = await Promise.all(
     unique.map(async (text) => ({
       key: await cacheKey(text, language, model),
+      language,
       text,
     })),
   );

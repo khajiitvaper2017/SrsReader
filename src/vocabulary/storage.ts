@@ -6,12 +6,15 @@ import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 import { emptySchedule } from "@/srs/model";
 import type { Request } from "@/vocabulary/contracts";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
-import { addContext, freshWord } from "@/vocabulary/service";
+import { freshWord } from "@/vocabulary/service";
+import { cacheContext } from "@/examples/sentences";
+import { sentenceId } from "@/examples/sentence-model";
 
 export async function mine(word: LookupWord, context?: ReadingContext) {
+  await cacheContext(word, context);
   return db.transaction("rw", db.vocabulary, async () => {
     const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
-    addContext(saved, context);
+    saved.mined = true;
     if (!saved.card && !saved.known) {
       saved.card = emptySchedule();
       saved.srsVersion++;
@@ -28,7 +31,7 @@ export function definePersonalWord(
   request: Extract<Request, { action: "defineWord" }>,
   tags?: Pick<Meaning, "tags" | "tagDescriptions">,
 ) {
-  return db.transaction("rw", db.vocabulary, async () => {
+  return db.transaction("rw", [db.vocabulary, db.sentences], async () => {
     const saved = await mine(word, request.context);
     const definitions = definitionSenses(request.definition);
     const personal = saved.meanings.filter(
@@ -90,17 +93,10 @@ export async function setMastered(word: LookupWord, value: boolean) {
 export async function saveTranslation(
   request: Extract<Request, { action: "saveTranslation" }>,
 ) {
-  await db.vocabulary
-    .where("id")
-    .equals(request.id)
-    .modify((word) => {
-      const context = word.contexts.find(
-        (c) => c.sentence === request.sentence && c.start === request.start,
-      );
-      if (!context) return;
-      context.translation = request.translation;
-      word.version++;
-      word.updated = Date.now();
+  const word = await db.vocabulary.get(request.id);
+  if (word)
+    await db.sentences.update(sentenceId(word.language, request.sentence), {
+      translation: request.translation,
     });
   return;
 }
@@ -139,10 +135,17 @@ export async function setSuspended(
 export async function deleteWord(
   request: Extract<Request, { action: "deleteWord" }>,
 ) {
+  return deleteWords([request.id]);
+}
+
+export async function deleteWords(ids: string[]) {
+  if (!ids.length) return;
+  const removed = new Set(ids);
   await db.transaction(
     "rw",
     [
       db.vocabulary,
+      db.decks,
       db.reviews,
       db.audio,
       db.rwkvMeta,
@@ -151,9 +154,12 @@ export async function deleteWord(
       db.srsMeta,
     ],
     async () => {
-      await db.vocabulary.delete(request.id);
-      await db.reviews.where("wordId").equals(request.id).delete();
-      await db.audio.delete(request.id);
+      await db.vocabulary.bulkDelete(ids);
+      await db.decks.toCollection().modify((deck) => {
+        deck.wordIds = deck.wordIds.filter((id) => !removed.has(id));
+      });
+      await db.reviews.where("wordId").anyOf(ids).delete();
+      await db.audio.bulkDelete(ids);
       await invalidateRwkv();
       await db.srsMeta.update("main", { undo: undefined });
     },
@@ -179,7 +185,6 @@ export async function editWord(
             definitions: [request.definition],
           },
         ];
-      w.contexts = request.contexts;
       w.version++;
       w.updated = Date.now();
     });

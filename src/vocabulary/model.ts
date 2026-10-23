@@ -36,7 +36,7 @@ export const vocabularySchema = z.object({
   lemma: z.string().min(1),
   reading: z.string(),
   meanings: z.array(meaningSchema),
-  contexts: z.array(contextSchema),
+  mined: z.boolean().default(true),
   known: z.boolean(),
   suspended: z.boolean(),
   card: scheduleSchema.nullable(),

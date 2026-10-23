@@ -2,7 +2,11 @@ import type { ReviewStatistics } from "@/srs/statistics";
 import type { Settings } from "@/settings/model";
 import { selection } from "@/vocabulary/contracts";
 import type { Vocabulary } from "@/vocabulary/model";
+import type { ReadingContext } from "@/vocabulary/model";
+import type { studyOverview } from "@/srs/decks";
+import type { Deck } from "@/srs/deck-model";
 import { z } from "zod";
+import { languageSchema } from "@/languages/model";
 
 export const requests = [
   z.object({
@@ -16,7 +20,21 @@ export const requests = [
     version: z.number().int().nonnegative(),
   }),
   z.object({ action: z.literal("undo"), id: z.string() }),
-  z.object({ action: z.literal("queue") }),
+  z.object({ action: z.literal("queue"), deckId: z.string().optional() }),
+  z.object({ action: z.literal("studyOverview") }),
+  z.object({
+    action: z.literal("manageDeck"),
+    language: languageSchema,
+    deckId: z.string().min(1),
+    operation: z.enum(["clear", "delete"]),
+  }),
+  z.object({ action: z.literal("sentenceExamples"), id: z.string() }),
+  z.object({
+    action: z.literal("createFrequencyDeck"),
+    dictionaryId: z.string(),
+    limit: z.number().int().min(1).max(10000),
+    name: z.string().trim().min(1).max(200),
+  }),
   z.object({
     action: z.literal("preview"),
     id: z.string(),
@@ -41,6 +59,10 @@ export const requests = [
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
+  studyOverview: Awaited<ReturnType<typeof studyOverview>>;
+  createFrequencyDeck: Deck;
+  manageDeck: void;
+  sentenceExamples: ReadingContext[];
   grade: { word: Vocabulary; reviewId: string };
   undo: void;
   queue: {

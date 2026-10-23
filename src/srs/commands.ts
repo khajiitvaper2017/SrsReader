@@ -25,9 +25,17 @@ import { stateOf } from "@/vocabulary/model";
 import { snapshot } from "@/vocabulary/snapshot";
 import { getWord, languageWords } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
+import {
+  createFrequencyDeck,
+  manageStudyDeck,
+  studyOverview,
+} from "@/srs/decks";
+import { sentenceExamples } from "@/examples/sentences";
 
 export function handleSrs(request: Request, settings: Settings) {
-  return request.action === "grade" ||
+  return request.action === "createFrequencyDeck" ||
+    request.action === "manageDeck" ||
+    request.action === "grade" ||
     request.action === "undo" ||
     request.action === "preview" ||
     request.action === "resetRwkv" ||
@@ -42,6 +50,29 @@ async function execute(request: Request, settings: Settings) {
   if (["queue", "preview", "grade", "stats"].includes(request.action))
     await requireScheduledModel(settings);
   switch (request.action) {
+    case "studyOverview":
+      return studyOverview(settings);
+    case "manageDeck":
+      await manageStudyDeck(
+        request.language,
+        request.deckId,
+        request.operation,
+      );
+      await notify(undefined, "collection");
+      return;
+    case "createFrequencyDeck": {
+      const deck = await createFrequencyDeck(
+        request.dictionaryId,
+        request.limit,
+        request.name,
+      );
+      await notify(undefined, "collection");
+      return deck;
+    }
+    case "sentenceExamples": {
+      const word = await getWord(request.id);
+      return word ? sentenceExamples(word, settings) : [];
+    }
     case "grade": {
       const word = await snapshot(
         await resolved(request.term, request.id, request.occurrence),
@@ -63,7 +94,7 @@ async function execute(request: Request, settings: Settings) {
       await notify(await undoReview(request.id));
       return;
     case "queue":
-      return reviewQueue();
+      return reviewQueue(request.deckId);
     case "preview":
       return preview(await getWord(request.id), request.durationMs, request.id);
     case "reviewStats":

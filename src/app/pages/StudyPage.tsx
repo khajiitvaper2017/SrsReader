@@ -1,0 +1,435 @@
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Loader,
+  Menu,
+  Modal,
+  NumberInput,
+  Paper,
+  Select,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { dictionariesClient } from "@/dictionaries/client";
+import type { Dictionary } from "@/dictionaries/model";
+import { languageName } from "@/languages/codes";
+import { LanguageSelect } from "@/languages/components/LanguageSelect";
+import { settingsClient } from "@/settings/client";
+import type { Settings } from "@/settings/model";
+import { useChanges } from "@/shared/hooks/useChanges";
+import { number, t } from "@/shared/i18n/i18n";
+import { ErrorBox } from "@/shared/ui/ErrorBox";
+import { srsClient } from "@/srs/client";
+import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
+import type { Responses } from "@/srs/contracts";
+import { BookOpen, Eraser, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+
+type DeckAction = {
+  language: string;
+  deckId: string;
+  name: string;
+  operation: "clear" | "delete";
+};
+
+export function StudyPage({
+  settings,
+  setSettings,
+}: {
+  settings: Settings;
+  setSettings: (settings: Settings) => void;
+}) {
+  const [languages, setLanguages] = useState<Responses["studyOverview"]>();
+  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [modal, setModal] = useState<"language" | "deck" | null>(null);
+  const [confirmation, setConfirmation] = useState<DeckAction | null>(null);
+  const [language, setLanguage] = useState(settings.studyLanguage);
+  const [dictionaryId, setDictionaryId] = useState("");
+  const [limit, setLimit] = useState<string | number>(1000);
+  const [name, setName] = useState("");
+  const load = useCallback(() => {
+    void Promise.all([
+      srsClient({ action: "studyOverview" }),
+      dictionariesClient({ action: "dictionaries" }),
+    ])
+      .then(([overview, rows]) => {
+        setLanguages(overview);
+        setDictionaries(rows);
+      })
+      .catch((error) => setError(error.message));
+  }, []);
+  useEffect(load, [load]);
+  useChanges(load, [
+    "vocabulary",
+    "srs",
+    "settings",
+    "dictionaries",
+    "collection",
+  ]);
+  const sources = dictionaries.filter(
+    (dictionary) =>
+      dictionary.enabled &&
+      dictionary.language === language &&
+      dictionary.frequencyCount > 0,
+  );
+  const source =
+    sources.find((dictionary) => dictionary.id === dictionaryId) || sources[0];
+  async function start(language: string, deckId?: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const next = await settingsClient({
+        action: "setSettings",
+        value: { ...settings, studyLanguage: language },
+      });
+      setSettings(next);
+      location.hash = `review/session${deckId ? `/${encodeURIComponent(deckId)}` : ""}`;
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function submit() {
+    setBusy(true);
+    setError("");
+    try {
+      if (modal === "language") {
+        setSettings(
+          await settingsClient({
+            action: "setSettings",
+            value: {
+              ...settings,
+              studyLanguages: [
+                ...new Set([...settings.studyLanguages, language]),
+              ],
+            },
+          }),
+        );
+      } else if (source) {
+        await srsClient({
+          action: "createFrequencyDeck",
+          dictionaryId: source.id,
+          limit: Number(limit),
+          name:
+            name.trim() ||
+            t("frequency_deck_default_name", {
+              dictionary: source.index.title,
+              count: Number(limit),
+            }),
+        });
+      }
+      setModal(null);
+      load();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function manageDeck() {
+    if (!confirmation) return;
+    setBusy(true);
+    setError("");
+    try {
+      await srsClient({
+        action: "manageDeck",
+        language: confirmation.language,
+        deckId: confirmation.deckId,
+        operation: confirmation.operation,
+      });
+      setConfirmation(null);
+      load();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Stack>
+      <Group justify="space-between" align="center">
+        <Title order={1}>{t("study_languages")}</Title>
+        <Group>
+          <Button
+            leftSection={<Plus size={16} />}
+            onClick={() => {
+              setLanguage(settings.studyLanguage);
+              setModal("language");
+            }}
+            disabled={busy}
+          >
+            {t("study_add_language")}
+          </Button>
+          <Button
+            variant="filled"
+            leftSection={<Plus size={16} />}
+            onClick={() => {
+              setLanguage(settings.studyLanguage);
+              setName("");
+              setModal("deck");
+            }}
+            disabled={busy}
+          >
+            {t("frequency_deck_add")}
+          </Button>
+        </Group>
+      </Group>
+      <ErrorBox error={error} />
+      <Paper>
+        {!languages && !error && <Loader />}
+        <Table.ScrollContainer minWidth={480}>
+          <Table verticalSpacing="sm" highlightOnHover>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t("study_language_deck")}</Table.Th>
+                <Table.Th ta="right">{t("new")}</Table.Th>
+                <Table.Th ta="right">{t("srs_queue_learning")}</Table.Th>
+                <Table.Th ta="right">{t("due")}</Table.Th>
+                <Table.Th aria-label={t("study_deck_actions")} />
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {languages?.map((row) => (
+                <StudyRows
+                  key={row.language}
+                  row={row}
+                  busy={busy}
+                  start={start}
+                  manage={setConfirmation}
+                />
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+        <Text variant="supporting" mt="md">
+          {t("study_overview_help")}
+        </Text>
+      </Paper>
+      <ReviewStatistics />
+      <Modal
+        opened={modal !== null}
+        onClose={() => {
+          if (!busy) setModal(null);
+        }}
+        title={t(
+          modal === "language" ? "study_add_language" : "frequency_deck_add",
+        )}
+        closeOnClickOutside={!busy}
+        closeOnEscape={!busy}
+        withCloseButton={!busy}
+      >
+        <Stack>
+          <ErrorBox error={error} />
+          <LanguageSelect
+            label={t("study_language")}
+            value={language}
+            onChange={setLanguage}
+            disabled={busy}
+          />
+          {modal === "deck" && (
+            <>
+              <Select
+                label={t("frequency_deck_dictionary")}
+                data={sources.map((dictionary) => ({
+                  value: dictionary.id,
+                  label: dictionary.index.title,
+                }))}
+                value={source?.id || null}
+                onChange={(value) => setDictionaryId(value || "")}
+                nothingFoundMessage={t("frequency_deck_dictionary_missing")}
+                disabled={busy || !sources.length}
+              />
+              {!sources.length && (
+                <Text variant="supporting">
+                  {t("frequency_deck_dictionary_missing")}
+                </Text>
+              )}
+              <NumberInput
+                label={t("frequency_deck_count")}
+                min={1}
+                max={10000}
+                value={limit}
+                onChange={setLimit}
+                disabled={busy}
+              />
+              <TextInput
+                label={t("frequency_deck_name")}
+                value={name}
+                onChange={(event) => setName(event.currentTarget.value)}
+                maxLength={200}
+                disabled={busy}
+              />
+              <Text variant="supporting">{t("frequency_deck_help")}</Text>
+            </>
+          )}
+          <Group justify="flex-end">
+            <Button
+              onClick={() => void submit()}
+              variant="filled"
+              loading={busy}
+              disabled={
+                !language ||
+                (modal === "deck" &&
+                  (!source ||
+                    !Number.isInteger(Number(limit)) ||
+                    Number(limit) < 1 ||
+                    Number(limit) > 10000))
+              }
+            >
+              {t(
+                modal === "language"
+                  ? "study_add_language"
+                  : "frequency_deck_add",
+              )}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      <Modal
+        opened={confirmation !== null}
+        onClose={() => {
+          if (!busy) setConfirmation(null);
+        }}
+        title={t(
+          confirmation?.operation === "delete"
+            ? "study_delete_deck_title"
+            : "study_clear_deck_title",
+          { name: confirmation?.name },
+        )}
+        closeOnClickOutside={!busy}
+        closeOnEscape={!busy}
+        withCloseButton={!busy}
+      >
+        <Stack>
+          <ErrorBox error={error} />
+          <Text>
+            {t(
+              confirmation?.operation === "delete"
+                ? "study_delete_deck_confirm"
+                : "study_clear_deck_confirm",
+            )}
+          </Text>
+          <Group justify="flex-end">
+            <Button onClick={() => setConfirmation(null)} disabled={busy}>
+              {t("cancel")}
+            </Button>
+            <Button
+              color="red"
+              variant="filled"
+              onClick={() => void manageDeck()}
+              loading={busy}
+            >
+              {t(
+                confirmation?.operation === "delete"
+                  ? "study_delete_deck"
+                  : "study_clear_deck",
+              )}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Stack>
+  );
+}
+
+function StudyRows({
+  row,
+  busy,
+  start,
+  manage,
+}: {
+  row: Responses["studyOverview"][number];
+  busy: boolean;
+  start: (language: string, deckId?: string) => Promise<void>;
+  manage: (action: DeckAction) => void;
+}) {
+  return (
+    <>
+      {[
+        { ...row, id: undefined, name: languageName(row.language) },
+        { ...row.mined, id: "mined", name: t("study_mined_words") },
+        ...row.decks,
+      ].map((deck) => (
+        <Table.Tr
+          key={deck.id || row.language}
+          onClick={() => {
+            if (!busy && deck.total) void start(row.language, deck.id);
+          }}
+          style={{ cursor: busy || !deck.total ? "default" : "pointer" }}
+        >
+          <Table.Td pl={deck.id ? "xl" : undefined}>
+            <Button
+              variant="transparent"
+              leftSection={!deck.id ? <BookOpen size={16} /> : undefined}
+              disabled={busy || !deck.total}
+            >
+              {deck.name}
+            </Button>
+          </Table.Td>
+          <Table.Td ta="right">{number(deck.fresh)}</Table.Td>
+          <Table.Td ta="right">{number(deck.learning)}</Table.Td>
+          <Table.Td ta="right">{number(deck.due)}</Table.Td>
+          <Table.Td ta="right">
+            {deck.id && (
+              <Menu position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    aria-label={t("study_deck_actions_for", {
+                      language: languageName(row.language),
+                      name: deck.name,
+                    })}
+                    onClick={(event) => event.stopPropagation()}
+                    disabled={busy}
+                  >
+                    <MoreHorizontal size={16} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+                  <Menu.Item
+                    color="red"
+                    leftSection={<Eraser size={16} />}
+                    disabled={!deck.wordCount}
+                    onClick={() =>
+                      manage({
+                        language: row.language,
+                        deckId: deck.id!,
+                        name: deck.name,
+                        operation: "clear",
+                      })
+                    }
+                  >
+                    {t("study_clear_deck")}
+                  </Menu.Item>
+                  {deck.id !== "mined" && (
+                    <Menu.Item
+                      color="red"
+                      leftSection={<Trash2 size={16} />}
+                      onClick={() =>
+                        manage({
+                          language: row.language,
+                          deckId: deck.id!,
+                          name: deck.name,
+                          operation: "delete",
+                        })
+                      }
+                    >
+                      {t("study_delete_deck")}
+                    </Menu.Item>
+                  )}
+                </Menu.Dropdown>
+              </Menu>
+            )}
+          </Table.Td>
+        </Table.Tr>
+      ))}
+    </>
+  );
+}

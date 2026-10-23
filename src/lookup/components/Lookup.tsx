@@ -369,16 +369,7 @@ function LookupEntry({
               {context ? (
                 <SentenceTranslation
                   key={`${word.id}:${context.sentence}:${context.start}`}
-                  context={{
-                    ...context,
-                    translation:
-                      context.translation ||
-                      saved?.contexts.find(
-                        (c) =>
-                          c.sentence === context.sentence &&
-                          c.start === context.start,
-                      )?.translation,
-                  }}
+                  context={context}
                   language={word.language}
                   settings={settings}
                   wordId={word.id}

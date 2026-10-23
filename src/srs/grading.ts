@@ -4,7 +4,8 @@ import { t } from "@/shared/i18n/i18n";
 import { candidates } from "@/srs/answers";
 import { commitReview } from "@/srs/storage";
 import type { ReadingContext } from "@/vocabulary/model";
-import { addContext, freshWord } from "@/vocabulary/service";
+import { freshWord } from "@/vocabulary/service";
+import { cacheContext } from "@/examples/sentences";
 import { getWord } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
 
@@ -26,7 +27,8 @@ export async function grade(
   if (before?.suspended)
     throw new Error(t("resume_this_word_before_grading_it"));
   const saved = structuredClone(before ?? freshWord(word));
-  addContext(saved, context);
+  if (source === "reading") saved.mined = true;
+  await cacheContext(word, context);
   const result = await candidates(saved, settings, now, durationMs);
   saved.card = result.schedules[rating - 1]!;
   const threshold = settings.leechThreshold;

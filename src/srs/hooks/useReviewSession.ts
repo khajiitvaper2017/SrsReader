@@ -4,14 +4,16 @@ import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
+import type { ReadingContext } from "@/vocabulary/model";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useReviewSession({
   settings,
+  deckId,
 }: {
   settings: Settings;
-  stats: { total: number; due: number; known: number; today: number };
+  deckId?: string;
 }) {
   const [queue, setQueue] = useState<Responses["queue"]>();
   const [revealed, setRevealed] = useState(false);
@@ -23,14 +25,41 @@ export function useReviewSession({
   const [front, setFront] = useState(settings.front);
   const [example, setExample] = useState(0);
   const word = queue?.words[0];
-  const context = word?.contexts[example];
+  const [sentences, setSentences] = useState<{
+    id: string;
+    contexts: ReadingContext[];
+    loading: boolean;
+  }>({ id: "", contexts: [], loading: false });
+  const contexts = sentences.id === word?.id ? sentences.contexts : [];
+  const sentenceLoading =
+    !!word && (sentences.id !== word.id || sentences.loading);
+  const context = contexts[example];
+  useEffect(() => {
+    let alive = true;
+    setSentences({ id: word?.id || "", contexts: [], loading: !!word });
+    if (word)
+      void srsClient({ action: "sentenceExamples", id: word.id })
+        .then((value) => {
+          if (alive)
+            setSentences({ id: word.id, contexts: value, loading: false });
+        })
+        .catch((error) => {
+          if (alive) {
+            setSentences({ id: word.id, contexts: [], loading: false });
+            setError(error.message);
+          }
+        });
+    return () => {
+      alive = false;
+    };
+  }, [word?.id, settings.nativeLanguage]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const load = useCallback(() => {
     if (busyRef.current) return;
-    void srsClient({ action: "queue" })
+    void srsClient({ action: "queue", deckId })
       .then((value) => setQueue(value))
       .catch((error) => setError(error.message));
-  }, []);
+  }, [deckId]);
   useEffect(load, [load]);
   useChanges(load, ["vocabulary", "srs", "settings", "dictionaries"]);
   useEffect(() => {
@@ -83,11 +112,11 @@ export function useReviewSession({
       });
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
-      setQueue(await srsClient({ action: "queue" }));
+      setQueue(await srsClient({ action: "queue", deckId }));
       setRevealed(false);
     } catch (error) {
       setError((error as Error).message);
-      setQueue(await srsClient({ action: "queue" }));
+      setQueue(await srsClient({ action: "queue", deckId }));
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -154,6 +183,8 @@ export function useReviewSession({
     setExample,
     word,
     context,
+    contexts,
+    sentenceLoading,
     load,
     gradeWord,
     reveal,

@@ -3,6 +3,8 @@ import { settingsSchema } from "@/settings/model";
 import { reviewSchema } from "@/srs/history";
 import { vocabularySchema } from "@/vocabulary/model";
 import Dexie from "dexie";
+import { mergeSentence, sentenceFromContext } from "@/examples/sentence-model";
+import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 
 export function installMigrations(database: Dexie) {
   database.version(1).stores({
@@ -103,5 +105,39 @@ export function installMigrations(database: Dexie) {
         entries: count,
         elapsedMs: Math.round(performance.now() - started),
       });
+    });
+  database
+    .version(9)
+    .stores({
+      sentences: "id, language, *wordIds",
+      decks: "id, language",
+      frequencies: "id, revisionId, [revisionId+folded], [revisionId+rank]",
+    })
+    .upgrade(async (tx) => {
+      async function moveContexts(
+        word: Vocabulary & { contexts?: ReadingContext[] },
+      ) {
+        for (const context of word.contexts || []) {
+          const sentence = sentenceFromContext(word.language, context, word.id);
+          await tx
+            .table("sentences")
+            .put(
+              mergeSentence(
+                await tx.table("sentences").get(sentence.id),
+                sentence,
+              ),
+            );
+        }
+        delete word.contexts;
+      }
+      for (const word of await tx.table("vocabulary").toArray()) {
+        await moveContexts(word);
+        await tx.table("vocabulary").put(word);
+      }
+      for (const review of await tx.table("reviews").toArray()) {
+        if (!review.before) continue;
+        await moveContexts(review.before);
+        await tx.table("reviews").put(review);
+      }
     });
 }

@@ -50,6 +50,10 @@ export async function handle(request: Request) {
     case "grade":
     case "undo":
     case "queue":
+    case "studyOverview":
+    case "manageDeck":
+    case "createFrequencyDeck":
+    case "sentenceExamples":
     case "preview":
     case "stats":
     case "reviewStats":

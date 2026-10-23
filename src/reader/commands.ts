@@ -4,6 +4,7 @@ import { udpipeModel } from "@/languages/codes";
 import { scanTexts } from "@/reader/scan";
 import type { Request } from "@/reader/contracts";
 import type { Settings } from "@/settings/model";
+import { cacheScannedTexts } from "@/examples/sentences";
 
 export const handleReader = execute;
 async function execute(request: Request, settings: Settings) {
@@ -58,6 +59,7 @@ async function execute(request: Request, settings: Settings) {
         spans,
         retryAt: analyses[index]?.retryAt,
       }));
+      await cacheScannedTexts(request.texts, spans, settings.studyLanguage);
       console.info("[SrsReader] Background scan finished", {
         blocks: results.length,
         words: results.reduce(

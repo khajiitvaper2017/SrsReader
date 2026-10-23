@@ -6,7 +6,6 @@ import type { ReviewSummary } from "@/srs/history";
 import type { candidates } from "@/srs/answers";
 import type { SchedulingPreferences } from "@/srs/preferences";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
-import { addContext } from "@/vocabulary/service";
 import type { Grade } from "ts-fsrs";
 
 export type ReviewCommit = {
@@ -31,7 +30,6 @@ export async function commitReview({
   id,
   rating,
   source,
-  context,
   durationMs,
   now,
   settings,
@@ -54,8 +52,7 @@ export async function commitReview({
       // Metadata writes can finish while the model calculates an answer.
       if (current) {
         saved.meanings = current.meanings;
-        saved.contexts = current.contexts;
-        addContext(saved, context);
+        saved.mined = current.mined !== false || saved.mined;
         saved.version = current.version + 1;
       }
       const meta = await db.srsMeta.get("main");
