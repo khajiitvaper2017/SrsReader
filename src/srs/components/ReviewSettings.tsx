@@ -13,6 +13,7 @@ import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { SrsSettings } from "@/srs/components/SrsSettings";
+import { srsPreferencesSchema } from "@/srs/preferences";
 export function ReviewSettings({
   settings,
   onChange: update,
@@ -81,6 +82,7 @@ export function ReviewSettings({
             <Select
               label={t("words_without_frequency")}
               value={settings.missingFrequency}
+              disabled={settings.newGatherOrder !== "frequency"}
               onChange={(value) =>
                 void update({
                   missingFrequency: value as Settings["missingFrequency"],
@@ -92,9 +94,61 @@ export function ReviewSettings({
               ]}
             />
           </SimpleGrid>
-          <Text variant="supporting">
-            {t("new_words_follow_combined_frequency_ranks_from_most")}
-          </Text>
+          {settings.newGatherOrder === "frequency" && (
+            <Text variant="supporting">
+              {t("new_words_follow_combined_frequency_ranks_from_most")}
+            </Text>
+          )}
+        </Stack>
+      </Paper>
+      <Paper>
+        <Stack>
+          <Title order={2}>{t("srs_display_order")}</Title>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            {(
+              [
+                [
+                  "newGatherOrder",
+                  "srs_new_gather_order",
+                  "srs_new_gather_help",
+                ],
+                ["newSortOrder", "srs_new_sort_order", "srs_new_sort_help"],
+                [
+                  "newReviewOrder",
+                  "srs_new_review_order",
+                  "srs_new_review_help",
+                ],
+                [
+                  "interdayReviewOrder",
+                  "srs_interday_review_order",
+                  "srs_interday_review_help",
+                ],
+                [
+                  "reviewSortOrder",
+                  "srs_review_sort_order",
+                  "srs_review_sort_help",
+                ],
+              ] as const
+            ).map(([key, label, help]) => (
+              <Select
+                key={key}
+                label={t(label)}
+                description={t(help)}
+                value={settings[key]}
+                allowDeselect={false}
+                data={srsPreferencesSchema.shape[key]
+                  .unwrap()
+                  .options.map((value) => ({
+                    value,
+                    label: t(`srs_order_${value}`),
+                  }))}
+                onChange={(value) => {
+                  if (value) void update({ [key]: value });
+                }}
+              />
+            ))}
+          </SimpleGrid>
+          <Text variant="supporting">{t("srs_display_order_help")}</Text>
         </Stack>
       </Paper>
       <Paper>

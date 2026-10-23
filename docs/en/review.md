@@ -63,6 +63,35 @@ Open **Settings → Review**.
 - **Default card front:** show the word alone or in its sentence.
 - **Show sentence translations:** show translations after revealing the answer.
 
+### Display order
+
+Open **Settings → Review → Display order**. These settings apply to every language and deck. They control which cards enter the queue and how they appear.
+
+**New card gather order** selects new words before the daily new-word limit:
+
+- **Word frequency** puts more frequent words first, using combined ranks from enabled dictionaries. **Words without frequency** controls words with no matching rank.
+- **Deck, then oldest first** starts with Mined words, then frequency decks in name order. Within each deck, older additions come first.
+- **Deck, then random** uses the same deck order and selects words at random within each deck.
+- **Oldest added first** and **Newest added first** use the date the word was added.
+- **Random** is the default. It selects words at random across the selected language or deck.
+
+**New card sort order** controls the selected words after the daily limit. **Order gathered** is the default. **Random** shuffles those words without changing which words were selected.
+
+**New/review order** accepts **Show before reviews**, **Mix with reviews**, or **Show after reviews**. The default is **Mix with reviews**. This places new cards relative to regular reviews and interday learning cards.
+
+**Interday learning/review order** uses the same three choices. It places learning and relearning steps that crossed a study-day boundary relative to regular reviews. The default is **Mix with reviews**. These learning cards receive space in the daily review limit before regular reviews, regardless of their display order.
+
+**Review sort order** sorts regular reviews before the daily review limit:
+
+- **Due date** puts earlier due dates first.
+- **Due date, then random** shuffles cards due on the same study day.
+- **Due date, then deck** groups cards due on the same study day by deck.
+- **Deck, then due date** groups cards by deck, with earlier due dates first within each deck.
+- **Shortest intervals first** and **Longest intervals first** use each card's scheduled interval.
+- **Random** is the default. It shuffles all due review cards.
+
+Deck order starts with Mined words, then frequency decks by name. Random order stays stable within the study day and changes at the next day boundary. Mix preserves the order within each group and chooses between groups in proportion to their remaining cards. Due same-day learning steps always come first. Each word has one card, so there are no card-type or sibling ordering options.
+
 ### Learning and review days
 
 **Learning steps** and **Relearning steps** accept positive durations separated by spaces. Use `m` for minutes, `h` for hours, and `d` for days. For example, `1m 10m` uses two steps. Leave the field empty to use model intervals. Both lists default to `10m`.

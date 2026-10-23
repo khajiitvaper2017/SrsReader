@@ -1,6 +1,7 @@
 import type { SchedulingPreferences } from "@/srs/preferences";
 import { dayStart, studyDay } from "@/srs/study-day";
 import type { Vocabulary } from "@/vocabulary/model";
+import { mergeQueues, queueRandom } from "@/srs/queue-order";
 
 export function buildQueue(
   words: Vocabulary[],
@@ -8,6 +9,7 @@ export function buildQueue(
   settings: SchedulingPreferences,
   now: number,
   orderedNew: Vocabulary[],
+  deckOrder: ReadonlyMap<string, number> = new Map(),
 ) {
   const available = Math.max(
     0,
@@ -15,6 +17,27 @@ export function buildQueue(
   );
   const byDue = (a: Vocabulary, b: Vocabulary) =>
     a.card!.due - b.card!.due || a.id.localeCompare(b.id);
+  const day = studyDay(now, settings.rolloverHour);
+  const byRandom = (a: Vocabulary, b: Vocabulary) =>
+    queueRandom(a.id, day) - queueRandom(b.id, day) || a.id.localeCompare(b.id);
+  const byDeck = (a: Vocabulary, b: Vocabulary) =>
+    (deckOrder.get(a.id) ?? 0) - (deckOrder.get(b.id) ?? 0);
+  const byDueDay = (a: Vocabulary, b: Vocabulary) =>
+    studyDay(a.card!.due, settings.rolloverHour) -
+    studyDay(b.card!.due, settings.rolloverHour);
+  const reviewOrder = {
+    due: byDue,
+    due_random: (a: Vocabulary, b: Vocabulary) =>
+      byDueDay(a, b) || byRandom(a, b),
+    due_deck: (a: Vocabulary, b: Vocabulary) =>
+      byDueDay(a, b) || byDeck(a, b) || byDue(a, b),
+    deck_due: (a: Vocabulary, b: Vocabulary) => byDeck(a, b) || byDue(a, b),
+    interval_asc: (a: Vocabulary, b: Vocabulary) =>
+      a.card!.scheduled_days - b.card!.scheduled_days || byDue(a, b),
+    interval_desc: (a: Vocabulary, b: Vocabulary) =>
+      b.card!.scheduled_days - a.card!.scheduled_days || byDue(a, b),
+    random: byRandom,
+  };
   const learning = words
     .filter(
       (word) =>
@@ -25,15 +48,29 @@ export function buildQueue(
     .sort(byDue);
   const interday = words
     .filter((word) => word.card!.interday && word.card!.due <= now)
-    .sort(byDue);
+    .sort(byDue)
+    .slice(0, available);
   const reviews = words
     .filter((word) => word.card!.state === 2 && word.card!.due <= now)
-    .sort(byDue);
-  const due = [...learning, ...[...interday, ...reviews].slice(0, available)];
+    .sort(reviewOrder[settings.reviewSortOrder])
+    .slice(0, Math.max(0, available - interday.length));
+  const scheduled = mergeQueues(
+    interday,
+    reviews,
+    settings.interdayReviewOrder,
+    day,
+  );
+  const due = [...learning, ...scheduled];
   const fresh =
     available > 0
       ? orderedNew.slice(0, Math.max(0, settings.newLimit - counts.introduced))
       : [];
+  if (settings.newSortOrder === "random")
+    fresh.sort(
+      (a, b) =>
+        queueRandom(a.id, day + 1) - queueRandom(b.id, day + 1) ||
+        a.id.localeCompare(b.id),
+    );
   const future = words
     .filter(
       (word) =>
@@ -58,7 +95,11 @@ export function buildQueue(
       Math.max(now + 500, word.card!.due - settings.learnAheadMinutes * 60000),
     ),
   );
-  const queued = [...due, ...fresh, ...ahead];
+  const queued = [
+    ...learning,
+    ...mergeQueues(fresh, scheduled, settings.newReviewOrder, day + 1),
+    ...ahead,
+  ];
   return {
     words: queued,
     learning: queued.filter((word) => word.card!.state === 1).length,

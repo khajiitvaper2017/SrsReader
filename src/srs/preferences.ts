@@ -22,6 +22,23 @@ export const srsPreferencesSchema = z.object({
   rolloverHour: z.number().int().min(0).max(23).default(4),
   learnAheadMinutes: z.number().nonnegative().finite().default(20),
   reviewLimit: z.number().int().positive().nullable().default(null),
+  newGatherOrder: z
+    .enum(["frequency", "deck", "deck_random", "oldest", "newest", "random"])
+    .default("random"),
+  newSortOrder: z.enum(["gathered", "random"]).default("gathered"),
+  newReviewOrder: z.enum(["before", "mix", "after"]).default("mix"),
+  interdayReviewOrder: z.enum(["before", "mix", "after"]).default("mix"),
+  reviewSortOrder: z
+    .enum([
+      "due",
+      "due_random",
+      "due_deck",
+      "deck_due",
+      "interval_asc",
+      "interval_desc",
+      "random",
+    ])
+    .default("random"),
   leechThreshold: z.number().int().nonnegative().default(8),
   leechAction: z.enum(["suspend", "mark"]).default("suspend"),
   intervalFuzz: z.boolean().default(false),
