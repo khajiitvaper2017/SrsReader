@@ -1,6 +1,13 @@
-import { ActionIcon, Box, Stack, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Box,
+  Stack,
+  Text,
+  Tree,
+  moveTreeNode,
+} from "@mantine/core";
 import { GripVertical } from "lucide-react";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 import { t } from "@/shared/i18n/i18n";
 
 export function SortableList<T>({
@@ -19,54 +26,54 @@ export function SortableList<T>({
   children: (item: T, handle: ReactNode) => ReactNode;
 }) {
   const help = useId();
-  const rows = useRef(new Map<string, HTMLDivElement>());
-  const active = useRef<{
-    start: number;
-    pointerId: number;
-    target: string;
-    moved: boolean;
-  } | null>(null);
-  const [drag, setDrag] = useState<{
-    id: string;
-    offset: number;
-    target: string;
-  } | null>(null);
-  function clearDrag() {
-    active.current = null;
-    setDrag(null);
-  }
+  const data = useMemo(
+    () => items.map((item) => ({ value: getId(item), label: getLabel(item) })),
+    [items, getId, getLabel],
+  );
   return (
     <Stack>
       <Text id={help} variant="supporting">
         {t("drag_to_reorder_help")}
       </Text>
-      <Stack role="list">
-        {items.map((item, index) => {
-          const id = getId(item);
+      <Tree
+        data={data}
+        withDragHandle
+        allowDrop={({ position }) => !disabled && position !== "inside"}
+        onDragDrop={(payload) => {
+          // Removing this callback during saves also removes Mantine's drag cleanup.
+          if (disabled) return;
+          const reordered = moveTreeNode(data, payload);
+          const index = reordered.findIndex(
+            (node) => node.value === payload.draggedNode,
+          );
+          const target = data[index]!;
+          if (target.value !== payload.draggedNode)
+            onMove(payload.draggedNode, target.value);
+        }}
+        styles={{
+          root: {
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--mantine-spacing-md)",
+          },
+          label: { cursor: "default" },
+        }}
+        renderNode={({ node, elementProps, dragHandleProps }) => {
+          const index = items.findIndex((item) => getId(item) === node.value);
+          const item = items[index]!;
           const label = t("reorder_item", { name: getLabel(item) });
-          const moving = drag?.id === id;
           return (
             <Box
-              key={id}
-              ref={(element) => {
-                if (element) rows.current.set(id, element);
-                else rows.current.delete(id);
-              }}
-              role="listitem"
-              pos="relative"
-              style={{
-                transform: moving ? `translateY(${drag.offset}px)` : undefined,
-                zIndex: moving ? 1 : undefined,
-                outline:
-                  drag?.target === id && !moving
-                    ? "2px solid var(--mantine-primary-color-filled)"
-                    : undefined,
-                outlineOffset: 2,
-              }}
+              {...elementProps}
+              onKeyDown={(event) => event.stopPropagation()}
             >
               {children(
                 item,
                 <ActionIcon
+                  {...dragHandleProps}
+                  onMouseDown={
+                    disabled ? undefined : dragHandleProps?.onMouseDown
+                  }
                   variant="subtle"
                   disabled={items.length < 2}
                   aria-disabled={disabled}
@@ -75,61 +82,16 @@ export function SortableList<T>({
                   aria-describedby={help}
                   title={label}
                   style={{
-                    cursor: moving ? "grabbing" : "grab",
-                    touchAction: "none",
+                    cursor: disabled ? undefined : "grab",
                     flexShrink: 0,
                   }}
-                  onPointerDown={(event) => {
-                    if (disabled || event.button !== 0 || !event.isPrimary)
-                      return;
-                    event.preventDefault();
-                    event.currentTarget.focus();
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                    active.current = {
-                      start: event.clientY,
-                      pointerId: event.pointerId,
-                      target: id,
-                      moved: false,
-                    };
-                  }}
-                  onPointerMove={(event) => {
-                    const current = active.current;
-                    if (!current || current.pointerId !== event.pointerId)
-                      return;
-                    const offset = event.clientY - current.start;
-                    if (Math.abs(offset) < 5 && !current.moved) return;
-                    current.moved = true;
-                    current.target = id;
-                    for (const [target, row] of rows.current) {
-                      if (target === id) continue;
-                      const rect = row.getBoundingClientRect();
-                      if (
-                        event.clientY >= rect.top &&
-                        event.clientY <= rect.bottom
-                      )
-                        current.target = target;
-                    }
-                    setDrag({ id, offset, target: current.target });
-                  }}
-                  onPointerUp={(event) => {
-                    const current = active.current;
-                    if (!current || current.pointerId !== event.pointerId)
-                      return;
-                    clearDrag();
-                    event.currentTarget.releasePointerCapture(event.pointerId);
-                    if (current.target !== id && !disabled)
-                      onMove(id, current.target);
-                  }}
-                  onPointerCancel={clearDrag}
-                  onLostPointerCapture={clearDrag}
                   onKeyDown={(event) => {
-                    if (event.key === "Escape") clearDrag();
                     if (event.key !== "ArrowUp" && event.key !== "ArrowDown")
                       return;
                     event.preventDefault();
                     const target =
                       items[index + (event.key === "ArrowUp" ? -1 : 1)];
-                    if (!disabled && target) onMove(id, getId(target));
+                    if (!disabled && target) onMove(node.value, getId(target));
                   }}
                 >
                   <GripVertical aria-hidden="true" size={16} />
@@ -137,8 +99,8 @@ export function SortableList<T>({
               )}
             </Box>
           );
-        })}
-      </Stack>
+        }}
+      />
     </Stack>
   );
 }

@@ -89,57 +89,35 @@ export function DictionarySettings({
         >
           {(dictionary, handle) => (
             <Paper p="sm">
-              <Stack>
-                <Group justify="space-between" align="flex-start">
-                  {handle}
-                  <Stack miw={160} style={{ flex: 1 }}>
-                    <strong>{dictionary.index.title}</strong>
-                    <Text variant="supporting">
-                      {dictionary.id === "nechybujte" ? (
-                        t("nechybujte_online_help")
-                      ) : (
-                        <>
-                          {dictionary.count > 0
-                            ? t("dictionary_entries", {
-                                language: dictionary.language,
-                                target: dictionary.target || t("unspecified"),
-                                count: dictionary.count,
-                              })
-                            : dictionary.language}
-                          {dictionary.frequencyCount > 0 &&
-                            t("frequency_count", {
-                              count: dictionary.frequencyCount,
-                            })}
-                          {" · "}
-                          {t("dictionary_revision", {
-                            revision: dictionary.index.revision,
+              <Group gap="sm" align="center">
+                {handle}
+                <Stack gap={0} miw={160} flex={1}>
+                  <strong>{dictionary.index.title}</strong>
+                  <Text variant="supporting">
+                    {dictionary.id === "nechybujte" ? (
+                      t("nechybujte_online_help")
+                    ) : (
+                      <>
+                        {dictionary.count > 0
+                          ? t("dictionary_entries", {
+                              language: dictionary.language,
+                              target: dictionary.target || t("unspecified"),
+                              count: dictionary.count,
+                            })
+                          : dictionary.language}
+                        {dictionary.frequencyCount > 0 &&
+                          t("frequency_count", {
+                            count: dictionary.frequencyCount,
                           })}
-                        </>
-                      )}
-                    </Text>
-                  </Stack>
-                  <Select
-                    w={120}
-                    aria-label={t("dictionary_display", {
-                      title: dictionary.index.title,
-                    })}
-                    value={
-                      dictionary.enabled
-                        ? dictionaryDisplay(dictionary.id, settings)
-                        : "hide"
-                    }
-                    disabled={busy}
-                    onChange={(value) =>
-                      setDisplay(dictionary, value as DictionaryDisplay)
-                    }
-                    data={[
-                      { value: "show", label: t("dictionary_show") },
-                      { value: "fallback", label: t("dictionary_if_needed") },
-                      { value: "hide", label: t("dictionary_hide") },
-                    ]}
-                  />
-                </Group>
-                <Group justify="flex-end">
+                        {" · "}
+                        {t("dictionary_revision", {
+                          revision: dictionary.index.revision,
+                        })}
+                      </>
+                    )}
+                  </Text>
+                </Stack>
+                <Group gap="xs" justify="flex-end">
                   {dictionary.index.isUpdatable && (
                     <ActionIcon
                       title={t("check_updates")}
@@ -186,8 +164,28 @@ export function DictionarySettings({
                       </ActionIcon>
                     </>
                   )}
+                  <Select
+                    w={120}
+                    aria-label={t("dictionary_display", {
+                      title: dictionary.index.title,
+                    })}
+                    value={
+                      dictionary.enabled
+                        ? dictionaryDisplay(dictionary.id, settings)
+                        : "hide"
+                    }
+                    disabled={busy}
+                    onChange={(value) =>
+                      setDisplay(dictionary, value as DictionaryDisplay)
+                    }
+                    data={[
+                      { value: "show", label: t("dictionary_show") },
+                      { value: "fallback", label: t("dictionary_if_needed") },
+                      { value: "hide", label: t("dictionary_hide") },
+                    ]}
+                  />
                 </Group>
-              </Stack>
+              </Group>
             </Paper>
           )}
         </SortableList>
