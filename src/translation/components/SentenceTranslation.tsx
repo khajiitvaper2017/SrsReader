@@ -1,17 +1,18 @@
 import { ActionIcon, Loader, Button, Stack, Text } from "@mantine/core";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { translateSentence } from "@/translation/translate";
+import { canAutoTranslate, translateSentence } from "@/translation/translate";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
 import type { ReadingContext } from "@/vocabulary/model";
 import { Languages } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 type Translation = NonNullable<ReadingContext["translation"]>;
 export function TextTranslation({
   text,
   language,
   settings,
+  autoTranslate,
   initialTranslation,
   onTranslated,
   label = t("translate"),
@@ -23,6 +24,7 @@ export function TextTranslation({
   text: string | string[];
   language: string;
   settings: Settings;
+  autoTranslate: boolean;
   initialTranslation?: Translation;
   onTranslated?: (translation: Translation) => void | Promise<void>;
   label?: string;
@@ -88,6 +90,30 @@ export function TextTranslation({
       setStatus("");
     }
   }
+  const translateAutomatically = useEffectEvent(() => {
+    if (!busy) void translate();
+  });
+  useEffect(() => {
+    if (!autoTranslate) return;
+    let cancelled = false;
+    void (async () => {
+      if (
+        initialTranslation?.language === settings.nativeLanguage ||
+        (await canAutoTranslate(language, settings.nativeLanguage))
+      ) {
+        if (!cancelled) translateAutomatically();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    inputKey,
+    language,
+    settings.nativeLanguage,
+    autoTranslate,
+    initialTranslation,
+  ]);
   const showingTranslation =
     shown && translation?.language === settings.nativeLanguage;
   const translated =
@@ -149,6 +175,7 @@ export function SentenceTranslation({
   context,
   language,
   settings,
+  autoTranslate = settings.autoTranslateSentences,
   wordId,
   onTranslated,
   label = t("translate_sentence"),
@@ -159,6 +186,7 @@ export function SentenceTranslation({
   context: ReadingContext;
   language: string;
   settings: Settings;
+  autoTranslate?: boolean;
   wordId?: string;
   onTranslated?: (translation: Translation) => void;
   label?: string;
@@ -176,6 +204,7 @@ export function SentenceTranslation({
       text={context.sentence}
       language={language}
       settings={settings}
+      autoTranslate={autoTranslate}
       initialTranslation={context.translation}
       label={label}
       collapsed={collapsed}

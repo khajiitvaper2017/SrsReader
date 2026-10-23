@@ -23,3 +23,16 @@ Open **Settings → General → Appearance**. Choose **Light**, **Dark**, **OLED
 - **Firefox:** open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select `.output/firefox-mv3/manifest.json`.
 
 Firefox temporary add-ons are removed when Firefox closes. Keep [backups](data.md); a permanent installation requires a signed package.
+
+## Automatic reloads
+
+Use the development build to reload the extension automatically when source files change.
+
+1. Run `npm run dev` for Chrome or `npm run dev:firefox` for Firefox in the project folder.
+2. Disable the regular build if it is installed. Keep it installed to preserve its data.
+3. In Chrome, use **Load unpacked** to load `.output/chrome-mv3-dev`. In Firefox, use **Load Temporary Add-on** to load `.output/firefox-mv3-dev/manifest.json`.
+4. Keep the command running while you edit files.
+
+WXT updates extension pages and reloads background and content scripts as needed. A regular `npm run build` does not enable automatic reloads. To stop the development server, press Ctrl+C in its terminal.
+
+Chrome treats the development folder as a separate extension with separate data. Your regular installation keeps its data. Use [backups](data.md) to copy your saved words and settings, and import dictionaries into the development installation.

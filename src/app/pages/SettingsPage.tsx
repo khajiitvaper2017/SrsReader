@@ -5,6 +5,7 @@ import {
   Group,
   Paper,
   Select,
+  Switch,
   Tabs,
   Text,
   Stack,
@@ -319,6 +320,26 @@ export function SettingsPage({
               <Paper>
                 <Stack>
                   <Title order={2}>{t("translation")}</Title>
+                  <Switch
+                    label={t("auto_translate_sentences")}
+                    description={t("auto_translate_sentences_help")}
+                    checked={settings.autoTranslateSentences}
+                    onChange={(event) =>
+                      void update({
+                        autoTranslateSentences: event.currentTarget.checked,
+                      })
+                    }
+                  />
+                  <Switch
+                    label={t("auto_translate_definitions")}
+                    description={t("auto_translate_definitions_help")}
+                    checked={settings.autoTranslateDefinitions}
+                    onChange={(event) =>
+                      void update({
+                        autoTranslateDefinitions: event.currentTarget.checked,
+                      })
+                    }
+                  />
                   <Text variant="supporting">
                     {t("translation_stays_on_your_device_models_download_on")}
                   </Text>

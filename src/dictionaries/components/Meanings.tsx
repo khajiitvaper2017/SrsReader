@@ -326,6 +326,7 @@ export function Meanings({
                   language !== settings.nativeLanguage ? (
                   <TextTranslation
                     compact
+                    autoTranslate={settings.autoTranslateDefinitions}
                     key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}:${JSON.stringify(senses)}`}
                     text={senses}
                     renderTranslation={(parts) => {

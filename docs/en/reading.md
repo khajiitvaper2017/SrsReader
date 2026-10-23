@@ -85,6 +85,13 @@ Dictionary and Tatoeba source links are hidden by default. To show them, turn of
 
 Translations replace the displayed definitions or example sentence. Click the crossed translation button to restore the original. Click it again to show the saved translation.
 
+**Settings → Audio & translation → Translation** has two independent switches:
+
+- **Automatically translate example sentences:** translates example and reading sentences into your native language when you open them.
+- **Automatically translate dictionary definitions:** translates dictionary definitions into your native language when you open them.
+
+Both switches are off by default. Unsupported language pairs stay in the original language. Local models can download on first use. If the browser translator needs activation, click a translation button once to prepare it. You can still use the translation button to show the original.
+
 Translations use your native language and run locally. Models download on first use; not every language pair is supported. Saved translations work offline. Editing a sentence removes its old translation.
 
 Download or update examples under **Settings → Dictionaries → Example sentences**, or import a detailed Tatoeba `.tsv` or `.bz2` export.

@@ -3,6 +3,31 @@ import type { Availability } from "@/platform/browser-ai";
 import { ai } from "@/platform/browser-ai";
 import { t } from "@/shared/i18n/i18n";
 import { browser } from "wxt/browser";
+import models from "../../public/bergamot-models.json";
+
+export async function canAutoTranslate(
+  sourceLanguage: string,
+  targetLanguage: string,
+): Promise<boolean> {
+  if (sourceLanguage === targetLanguage) return false;
+  if (ai.Translator) {
+    try {
+      if (
+        (await ai.Translator.availability({
+          sourceLanguage,
+          targetLanguage,
+        })) === "available"
+      )
+        return true;
+    } catch {
+      // A website's Permissions Policy can block the browser API in its popup.
+    }
+  }
+  return (
+    `${sourceLanguage}${targetLanguage}` in models ||
+    (`${sourceLanguage}en` in models && `en${targetLanguage}` in models)
+  );
+}
 
 type TranslationRequest = {
   from: string;

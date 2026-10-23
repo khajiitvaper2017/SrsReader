@@ -16,4 +16,6 @@ npm run zip:firefox
 
 Load the builds using the [installation guide](docs/en/getting-started.md).
 
-For development, use `npm run dev` or `npm run dev:firefox`. Run `npm run fix` to apply ESLint fixes and Prettier formatting; `npm run typecheck` checks TypeScript.
+For automatic reloads during development, run `npm run dev` or `npm run dev:firefox` and load the development build once. Keep the command running while you edit files. See the [automatic reload setup](docs/en/getting-started.md#automatic-reloads).
+
+Run `npm run fix` to apply ESLint fixes and Prettier formatting; `npm run typecheck` checks TypeScript.

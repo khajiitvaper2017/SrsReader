@@ -29,6 +29,9 @@ export function ContextSentence({
       context={context}
       language={word.language}
       settings={settings}
+      autoTranslate={
+        settings.autoTranslateSentences && settings.showSentenceTranslation
+      }
       wordId={word.id}
     >
       {(translationButton, translation, failure) => (
