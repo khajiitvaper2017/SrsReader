@@ -113,7 +113,7 @@ export function usePronunciation({
         return;
       }
       let record = await getAudio(word.id);
-      if (!record && settings.audioDownloads) {
+      if (!record) {
         try {
           await audioClient({ action: "audio", id: word.id, download: true });
           record = await getAudio(word.id);

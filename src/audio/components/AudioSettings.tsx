@@ -73,16 +73,6 @@ export function AudioSettings({
             })),
           ]}
         />
-        <Switch
-          label={t("download_natural_pronunciations")}
-          description={t(
-            "downloads_from_audio_providers_when_playing_or_saving",
-          )}
-          checked={settings.audioDownloads}
-          onChange={(event) =>
-            void update({ audioDownloads: event.target.checked })
-          }
-        />
         <Stack gap="xs">
           <Text fw={500}>{t("audio_sources")}</Text>
           <Text variant="supporting">{t("audio_sources_order_help")}</Text>

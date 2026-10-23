@@ -52,7 +52,7 @@ async function execute(request: Request, settings: Settings) {
         const { blob, ...info } = saved;
         return info;
       }
-      if (!request.download || !settings.audioDownloads) return null;
+      if (!request.download) return null;
       const word = await getWord(request.id);
       const identity = JSON.parse(request.id) as [string, string, string];
       const record = await cachePronunciation(

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const audioPreferencesSchema = z.object({
-  audioDownloads: z.boolean().default(false),
   audioSources: z
     .array(
       z.object({

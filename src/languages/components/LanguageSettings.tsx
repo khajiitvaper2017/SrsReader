@@ -54,7 +54,6 @@ export function LanguageSettings({
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
           <MultiSelect
             label={t("studied_languages")}
-            description={`${t("studied_languages_help")} ${t("studied_languages_features_help")}`}
             searchable
             value={settings.studyLanguages}
             data={languages}
