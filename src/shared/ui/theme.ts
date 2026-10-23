@@ -281,14 +281,10 @@ export function createUITheme(
       }),
       Title: Title.extend({ defaultProps: { order: 2 } }),
       Accordion: Accordion.extend({
-        defaultProps: { variant: "default", chevronSize: 14 },
         styles: {
-          control: { paddingInline: 0, paddingBlock: 8 },
           label: {
-            padding: 0,
             ...(popup ? { fontSize: "var(--mantine-font-size-sm)" } : {}),
           },
-          content: { paddingInline: 0 },
         },
       }),
       Menu: Menu.extend({
