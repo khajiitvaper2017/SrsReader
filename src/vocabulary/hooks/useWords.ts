@@ -38,7 +38,7 @@ export function useWords({
     const request = ++pending.current;
     setLoading(true);
     void Promise.all([
-      vocabularyClient({ action: "words", query: "", language, deckId }),
+      vocabularyClient({ action: "words", language, deckId }),
       srsClient({ action: "studyOverview" }),
     ])
       .then(([words, overview]) => {

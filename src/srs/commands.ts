@@ -47,7 +47,7 @@ export function handleSrs(request: Request, settings: Settings) {
     : execute(request, settings);
 }
 async function execute(request: Request, settings: Settings) {
-  if (["queue", "preview", "grade", "stats"].includes(request.action))
+  if (["queue", "preview", "grade"].includes(request.action))
     await requireScheduledModel(settings);
   switch (request.action) {
     case "studyOverview":
@@ -74,9 +74,13 @@ async function execute(request: Request, settings: Settings) {
       return word ? sentenceExamples(word, settings) : [];
     }
     case "grade": {
-      const word = await snapshot(
-        await resolved(request.term, request.id, request.occurrence),
-      );
+      const word = {
+        forms: [],
+        ...((await getWord(request.id)) ??
+          (await snapshot(
+            await resolved(request.term, request.id, request.occurrence),
+          ))),
+      };
       const result = await grade(
         word,
         request.rating as Grade,

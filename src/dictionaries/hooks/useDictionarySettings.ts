@@ -17,8 +17,6 @@ export function useDictionarySettings({
   tasks,
 }: {
   settings: Settings;
-  onChange: (patch: Partial<Settings>) => Promise<void>;
-  dictionaries: Dictionary[];
   reload: () => void;
   tasks: SettingsTask;
 }) {

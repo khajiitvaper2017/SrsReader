@@ -17,7 +17,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 export function Popup() {
-  const [settings, setSettings, ready] = useSettings();
+  const [settings, setSettings] = useSettings();
   const [host, setHost] = useState("");
   const [stats, setStats] = useState({ total: 0, due: 0, known: 0, today: 0 });
   const [error, setError] = useState("");
@@ -67,7 +67,6 @@ export function Popup() {
       setError((error as Error).message);
     }
   }
-  if (!ready) return null;
   return (
     <Stack gap="md" p="md">
       <Group align="center" justify="space-between" component="header">

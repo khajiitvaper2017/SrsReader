@@ -94,9 +94,13 @@ async function execute(request: Request, settings: Settings) {
       };
     }
     case "mine": {
-      const word = await snapshot(
-        await resolved(request.term, request.id, request.occurrence),
-      );
+      const word = {
+        forms: [],
+        ...((await getWord(request.id)) ??
+          (await snapshot(
+            await resolved(request.term, request.id, request.occurrence),
+          ))),
+      };
       const saved = await mine(word, request.context);
       cacheAudio(word);
       await notify(word.id);
@@ -166,9 +170,13 @@ async function execute(request: Request, settings: Settings) {
       await notify(request.id);
       return;
     case "known": {
-      const word = await snapshot(
-        await resolved(request.term, request.id, request.occurrence),
-      );
+      const word = {
+        forms: [],
+        ...((await getWord(request.id)) ??
+          (await snapshot(
+            await resolved(request.term, request.id, request.occurrence),
+          ))),
+      };
       const result = await setMastered(word, request.value);
       await notify(word.id);
       return result;
@@ -219,9 +227,6 @@ async function execute(request: Request, settings: Settings) {
         db.decks.where("language").equals(language).toArray(),
       ]);
       return wordsInDeck(studyGroups(words, decks), request.deckId)
-        .filter((w) =>
-          folded(w.lemma, language).includes(folded(request.query, language)),
-        )
         .sort((a, b) => b.updated - a.updated)
         .map((word) => ({
           ...word,

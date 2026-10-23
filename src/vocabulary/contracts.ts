@@ -67,7 +67,6 @@ export const requests = [
   z.object({ action: z.literal("refreshWord"), id: z.string() }),
   z.object({
     action: z.literal("words"),
-    query: z.string().default(""),
     language: languageSchema.optional(),
     deckId: z.string().optional(),
   }),

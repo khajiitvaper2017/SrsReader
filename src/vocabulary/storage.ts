@@ -9,7 +9,7 @@ import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { cacheContext } from "@/examples/sentences";
 import { sentenceId } from "@/examples/sentence-model";
-import { meaningKey } from "@/vocabulary/definitions";
+import { applyDefinitionOverrides, meaningKey } from "@/vocabulary/definitions";
 
 export async function mine(word: LookupWord, context?: ReadingContext) {
   await cacheContext(word, context);
@@ -33,17 +33,27 @@ export function definePersonalWord(
   tags?: Pick<Meaning, "tags" | "tagDescriptions">,
 ) {
   return db.transaction("rw", [db.vocabulary, db.sentences], async () => {
-    const saved = await mine(word, request.context);
+    const existing = await db.vocabulary.get(word.id);
+    const saved = existing || (await mine(word, request.context));
+    if (existing) {
+      await cacheContext(word, request.context);
+      saved.version++;
+      saved.updated = Date.now();
+    }
     const definitions = definitionSenses(request.definition);
     if (request.dictionaryKey !== undefined) {
+      const meaning = word.meanings.find(
+        (meaning) =>
+          meaning.dictionaryId !== "personal" &&
+          meaningKey(meaning) === request.dictionaryKey,
+      );
+      if (!meaning) throw new Error(t("definition_not_found"));
       if (
-        !word.meanings.some(
-          (meaning) =>
-            meaning.dictionaryId !== "personal" &&
-            meaningKey(meaning) === request.dictionaryKey,
+        !saved.meanings.some(
+          (entry) => meaningKey(entry) === request.dictionaryKey,
         )
       )
-        throw new Error(t("definition_not_found"));
+        saved.meanings.push(meaning);
       saved.definitionOverrides = {
         ...saved.definitionOverrides,
         [request.dictionaryKey]: definitions,
@@ -91,7 +101,9 @@ export function replaceMeanings(id: string, meanings: Vocabulary["meanings"]) {
         ...word.meanings.filter(
           (meaning) => meaning.dictionaryId === "personal",
         ),
-        ...meanings,
+        ...applyDefinitionOverrides(meanings, word).map(
+          ({ customDefinitions: _custom, ...meaning }) => meaning,
+        ),
       ];
       word.version++;
       word.updated = Date.now();

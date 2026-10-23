@@ -40,6 +40,12 @@ export function useReviewSession({
   const sentenceLoading =
     !!word && (sentences.id !== word.id || sentences.loading);
   const context = contexts[example];
+  const [sentenceRevision, refreshSentences] = useState(0);
+  const sentencesChanged = useCallback(
+    () => refreshSentences((value) => value + 1),
+    [],
+  );
+  useChanges(sentencesChanged, ["vocabulary"]);
   useEffect(() => {
     let alive = true;
     setSentences({ id: word?.id || "", contexts: [], loading: !!word });
@@ -48,7 +54,6 @@ export function useReviewSession({
         .then((value) => {
           if (alive) {
             setSentences({ id: word.id, contexts: value, loading: false });
-            setExample(0);
           }
         })
         .catch((error) => {
@@ -60,7 +65,7 @@ export function useReviewSession({
     return () => {
       alive = false;
     };
-  }, [word?.id, word?.version, settings]);
+  }, [word?.id, word?.version, settings, sentenceRevision]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const load = useCallback(() => {
     if (busyRef.current) return;

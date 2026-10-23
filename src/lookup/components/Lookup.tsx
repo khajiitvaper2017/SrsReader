@@ -127,7 +127,7 @@ function LookupEntry({
     undo,
     toggleMastery,
     definitionSaved,
-  } = useLookupWord({ page, onLookup, onBack, onContext });
+  } = useLookupWord({ page, onLookup, onBack });
   const surface = result?.grammar?.group?.form || term;
   const hiddenCandidateDictionaries = new Map(
     result?.words

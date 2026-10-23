@@ -154,3 +154,5 @@ Use **Add custom definition** (+) to add a definition. Use the pencil beside a d
 The sentence’s translation, speaker, and next-example buttons sit beside it.
 
 Use **Maintenance → Rebuild RWKV state** to rebuild its cache from saved answers. This does not change due dates or remove history.
+
+Editing a definition keeps the word in its current deck. Custom dictionary edits remain available when a dictionary update changes the original definition.

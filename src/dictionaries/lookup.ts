@@ -17,7 +17,7 @@ import { wordId } from "@/vocabulary/model";
 import { getSettings } from "@/settings/store";
 import { listDictionaries } from "@/dictionaries/storage";
 import { displayedMeanings } from "@/dictionaries/display";
-import { applyDefinitionOverrides } from "@/vocabulary/definitions";
+import { applyDefinitionOverrides, meaningKey } from "@/vocabulary/definitions";
 
 type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
@@ -320,7 +320,8 @@ export async function lookupMany(
       const meanings = word.meanings.filter(
         (meaning) =>
           meaning.dictionaryId === "personal" ||
-          meaning.dictionaryId === "nechybujte",
+          meaning.dictionaryId === "nechybujte" ||
+          !!word.definitionOverrides?.[meaningKey(meaning)],
       );
       if (meanings.length) words.unshift({ ...word, meanings, forms: [] });
     }

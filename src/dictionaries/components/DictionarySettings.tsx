@@ -35,12 +35,10 @@ import { Download, RefreshCw, Trash2, Upload } from "lucide-react";
 export function DictionarySettings({
   settings,
   dictionaries,
-  onChange: update,
   reload: load,
   tasks,
 }: {
   settings: Settings;
-  onChange: (patch: Partial<Settings>) => Promise<void>;
   dictionaries: Dictionary[];
   reload: () => void;
   tasks: SettingsTask;
@@ -60,8 +58,6 @@ export function DictionarySettings({
     removeDictionary,
   } = useDictionarySettings({
     settings,
-    dictionaries,
-    onChange: update,
     reload: load,
     tasks,
   });

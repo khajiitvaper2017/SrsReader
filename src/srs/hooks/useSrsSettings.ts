@@ -1,4 +1,3 @@
-import type { Dictionary } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
@@ -10,8 +9,6 @@ export function useSrsSettings({
   onError,
 }: {
   settings: Settings;
-  dictionaries: Dictionary[];
-  onChange: (patch: Partial<Settings>) => Promise<void>;
   onError: (message: string) => void;
 }) {
   const [busy, setBusy] = useState(false);

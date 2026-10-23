@@ -48,7 +48,7 @@ export function Meanings({
     tagDescriptions,
     monolingual,
     definitionLanguages,
-  } = useMeanings({ meanings, language, settings, onIgnoreTag });
+  } = useMeanings({ meanings, language, settings });
   const dictionaries = [
     ...new Set(displayed.map((meaning) => meaning.dictionaryId)),
   ]

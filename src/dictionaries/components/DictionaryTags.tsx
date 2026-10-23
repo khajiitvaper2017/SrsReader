@@ -22,8 +22,6 @@ export function DictionaryTags({
 }) {
   const { search, setSearch, error, entries } = useDictionaryTags({
     dictionaries,
-    settings,
-    onChange,
   });
   return (
     <Accordion>

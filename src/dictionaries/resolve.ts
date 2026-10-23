@@ -26,10 +26,7 @@ export async function lookup(
 ): Promise<LookupResult> {
   const lookupTerm =
     settings.studyLanguage === "cs" ? normalizeCzechReflexive(term) : term;
-  const contextual =
-    settings.studyLanguage === "cs"
-      ? await occurrenceAnalysis(occurrence, term)
-      : undefined;
+  const contextual = await occurrenceAnalysis(occurrence, term);
   const terms = [...new Set([...(contextual?.terms || []), lookupTerm])];
   const grammar = contextual?.grammar;
   const baseTokens =

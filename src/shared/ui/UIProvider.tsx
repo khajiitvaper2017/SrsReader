@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import { browser } from "wxt/browser";
 
 export const SettingsContext = createContext<
-  readonly [Settings, Dispatch<SetStateAction<Settings>>, boolean]
+  readonly [Settings, Dispatch<SetStateAction<Settings>>]
 >(undefined!);
 const colorSchemeManager = {
   get: () => "auto" as const,
@@ -95,7 +95,7 @@ export function UIProvider({
   );
   const systemScheme = useColorScheme(initialScheme);
   return (
-    <SettingsContext.Provider value={[settings, setSettings, true]}>
+    <SettingsContext.Provider value={[settings, setSettings]}>
       <MantineProvider
         theme={createUITheme(settings, popup)}
         colorSchemeManager={colorSchemeManager}

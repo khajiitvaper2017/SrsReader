@@ -12,7 +12,6 @@ export function useMeanings({
   meanings: Meaning[];
   language: string;
   settings: Settings;
-  onIgnoreTag?: (tag: string) => void;
 }) {
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const visible = displayedMeanings(meanings, settings, dictionaries);

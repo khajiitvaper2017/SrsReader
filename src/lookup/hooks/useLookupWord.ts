@@ -39,7 +39,6 @@ export function useLookupWord({
     occurrence?: Occurrence,
   ) => void;
   onBack?: () => void;
-  onContext: (context: ReadingContext) => void;
 }) {
   const [settings, setSettings] = useSettings();
   const readingRef = useRef<HTMLDivElement>(null);
@@ -141,7 +140,9 @@ export function useLookupWord({
       alive = false;
     };
   }, [term, occurrence]);
+  const pending = useRef(0);
   const reload = useCallback(() => {
+    const request = ++pending.current;
     if (!selected || !term) return;
     void Promise.all([
       vocabularyClient({ action: "word", id: selected }),
@@ -150,15 +151,23 @@ export function useLookupWord({
       dictionariesClient({ action: "lookup", term, occurrence }),
     ])
       .then(([word, times, settings, result]) => {
+        if (request !== pending.current) return;
         setSaved(word);
         setTimes(times);
         setSettings(settings);
         setResult(result);
         setError(result.warning || "");
       })
-      .catch((error) => setError(error.message));
+      .catch((error) => {
+        if (request === pending.current) setError(error.message);
+      });
   }, [selected, term, duration, occurrence]);
-  useEffect(reload, [reload]);
+  useEffect(() => {
+    reload();
+    return () => {
+      pending.current++;
+    };
+  }, [reload]);
   useChanges(reload, ["vocabulary", "srs", "settings", "dictionaries"]);
   useEffect(() => {
     function key(event: KeyboardEvent) {

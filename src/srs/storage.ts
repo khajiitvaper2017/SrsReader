@@ -5,7 +5,7 @@ import { dayStart, studyDay } from "@/srs/study-day";
 import type { ReviewSummary } from "@/srs/history";
 import type { candidates } from "@/srs/answers";
 import type { SchedulingPreferences } from "@/srs/preferences";
-import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
+import type { Vocabulary } from "@/vocabulary/model";
 import type { Grade } from "ts-fsrs";
 
 export type ReviewCommit = {
@@ -16,7 +16,6 @@ export type ReviewCommit = {
   id: string;
   rating: Grade;
   source: "reading" | "review";
-  context?: ReadingContext;
   durationMs: number | null;
   now: number;
   settings: SchedulingPreferences;
@@ -67,7 +66,18 @@ export async function commitReview({
         time: now,
         rating,
         source,
-        before: before ?? null,
+        before: before
+          ? {
+              id: before.id,
+              language: before.language,
+              version: before.version,
+              srsVersion: before.srsVersion,
+              card: before.card,
+              known: before.known,
+              suspended: before.suspended,
+              leech: before.leech,
+            }
+          : null,
         afterVersion: saved.version,
         afterSrsVersion: saved.srsVersion,
         after: saved.card,

@@ -1,6 +1,5 @@
 import type { Dictionary, Tag } from "@/dictionaries/model";
 import { dictionaryTags } from "@/dictionaries/storage";
-import type { Settings } from "@/settings/model";
 import { i18n } from "@/shared/i18n/i18n";
 import { useEffect, useState } from "react";
 
@@ -8,8 +7,6 @@ export function useDictionaryTags({
   dictionaries,
 }: {
   dictionaries: Dictionary[];
-  settings: Settings;
-  onChange: (patch: Partial<Settings>) => void;
 }) {
   const [tags, setTags] = useState<Tag[]>([]);
   const [search, setSearch] = useState("");

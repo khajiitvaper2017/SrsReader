@@ -13,7 +13,18 @@ export const reviewSchema = z.object({
   time: z.number().finite(),
   rating: z.number().int().min(1).max(4),
   source: z.enum(["reading", "review"]),
-  before: vocabularySchema.nullable(),
+  before: vocabularySchema
+    .pick({
+      id: true,
+      language: true,
+      version: true,
+      srsVersion: true,
+      card: true,
+      known: true,
+      suspended: true,
+      leech: true,
+    })
+    .nullable(),
   afterVersion: z.number().int(),
   log: z.record(
     z.string(),

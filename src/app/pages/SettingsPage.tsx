@@ -154,7 +154,7 @@ export function SettingsPage({
     <DictionarySettings
       settings={settings}
       dictionaries={dictionaries}
-      onChange={update}
+
       reload={load}
       tasks={tasks}
     />

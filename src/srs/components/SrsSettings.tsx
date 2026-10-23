@@ -70,7 +70,7 @@ export function SrsSettings({
   onError: (message: string) => void;
 }) {
   const { busy, message, setMessage, status, bands, setBands, task, prepare } =
-    useSrsSettings({ settings, dictionaries, onChange, onError });
+    useSrsSettings({ settings, onError });
   const [pendingModel, setPendingModel] = useState<{
     algorithm: Settings["algorithm"];
     rwkvMode: Settings["rwkvMode"];

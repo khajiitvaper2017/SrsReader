@@ -67,7 +67,16 @@ const learningSchema = z.object({
   decks: z.array(deckSchema).default([]),
   sentences: z.array(sentenceSchema).default([]),
   reviews: z.array(
-    reviewSchema.extend({ before: archivedWordSchema.nullable() }),
+    reviewSchema.extend({
+      before: z
+        .union([
+          archivedWordSchema,
+          reviewSchema.shape.before
+            .unwrap()
+            .extend({ contexts: z.array(contextSchema).optional() }),
+        ])
+        .nullable(),
+    }),
   ),
   audio: z.array(
     audioInfoSchema.extend({ path: z.string(), mime: z.string() }),
@@ -153,14 +162,14 @@ export async function readLearning(file: File) {
         review.before ? [review.before] : [],
       ),
     ]) {
-      for (const context of word.contexts || []) {
+      for (const context of ("contexts" in word ? word.contexts : []) || []) {
         const sentence = sentenceFromContext(word.language, context, word.id);
         sentences.set(
           sentence.id,
           mergeSentence(sentences.get(sentence.id), sentence),
         );
       }
-      delete word.contexts;
+      if ("contexts" in word) delete word.contexts;
     }
     data.sentences = [...sentences.values()];
     if (
