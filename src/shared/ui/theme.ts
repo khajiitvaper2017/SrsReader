@@ -263,6 +263,7 @@ export function createUITheme(
         defaultProps: {
           ...(popup ? { size: "sm" } : { size: "lg", fz: "xs" }),
           variant: "light",
+          tt: "none",
         },
       }),
       Kbd: Kbd.extend({ defaultProps: { size: controlSize } }),
