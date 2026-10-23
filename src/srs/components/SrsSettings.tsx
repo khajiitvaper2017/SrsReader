@@ -278,7 +278,11 @@ export function SrsSettings({
               />
               <Text variant="supporting">{t("srs_rank_help")}</Text>
               {dictionaries
-                .filter((dictionary) => dictionary.frequencyCount > 0)
+                .filter(
+                  (dictionary) =>
+                    dictionary.frequencyCount > 0 &&
+                    dictionary.language === settings.studyLanguage,
+                )
                 .map((dictionary) => (
                   <Checkbox
                     checked={isRankSource(dictionary, settings)}

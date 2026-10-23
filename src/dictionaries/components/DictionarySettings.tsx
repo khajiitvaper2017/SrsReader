@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from "react";
 import {
   ActionIcon,
   Anchor,
@@ -10,6 +11,7 @@ import {
   Select,
   Text,
   Title,
+  Tabs,
 } from "@mantine/core";
 import {
   FrequencyBrowser,
@@ -30,6 +32,7 @@ import { SortableList } from "@/shared/ui/SortableList";
 import {
   dictionaryDisplay,
   type DictionaryDisplay,
+  type DictionaryRole,
 } from "@/dictionaries/display";
 import { Download, RefreshCw, Trash2, Upload } from "lucide-react";
 export function DictionarySettings({
@@ -37,11 +40,13 @@ export function DictionarySettings({
   dictionaries,
   reload: load,
   tasks,
+  children,
 }: {
   settings: Settings;
   dictionaries: Dictionary[];
   reload: () => void;
   tasks: SettingsTask;
+  children?: ReactNode;
 }) {
   const {
     busy,
@@ -61,198 +66,242 @@ export function DictionarySettings({
     reload: load,
     tasks,
   });
-  return (
-    <Paper>
-      <Stack>
-        <Group align="center" justify="space-between">
-          <Stack>
-            <Title order={2}>{t("dictionaries")}</Title>
-          </Stack>
-          <Badge>
-            {t("dictionaries_installed", {
-              count: dictionaries.filter(
-                (dictionary) => dictionary.id !== "nechybujte",
-              ).length,
-            })}
-          </Badge>
-        </Group>
-        <SortableList
-          items={dictionaries}
-          getId={(dictionary) => dictionary.id}
-          getLabel={(dictionary) => dictionary.index.title}
-          onMove={moveDictionary}
-          disabled={busy}
-        >
-          {(dictionary, handle) => (
-            <Paper p="sm">
-              <Group gap="sm" align="center">
-                {handle}
-                <Stack gap={0} miw={160} flex={1}>
-                  <strong>{dictionary.index.title}</strong>
-                  <Text variant="supporting">
-                    {dictionary.id === "nechybujte" ? (
-                      t("nechybujte_online_help")
-                    ) : (
-                      <>
-                        {dictionary.count > 0
-                          ? t("dictionary_entries", {
-                              language: dictionary.language,
-                              target: dictionary.target || t("unspecified"),
-                              count: dictionary.count,
-                            })
-                          : dictionary.language}
-                        {dictionary.frequencyCount > 0 &&
-                          t("frequency_count", {
-                            count: dictionary.frequencyCount,
-                          })}
-                        {" · "}
-                        {t("dictionary_revision", {
-                          revision: dictionary.index.revision,
-                        })}
-                      </>
-                    )}
-                  </Text>
-                </Stack>
-                <Group gap="xs" justify="flex-end">
-                  {dictionary.index.isUpdatable && (
-                    <ActionIcon
-                      title={t("check_updates")}
-                      aria-label={t("check_updates")}
-                      disabled={busy}
-                      onClick={() => checkForUpdate(dictionary)}
-                      variant="subtle"
-                    >
-                      <RefreshCw aria-hidden="true" size={16} />
-                    </ActionIcon>
-                  )}
-                  {updates[dictionary.id] && (
-                    <Button
-                      disabled={busy}
-                      onClick={() => installUpdate(dictionary)}
-                      variant="filled"
-                    >
-                      <Download aria-hidden="true" size={16} />{" "}
-                      {t("update_dictionary_revision", {
-                        revision: updates[dictionary.id]!.revision,
-                      })}
-                    </Button>
-                  )}
-                  {dictionary.id !== "nechybujte" && (
+  const [role, setRole] = useState<DictionaryRole>("vocabulary");
+  const visible = dictionaries
+    .filter(
+      (dictionary) =>
+        dictionary.language === settings.studyLanguage &&
+        (role === "frequency"
+          ? dictionary.frequencyCount > 0
+          : dictionary.count > 0 || dictionary.id === "nechybujte"),
+    )
+    .sort((a, b) =>
+      role === "frequency"
+        ? (settings.frequencyPreferences[a.id]?.order ?? a.order) -
+          (settings.frequencyPreferences[b.id]?.order ?? b.order)
+        : a.order - b.order,
+    );
+  const dictionaryControls = (
+    <Stack>
+      <SortableList
+        items={visible}
+        getId={(dictionary) => dictionary.id}
+        getLabel={(dictionary) => dictionary.index.title}
+        onMove={(id, target) => moveDictionary(id, target, role)}
+        disabled={busy}
+      >
+        {(dictionary, handle) => (
+          <Paper p="sm">
+            <Group gap="sm" align="center">
+              {handle}
+              <Stack gap={0} miw={160} flex={1}>
+                <strong>{dictionary.index.title}</strong>
+                <Text variant="supporting">
+                  {dictionary.id === "nechybujte" ? (
+                    t("nechybujte_online_help")
+                  ) : (
                     <>
-                      <ActionIcon
-                        title={t("export_zip")}
-                        aria-label={t("export_zip")}
-                        disabled={busy}
-                        onClick={() => exportDictionary(dictionary)}
-                        variant="subtle"
-                      >
-                        <Download aria-hidden="true" size={16} />
-                      </ActionIcon>
-                      <ActionIcon
-                        title={t("remove")}
-                        aria-label={t("remove")}
-                        disabled={busy}
-                        onClick={() => removeDictionary(dictionary)}
-                        variant="subtle"
-                        color="red"
-                      >
-                        <Trash2 aria-hidden="true" size={16} />
-                      </ActionIcon>
+                      {dictionary.count > 0
+                        ? t("dictionary_entries", {
+                            language: dictionary.language,
+                            target: dictionary.target || t("unspecified"),
+                            count: dictionary.count,
+                          })
+                        : dictionary.language}
+                      {dictionary.frequencyCount > 0 &&
+                        t("frequency_count", {
+                          count: dictionary.frequencyCount,
+                        })}
+                      {" · "}
+                      {t("dictionary_revision", {
+                        revision: dictionary.index.revision,
+                      })}
                     </>
                   )}
-                  <Select
-                    w={120}
-                    aria-label={t("dictionary_display", {
-                      title: dictionary.index.title,
-                    })}
-                    value={
-                      dictionary.enabled
-                        ? dictionaryDisplay(dictionary.id, settings)
-                        : "hide"
-                    }
+                </Text>
+              </Stack>
+              <Group gap="xs" justify="flex-end">
+                {dictionary.index.isUpdatable && (
+                  <ActionIcon
+                    title={t("check_updates")}
+                    aria-label={t("check_updates")}
                     disabled={busy}
-                    onChange={(value) =>
-                      setDisplay(dictionary, value as DictionaryDisplay)
-                    }
-                    data={[
-                      { value: "show", label: t("dictionary_show") },
-                      { value: "fallback", label: t("dictionary_if_needed") },
-                      { value: "hide", label: t("dictionary_hide") },
-                    ]}
-                  />
-                </Group>
+                    onClick={() => checkForUpdate(dictionary)}
+                    variant="subtle"
+                  >
+                    <RefreshCw aria-hidden="true" size={16} />
+                  </ActionIcon>
+                )}
+                {updates[dictionary.id] && (
+                  <Button
+                    disabled={busy}
+                    onClick={() => installUpdate(dictionary)}
+                    variant="filled"
+                  >
+                    <Download aria-hidden="true" size={16} />{" "}
+                    {t("update_dictionary_revision", {
+                      revision: updates[dictionary.id]!.revision,
+                    })}
+                  </Button>
+                )}
+                {dictionary.id !== "nechybujte" && (
+                  <>
+                    <ActionIcon
+                      title={t("export_zip")}
+                      aria-label={t("export_zip")}
+                      disabled={busy}
+                      onClick={() => exportDictionary(dictionary)}
+                      variant="subtle"
+                    >
+                      <Download aria-hidden="true" size={16} />
+                    </ActionIcon>
+                    <ActionIcon
+                      title={t("remove")}
+                      aria-label={t("remove")}
+                      disabled={busy}
+                      onClick={() => removeDictionary(dictionary)}
+                      variant="subtle"
+                      color="red"
+                    >
+                      <Trash2 aria-hidden="true" size={16} />
+                    </ActionIcon>
+                  </>
+                )}
+                <Select
+                  w={120}
+                  aria-label={t("dictionary_display", {
+                    title: dictionary.index.title,
+                  })}
+                  value={
+                    role === "frequency" || dictionary.enabled
+                      ? dictionaryDisplay(dictionary.id, settings, role)
+                      : "hide"
+                  }
+                  disabled={busy}
+                  onChange={(value) =>
+                    setDisplay(dictionary, value as DictionaryDisplay, role)
+                  }
+                  data={[
+                    { value: "show", label: t("dictionary_show") },
+                    { value: "fallback", label: t("dictionary_if_needed") },
+                    { value: "hide", label: t("dictionary_hide") },
+                  ]}
+                />
               </Group>
-            </Paper>
-          )}
-        </SortableList>
-        <Divider />
-        <Text variant="supporting">{t("dictionary_display_help")}</Text>
-        <Stack
-          aria-busy={busy && progressTarget === "dictionary"}
-          onDragOver={(event) => {
-            event.preventDefault();
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            void fileImport(event.dataTransfer.files[0]);
-          }}
-        >
-          <Text>{t("drop_a_yomitan_format_3_zip")}</Text>
-          <Group>
-            <Button
-              disabled={busy}
-              onClick={() => fileInput.current?.click()}
-              variant="filled"
-            >
-              <Upload aria-hidden="true" size={16} />{" "}
-              {busy ? t("working") : t("choose_zip")}
-            </Button>
-          </Group>
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".zip"
-            hidden
-            onChange={(event) => {
-              void fileImport(event.target.files?.[0]);
-              event.target.value = "";
-            }}
-          />
-        </Stack>
-        <Stack>
-          <Anchor
-            href="https://yomitan.wiki/dictionaries/"
-            target="_blank"
-            rel="noopener noreferrer"
+            </Group>
+          </Paper>
+        )}
+      </SortableList>
+      <Divider />
+      <Text variant="supporting">{t("dictionary_display_help")}</Text>
+      <Stack
+        aria-busy={busy && progressTarget === "dictionary"}
+        onDragOver={(event) => {
+          event.preventDefault();
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          void fileImport(event.dataTransfer.files[0]);
+        }}
+      >
+        <Text>{t("drop_a_yomitan_format_3_zip")}</Text>
+        <Group>
+          <Button
+            disabled={busy}
+            onClick={() => fileInput.current?.click()}
+            variant="filled"
           >
-            {t("find_dictionaries")}{" "}
-          </Anchor>
-        </Stack>
-        <WiktionaryBrowser
-          key={`${settings.studyLanguage}:${settings.nativeLanguage}`}
-          language={settings.studyLanguage}
-          nativeLanguage={settings.nativeLanguage}
-          busy={busy}
-          onImport={(entry) =>
-            downloadDictionary(
-              wiktionaryDownloadUrl(entry),
-              entry.source,
-              wiktionaryName(entry),
-            )
-          }
-        />
-        <FrequencyBrowser
-          language={settings.studyLanguage}
-          busy={busy}
-          onImport={(entry) =>
-            downloadDictionary(
-              frequencyDownloadUrl(entry.file),
-              entry.code,
-              `${languageName(entry.code)} ${entry.source}`,
-            )
-          }
+            <Upload aria-hidden="true" size={16} />{" "}
+            {busy ? t("working") : t("choose_zip")}
+          </Button>
+        </Group>
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".zip"
+          hidden
+          onChange={(event) => {
+            void fileImport(event.target.files?.[0]);
+            event.target.value = "";
+          }}
         />
       </Stack>
-    </Paper>
+      <Stack>
+        <Anchor
+          href="https://yomitan.wiki/dictionaries/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t("find_dictionaries")}{" "}
+        </Anchor>
+      </Stack>
+    </Stack>
+  );
+  return (
+    <Stack>
+      <Paper>
+        <Stack>
+          <Group justify="space-between">
+            <Title order={2}>{t("dictionaries")}</Title>
+            <Badge>
+              {t("dictionaries_installed", {
+                count: visible.filter(
+                  (dictionary) => dictionary.id !== "nechybujte",
+                ).length,
+              })}
+            </Badge>
+          </Group>
+          <Tabs
+            value={role}
+            onChange={(value) => setRole(value as DictionaryRole)}
+            keepMounted={false}
+          >
+            <Tabs.List mb="sm" aria-label={t("dictionary_types")}>
+              <Tabs.Tab value="vocabulary">
+                {t("vocabulary_dictionaries")}
+              </Tabs.Tab>
+              <Tabs.Tab value="frequency">
+                {t("frequency_dictionaries")}
+              </Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="vocabulary">
+              <Stack>
+                {dictionaryControls}
+                <WiktionaryBrowser
+                  key={`${settings.studyLanguage}:${settings.nativeLanguage}`}
+                  language={settings.studyLanguage}
+                  nativeLanguage={settings.nativeLanguage}
+                  busy={busy}
+                  onImport={(entry) =>
+                    downloadDictionary(
+                      wiktionaryDownloadUrl(entry),
+                      entry.source,
+                      wiktionaryName(entry),
+                    )
+                  }
+                />
+              </Stack>
+            </Tabs.Panel>
+            <Tabs.Panel value="frequency">
+              <Stack>
+                {dictionaryControls}
+                <FrequencyBrowser
+                  language={settings.studyLanguage}
+                  busy={busy}
+                  onImport={(entry) =>
+                    downloadDictionary(
+                      frequencyDownloadUrl(entry.file),
+                      entry.code,
+                      `${languageName(entry.code)} ${entry.source}`,
+                    )
+                  }
+                />{" "}
+              </Stack>
+            </Tabs.Panel>
+          </Tabs>
+        </Stack>
+      </Paper>
+      {role === "vocabulary" && children}
+    </Stack>
   );
 }

@@ -1,3 +1,4 @@
+import { listFrequencyDictionaries } from "@/dictionaries/storage";
 import type { LookupWord } from "@/dictionaries/model";
 import { clearLookupCache, lookupMany } from "@/dictionaries/lookup";
 import { db } from "@/platform/database/db";
@@ -100,7 +101,9 @@ export async function manageStudyDeck(
 }
 
 async function frequencyDeckWords(dictionaryId: string, limit: number) {
-  const dictionary = await db.dictionaries.get(dictionaryId);
+  const dictionary = (await listFrequencyDictionaries()).find(
+    (dictionary) => dictionary.id === dictionaryId,
+  );
   if (!dictionary?.enabled || !dictionary.frequencyCount)
     throw new Error(t("frequency_deck_dictionary_missing"));
   const entries = new Map<string, { key: string; reading: string | null }>();

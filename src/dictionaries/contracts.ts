@@ -14,11 +14,13 @@ export const requests = [
   }),
   z.object({
     action: z.literal("setDictionary"),
+    role: z.enum(["vocabulary", "frequency"]),
     id: z.string(),
     display: z.enum(["show", "fallback", "hide"]),
   }),
   z.object({
     action: z.literal("moveDictionary"),
+    role: z.enum(["vocabulary", "frequency"]),
     id: z.string(),
     target: z.string(),
   }),

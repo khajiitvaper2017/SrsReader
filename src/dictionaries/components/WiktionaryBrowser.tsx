@@ -35,9 +35,6 @@ const downloads: WiktionaryDownload[] = types.flatMap((type) =>
     })),
   ),
 );
-const languages = [
-  ...new Set(downloads.map((entry) => languageCode(entry.source))),
-];
 const typeLabels = {
   main: "dictionary_definitions",
   glossary: "dictionary_translations",
@@ -62,7 +59,6 @@ export function WiktionaryBrowser({
   onImport: (entry: WiktionaryDownload) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const [source, setSource] = useState(language);
   const [target, setTarget] = useState(
     downloads.some(
       (entry) =>
@@ -79,7 +75,7 @@ export function WiktionaryBrowser({
   const available = open
     ? downloads.filter(
         (entry) =>
-          (!source || languageCode(entry.source) === source) &&
+          languageCode(entry.source) === language &&
           languageName(languageCode(entry.source)) !==
             languageCode(entry.source) &&
           languageName(languageCode(entry.target)) !==
@@ -128,31 +124,6 @@ export function WiktionaryBrowser({
           {open && (
             <>
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <Group justify="space-between" align="center" wrap="nowrap">
-                  {t("study_language")}
-                  <NativeSelect
-                    aria-label={t("dictionary_study_language")}
-                    value={source}
-                    onChange={(event) => {
-                      const value = event.currentTarget.value;
-                      setSource(value);
-                      setTarget("");
-                      setType("");
-                    }}
-                    w={160}
-                    maw="50%"
-                  >
-                    <option value="">{t("all_languages")}</option>
-                    {[...languages]
-                      .filter((code) => languageName(code) !== code)
-                      .sort(compareLanguages)
-                      .map((code) => (
-                        <option key={code} value={code}>
-                          {languageName(code)}
-                        </option>
-                      ))}
-                  </NativeSelect>
-                </Group>
                 <Group justify="space-between" align="center" wrap="nowrap">
                   {t("definition_language")}
                   <NativeSelect

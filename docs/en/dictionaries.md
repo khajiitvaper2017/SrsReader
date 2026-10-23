@@ -1,5 +1,9 @@
 # Dictionaries
 
+Open **Settings → Dictionaries** and choose a language. The selector includes studied languages and languages with installed dictionaries. **Vocabulary** contains definitions, word forms, and example sentences. **Frequency** contains word rankings. Download catalogs use the selected language.
+
+A ZIP that contains definitions and rankings appears in both tabs. Each part has its own **Show**, **If needed**, **Hide**, and order settings. Removing the ZIP removes both parts. Other languages keep their own settings.
+
 ## Search
 
 Open the **Search** tab and choose a language. **Word or reading** finds dictionary words and readings that contain your text. **Definition** finds words whose definitions contain your text. For example, search English definitions for **animal** to find words with that meaning in the selected language.

@@ -8,7 +8,7 @@ import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { readDownload, saveBlob } from "@/shared/download";
 import { i18n, t } from "@/shared/i18n/i18n";
-import type { DictionaryDisplay } from "@/dictionaries/display";
+import type { DictionaryDisplay, DictionaryRole } from "@/dictionaries/display";
 import { useEffect, useRef, useState } from "react";
 
 export function useDictionarySettings({
@@ -98,20 +98,26 @@ export function useDictionarySettings({
     if (!file || busy) return;
     await task(() => importZip(file));
   }
-  function setDisplay(dictionary: Dictionary, display: DictionaryDisplay) {
+  function setDisplay(
+    dictionary: Dictionary,
+    display: DictionaryDisplay,
+    role: DictionaryRole,
+  ) {
     return void task(async () => {
       await dictionariesClient({
         action: "setDictionary",
+        role,
         id: dictionary.id,
         display,
       });
       load();
     });
   }
-  function moveDictionary(id: string, target: string) {
+  function moveDictionary(id: string, target: string, role: DictionaryRole) {
     return void task(async () => {
       await dictionariesClient({
         action: "moveDictionary",
+        role,
         id,
         target,
       });

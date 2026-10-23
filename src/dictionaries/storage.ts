@@ -4,6 +4,7 @@ import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { getSettings, saveSettings } from "@/settings/store";
+import { dictionaryDisplay } from "@/dictionaries/display";
 import type { Dictionary } from "@/dictionaries/model";
 
 export async function setDictionaryDisplay(
@@ -15,11 +16,17 @@ export async function setDictionaryDisplay(
   );
   if (!dictionary) throw new Error(t("dictionary_not_found"));
   const enabled = request.display !== "hide";
-  if (request.id === "nechybujte") settings.nechybujte = enabled;
-  else await db.dictionaries.update(request.id, { enabled });
-  settings.dictionaryPreferences[dictionary.id] = {
+  if (request.role === "vocabulary") {
+    if (request.id === "nechybujte") settings.nechybujte = enabled;
+    else await db.dictionaries.update(request.id, { enabled });
+  }
+  const preferences =
+    request.role === "frequency"
+      ? settings.frequencyPreferences
+      : settings.dictionaryPreferences;
+  preferences[dictionary.id] = {
     enabled,
-    order: dictionary.order,
+    order: preferences[dictionary.id]?.order ?? dictionary.order,
     fallback: request.display === "fallback",
   };
   await saveSettings(settings);
@@ -31,7 +38,25 @@ export async function reorderDictionary(
 ) {
   await navigator.locks.request("srs-reader-dictionary-write", () =>
     db.transaction("rw", [db.dictionaries, db.settings], async () => {
-      const dictionaries = await listDictionaries(settings);
+      const all = await listDictionaries(settings);
+      const source = all.find((dictionary) => dictionary.id === request.id);
+      const targetDictionary = all.find(
+        (dictionary) => dictionary.id === request.target,
+      );
+      if (
+        !source ||
+        !targetDictionary ||
+        source.language !== targetDictionary.language
+      )
+        throw new Error(t("dictionary_not_found"));
+      const dictionaries = (
+        request.role === "frequency"
+          ? await listFrequencyDictionaries(settings)
+          : all.filter(
+              (dictionary) =>
+                dictionary.count > 0 || dictionary.id === "nechybujte",
+            )
+      ).filter((dictionary) => dictionary.language === source.language);
       const index = dictionaries.findIndex(
         (dictionary) => dictionary.id === request.id,
       );
@@ -43,12 +68,16 @@ export async function reorderDictionary(
       dictionaries.splice(target, 0, dictionary!);
       const currentSettings =
         (await db.settings.get("main"))?.value || settings;
+      const preferences =
+        request.role === "frequency"
+          ? currentSettings.frequencyPreferences
+          : currentSettings.dictionaryPreferences;
       for (const [order, dictionary] of dictionaries.entries()) {
-        if (dictionary.id !== "nechybujte")
+        if (request.role === "vocabulary" && dictionary.id !== "nechybujte")
           await db.dictionaries.update(dictionary.id, { order });
-        currentSettings.dictionaryPreferences[dictionary.id] = {
+        preferences[dictionary.id] = {
           fallback:
-            currentSettings.dictionaryPreferences[dictionary.id]?.fallback ??
+            preferences[dictionary.id]?.fallback ??
             dictionary.id === "nechybujte",
           enabled: dictionary.enabled,
           order,
@@ -101,4 +130,18 @@ export async function dictionaryImage(id: string, path: string) {
   return dictionary
     ? db.dictionaryMedia.get(dictionary.revisionId + ":" + path)
     : undefined;
+}
+
+export async function listFrequencyDictionaries(settings?: Settings) {
+  settings ??= await getSettings();
+  const preferences = settings.frequencyPreferences;
+  return (await db.dictionaries.toArray())
+    .filter((dictionary) => dictionary.frequencyCount > 0)
+    .map((dictionary) => ({
+      ...dictionary,
+      enabled:
+        dictionaryDisplay(dictionary.id, settings, "frequency") !== "hide",
+      order: preferences[dictionary.id]?.order ?? dictionary.order,
+    }))
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }

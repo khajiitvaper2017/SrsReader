@@ -2,13 +2,20 @@ import type { Dictionary, Meaning, LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { folded } from "@/languages/text";
 
+export type DictionaryRole = "vocabulary" | "frequency";
+
 export type DictionaryDisplay = "show" | "fallback" | "hide";
 
 export function dictionaryDisplay(
   id: string,
   settings: Settings,
+  role: DictionaryRole = "vocabulary",
 ): DictionaryDisplay {
-  const preference = settings.dictionaryPreferences[id];
+  const preference = (
+    role === "frequency"
+      ? settings.frequencyPreferences
+      : settings.dictionaryPreferences
+  )[id];
   const enabled =
     id === "nechybujte" ? settings.nechybujte : preference?.enabled !== false;
   if (!enabled) return "hide";

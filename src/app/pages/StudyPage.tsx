@@ -83,7 +83,7 @@ export function StudyPage({
   ]);
   const sources = dictionaries.filter(
     (dictionary) =>
-      dictionary.enabled &&
+      settings.frequencyPreferences[dictionary.id]?.enabled !== false &&
       dictionary.language === language &&
       dictionary.frequencyCount > 0,
   );

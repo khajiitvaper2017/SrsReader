@@ -3,6 +3,7 @@ import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import type { Vocabulary } from "@/vocabulary/model";
+import { listFrequencyDictionaries } from "@/dictionaries/storage";
 import { getSettings } from "@/settings/store";
 
 export function harmonicRank(ranks: number[]) {
@@ -29,9 +30,7 @@ export async function wordFrequencies(
   word: Pick<LookupWord, "lemma" | "reading" | "language">,
 ) {
   const settings = await getSettings();
-  const dictionaries = (
-    await db.dictionaries.orderBy("order").toArray()
-  ).filter(
+  const dictionaries = (await listFrequencyDictionaries(settings)).filter(
     (d) => d.enabled && d.language === word.language && d.frequencyCount > 0,
   );
   if (!dictionaries.length) return [];
@@ -57,14 +56,12 @@ export async function wordFrequencies(
     })
     .filter(
       (row, index) =>
-        !settings.dictionaryPreferences[row.id]?.fallback || index === 0,
+        !settings.frequencyPreferences[row.id]?.fallback || index === 0,
     );
 }
 
 export async function orderNewWords(words: Vocabulary[], settings: Settings) {
-  const dictionaries = (
-    await db.dictionaries.orderBy("order").toArray()
-  ).filter(
+  const dictionaries = (await listFrequencyDictionaries(settings)).filter(
     (d) =>
       d.enabled &&
       d.language === settings.studyLanguage &&
@@ -110,7 +107,7 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
         matchingRanks
           .filter(
             (row, index) =>
-              !settings.dictionaryPreferences[row.dictionary.id]?.fallback ||
+              !settings.frequencyPreferences[row.dictionary.id]?.fallback ||
               index === 0,
           )
           .map((row) => row.rank),

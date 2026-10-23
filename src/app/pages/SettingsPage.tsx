@@ -61,8 +61,19 @@ export function SettingsPage({
   setup?: boolean;
   tab?: string;
 }) {
+  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const languages = [
+    ...new Set([
+      ...preferences.studyLanguages,
+      ...(setup || tab === "dictionaries"
+        ? dictionaries
+            .filter((dictionary) => dictionary.id !== "nechybujte")
+            .map((dictionary) => dictionary.language)
+        : []),
+    ]),
+  ];
   const [language, setLanguage] = useState(preferences.studyLanguage);
-  const selectedLanguage = preferences.studyLanguages.includes(language)
+  const selectedLanguage = languages.includes(language)
     ? language
     : preferences.studyLanguage;
   const settings = useMemo(
@@ -72,7 +83,6 @@ export function SettingsPage({
   const tasks = useSettingsTask();
   const { error, setError, notice, busy, setBusy, progress, setProgress } =
     tasks;
-  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const languageData = useLanguageData(settings.studyLanguage, tasks);
   const load = useCallback(() => {
     void dictionariesClient({ action: "dictionaries" })
@@ -170,17 +180,15 @@ export function SettingsPage({
     <DictionarySettings
       settings={settings}
       dictionaries={dictionaries}
-
       reload={load}
       tasks={tasks}
-    />
-  );
-  const dataSettings = (
-    <LanguageDataSettings
-      settings={settings}
-      data={languageData}
-      tasks={tasks}
-    />
+    >
+      <LanguageDataSettings
+        settings={settings}
+        data={languageData}
+        tasks={tasks}
+      />
+    </DictionarySettings>
   );
   return (
     <Stack>
@@ -201,13 +209,13 @@ export function SettingsPage({
       )}
       {(setup ||
         ["reading", "dictionaries", "review", "audio"].includes(selected)) &&
-        settings.studyLanguages.length > 0 && (
+        languages.length > 0 && (
           <Select
             label={t("language_settings_for")}
             description={t("language_settings_for_help")}
             value={selectedLanguage}
             disabled={busy}
-            data={settings.studyLanguages.map((value) => ({
+            data={languages.map((value) => ({
               value,
               label: languageName(value),
             }))}
@@ -221,7 +229,6 @@ export function SettingsPage({
           <LanguageSettings settings={settings} onChange={update} setup />
           {dictionarySettings}
           <LookupSettings settings={settings} onChange={update} />
-          {dataSettings}
           <Group justify="flex-end">
             <Button
               variant="filled"
@@ -290,10 +297,7 @@ export function SettingsPage({
             </Stack>
           </Tabs.Panel>
           <Tabs.Panel value="dictionaries">
-            <Stack>
-              {dictionarySettings}
-              {dataSettings}
-            </Stack>
+            <Stack>{dictionarySettings}</Stack>
           </Tabs.Panel>
           <Tabs.Panel value="review">
             <ReviewSettings

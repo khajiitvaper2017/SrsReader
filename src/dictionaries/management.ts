@@ -1,3 +1,5 @@
+import { settingsSchema } from "@/settings/model";
+import { saveSettings } from "@/settings/store";
 import {
   dictionaryId,
   entryMatch,
@@ -301,10 +303,25 @@ async function importRevision(
       done: 0,
       total: 0,
     });
-    await db.transaction("rw", [db.dictionaries, db.archives], async () => {
-      await db.archives.put({ id: revisionId, blob });
-      await db.dictionaries.put(dictionary);
-    });
+    await db.transaction(
+      "rw",
+      [db.dictionaries, db.archives, db.settings],
+      async () => {
+        await db.archives.put({ id: revisionId, blob });
+        await db.dictionaries.put(dictionary);
+        if (frequencyCount > 0) {
+          const settings = settingsSchema.parse(
+            (await db.settings.get("main"))?.value || {},
+          );
+          settings.frequencyPreferences[id] ??= {
+            enabled: true,
+            order: dictionary.order,
+            fallback: false,
+          };
+          await saveSettings(settings);
+        }
+      },
+    );
     activated = true;
     if (existing)
       await removeRevision(existing.revisionId).catch(console.error);

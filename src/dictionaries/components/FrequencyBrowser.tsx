@@ -24,7 +24,6 @@ export const frequencyDownloadUrl = (file: string) =>
 const downloads = catalog.filter((entry) =>
   supportedLanguages.includes(languageCode(entry.code)),
 );
-const languages = [...new Set(downloads.map((entry) => entry.code))];
 const compareNames = (a: FrequencyDownload, b: FrequencyDownload) =>
   languageName(a.code).localeCompare(
     languageName(b.code),
@@ -50,15 +49,13 @@ export function FrequencyBrowser({
   busy: boolean;
   onImport: (entry: FrequencyDownload) => Promise<void>;
 }) {
-  const [selectedLanguage, setLanguage] = useState(language);
   const [type, setType] = useState("");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("language");
   const [installing, setInstalling] = useState("");
   const available = downloads.filter(
     (entry) =>
-      (!selectedLanguage || entry.code === selectedLanguage) &&
-      languageName(entry.code) !== entry.code,
+      entry.code === language && languageName(entry.code) !== entry.code,
   );
   const types = [...new Set(available.map((entry) => entry.type))].sort();
   const query = search.trim().toLocaleLowerCase();
@@ -95,33 +92,6 @@ export function FrequencyBrowser({
         <Accordion.Control>{t("frequency_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Group justify="space-between" align="center">
-              {t("language")}{" "}
-              <NativeSelect
-                aria-label={t("frequency_language")}
-                value={selectedLanguage}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-                  setLanguage(value);
-                  setType("");
-                }}
-              >
-                <option value="">{t("all_languages")}</option>
-                {[...languages]
-                  .filter((code) => languageName(code) !== code)
-                  .sort((a, b) =>
-                    languageName(a).localeCompare(
-                      languageName(b),
-                      i18n.resolvedLanguage,
-                    ),
-                  )
-                  .map((code) => (
-                    <option key={code} value={code}>
-                      {languageName(code)}
-                    </option>
-                  ))}
-              </NativeSelect>
-            </Group>
             <Group justify="space-between" align="center">
               {t("type")}{" "}
               <NativeSelect

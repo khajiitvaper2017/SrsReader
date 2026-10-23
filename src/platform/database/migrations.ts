@@ -140,4 +140,23 @@ export function installMigrations(database: Dexie) {
         await tx.table("reviews").put(review);
       }
     });
+  database
+    .version(10)
+    .stores({})
+    .upgrade(async (tx) => {
+      const record = await tx.table("settings").get("main");
+      if (!record) return;
+      const settings = settingsSchema.parse(record.value);
+      for (const dictionary of await tx.table("dictionaries").toArray()) {
+        if (dictionary.frequencyCount > 0)
+          settings.frequencyPreferences[dictionary.id] = {
+            enabled: dictionary.enabled,
+            order: dictionary.order,
+            fallback:
+              settings.dictionaryPreferences[dictionary.id]?.fallback ?? false,
+          };
+      }
+      const { studyLanguage: _language, ...value } = settings;
+      await tx.table("settings").put({ id: "main", value });
+    });
 }
