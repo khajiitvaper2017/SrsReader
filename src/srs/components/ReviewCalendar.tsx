@@ -129,6 +129,7 @@ export function ReviewCalendar({
             gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`,
             gridTemplateRows: "repeat(7, 1fr)",
             gridAutoFlow: "column",
+            gap: 2,
           }}
         >
           {Array.from({ length: offset }, (_, index) => (
