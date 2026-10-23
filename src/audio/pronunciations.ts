@@ -1,4 +1,10 @@
 import type { AudioInfo } from "@/audio/model";
+import type { AudioPreferences } from "@/audio/preferences";
+import {
+  audioSourceUrl,
+  forvoSources,
+  languagePodSources,
+} from "@/audio/providers";
 import { getAudio, saveAudio } from "@/audio/storage";
 import { languageIso3 } from "@/languages/codes";
 import { t } from "@/shared/i18n/i18n";
@@ -34,7 +40,7 @@ async function commons(parameters: Record<string, string>) {
   return result.query;
 }
 
-async function* pronunciationSources(
+async function* commonsSources(
   language: string,
   lemma: string,
   reading: string,
@@ -108,21 +114,56 @@ async function* pronunciationSources(
   }
 }
 
+async function* pronunciationSources(
+  language: string,
+  lemma: string,
+  reading: string,
+  sources: AudioPreferences["audioSources"],
+) {
+  let found = false;
+  let failure: unknown;
+  const providers = {
+    commons: commonsSources,
+    languagePod101: languagePodSources,
+    forvo: forvoSources,
+  };
+  for (const source of sources) {
+    if (!source.enabled) continue;
+    try {
+      for await (const info of providers[source.type](
+        language,
+        lemma,
+        reading,
+      )) {
+        found = true;
+        yield info;
+      }
+    } catch (error) {
+      failure = error;
+    }
+  }
+  if (!found && failure) throw failure;
+}
+
 export async function findPronunciations(
   language: string,
   lemma: string,
   reading: string,
+  providers: AudioPreferences["audioSources"],
 ) {
   const sources = new Map<string, AudioInfo>();
-  for await (const source of pronunciationSources(language, lemma, reading))
+  for await (const source of pronunciationSources(
+    language,
+    lemma,
+    reading,
+    providers,
+  ))
     sources.set(source.url, source);
   return [...sources.values()];
 }
 
 export async function cacheAudioSource(info: AudioInfo) {
-  const url = httpsUrl(info.url);
-  if (new URL(url).hostname !== "upload.wikimedia.org")
-    throw new Error(t("invalid_audio_source"));
+  const url = audioSourceUrl(info.url);
   const saved = await getAudio(info.id);
   if (saved?.url === url) return saved;
   const response = await fetch(url, {
@@ -142,10 +183,16 @@ export async function cachePronunciation(
   language: string,
   lemma: string,
   reading: string,
+  providers: AudioPreferences["audioSources"],
 ) {
   const saved = await getAudio(wordId(language, lemma, reading));
   if (saved) return saved;
-  for await (const source of pronunciationSources(language, lemma, reading)) {
+  for await (const source of pronunciationSources(
+    language,
+    lemma,
+    reading,
+    providers,
+  )) {
     const record = await cacheAudioSource(source);
     if (record) return record;
   }

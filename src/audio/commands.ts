@@ -18,7 +18,12 @@ async function execute(request: Request, settings: Settings) {
         string,
         string,
       ];
-      return findPronunciations(language, lemma, reading);
+      return findPronunciations(
+        language,
+        lemma,
+        reading,
+        settings.audioSources,
+      );
     }
     case "audio": {
       if (request.source) {
@@ -41,6 +46,7 @@ async function execute(request: Request, settings: Settings) {
         word?.language || identity[0],
         word?.lemma || identity[1],
         word?.reading || identity[2],
+        settings.audioSources,
       );
       if (!record) return null;
       const { blob, ...info } = record;

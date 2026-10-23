@@ -100,7 +100,7 @@
   "downloading_translation_model": "Downloading translation model…",
   "downloading_translation_model_2": "Downloading translation model… {{value1}}%",
   "downloading_word_forms": "Downloading word forms",
-  "downloads_from_wikimedia_commons_when_playing_or_saving": "Downloads from Wikimedia Commons when playing or saving a word. Only the word is sent.",
+  "downloads_from_audio_providers_when_playing_or_saving": "Downloads from enabled audio sources when playing or saving a word. Only the word is sent.",
   "drop_a_yomitan_format_3_zip": "Drop a Yomitan format-3 ZIP",
   "due": "Due",
   "easy": "Easy",
@@ -830,5 +830,9 @@
   "udpipe_model_ukrainian-iu": "Institute for Ukrainian corpus (IU)",
   "udpipe_corpus_ukrainian-iu": "Fiction, news, letters, web content, and other Ukrainian texts.",
   "udpipe_model_ukrainian-parlamint": "ParlaMint",
-  "udpipe_corpus_ukrainian-parlamint": "Transcripts of plenary sessions of the Ukrainian parliament."
+  "udpipe_corpus_ukrainian-parlamint": "Transcripts of plenary sessions of the Ukrainian parliament.",
+  "audio_source_commons": "Wikimedia Commons / Lingua Libre",
+  "audio_sources_order_help": "Enable the sources you want. Use the arrows to set their priority. Disabled sources are not contacted. Saved recordings remain available.",
+  "move_audio_source_up": "Move {{source}} up",
+  "move_audio_source_down": "Move {{source}} down"
 }

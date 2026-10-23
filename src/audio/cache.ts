@@ -6,7 +6,12 @@ export function cacheAudio(word: LookupWord) {
   void getSettings()
     .then((settings) =>
       settings.audioDownloads
-        ? cachePronunciation(word.language, word.lemma, word.reading)
+        ? cachePronunciation(
+            word.language,
+            word.lemma,
+            word.reading,
+            settings.audioSources,
+          )
         : null,
     )
     .catch(console.warn);

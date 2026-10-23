@@ -18,7 +18,7 @@ Export before uninstalling, clearing browser data, or moving to another browser.
 
 ## What stays local
 
-Local parsing, reviews, and translation run on your device. Optional UDPipe analysis sends Czech page text to LINDAT. LINDAT may use that text to improve its systems. Page URLs are not added to these requests. Successful analyses stay cached in this browser until extension data is cleared. The parser cache is not included in exports. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers, and GitHub for the RWKV model. Optional pronunciation downloads send the word to Wikimedia Commons, not your sentences or website URLs.
+Local parsing, reviews, and translation run on your device. Optional UDPipe analysis sends Czech page text to LINDAT. LINDAT may use that text to improve its systems. Page URLs are not added to these requests. Successful analyses stay cached in this browser until extension data is cleared. The parser cache is not included in exports. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers, and GitHub for the RWKV model. Optional pronunciation downloads send the word to Wikimedia Commons, LanguagePod101, or Forvo. These requests do not include your sentences or website URLs. Opening **Audio sources** also sends the word to enabled providers. Disable a provider under **Settings → Audio & translation → Pronunciation → Audio sources** to stop requests to it.
 
 ## Sources
 

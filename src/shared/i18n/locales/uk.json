@@ -102,7 +102,7 @@
   "downloading_translation_model": "Завантаження моделі перекладу…",
   "downloading_translation_model_2": "Завантаження моделі перекладу… {{value1}}%",
   "downloading_word_forms": "Завантаження словоформ",
-  "downloads_from_wikimedia_commons_when_playing_or_saving": "Завантажує вимову з Вікісховища під час прослуховування або збереження слова. Надсилається лише слово.",
+  "downloads_from_audio_providers_when_playing_or_saving": "Завантажує вимову з увімкнених джерел під час прослуховування чи збереження слова. Надсилається лише слово.",
   "drop_a_yomitan_format_3_zip": "Перетягніть ZIP Yomitan формату 3",
   "due": "Час повторити",
   "easy": "Легко",
@@ -873,5 +873,9 @@
   "udpipe_model_ukrainian-iu": "Корпус Інституту української (IU)",
   "udpipe_corpus_ukrainian-iu": "Художня література, новини, листи, вебтексти та інші українські тексти.",
   "udpipe_model_ukrainian-parlamint": "ParlaMint",
-  "udpipe_corpus_ukrainian-parlamint": "Стенограми пленарних засідань Верховної Ради України."
+  "udpipe_corpus_ukrainian-parlamint": "Стенограми пленарних засідань Верховної Ради України.",
+  "audio_source_commons": "Вікісховище / Lingua Libre",
+  "audio_sources_order_help": "Увімкніть потрібні джерела. Стрілками змініть порядок їх використання. Запити до вимкнених джерел не надсилаються. Збережені записи залишаються доступними.",
+  "move_audio_source_up": "Підняти {{source}} вище",
+  "move_audio_source_down": "Опустити {{source}} нижче"
 }

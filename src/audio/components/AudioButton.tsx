@@ -125,9 +125,13 @@ export function AudioButton({
                     )}
                     <span>
                       <strong>
-                        {source.name.startsWith("LL-")
-                          ? "Lingua Libre"
-                          : "Wikimedia Commons"}
+                        {source.page.startsWith("https://forvo.com/")
+                          ? "Forvo"
+                          : source.creator === "LanguagePod101"
+                            ? "LanguagePod101"
+                            : source.name.startsWith("LL-")
+                              ? "Lingua Libre"
+                              : "Wikimedia Commons"}
                       </strong>
                       <Text
                         variant="supporting"
@@ -145,7 +149,9 @@ export function AudioButton({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {source.creator} · {source.license}
+                      {[source.creator, source.license]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </Menu.Item>
                   )}
                 </Stack>

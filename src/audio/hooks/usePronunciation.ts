@@ -57,9 +57,9 @@ export function usePronunciation({
         .then((found) => {
           if (alive)
             setSources((cached) => [
-              ...cached,
-              ...found.filter(
-                (source) => !cached.some((item) => item.url === source.url),
+              ...found,
+              ...cached.filter(
+                (source) => !found.some((item) => item.url === source.url),
               ),
             ]);
         })
@@ -73,7 +73,7 @@ export function usePronunciation({
     return () => {
       alive = false;
     };
-  }, [open, word.id, word.language, sentence]);
+  }, [open, word.id, word.language, sentence, settings.audioSources]);
   function playVoice(voice: string) {
     void speak(sentence || word.lemma, word.language, voice).catch((error) =>
       onError(error instanceof Error ? error.message : String(error)),
