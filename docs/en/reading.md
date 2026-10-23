@@ -64,6 +64,8 @@ Dictionary and Tatoeba source links are hidden by default. To show them, turn of
 - **Translate current sentence:** translate your reading sentence. Mining keeps that translation with the original.
 - **Translate definition:** translate a monolingual dictionary definition.
 
+Translations replace the displayed definitions or example sentence. Click the crossed translation button to restore the original. Click it again to show the saved translation.
+
 Translations use your native language and run locally. Models download on first use; not every language pair is supported. Saved translations work offline. Editing a sentence removes its old translation.
 
 Download or update examples under **Settings → Dictionaries → Example sentences**, or import a detailed Tatoeba `.tsv` or `.bz2` export.

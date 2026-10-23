@@ -138,7 +138,11 @@ function LookupEntry({
         ),
       ),
   );
-  const renderHeader = (sentenceButton?: ReactNode, translation?: ReactNode) =>
+  const renderHeader = (
+    sentenceButton?: ReactNode,
+    translation?: ReactNode,
+    failure?: ReactNode,
+  ) =>
     word && (
       <>
         <Stack
@@ -290,7 +294,6 @@ function LookupEntry({
             </Stack>
             <Group gap={4} align="center">
               <FrequencyBadge word={word} />
-              <AudioButton word={word} settings={settings} onError={setError} />
               <ActionIcon
                 title={t("add_custom_definition")}
                 aria-label={t("add_custom_definition")}
@@ -305,6 +308,7 @@ function LookupEntry({
                 <Plus aria-hidden="true" size={16} />
               </ActionIcon>
               {sentenceButton}
+              <AudioButton word={word} settings={settings} onError={setError} />
             </Group>
           </Group>
 
@@ -315,6 +319,7 @@ function LookupEntry({
           )}
         </Stack>
         {translation}
+        {failure}
       </>
     );
   return (

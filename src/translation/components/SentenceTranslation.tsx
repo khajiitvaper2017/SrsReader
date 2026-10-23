@@ -3,6 +3,7 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { translateSentence } from "@/translation/translate";
 import { vocabularyClient } from "@/vocabulary/client";
+import { Sentence } from "@/vocabulary/components/Sentence";
 import type { ReadingContext } from "@/vocabulary/model";
 import { Languages } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
@@ -16,9 +17,10 @@ export function TextTranslation({
   label = t("translate"),
   collapsed = false,
   compact = false,
+  renderTranslation,
   children,
 }: {
-  text: string;
+  text: string | string[];
   language: string;
   settings: Settings;
   initialTranslation?: Translation;
@@ -26,9 +28,17 @@ export function TextTranslation({
   label?: string;
   collapsed?: boolean;
   compact?: boolean;
-  children?: (button: ReactNode, translation: ReactNode) => ReactNode;
+  renderTranslation?: (parts: string[]) => ReactNode;
+  children?: (
+    button: ReactNode,
+    translation: ReactNode,
+    failure: ReactNode,
+  ) => ReactNode;
 }) {
-  const [translation, setTranslation] = useState(initialTranslation);
+  const [translation, setTranslation] = useState<
+    (Translation & { parts?: string[] }) | undefined
+  >(initialTranslation);
+  const inputKey = JSON.stringify(text);
   const [shown, setShown] = useState(!collapsed);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -37,27 +47,40 @@ export function TextTranslation({
   useEffect(() => {
     setTranslation(initialTranslation);
     setError("");
-  }, [text, initialTranslation]);
+  }, [inputKey, initialTranslation]);
   async function translate() {
     if (translation?.language === settings.nativeLanguage) {
+      console.info("[translation] text cache hit", {
+        text,
+        sourceLanguage: language,
+        targetLanguage: settings.nativeLanguage,
+        response: translation.text,
+      });
       setShown(true);
       return;
     }
     setBusy(true);
     setError("");
     try {
+      const parts: string[] = [];
+      for (const part of typeof text === "string" ? [text] : text) {
+        parts.push(
+          await translateSentence(
+            part,
+            language,
+            settings.nativeLanguage,
+            setStatus,
+          ),
+        );
+      }
       const value = {
-        text: await translateSentence(
-          text,
-          language,
-          settings.nativeLanguage,
-          setStatus,
-        ),
+        text: parts.join("\n"),
+        parts,
         language: settings.nativeLanguage,
       };
       setTranslation(value);
       setShown(true);
-      await onTranslated?.(value);
+      await onTranslated?.({ text: value.text, language: value.language });
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -65,19 +88,36 @@ export function TextTranslation({
       setStatus("");
     }
   }
-  const translated = shown && translation && (
-    <Text lang={translation.language} dir="auto" w="100%">
-      {translation.text}
-    </Text>
-  );
-  const button = (!shown ||
-    !translation ||
-    translation.language !== settings.nativeLanguage) && (
+  const showingTranslation =
+    shown && translation?.language === settings.nativeLanguage;
+  const translated =
+    showingTranslation &&
+    translation &&
+    (renderTranslation ? (
+      renderTranslation(translation.parts || [translation.text])
+    ) : (
+      <Text
+        data-srs-reader=""
+        lang={translation.language}
+        dir="auto"
+        w="100%"
+        style={{ whiteSpace: "pre-wrap" }}
+      >
+        {translation.text}
+      </Text>
+    ));
+  const buttonLabel = busy
+    ? status || t("translating")
+    : showingTranslation
+      ? t("show_original")
+      : label;
+  const button = (
     <Control
-      title={busy ? status || t("translating") : label}
-      aria-label={busy ? status || t("translating") : label}
+      title={buttonLabel}
+      aria-label={buttonLabel}
+      aria-pressed={showingTranslation}
       disabled={busy}
-      onClick={() => void translate()}
+      onClick={() => (showingTranslation ? setShown(false) : void translate())}
       variant="subtle"
       size={compact ? "sm" : "compact-xs"}
       color={compact ? "gray" : undefined}
@@ -85,26 +125,19 @@ export function TextTranslation({
       {busy ? (
         <Loader size={14} aria-hidden="true" />
       ) : (
-        <Languages aria-hidden="true" size={16} />
+        <Languages aria-hidden="true" size={16}>
+          {showingTranslation && <path d="m3 3 18 18" />}
+        </Languages>
       )}
-      {!compact && (busy ? status || t("translating") : label)}
+      {!compact && buttonLabel}
     </Control>
   );
   const failure = error && (
-    <Text role="alert" c="red">
+    <Text data-srs-reader="" role="alert" c="red">
       {error}
     </Text>
   );
-  if (children)
-    return children(
-      button,
-      translated || failure ? (
-        <Stack data-srs-reader="" gap="xs">
-          {translated}
-          {failure}
-        </Stack>
-      ) : null,
-    );
+  if (children) return children(button, translated, failure);
   return (
     <Stack data-srs-reader="" gap="xs" align={compact ? "flex-end" : undefined}>
       {translated}
@@ -132,7 +165,11 @@ export function SentenceTranslation({
   label?: string;
   collapsed?: boolean;
   compact?: boolean;
-  children?: (button: ReactNode, translation: ReactNode) => ReactNode;
+  children?: (
+    button: ReactNode,
+    translation: ReactNode,
+    failure: ReactNode,
+  ) => ReactNode;
 }) {
   return (
     <TextTranslation
@@ -156,7 +193,14 @@ export function SentenceTranslation({
           });
       }}
     >
-      {children}
+      {children ||
+        ((button, translation, failure) => (
+          <Stack gap="xs">
+            {translation || <Sentence context={context} language={language} />}
+            {button}
+            {failure}
+          </Stack>
+        ))}
     </TextTranslation>
   );
 }

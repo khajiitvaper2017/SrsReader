@@ -69,7 +69,7 @@ export function WordExamples({
       language={word.language}
       settings={settings}
     >
-      {(translationButton, translation) => (
+      {(translationButton, translation, failure) => (
         <Stack
           data-reading-source-url={example.context.url}
           data-reading-source-title={example.context.title}
@@ -77,7 +77,9 @@ export function WordExamples({
         >
           <Group gap={4} wrap="nowrap" align="flex-start">
             <Box style={{ flex: 1, minWidth: 0 }}>
-              <Sentence context={example.context} language={word.language} />
+              {translation || (
+                <Sentence context={example.context} language={word.language} />
+              )}
             </Box>
             <Group
               gap={4}
@@ -98,7 +100,7 @@ export function WordExamples({
               {translationButton}
             </Group>
           </Group>
-          {translation}
+          {failure}
           {!settings.hideDictionarySources && (
             <Group
               data-srs-reader=""

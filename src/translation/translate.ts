@@ -41,7 +41,11 @@ export async function translateSentence(
   targetLanguage: string,
   progress: (message: string) => void,
 ): Promise<string> {
-  if (sourceLanguage === targetLanguage) return text;
+  console.info("[translation] input", { text, sourceLanguage, targetLanguage });
+  if (sourceLanguage === targetLanguage) {
+    console.info("[translation] same-language response", { text });
+    return text;
+  }
   if (text.length > 30000)
     throw new Error(t("this_sentence_is_too_long_to_translate"));
   const options = { sourceLanguage, targetLanguage };
@@ -75,8 +79,16 @@ export async function translateSentence(
         },
       });
       progress(t("translating"));
-      return await translator.translate(text);
-    } catch {
+      console.info("[translation] browser request", { text, ...options });
+      const response = await translator.translate(text);
+      console.info("[translation] browser response", {
+        text,
+        ...options,
+        response,
+      });
+      return response;
+    } catch (error) {
+      console.warn("[translation] browser failed; using Bergamot", error);
       // Chrome can report a downloadable pair that it cannot create on this device.
     } finally {
       translator?.destroy();
@@ -95,6 +107,7 @@ export async function translateSentence(
       const cache = await caches.open("translation-models");
       const key = `${url}?sha256=${checksum}`;
       const saved = await cache.match(key);
+      console.info("[translation] model cache", { key, hit: !!saved });
       if (saved) return saved.arrayBuffer();
       progress(t("downloading_translation_model"));
       const buffer = await super.fetch(url, checksum, options);
@@ -111,20 +124,24 @@ export async function translateSentence(
     }),
   );
   try {
-    return (
-      await translator.translate({
-        from: sourceLanguage,
-        to: targetLanguage,
-        text,
-        html: false,
-      })
-    ).target.text;
-  } catch {
+    const request: TranslationRequest = {
+      from: sourceLanguage,
+      to: targetLanguage,
+      text,
+      html: false,
+    };
+    console.info("[translation] Bergamot request", request);
+    const response = await translator.translate(request);
+    console.info("[translation] Bergamot response", { request, response });
+    return response.target.text;
+  } catch (error) {
+    console.warn("[translation] Bergamot failed", error);
     throw new Error(
       t("translation_failed", {
         source: languageName(sourceLanguage),
         target: languageName(targetLanguage),
       }),
+      { cause: error },
     );
   } finally {
     await translator.delete();

@@ -254,6 +254,8 @@
   "parse_websites": "Розпізнавати текст на сайтах",
   "parse_websites_automatically": "Автоматично розпізнавати текст на сайтах",
   "personal_definition": "Власне визначення",
+  "custom": "Власне",
+  "show_original": "Показати оригінал",
   "play_audio_on_reveal": "Озвучувати після відкриття відповіді",
   "play_word_pronunciation": "Прослухати вимову слова",
   "press_a_key_or_key_combination": "Натисніть клавішу або комбінацію клавіш.",

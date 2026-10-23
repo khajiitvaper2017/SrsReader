@@ -1,6 +1,6 @@
 import { ActionIcon, Group, Anchor, Badge, Stack, Text } from "@mantine/core";
 import { Structured } from "@/dictionaries/components/StructuredContent";
-import { definitionText } from "@/dictionaries/definitions";
+import { mapDefinitionSenses } from "@/dictionaries/definitions";
 import { useMeanings } from "@/dictionaries/hooks/useMeanings";
 import {
   filterPrepositionSenses,
@@ -87,13 +87,75 @@ export function Meanings({
               )}
             </ActionIcon>
           );
+          const renderTags = (meaning: Meaning) => {
+            const conflicts = grammarConflicts(meaning, grammar);
+            const tagTitle = (tag: string) =>
+              [
+                meaning.tagDescriptions?.[tag] ||
+                  tagDescriptions[`${meaning.dictionaryId}:${tag}`],
+                conflicts[tag],
+              ]
+                .filter(Boolean)
+                .join("\n") || undefined;
+            return (
+              <>
+                {meaningTags(meaning).map((tag, j) =>
+                  onIgnoreTag ? (
+                    <Menu key={j}>
+                      <Menu.Target>
+                        <Button
+                          variant="light"
+                          size="compact-xs"
+                          h={18}
+                          mih={0}
+                          px={4}
+                          py={0}
+                          radius="xl"
+                          data-srs-reader=""
+                          color={conflicts[tag] ? "red" : undefined}
+                          title={tagTitle(tag)}
+                        >
+                          {tag}
+                        </Button>
+                      </Menu.Target>
+
+                      <Menu.Dropdown aria-label={tag} data-srs-reader="">
+                        <Menu.Item onClick={() => onIgnoreTag(tag)}>
+                          <EyeOff aria-hidden="true" size={16} />{" "}
+                          {t("ignore_words_with_tag")}
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  ) : (
+                    <Badge
+                      size="sm"
+                      px={4}
+                      radius="xl"
+                      key={j}
+                      color={conflicts[tag] ? "red" : undefined}
+                      title={tagTitle(tag)}
+                    >
+                      {tag}
+                    </Badge>
+                  ),
+                )}
+              </>
+            );
+          };
           return (
             <Stack key={dictionaryId} gap="xs" data-dictionary={dictionaryId}>
               {!visible.length && (
                 <Group justify="space-between" data-srs-reader>
-                  <Text size="xs" c="dimmed">
-                    {title}
-                  </Text>
+                  <Group gap={4} style={{ flex: 1, minWidth: 0 }}>
+                    <Text size="xs" c="dimmed">
+                      {title}
+                    </Text>
+                    {entries.map((meaning, index) => (
+                      <Group key={index} gap={4}>
+                        {renderTags(meaning)}
+                      </Group>
+                    ))}
+                  </Group>
                   {toggle}
                 </Group>
               )}
@@ -103,18 +165,56 @@ export function Meanings({
                 const definitions = (
                   expanded ? meaning : filtered.get(meaning)!
                 ).definitions;
-                const conflicts = grammarConflicts(meaning, grammar);
-                const tagTitle = (tag: string) =>
-                  [
-                    meaning.tagDescriptions?.[tag] ||
-                      tagDescriptions[`${meaning.dictionaryId}:${tag}`],
-                    conflicts[tag],
-                  ]
-                    .filter(Boolean)
-                    .join("\n") || undefined;
+                const senses: string[] = [];
+                mapDefinitionSenses(definitions, (text) => {
+                  senses.push(text);
+                  return text;
+                });
+                const renderDefinitions = (values: Definition[]) => (
+                  <Stack
+                    data-meaning={index}
+                    data-reading-language={
+                      meaning.dictionaryId === "nechybujte"
+                        ? "cs"
+                        : meaning.dictionaryId === "personal"
+                          ? settings.nativeLanguage
+                          : definitionLanguages[meaning.dictionaryId] || ""
+                    }
+                    gap="xs"
+                    className="dictionary-content"
+                    data-hide-sources={
+                      settings.hideDictionarySources || undefined
+                    }
+                  >
+                    {["nechybujte", "personal"].includes(
+                      meaning.dictionaryId,
+                    ) ? (
+                      <ol data-sc-content="glosses">
+                        {values.map((definition, j) => (
+                          <li key={j}>
+                            <Structured
+                              value={definition}
+                              dictionaryId={meaning.dictionaryId}
+                            />
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      values.map((definition: Definition, j) => (
+                        <Stack key={j} gap="xs">
+                          <Structured
+                            value={definition}
+                            dictionaryId={meaning.dictionaryId}
+                          />
+                        </Stack>
+                      ))
+                    )}
+                  </Stack>
+                );
                 const renderMeaning = (
                   translationButton?: ReactNode,
                   translation?: ReactNode,
+                  failure?: ReactNode,
                 ) => (
                   <Stack key={`${meaning.dictionaryId}:${i}`} gap="xs">
                     <Group
@@ -126,44 +226,10 @@ export function Meanings({
                       <Group gap={4} style={{ flex: 1, minWidth: 0 }}>
                         <Text component="span" size="xs" c="dimmed">
                           {meaning.dictionaryId === "personal"
-                            ? t("personal_definition")
+                            ? t("custom")
                             : meaning.title}
                         </Text>
-                        {meaningTags(meaning).map((tag, j) =>
-                          onIgnoreTag ? (
-                            <Menu key={j}>
-                              <Menu.Target>
-                                <Button
-                                  variant="light"
-                                  size="compact-xs"
-                                  data-srs-reader=""
-                                  color={conflicts[tag] ? "red" : undefined}
-                                  title={tagTitle(tag)}
-                                >
-                                  {tag}
-                                </Button>
-                              </Menu.Target>
-
-                              <Menu.Dropdown
-                                aria-label={tag}
-                                data-srs-reader=""
-                              >
-                                <Menu.Item onClick={() => onIgnoreTag(tag)}>
-                                  <EyeOff aria-hidden="true" size={16} />{" "}
-                                  {t("ignore_words_with_tag")}
-                                </Menu.Item>
-                              </Menu.Dropdown>
-                            </Menu>
-                          ) : (
-                            <Badge
-                              key={j}
-                              color={conflicts[tag] ? "red" : undefined}
-                              title={tagTitle(tag)}
-                            >
-                              {tag}
-                            </Badge>
-                          ),
-                        )}
+                        {renderTags(meaning)}
                       </Group>
                       {((i === 0 && toggle) ||
                         meaningActions ||
@@ -181,46 +247,8 @@ export function Meanings({
                         `[data-meaning="${index}"]`,
                       )}
                     </style>
-                    <Stack
-                      data-meaning={index}
-                      data-reading-language={
-                        meaning.dictionaryId === "nechybujte"
-                          ? "cs"
-                          : meaning.dictionaryId === "personal"
-                            ? settings.nativeLanguage
-                            : definitionLanguages[meaning.dictionaryId] || ""
-                      }
-                      gap="xs"
-                      className="dictionary-content"
-                      data-hide-sources={
-                        settings.hideDictionarySources || undefined
-                      }
-                    >
-                      {["nechybujte", "personal"].includes(
-                        meaning.dictionaryId,
-                      ) ? (
-                        <ol data-sc-content="glosses">
-                          {definitions.map((definition, j) => (
-                            <li key={j}>
-                              <Structured
-                                value={definition}
-                                dictionaryId={meaning.dictionaryId}
-                              />
-                            </li>
-                          ))}
-                        </ol>
-                      ) : (
-                        definitions.map((definition: Definition, j) => (
-                          <Stack key={j} gap="xs">
-                            <Structured
-                              value={definition}
-                              dictionaryId={meaning.dictionaryId}
-                            />
-                          </Stack>
-                        ))
-                      )}
-                    </Stack>
-                    {translation}
+                    {translation || renderDefinitions(definitions)}
+                    {failure}
                     {meaning.attribution &&
                       (!settings.hideDictionarySources ||
                         !(
@@ -252,16 +280,19 @@ export function Meanings({
                   language !== settings.nativeLanguage ? (
                   <TextTranslation
                     compact
-                    key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}`}
-                    text={definitions
-                      .map((definition, index) => {
-                        const text = definitionText(definition)
-                          .replace(/[ \t]+/g, " ")
-                          .trim();
-                        return text ? `${index + 1}. ${text}` : "";
-                      })
-                      .filter(Boolean)
-                      .join("\n")}
+                    key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}:${JSON.stringify(senses)}`}
+                    text={senses}
+                    renderTranslation={(parts) => {
+                      let senseIndex = 0;
+                      return renderDefinitions(
+                        mapDefinitionSenses(definitions, () => ({
+                          tag: "span",
+                          lang: settings.nativeLanguage,
+                          data: { content: "translation" },
+                          content: parts[senseIndex++]!,
+                        })),
+                      );
+                    }}
                     language={language}
                     settings={settings}
                     label={t("translate_definition")}

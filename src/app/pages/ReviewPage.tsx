@@ -143,14 +143,18 @@ export function ReviewPage({
                     />
                     {context && (
                       <Stack gap="xs">
-                        <Sentence context={context} language={word.language} />
-                        {settings.showSentenceTranslation && (
+                        {settings.showSentenceTranslation ? (
                           <SentenceTranslation
                             key={`${word.id}:${example}`}
                             context={context}
                             language={word.language}
                             settings={settings}
                             wordId={word.id}
+                          />
+                        ) : (
+                          <Sentence
+                            context={context}
+                            language={word.language}
                           />
                         )}
                         <Group gap="xs" align="center" justify="space-between">

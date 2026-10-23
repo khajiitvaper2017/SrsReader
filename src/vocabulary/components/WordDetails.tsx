@@ -16,7 +16,6 @@ import { WordExamples } from "@/examples/components/WordExamples";
 import type { Settings } from "@/settings/model";
 import { i18n, number, t } from "@/shared/i18n/i18n";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
-import { Sentence } from "@/vocabulary/components/Sentence";
 import { useWords } from "@/vocabulary/hooks/useWords";
 import {
   Check,
@@ -119,7 +118,6 @@ export function WordDetails({
         />
         {word.contexts.map((context, i) => (
           <Stack key={`${word.id}:${i}`} gap="xs">
-            <Sentence context={context} language={word.language} />
             <SentenceTranslation
               context={context}
               language={word.language}
