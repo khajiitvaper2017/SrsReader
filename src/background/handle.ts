@@ -61,6 +61,7 @@ export async function handle(request: Request) {
       return handleSrs(request, settings);
     case "audio":
     case "audioSources":
+    case "setAudioSources":
       return handleAudio(request, settings);
     case "invalidate":
       await notify();

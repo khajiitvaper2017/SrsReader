@@ -5,13 +5,26 @@ import {
   findPronunciations,
 } from "@/audio/pronunciations";
 import { getAudio } from "@/audio/storage";
+import { notify } from "@/background/events";
+import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
+import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { getWord } from "@/vocabulary/storage";
 
-export const handleAudio = execute;
+export function handleAudio(request: Request, settings: Settings) {
+  return request.action === "setAudioSources"
+    ? srsWrite(async () => execute(request, await getSettings()))
+    : execute(request, settings);
+}
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
+    case "setAudioSources": {
+      const next = { ...settings, audioSources: request.sources };
+      await saveSettings(next);
+      await notify(undefined, "settings");
+      return next;
+    }
     case "audioSources": {
       const [language, lemma, reading] = JSON.parse(request.id) as [
         string,

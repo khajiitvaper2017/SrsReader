@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Group,
   Paper,
   Select,
@@ -8,11 +7,11 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { localVoices } from "@/audio/playback";
 import { languageName } from "@/languages/codes";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import { SortableList } from "@/shared/ui/SortableList";
 import { useEffect, useState } from "react";
 export function AudioSettings({
   settings,
@@ -22,6 +21,7 @@ export function AudioSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
 }) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [saving, setSaving] = useState(false);
   useEffect(() => {
     void localVoices().then(setVoices);
   }, []);
@@ -33,11 +33,21 @@ export function AudioSettings({
     languagePod101: "LanguagePod101",
     forvo: "Forvo",
   };
-  function moveSource(index: number, direction: -1 | 1) {
+  async function saveSources(sources: Settings["audioSources"]) {
+    setSaving(true);
+    try {
+      await update({ audioSources: sources });
+    } finally {
+      setSaving(false);
+    }
+  }
+  function moveSource(id: string, target: string) {
     const sources = [...settings.audioSources];
+    const index = sources.findIndex((source) => source.type === id);
+    const targetIndex = sources.findIndex((source) => source.type === target);
     const [source] = sources.splice(index, 1);
-    sources.splice(index + direction, 0, source!);
-    void update({ audioSources: sources });
+    sources.splice(targetIndex, 0, source!);
+    void saveSources(sources);
   }
   return (
     <Paper>
@@ -76,52 +86,34 @@ export function AudioSettings({
         <Stack gap="xs">
           <Text fw={500}>{t("audio_sources")}</Text>
           <Text variant="supporting">{t("audio_sources_order_help")}</Text>
-          {settings.audioSources.map((source, index) => (
-            <Group key={source.type} wrap="nowrap" justify="space-between">
-              <Switch
-                flex={1}
-                miw={0}
-                label={sourceNames[source.type]}
-                checked={source.enabled}
-                onChange={(event) => {
-                  const enabled = event.target.checked;
-                  void update({
-                    audioSources: settings.audioSources.map((item, i) =>
-                      i === index ? { ...item, enabled } : item,
-                    ),
-                  });
-                }}
-              />
-              <Group gap="xs" wrap="nowrap">
-                <ActionIcon
-                  variant="subtle"
-                  disabled={index === 0}
-                  aria-label={t("move_audio_source_up", {
-                    source: sourceNames[source.type],
-                  })}
-                  title={t("move_audio_source_up", {
-                    source: sourceNames[source.type],
-                  })}
-                  onClick={() => moveSource(index, -1)}
-                >
-                  <ArrowUp aria-hidden="true" size={16} />
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  disabled={index === settings.audioSources.length - 1}
-                  aria-label={t("move_audio_source_down", {
-                    source: sourceNames[source.type],
-                  })}
-                  title={t("move_audio_source_down", {
-                    source: sourceNames[source.type],
-                  })}
-                  onClick={() => moveSource(index, 1)}
-                >
-                  <ArrowDown aria-hidden="true" size={16} />
-                </ActionIcon>
+          <SortableList
+            items={settings.audioSources}
+            getId={(source) => source.type}
+            getLabel={(source) => sourceNames[source.type]}
+            onMove={moveSource}
+            disabled={saving}
+          >
+            {(source, handle) => (
+              <Group wrap="nowrap">
+                {handle}
+                <Switch
+                  flex={1}
+                  miw={0}
+                  label={sourceNames[source.type]}
+                  checked={source.enabled}
+                  disabled={saving}
+                  onChange={(event) => {
+                    const enabled = event.target.checked;
+                    void saveSources(
+                      settings.audioSources.map((item) =>
+                        item.type === source.type ? { ...item, enabled } : item,
+                      ),
+                    );
+                  }}
+                />
               </Group>
-            </Group>
-          ))}
+            )}
+          </SortableList>
         </Stack>
         <Switch
           label={t("normalize_recording_volume")}

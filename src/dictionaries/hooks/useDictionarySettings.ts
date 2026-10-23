@@ -111,22 +111,12 @@ export function useDictionarySettings({
       load();
     });
   }
-  function moveUp(dictionary: Dictionary) {
+  function moveDictionary(id: string, target: string) {
     return void task(async () => {
       await dictionariesClient({
         action: "moveDictionary",
-        id: dictionary.id,
-        direction: "up",
-      });
-      load();
-    });
-  }
-  function moveDown(dictionary: Dictionary) {
-    return void task(async () => {
-      await dictionariesClient({
-        action: "moveDictionary",
-        id: dictionary.id,
-        direction: "down",
+        id,
+        target,
       });
       load();
     });
@@ -202,8 +192,7 @@ export function useDictionarySettings({
     downloadDictionary,
     fileImport,
     setDisplay,
-    moveUp,
-    moveDown,
+    moveDictionary,
     checkForUpdate,
     installUpdate,
     exportDictionary,

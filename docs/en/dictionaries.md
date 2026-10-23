@@ -10,7 +10,7 @@ Open **Settings → Dictionaries**:
 
 Keep Settings open while downloading and importing. You can switch settings tabs while a download or import runs. Once installed, dictionaries work offline.
 
-Use **↑** and **↓** to order dictionaries, including Nechybujte. Higher dictionaries appear first in the popup. Each dictionary has three display options:
+Drag a dictionary by its handle to change the order, including Nechybujte. You can also focus the handle and press Up or Down. Higher dictionaries appear first in the popup. Each dictionary has three display options:
 
 - **Show:** include its entries even when another dictionary has a match.
 - **If needed:** include its entries only when dictionaries above it have no match.

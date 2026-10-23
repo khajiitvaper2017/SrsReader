@@ -10,6 +10,7 @@ import {
   Title,
 } from "@mantine/core";
 import { AudioSettings } from "@/audio/components/AudioSettings";
+import { audioClient } from "@/audio/client";
 import { BackupSettings } from "@/backups/components/BackupSettings";
 import { dictionariesClient } from "@/dictionaries/client";
 import { DictionarySettings } from "@/dictionaries/components/DictionarySettings";
@@ -69,7 +70,14 @@ export function SettingsPage({
     const next = { ...settings, ...patch };
     setSettings(next);
     try {
-      setSettings(await settingsClient({ action: "setSettings", value: next }));
+      setSettings(
+        patch.audioSources
+          ? await audioClient({
+              action: "setAudioSources",
+              sources: patch.audioSources,
+            })
+          : await settingsClient({ action: "setSettings", value: next }),
+      );
       setError("");
     } catch (error) {
       setSettings(settings);

@@ -214,8 +214,6 @@
   "mouse_back": "Кнопка миші «Назад»",
   "mouse_button": "Кнопка миші",
   "mouse_forward": "Кнопка миші «Вперед»",
-  "move_dictionary_down": "Опустити словник нижче",
-  "move_dictionary_up": "Підняти словник вище",
   "native_language": "Рідна мова",
   "nechybujte_online": "Nechybujte (онлайн)",
   "nechybujte_online_help": "Тлумачення чеських слів онлайн. До Nechybujte надсилається лише слово, яке ви шукаєте. Текст сторінки не надсилається.",
@@ -875,7 +873,7 @@
   "udpipe_model_ukrainian-parlamint": "ParlaMint",
   "udpipe_corpus_ukrainian-parlamint": "Стенограми пленарних засідань Верховної Ради України.",
   "audio_source_commons": "Вікісховище / Lingua Libre",
-  "audio_sources_order_help": "Увімкніть потрібні джерела. Стрілками змініть порядок їх використання. Запити до вимкнених джерел не надсилаються. Збережені записи залишаються доступними.",
-  "move_audio_source_up": "Підняти {{source}} вище",
-  "move_audio_source_down": "Опустити {{source}} нижче"
+  "audio_sources_order_help": "Увімкніть потрібні джерела. Запити до вимкнених джерел не надсилаються. Збережені записи залишаються доступними.",
+  "drag_to_reorder_help": "Перетягніть елемент за ручку, щоб змінити порядок. Також можна вибрати ручку клавішею Tab і натискати стрілки вгору чи вниз.",
+  "reorder_item": "Змінити порядок: {{name}}"
 }

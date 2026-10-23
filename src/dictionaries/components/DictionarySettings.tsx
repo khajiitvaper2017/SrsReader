@@ -26,18 +26,12 @@ import { languageName } from "@/languages/codes";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import { SortableList } from "@/shared/ui/SortableList";
 import {
   dictionaryDisplay,
   type DictionaryDisplay,
 } from "@/dictionaries/display";
-import {
-  ArrowDown,
-  ArrowUp,
-  Download,
-  RefreshCw,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { Download, RefreshCw, Trash2, Upload } from "lucide-react";
 export function DictionarySettings({
   settings,
   dictionaries,
@@ -59,8 +53,7 @@ export function DictionarySettings({
     downloadDictionary,
     fileImport,
     setDisplay,
-    moveUp,
-    moveDown,
+    moveDictionary,
     checkForUpdate,
     installUpdate,
     exportDictionary,
@@ -87,11 +80,18 @@ export function DictionarySettings({
             })}
           </Badge>
         </Group>
-        <Stack>
-          {dictionaries.map((dictionary, i) => (
-            <Paper key={dictionary.id} p="sm">
+        <SortableList
+          items={dictionaries}
+          getId={(dictionary) => dictionary.id}
+          getLabel={(dictionary) => dictionary.index.title}
+          onMove={moveDictionary}
+          disabled={busy}
+        >
+          {(dictionary, handle) => (
+            <Paper p="sm">
               <Stack>
                 <Group justify="space-between" align="flex-start">
+                  {handle}
                   <Stack miw={160} style={{ flex: 1 }}>
                     <strong>{dictionary.index.title}</strong>
                     <Text variant="supporting">
@@ -140,24 +140,6 @@ export function DictionarySettings({
                   />
                 </Group>
                 <Group justify="flex-end">
-                  <ActionIcon
-                    disabled={busy || i === 0}
-                    title={t("move_dictionary_up")}
-                    aria-label={t("move_dictionary_up")}
-                    onClick={() => moveUp(dictionary)}
-                    variant="subtle"
-                  >
-                    <ArrowUp aria-hidden="true" size={16} />
-                  </ActionIcon>
-                  <ActionIcon
-                    disabled={busy || i === dictionaries.length - 1}
-                    title={t("move_dictionary_down")}
-                    aria-label={t("move_dictionary_down")}
-                    onClick={() => moveDown(dictionary)}
-                    variant="subtle"
-                  >
-                    <ArrowDown aria-hidden="true" size={16} />
-                  </ActionIcon>
                   {dictionary.index.isUpdatable && (
                     <ActionIcon
                       title={t("check_updates")}
@@ -207,8 +189,8 @@ export function DictionarySettings({
                 </Group>
               </Stack>
             </Paper>
-          ))}
-        </Stack>
+          )}
+        </SortableList>
         <Divider />
         <Text variant="supporting">{t("dictionary_display_help")}</Text>
         <Stack

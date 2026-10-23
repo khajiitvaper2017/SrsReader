@@ -12,7 +12,7 @@ export const requests = [
   z.object({
     action: z.literal("moveDictionary"),
     id: z.string(),
-    direction: z.enum(["up", "down"]),
+    target: z.string(),
   }),
   z.object({ action: z.literal("deleteDictionary"), id: z.string() }),
   z.object({

@@ -35,13 +35,12 @@ export async function reorderDictionary(
       const index = dictionaries.findIndex(
         (dictionary) => dictionary.id === request.id,
       );
-      if (index < 0) throw new Error(t("dictionary_not_found"));
-      const target = index + (request.direction === "up" ? -1 : 1);
-      if (target < 0 || target >= dictionaries.length) return;
-      [dictionaries[index], dictionaries[target]] = [
-        dictionaries[target]!,
-        dictionaries[index]!,
-      ];
+      const target = dictionaries.findIndex(
+        (dictionary) => dictionary.id === request.target,
+      );
+      if (index < 0 || target < 0) throw new Error(t("dictionary_not_found"));
+      const [dictionary] = dictionaries.splice(index, 1);
+      dictionaries.splice(target, 0, dictionary!);
       const currentSettings =
         (await db.settings.get("main"))?.value || settings;
       for (const [order, dictionary] of dictionaries.entries()) {
