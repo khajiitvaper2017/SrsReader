@@ -42,6 +42,7 @@ export function createUITheme(
   popup = false,
 ) {
   const oled = settings.theme === "oled";
+  const controlSize = popup ? "xs" : "md";
   return createTheme({
     primaryColor: "accent",
     primaryShade: 6,
@@ -71,9 +72,22 @@ export function createUITheme(
     },
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    fontSizes: { md: "0.875rem" },
+    fontSizes: popup
+      ? { xs: "0.6875rem", sm: "0.8125rem", md: "0.875rem" }
+      : { md: "0.875rem" },
     defaultRadius: "sm",
     radius: { xs: "0.1875rem", sm: "0.3125rem", md: "0.5rem" },
+    ...(popup
+      ? {
+          headings: {
+            sizes: {
+              h1: { fontSize: "1.5rem" },
+              h2: { fontSize: "1.125rem" },
+              h3: { fontSize: "0.9375rem" },
+            },
+          },
+        }
+      : {}),
     components: {
       ...(popup
         ? {
@@ -84,46 +98,50 @@ export function createUITheme(
         : {}),
       Button: Button.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           variant: "default",
           "data-srs-reader": true,
         },
         styles: {
-          label: { gap: "var(--mantine-spacing-xs)", whiteSpace: "normal" },
+          label: {
+            gap: popup ? 6 : "var(--mantine-spacing-xs)",
+            whiteSpace: "normal",
+          },
           root: {
             height: "auto",
-            minHeight: "var(--button-height)",
-            paddingBlock: "var(--mantine-spacing-xs)",
+            minHeight: popup ? 30 : "var(--button-height)",
+            paddingBlock: popup ? 5 : "var(--mantine-spacing-xs)",
           },
         },
       }),
       ActionIcon: ActionIcon.extend({
         defaultProps: {
+          ...(popup ? { size: "sm" } : {}),
           variant: "subtle",
           color: "gray",
           "data-srs-reader": true,
         },
       }),
-      Input: Input.extend({ defaultProps: { size: "md" } }),
+      Input: Input.extend({ defaultProps: { size: controlSize } }),
       InputWrapper: Input.Wrapper.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           inputWrapperOrder: ["label", "input", "description", "error"],
         },
       }),
       TextInput: TextInput.extend({
-        defaultProps: { size: "md", "data-srs-reader": true },
+        defaultProps: { size: controlSize, "data-srs-reader": true },
       }),
       NumberInput: NumberInput.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           allowDecimal: false,
           "data-srs-reader": true,
         },
       }),
       Textarea: Textarea.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           autosize: true,
           minRows: 3,
           "data-srs-reader": true,
@@ -133,29 +151,36 @@ export function createUITheme(
         defaultProps: { variant: "pills" },
         styles: {
           list: { flexWrap: "wrap" },
-          tab: { fontSize: "var(--mantine-font-size-md)" },
+          tab: {
+            fontSize: popup
+              ? "var(--mantine-font-size-sm)"
+              : "var(--mantine-font-size-md)",
+            ...(popup ? { minHeight: 34 } : {}),
+          },
         },
       }),
       SegmentedControl: SegmentedControl.extend({
-        defaultProps: { size: "md", "data-srs-reader": true },
+        defaultProps: { size: controlSize, "data-srs-reader": true },
         styles: { label: { whiteSpace: "normal" } },
       }),
       NavLink: NavLink.extend({
         defaultProps: { "data-srs-reader": true },
-        styles: {
-          label: { fontSize: "var(--mantine-font-size-md)" },
-          description: { fontSize: "var(--mantine-font-size-xs)" },
-        },
+        styles: popup
+          ? {}
+          : {
+              label: { fontSize: "var(--mantine-font-size-md)" },
+              description: { fontSize: "var(--mantine-font-size-xs)" },
+            },
       }),
       ComboboxDropdown: Combobox.Dropdown.extend({
         defaultProps: { "data-srs-reader": true },
       }),
       NativeSelect: NativeSelect.extend({
-        defaultProps: { size: "md", "data-srs-reader": true },
+        defaultProps: { size: controlSize, "data-srs-reader": true },
       }),
       Select: Select.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           allowDeselect: false,
           maxDropdownHeight: 200,
           comboboxProps: {
@@ -176,7 +201,7 @@ export function createUITheme(
       }),
       ColorInput: ColorInput.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           format: "hex",
           disallowInput: true,
           withEyeDropper: false,
@@ -197,7 +222,7 @@ export function createUITheme(
       }),
       Switch: Switch.extend({
         defaultProps: {
-          size: "md",
+          size: controlSize,
           labelPosition: "left",
           w: "100%",
           "data-srs-reader": true,
@@ -208,13 +233,13 @@ export function createUITheme(
         },
       }),
       Checkbox: Checkbox.extend({
-        defaultProps: { size: "md", "data-srs-reader": true },
+        defaultProps: { size: controlSize, "data-srs-reader": true },
       }),
       Radio: Radio.extend({
-        defaultProps: { size: "md", "data-srs-reader": true },
+        defaultProps: { size: controlSize, "data-srs-reader": true },
       }),
       RadioGroup: Radio.Group.extend({
-        defaultProps: { size: "md" },
+        defaultProps: { size: controlSize },
         styles: {
           description: { marginTop: "var(--mantine-spacing-md)" },
         },
@@ -231,10 +256,14 @@ export function createUITheme(
       }),
       Fieldset: Fieldset.extend({ defaultProps: { p: "sm" } }),
       Badge: Badge.extend({
-        defaultProps: { size: "lg", fz: "xs", variant: "light" },
+        defaultProps: {
+          ...(popup ? { size: "sm" } : { size: "lg", fz: "xs" }),
+          variant: "light",
+        },
       }),
-      Kbd: Kbd.extend({ defaultProps: { size: "md" } }),
+      Kbd: Kbd.extend({ defaultProps: { size: controlSize } }),
       Text: Text.extend({
+        ...(popup ? { defaultProps: { size: "sm" } } : {}),
         styles: (theme, { variant }) => ({
           root:
             variant === "supporting"
@@ -250,7 +279,10 @@ export function createUITheme(
         defaultProps: { variant: "default", chevronSize: 14 },
         styles: {
           control: { paddingInline: 0, paddingBlock: 8 },
-          label: { padding: 0 },
+          label: {
+            padding: 0,
+            ...(popup ? { fontSize: "var(--mantine-font-size-sm)" } : {}),
+          },
           content: { paddingInline: 0 },
         },
       }),

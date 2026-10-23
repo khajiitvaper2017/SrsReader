@@ -104,6 +104,12 @@ export function Meanings({
                       <Menu.Target>
                         <Button
                           variant="light"
+                          size="compact-xs"
+                          h={18}
+                          mih={0}
+                          px={4}
+                          py={0}
+                          radius="xl"
                           data-srs-reader=""
                           color={conflicts[tag] ? "red" : undefined}
                           title={tagTitle(tag)}

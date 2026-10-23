@@ -35,10 +35,11 @@ export function Ratings({
           onClick={() => onGrade(i + 1)}
           variant="light"
           color={["red", "orange", "green", "blue"][i]}
+          h={compact ? 40 : undefined}
           px={4}
           miw={0}
         >
-          <Stack align="center">
+          <Stack gap={compact ? 0 : undefined} align="center">
             <Text span inherit>
               {label}
             </Text>
