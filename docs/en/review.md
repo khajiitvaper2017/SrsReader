@@ -14,7 +14,7 @@ Use **Add language** to keep another language in this list.
 4. Enter a deck name, or leave it empty for an automatic name.
 5. Select **Add frequency deck**.
 
-The deck checks the first N unique entries. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
+The deck checks the first N unique entries that contain letters. Punctuation, symbols, and number-only entries are skipped. These entries are also hidden in existing frequency decks. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
 
 ## Browse words in a deck
 

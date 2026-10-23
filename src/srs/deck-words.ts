@@ -2,6 +2,8 @@ import type { Deck } from "@/srs/deck-model";
 import type { Vocabulary } from "@/vocabulary/model";
 import { t } from "@/shared/i18n/i18n";
 
+export const isFrequencyWord = (term: string) => /\p{L}/u.test(term);
+
 export function studyGroups(words: Vocabulary[], decks: Deck[]) {
   const mined = words.filter((word) => word.mined !== false);
   const assigned = new Set(mined.map((word) => word.id));
@@ -25,9 +27,11 @@ export function wordsInDeck(
   deckId?: string,
 ) {
   if (deckId === "mined") return groups.mined;
-  if (!deckId)
-    return [...groups.mined, ...groups.decks.flatMap((deck) => deck.words)];
-  const deck = groups.decks.find((deck) => deck.id === deckId);
-  if (!deck) throw new Error(t("study_deck_not_found"));
-  return deck.words;
+  const words = !deckId
+    ? [...groups.mined, ...groups.decks.flatMap((deck) => deck.words)]
+    : groups.decks.find((deck) => deck.id === deckId)?.words;
+  if (!words) throw new Error(t("study_deck_not_found"));
+  return words.filter(
+    (word) => word.mined !== false || isFrequencyWord(word.lemma),
+  );
 }

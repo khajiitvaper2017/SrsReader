@@ -8,7 +8,7 @@ import { dailyCounts } from "@/srs/workload";
 import type { Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { snapshot } from "@/vocabulary/snapshot";
-import { studyGroups } from "@/srs/deck-words";
+import { isFrequencyWord, studyGroups, wordsInDeck } from "@/srs/deck-words";
 import { deleteWords } from "@/vocabulary/storage";
 import Dexie from "dexie";
 
@@ -54,15 +54,12 @@ export async function studyOverview(settings: Settings) {
       }
       return {
         language,
-        ...summary([
-          ...groups.mined,
-          ...groups.decks.flatMap((deck) => deck.words),
-        ]),
+        ...summary(wordsInDeck(groups)),
         mined: summary(groups.mined),
         decks: groups.decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
-          ...summary(deck.words),
+          ...summary(wordsInDeck(groups, deck.id)),
         })),
       };
     }),
@@ -124,6 +121,7 @@ export async function createFrequencyDeck(
     )
     .until(() => entries.size >= limit)
     .each((row) => {
+      if (!isFrequencyWord(row.key)) return;
       const key = JSON.stringify([row.key, row.reading]);
       if (!entries.has(key)) entries.set(key, row);
     });
@@ -140,7 +138,9 @@ export async function createFrequencyDeck(
       const result = results
         .get(entry.key)
         ?.words.find(
-          (word) => entry.reading === null || word.reading === entry.reading,
+          (word) =>
+            isFrequencyWord(word.lemma) &&
+            (entry.reading === null || word.reading === entry.reading),
         );
       if (!result?.meanings.length || ids.has(result.id)) continue;
       if (await db.vocabulary.get(result.id)) continue;
