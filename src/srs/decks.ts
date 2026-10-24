@@ -73,7 +73,6 @@ export async function manageStudyDeck(
     [
       db.vocabulary,
       db.decks,
-      db.reviews,
       db.audio,
       db.rwkvMeta,
       db.rwkvEntities,

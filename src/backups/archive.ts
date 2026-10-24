@@ -220,9 +220,15 @@ export async function readLearning(file: File) {
       throw new Error(t("invalid_word_identities_in_learning_archive"));
     if (
       new Set(data.reviews.map((r) => r.id)).size !== data.reviews.length ||
-      data.reviews.some(
-        (r) => !ids.has(r.wordId) || (r.before && r.before.id !== r.wordId),
-      )
+      data.reviews.some((r) => {
+        const identity = z
+          .tuple([z.string(), z.string().min(1), z.string()])
+          .parse(JSON.parse(r.wordId));
+        return (
+          r.wordId !== wordId(...identity) ||
+          (r.before && r.before.id !== r.wordId)
+        );
+      })
     )
       throw new Error(t("invalid_review_references_in_learning_archive"));
     if (

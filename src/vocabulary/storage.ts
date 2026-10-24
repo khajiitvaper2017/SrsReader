@@ -180,7 +180,6 @@ export async function deleteWords(ids: string[]) {
     [
       db.vocabulary,
       db.decks,
-      db.reviews,
       db.audio,
       db.rwkvMeta,
       db.rwkvEntities,
@@ -192,7 +191,6 @@ export async function deleteWords(ids: string[]) {
       await db.decks.toCollection().modify((deck) => {
         deck.wordIds = deck.wordIds.filter((id) => !removed.has(id));
       });
-      await db.reviews.where("wordId").anyOf(ids).delete();
       await db.audio.bulkDelete(ids);
       await invalidateRwkv();
       await db.srsMeta.update("main", { undo: undefined });

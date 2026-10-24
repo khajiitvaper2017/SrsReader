@@ -28,10 +28,10 @@ Use **Language** and **Deck** to browse another group. **All decks** combines mi
 
 Open the three-dot menu at the end of a deck row in **Study**.
 
-- **Clear deck** deletes all words in that deck, their review history, and downloaded recordings. This includes mastered and suspended words. The empty deck remains in the list. Use this action to empty **Mined words**.
+- **Clear deck** deletes all words in that deck and downloaded recordings. This includes mastered and suspended words. The empty deck remains in the list. Use this action to empty **Mined words**.
 - **Delete deck** also removes the frequency deck from the list.
 
-Confirm the action in the dialog. These actions cannot be undone. Cached sentences, dictionaries, and words in other groups are kept. Export **Words & progress** in **Settings → Backups** if you want a copy first.
+Confirm the action in the dialog. These actions cannot be undone. Review history, cached sentences, dictionaries, and words in other groups are kept. Past reviews still count in statistics and daily limits. Export **Words & progress** in **Settings → Backups** if you want a copy first.
 
 ## Sentences from reading
 
@@ -143,7 +143,7 @@ Settings affect future answers. To apply current retention and interval settings
 
 A leech is a word you repeatedly forget. The default threshold is eight lapses. Only Again from normal Review counts as a lapse. Repeated Again during relearning does not add lapses. Choose **Suspend** or **Mark only**. Set the threshold to 0 to disable detection. With threshold eight, detection repeats at 12, 16, and later matching lapses after you resume a word.
 
-Use the **Leeches** filter in **Words** to find marked words. Word details show lapse counts. You can edit definitions, change retention, or delete a word and its history.
+Use the **Leeches** filter in **Words** to find marked words. Word details show lapse counts. You can edit definitions, change retention, or delete a word. Deleting a word keeps its review history.
 
 **Master** excludes a word from SRS while preserving its history. **Unmaster** restores its schedule. **Suspend** pauses review until **Resume**. Neither action resets memory.
 

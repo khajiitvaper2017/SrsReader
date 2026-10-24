@@ -146,7 +146,7 @@ export function useWords({
     if (!word) return;
     if (
       confirm(
-        t("delete_its_review_history_and_its_recording", {
+        t("delete_word_and_recording_confirm", {
           lemma: word.lemma,
         }),
       )
