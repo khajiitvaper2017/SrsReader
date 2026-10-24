@@ -8,11 +8,17 @@ export type ChangeScope =
   | "vocabulary"
   | "settings"
   | "dictionaries"
+  | "dictionaryVisibility"
   | "srs";
 export type ChangeMessage = {
   event: "changed";
   scope: ChangeScope;
-  word?: { id: string; state: WordState };
+  word?: {
+    id: string;
+    state: WordState;
+    hiddenDictionaries?: string[];
+    expandedDictionaries?: string[];
+  };
 };
 export type ParsedMessage = {
   event: "parsed";

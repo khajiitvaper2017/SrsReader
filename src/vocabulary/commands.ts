@@ -168,7 +168,12 @@ async function execute(request: Request, settings: Settings) {
           word.version++;
           word.updated = Date.now();
         });
-      await notify(request.id);
+      await notify(
+        request.id,
+        request.action === "dictionaryVisibility"
+          ? "dictionaryVisibility"
+          : "vocabulary",
+      );
       return;
     case "known": {
       const word = {

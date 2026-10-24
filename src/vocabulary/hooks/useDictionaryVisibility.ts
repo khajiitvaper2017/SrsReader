@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useChanges } from "@/shared/hooks/useChanges";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { Vocabulary } from "@/vocabulary/model";
 
@@ -14,6 +15,17 @@ export function useDictionaryVisibility(
     setHidden(saved?.hiddenDictionaries || []);
     setExpanded(saved?.expandedDictionaries || []);
   }, [wordId, saved?.id, saved?.version]);
+  useChanges(
+    useCallback(
+      ({ word }) => {
+        if (word?.id !== wordId) return;
+        setHidden(word.hiddenDictionaries || []);
+        setExpanded(word.expandedDictionaries || []);
+      },
+      [wordId],
+    ),
+    ["dictionaryVisibility"],
+  );
   async function setView(
     dictionaryId: string,
     view: "hidden" | "matched" | "all",

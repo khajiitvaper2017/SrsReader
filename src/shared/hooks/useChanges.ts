@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { browser } from "wxt/browser";
 
 export function useChanges(
-  callback: () => void,
+  callback: (message: ChangeMessage) => void,
   scopes?: readonly ChangeScope[],
 ) {
   const filter = scopes?.join(",");
@@ -15,7 +15,7 @@ export function useChanges(
           message.scope === "collection" ||
           filter.split(",").includes(message.scope))
       )
-        callback();
+        callback(message);
     };
     browser.runtime.onMessage.addListener(listener);
     return () => browser.runtime.onMessage.removeListener(listener);

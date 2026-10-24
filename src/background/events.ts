@@ -20,16 +20,16 @@ export async function notify(
   scope: ChangeScope = wordId ? "vocabulary" : "collection",
 ) {
   if (!wordId) clearLookupCache();
+  const word = wordId ? await db.vocabulary.get(wordId) : undefined;
   const message: ChangeMessage = {
     scope,
     event: "changed",
     word: wordId
       ? {
           id: wordId,
-          state: stateOf(
-            await db.vocabulary.get(wordId),
-            (await getSettings()).matureIntervalDays,
-          ),
+          state: stateOf(word, (await getSettings()).matureIntervalDays),
+          hiddenDictionaries: word?.hiddenDictionaries,
+          expandedDictionaries: word?.expandedDictionaries,
         }
       : undefined,
   };
