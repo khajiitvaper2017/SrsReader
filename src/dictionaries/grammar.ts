@@ -53,6 +53,29 @@ const tagFeatures = new Map<string, [string, string[]]>(
   ),
 );
 
+export function dictionaryPartsOfSpeech(meanings: Meaning[]): string[] {
+  const parts = meanings.flatMap((meaning) =>
+    meaningTags(meaning).flatMap((tag) => {
+      const explicit = tag.match(/^UPOS=(.+)$/u);
+      if (explicit) return explicit[1]!.split(",");
+      const alias = tag.toLowerCase();
+      const rule = tagFeatures.get(alias);
+      if (rule?.[0] !== "UPOS") return alias === "vr" ? ["VERB"] : [];
+      // Matching aliases include related classes; show their broad dictionary label.
+      const pos = rule[1][0]!;
+      return [pos === "CCONJ" ? "CONJ" : pos];
+    }),
+  );
+  return [...new Set(parts)]
+    .map((pos) =>
+      t(`sentence_grammar.pos.${pos}`, {
+        defaultValue: "",
+        nsSeparator: false,
+      }),
+    )
+    .filter(Boolean);
+}
+
 export function grammarConflicts(
   meaning: Meaning,
   grammar?: OccurrenceGrammar,

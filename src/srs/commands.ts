@@ -91,7 +91,7 @@ async function execute(request: Request, settings: Settings) {
         request.time,
       );
       cacheAudio(word);
-      await notify(word.id);
+      await notify(word.id, request.source === "review" ? "srs" : "vocabulary");
       return result;
     }
     case "undo":

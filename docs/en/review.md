@@ -78,6 +78,7 @@ Open **Settings → Review**.
 - **Use only Again and Good:** hides Hard and Easy. New profiles show all four answers.
 - **Mature interval (days):** default 28. A scheduled interval below this value is Young. An interval at or above it is Mature. This does not depend on the age of the word.
 - **Default card front:** show the word alone or in its sentence.
+- **Show part of speech on card fronts:** enabled by default. Shows the word’s part of speech from its saved dictionary entries. If several are available, they are listed together. Nothing is shown if no part of speech is available. Turn this off to hide the label.
 - **Show sentence translations:** show translations after revealing the answer.
 
 ### Display order

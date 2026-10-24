@@ -14,6 +14,7 @@ import {
 } from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
+import { dictionaryPartsOfSpeech } from "@/dictionaries/grammar";
 import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
 import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 import type { Settings } from "@/settings/model";
@@ -55,6 +56,10 @@ export function ReviewPage({
     reveal,
     undo,
   } = useReviewSession({ settings, deckId });
+  const partsOfSpeech =
+    word && settings.showPartOfSpeech
+      ? dictionaryPartsOfSpeech(word.meanings)
+      : [];
   if (!queue && !error) return <SrsProgress />;
   return (
     <Stack
@@ -132,6 +137,11 @@ export function ReviewPage({
                 {word.reading && (
                   <Text variant="supporting">{word.reading}</Text>
                 )}
+                {partsOfSpeech.length > 0 && (
+                  <Text variant="supporting" data-srs-reader>
+                    {partsOfSpeech.join(" / ")}
+                  </Text>
+                )}
                 {front === "sentence" && !context && (
                   <Text variant="supporting">
                     {t(
@@ -183,6 +193,7 @@ export function ReviewPage({
                     key={word.id}
                     id={word.id}
                     context={context}
+                    contextLoading={sentenceLoading}
                     settings={settings}
                     onError={setError}
                   />

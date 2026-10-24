@@ -50,6 +50,13 @@ export function ReviewSettings({
             />
           </Stack>
           <Switch
+            label={t("show_part_of_speech_on_card_fronts")}
+            checked={settings.showPartOfSpeech}
+            onChange={(event) =>
+              void update({ showPartOfSpeech: event.target.checked })
+            }
+          />
+          <Switch
             label={t("show_sentence_translations")}
             checked={settings.showSentenceTranslation}
             onChange={(event) =>

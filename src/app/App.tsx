@@ -24,7 +24,7 @@ import {
   Settings as SettingsIcon,
   SlidersHorizontal,
 } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
 export function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
@@ -56,6 +56,10 @@ export function App() {
   const reviewing =
     page === "review/session" || page.startsWith("review/session/");
   const reviewLanguage = page.split("/")[2] || settings.studyLanguage;
+  const reviewSettings = useMemo(
+    () => ({ ...settings, studyLanguage: reviewLanguage }),
+    [settings, reviewLanguage],
+  );
   const deckId = reviewing ? page.split("/")[3] : undefined;
   const inSetup = page === "setup" || !settings.setupComplete;
   const setup = inSetup && !docs;
@@ -147,7 +151,7 @@ export function App() {
           ) : reviewing && settings.studyLanguages.includes(reviewLanguage) ? (
             <ReviewPage
               key={`${reviewLanguage}:${deckId || ""}`}
-              settings={{ ...settings, studyLanguage: reviewLanguage }}
+              settings={reviewSettings}
               deckId={deckId}
             />
           ) : (

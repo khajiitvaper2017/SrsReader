@@ -17,17 +17,24 @@ export function CardDefinitions({
   id,
   settings,
   context,
+  contextLoading = false,
   onError,
 }: {
   id: string;
   settings: Settings;
   context?: ReadingContext;
+  /** Wait for sentence selection before looking up definitions. */
+  contextLoading?: boolean;
   onError: (message: string) => void;
 }) {
-  const [result, setResult] = useState<Responses["cardDefinitions"]>();
+  const [loaded, setLoaded] = useState<{
+    context?: ReadingContext;
+    result: Responses["cardDefinitions"];
+  }>();
   const [editing, setEditing] = useState<DefinitionEditing>(null);
   const pending = useRef(0);
   const reload = useCallback(async () => {
+    if (contextLoading) return;
     const request = ++pending.current;
     try {
       const result = await vocabularyClient({
@@ -35,11 +42,11 @@ export function CardDefinitions({
         id,
         context,
       });
-      if (request === pending.current) setResult(result);
+      if (request === pending.current) setLoaded({ context, result });
     } catch (error) {
       if (request === pending.current) onError((error as Error).message);
     }
-  }, [id, context, settings, onError]);
+  }, [id, context, contextLoading, settings, onError]);
   useEffect(() => {
     void reload();
     return () => {
@@ -47,8 +54,9 @@ export function CardDefinitions({
     };
   }, [reload]);
   useChanges(reload, ["vocabulary", "settings", "dictionaries"]);
-  const visibility = useDictionaryVisibility(id, result?.saved, onError);
-  if (!result) return <Loader size="sm" aria-label={t("looking_up")} />;
+  const visibility = useDictionaryVisibility(id, loaded?.result.saved, onError);
+  if (!loaded) return <Loader size="sm" aria-label={t("looking_up")} />;
+  const { result, context: definitionContext } = loaded;
   return (
     <Stack gap="xs">
       <Group justify="flex-end" data-srs-reader>
@@ -63,9 +71,11 @@ export function CardDefinitions({
       </Group>
       <EditableMeanings
         word={result.word}
-        term={result.occurrence ? context!.surface : result.word.lemma}
+        term={
+          result.occurrence ? definitionContext!.surface : result.word.lemma
+        }
         settings={settings}
-        context={context}
+        context={definitionContext}
         occurrence={result.occurrence}
         grammar={result.grammar}
         editing={editing}

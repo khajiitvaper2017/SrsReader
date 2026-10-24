@@ -9,7 +9,10 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
     [],
   );
   const [revision, setRevision] = useState(0);
-  useChanges(useCallback(() => setRevision((value) => value + 1), []));
+  useChanges(
+    useCallback(() => setRevision((value) => value + 1), []),
+    ["dictionaries", "frequency", "settings"],
+  );
   useEffect(() => {
     let alive = true;
     setRows([]);
