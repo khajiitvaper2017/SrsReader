@@ -12,7 +12,7 @@ import { folded } from "@/languages/text";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
 import { db } from "@/platform/database/db";
-import { studyGroups, wordsInDeck } from "@/srs/deck-words";
+import { listWords } from "@/vocabulary/list";
 import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import type { Request } from "@/vocabulary/contracts";
@@ -24,7 +24,6 @@ import {
   deleteDefinition,
   deleteWord,
   getWord,
-  languageWords,
   mine,
   replaceMeanings,
   saveTranslation,
@@ -225,19 +224,8 @@ async function execute(request: Request, settings: Settings) {
       await notify(saved.id);
       return;
     }
-    case "words": {
-      const language = request.language || settings.studyLanguage;
-      const [words, decks] = await Promise.all([
-        languageWords(language),
-        db.decks.where("language").equals(language).toArray(),
-      ]);
-      return wordsInDeck(studyGroups(words, decks), request.deckId)
-        .sort((a, b) => b.updated - a.updated)
-        .map((word) => ({
-          ...word,
-          meanings: applyDefinitionOverrides(word.meanings, word),
-        }));
-    }
+    case "words":
+      return listWords(request, settings);
     case "retentionOverride":
       await setRetentionOverride(request);
       await notify(request.id);

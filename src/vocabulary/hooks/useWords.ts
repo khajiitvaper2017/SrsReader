@@ -2,11 +2,13 @@ import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
-import type { Responses as SrsResponses } from "@/srs/contracts";
-import { folded } from "@/languages/text";
+import { db } from "@/platform/database/db";
+import type { Deck } from "@/srs/deck-model";
+import { useDebouncedValue } from "@mantine/hooks";
+import type { Request } from "@/vocabulary/contracts";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { ReadingContext } from "@/vocabulary/model";
-import { stateOf, type Vocabulary } from "@/vocabulary/model";
+import { type Vocabulary } from "@/vocabulary/model";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useWords({
@@ -20,11 +22,18 @@ export function useWords({
 }) {
   const [contexts, setContexts] = useState<ReadingContext[]>([]);
   const [words, setWords] = useState<Vocabulary[]>([]);
-  const [overview, setOverview] = useState<SrsResponses["studyOverview"]>([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const overview = settings.studyLanguages.map((language) => ({
+    language,
+    decks: decks.filter((deck) => deck.language === language),
+  }));
   const [loading, setLoading] = useState(true);
   const pending = useRef(0);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [query, updateQuery] = useState("");
+  const [filter, updateFilter] =
+    useState<Extract<Request, { action: "words" }>["filter"]>("all");
+  const [total, setTotal] = useState(0);
+  const [search] = useDebouncedValue(query, 150);
   const [selected, setSelected] = useState("");
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -33,18 +42,38 @@ export function useWords({
     detailRef.current?.scrollTo(0, 0);
     detailRef.current?.scrollIntoView({ block: "nearest" });
   }, [selected]);
-  useEffect(() => setPage(1), [query, filter]);
+  function setQuery(value: string) {
+    updateQuery(value);
+    setPage(1);
+  }
+  function setFilter(value: string) {
+    updateFilter(value as typeof filter);
+    setPage(1);
+  }
+  const loadDecks = useCallback(() => {
+    void db.decks
+      .toArray()
+      .then(setDecks)
+      .catch((error) => setError(error.message));
+  }, []);
+  useEffect(loadDecks, [loadDecks]);
+  useChanges(loadDecks, ["collection"]);
   const load = useCallback(() => {
     const request = ++pending.current;
     setLoading(true);
-    void Promise.all([
-      vocabularyClient({ action: "words", language, deckId }),
-      srsClient({ action: "studyOverview" }),
-    ])
-      .then(([words, overview]) => {
+    void vocabularyClient({
+      action: "words",
+      language,
+      deckId,
+      query: search,
+      filter,
+      page,
+    })
+      .then((result) => {
         if (request !== pending.current) return;
-        setWords(words);
-        setOverview(overview);
+        setWords(result.words);
+        setTotal(result.total);
+        setPage(result.page);
         setError("");
       })
       .catch((error) => {
@@ -53,7 +82,7 @@ export function useWords({
       .finally(() => {
         if (request === pending.current) setLoading(false);
       });
-  }, [language, deckId]);
+  }, [language, deckId, search, filter, page]);
   useEffect(() => {
     load();
     return () => {
@@ -67,19 +96,28 @@ export function useWords({
     "dictionaries",
     "collection",
   ]);
-  const search = folded(query.trim(), language);
-  const visible = words.filter(
-    (w) =>
-      folded(`${w.lemma} ${w.reading}`, language).includes(search) &&
-      (filter === "all" ||
-        (filter === "leeches"
-          ? w.leech
-          : stateOf(w, settings.matureIntervalDays) === filter)),
-  );
-  const pages = Math.max(1, Math.ceil(visible.length / 50));
-  const currentPage = Math.min(page, pages);
-  const pageWords = visible.slice((currentPage - 1) * 50, currentPage * 50);
-  const word = visible.find((w) => w.id === selected);
+  const pages = Math.max(1, Math.ceil(total / 50));
+  const [savedWord, setWord] = useState<Vocabulary>();
+  const word =
+    words.find((entry) => entry.id === selected) ||
+    (savedWord?.id === selected ? savedWord : undefined);
+  useEffect(() => {
+    let alive = true;
+    if (!selected) {
+      setWord(undefined);
+      return;
+    }
+    void vocabularyClient({ action: "word", id: selected })
+      .then((value) => {
+        if (alive) setWord(value);
+      })
+      .catch((error) => {
+        if (alive) setError(error.message);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [selected, words]);
   useEffect(() => {
     let alive = true;
     setContexts([]);
@@ -94,12 +132,11 @@ export function useWords({
     return () => {
       alive = false;
     };
-  }, [word]);
+  }, [word?.id, word?.version]);
   async function action(task: () => Promise<unknown>) {
     try {
       setError("");
       await task();
-      load();
     } catch (error) {
       setError((error as Error).message);
     }
@@ -170,11 +207,11 @@ export function useWords({
     setError,
     detailRef,
     word,
-    visible,
+    total,
     overview,
     loading,
-    pageWords,
-    page: currentPage,
+    pageWords: words,
+    page,
     pages,
     setPage,
     action,
