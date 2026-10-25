@@ -346,7 +346,7 @@ function LookupEntry({
           )}
           <ErrorBox error={error} />
           <SrsProgress />
-          {!result && !error && (
+          {(!result || result.onlinePending) && !error && (
             <Text variant="supporting">{t("looking_up")}</Text>
           )}
           {!word && !!result?.words.length && (
