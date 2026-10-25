@@ -30,7 +30,7 @@ import { installedMorphology } from "@/languages/storage";
 import { LookupSettings } from "@/reader/components/LookupSettings";
 import { ReadingSettings } from "@/reader/components/ReadingSettings";
 import { settingsClient } from "@/settings/client";
-import { useSettingsTask } from "@/settings/hooks/useSettingsTask";
+import type { useSettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
@@ -48,16 +48,17 @@ import {
 } from "lucide-react";
 import { WordColors } from "@/settings/components/WordColors";
 import { AppearanceSettings } from "@/settings/components/AppearanceSettings";
-import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 export function SettingsPage({
   settings: preferences,
   setSettings,
+  tasks,
   setup = false,
   tab = "general",
 }: {
   settings: Settings;
   setSettings: (settings: Settings) => void;
+  tasks: ReturnType<typeof useSettingsTask>;
   setup?: boolean;
   tab?: string;
 }) {
@@ -80,17 +81,7 @@ export function SettingsPage({
     () => ({ ...preferences, studyLanguage: selectedLanguage }),
     [preferences, selectedLanguage],
   );
-  const tasks = useSettingsTask();
-  const {
-    error,
-    setError,
-    notice,
-    setNotice,
-    busy,
-    setBusy,
-    progress,
-    setProgress,
-  } = tasks;
+  const { setError, busy, setBusy, setProgress } = tasks;
   const languageData = useLanguageData(settings.studyLanguage, tasks);
   const load = useCallback(() => {
     void dictionariesClient({ action: "dictionaries" })
@@ -204,14 +195,6 @@ export function SettingsPage({
         <Title order={1}>{t(setup ? "setup" : "settings")}</Title>
         {setup && <Text variant="supporting">{t("settings_setup_intro")}</Text>}
       </Stack>
-      <TaskAlerts
-        busy={busy}
-        progress={progress}
-        error={error}
-        notice={notice}
-        onDismissError={() => setError("")}
-        onDismissNotice={() => setNotice("")}
-      />
       {(setup ||
         ["reading", "dictionaries", "review", "audio"].includes(selected)) &&
         languages.length > 0 && (

@@ -20,9 +20,9 @@ Open **Settings → Dictionaries**:
 - **Frequency:** choose a corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
 - **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Choose **Language-specific settings** first if the ZIP lacks language information.
 
-Keep Settings open while downloading and importing. You can switch settings tabs while a download or import runs. A floating alert in the lower-right corner shows the current step and progress. When the total is known, it also estimates the time left in that step. Completion and errors appear in the same place. Use the close button to dismiss a result. Once installed, dictionaries work offline.
+Dictionary downloads and imports run in the background while the browser is open. You can close the SrsReader app tab and reopen it later. Switching app pages, settings tabs, or browser tabs does not stop the task. A floating alert shows progress on every app page. Reopening SrsReader restores the current progress or the result. When the total is known, the alert estimates the time left in the current step. Use the close button to dismiss a result. Once installed, dictionaries work offline.
 
-The same alerts show progress and results for example sentences, word-form data, and backups in Settings. Study actions also show floating alerts.
+Example sentences and word-form data also download and import in the background. Backup operations and study actions use the same floating alerts. Keep the app tab open during backup operations.
 
 Drag a dictionary by its handle to change the order, including online dictionaries. You can also focus the handle and press Up or Down. Higher dictionaries appear first in the popup. Each vocabulary dictionary has three display options:
 

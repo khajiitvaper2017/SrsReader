@@ -25,9 +25,11 @@ import type {
 } from "@/srs/engines/rwkv/records";
 import type { Review, SrsMeta } from "@/srs/history";
 import type { Vocabulary } from "@/vocabulary/model";
+import type { ImportTask } from "@/imports/model";
 import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
+  importTasks!: Table<ImportTask, string>;
   immersionWords!: Table<ImmersionWord, string>;
   immersionPassages!: Table<ImmersionPassage, string>;
   sentences!: Table<CachedSentence, string>;

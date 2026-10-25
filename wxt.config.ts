@@ -70,7 +70,11 @@ export default defineConfig({
     ...(browser === "chrome" ? { minimum_chrome_version: "125" } : {}),
     default_locale: "en",
     description: "__MSG_extensionDescription__",
-    permissions: ["storage", "unlimitedStorage"],
+    permissions: [
+      "storage",
+      "unlimitedStorage",
+      ...(browser === "chrome" ? ["offscreen" as const] : []),
+    ],
     content_security_policy: {
       extension_pages:
         "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",

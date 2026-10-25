@@ -10,10 +10,14 @@ import { handleSettings } from "@/settings/commands";
 import { getSettings } from "@/settings/store";
 import { handleSrs } from "@/srs/commands";
 import { handleVocabulary } from "@/vocabulary/commands";
+import { handleImports } from "@/imports/commands";
 
 export async function handle(request: Request) {
   const settings = await getSettings();
   switch (request.action) {
+    case "runImport":
+    case "closeImportHost":
+      return handleImports(request.action);
     case "settings":
     case "setSettings":
       return handleSettings(request, settings);

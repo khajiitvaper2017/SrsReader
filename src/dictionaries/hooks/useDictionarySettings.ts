@@ -1,16 +1,15 @@
 import { exportImmersionDictionary } from "@/dictionaries/immersion";
 import { dictionariesClient } from "@/dictionaries/client";
-import ImportWorker from "@/dictionaries/import.worker?worker";
+import { startImport } from "@/imports/client";
 import { checkUpdate } from "@/dictionaries/management";
 import type { Dictionary } from "@/dictionaries/model";
 import { dictionaryArchive } from "@/dictionaries/storage";
-import { rpc } from "@/platform/messaging/send";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
-import { readDownload, saveBlob } from "@/shared/download";
+import { saveBlob } from "@/shared/download";
 import { i18n, t } from "@/shared/i18n/i18n";
 import type { DictionaryDisplay, DictionaryRole } from "@/dictionaries/display";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export function useDictionarySettings({
   settings,
@@ -25,48 +24,26 @@ export function useDictionarySettings({
     busy,
     progressTarget,
     setProgressTarget,
-    setProgress,
     setNotice,
     run: task,
   } = tasks;
   const [updates, setUpdates] = useState<
     Record<string, { revision: string; url: string } | null>
   >({});
-  const worker = useRef<Worker | undefined>(undefined);
   const fileInput = useRef<HTMLInputElement>(null);
-  useEffect(() => () => worker.current?.terminate(), []);
   async function importZip(
     blob: Blob,
     expectedId?: string,
     language: string = settings.studyLanguage,
   ) {
     setProgressTarget("dictionary");
-    setProgress({ phase: t("importing"), done: 0, total: 0 });
-    await new Promise<void>((resolve, reject) => {
-      const current = new ImportWorker();
-      worker.current = current;
-      current.onmessage = (event) => {
-        if (event.data.progress) setProgress(event.data.progress);
-        if (event.data.error || event.data.dictionary) {
-          current.terminate();
-          worker.current = undefined;
-          if (event.data.error) reject(new Error(event.data.error));
-          else resolve();
-        }
-      };
-      current.onerror = (event) => {
-        current.terminate();
-        worker.current = undefined;
-        reject(new Error(event.message || t("dictionary_import_failed")));
-      };
-      current.postMessage({
-        blob,
-        language,
-        expectedId,
-        locale: i18n.language,
-      });
+    await startImport({
+      type: "dictionary",
+      blob,
+      language,
+      expectedId,
+      locale: i18n.language,
     });
-    await rpc({ action: "invalidate" });
     load();
     setNotice(t("dictionary_imported"));
   }
@@ -77,22 +54,14 @@ export function useDictionarySettings({
   ) {
     await task(async () => {
       setProgressTarget("dictionary");
-      setProgress({
-        phase: t("downloading_dictionary", { title }),
-        done: 0,
-        total: 0,
+      await startImport({
+        type: "dictionary",
+        url,
+        language,
+        title,
+        locale: i18n.language,
       });
-      const response = await fetch(url, { credentials: "omit" });
-      if (!response.ok)
-        throw new Error(
-          t("dictionary_download_failed", { status: response.status }),
-        );
-      const blob = await readDownload(
-        response,
-        t("downloading_dictionary", { title }),
-        setProgress,
-      );
-      await importZip(blob, undefined, language);
+      load();
     });
   }
   async function fileImport(file: File | undefined) {
@@ -140,21 +109,15 @@ export function useDictionarySettings({
   function installUpdate(dictionary: Dictionary) {
     return void task(async () => {
       setProgressTarget("dictionary");
-      const phase = t("downloading_dictionary", {
+      await startImport({
+        type: "dictionary",
+        url: updates[dictionary.id]!.url,
+        language: settings.studyLanguage,
         title: dictionary.index.title,
+        expectedId: dictionary.id,
+        locale: i18n.language,
       });
-      setProgress({ phase, done: 0, total: 0 });
-      const response = await fetch(updates[dictionary.id]!.url, {
-        credentials: "omit",
-      });
-      if (!response.ok)
-        throw new Error(
-          t("dictionary_download_failed", {
-            status: response.status,
-          }),
-        );
-      const blob = await readDownload(response, phase, setProgress);
-      await importZip(blob, dictionary.id);
+      load();
       setUpdates((u) => ({ ...u, [dictionary.id]: null }));
     });
   }

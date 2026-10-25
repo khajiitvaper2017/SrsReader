@@ -13,9 +13,11 @@ import { WordsPage } from "@/app/pages/WordsPage";
 import { SearchPage } from "@/app/pages/SearchPage";
 import { stopAudio } from "@/audio/playback";
 import { useSettings } from "@/settings/hooks/useSettings";
+import { useSettingsTask } from "@/settings/hooks/useSettingsTask";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { Logo } from "@/shared/ui/Logo";
+import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { srsClient } from "@/srs/client";
 import {
   BookMarked,
@@ -29,6 +31,7 @@ const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
 export function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
   const [settings, setSettings] = useSettings();
+  const tasks = useSettingsTask();
   const [stats, setStats] = useState<{
     total: number;
     due: number;
@@ -132,11 +135,17 @@ export function App() {
               <DocsPage topic={page.split("/")[1] || "getting-started"} />
             </React.Suspense>
           ) : setup ? (
-            <SettingsPage settings={settings} setSettings={setSettings} setup />
+            <SettingsPage
+              settings={settings}
+              setSettings={setSettings}
+              tasks={tasks}
+              setup
+            />
           ) : page === "settings" || page.startsWith("settings/") ? (
             <SettingsPage
               settings={settings}
               setSettings={setSettings}
+              tasks={tasks}
               tab={page.split("/")[1]}
             />
           ) : page === "words" || page.startsWith("words/") ? (
@@ -159,6 +168,20 @@ export function App() {
           )}
         </Container>
       </AppShell.Main>
+      <TaskAlerts
+        busy={tasks.busy}
+        progress={tasks.progress}
+        error={tasks.error}
+        notice={tasks.notice}
+        onDismissError={() => {
+          tasks.setError("");
+          void tasks.dismissImport();
+        }}
+        onDismissNotice={() => {
+          tasks.setNotice("");
+          void tasks.dismissImport();
+        }}
+      />
     </AppShell>
   );
 }

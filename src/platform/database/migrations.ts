@@ -162,4 +162,5 @@ export function installMigrations(database: Dexie) {
     immersionPassages: "id, dictionaryId",
   });
   database.version(12).stores({ spanishdict: "term" });
+  database.version(13).stores({ importTasks: "id" });
 }
