@@ -104,7 +104,7 @@ export function createPopup(
     ) as HTMLElement;
     for (
       let parent: Element | null = anchor;
-      parent;
+      parent && parent !== document.scrollingElement;
       parent = parent.parentElement
     ) {
       const style = getComputedStyle(parent);
