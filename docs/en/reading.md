@@ -43,7 +43,9 @@ The choice applies to all dictionaries for that language, on websites and in sca
 
 New text, including added subtitle words, is processed separately. Existing colors stay visible while results load. Menu and toolbar changes do not trigger a text lookup.
 
-Parsing detects text in any language in **Settings → General → Studied languages**. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
+Automatic scanning detects text in any language in **Settings → General → Studied languages**. Local word and script hints help identify short passages in common study languages, including English, Spanish, French, German, Italian, Portuguese, Dutch, Nordic and Central European languages, Russian, Ukrainian, Latin, Greek, Turkish, Arabic, Hebrew, Japanese, Korean, and Chinese. Longer or uncertain passages can use the browser’s language detector. Detection does not download a language model. Ambiguous text can use the page language; other languages and text with no known language are skipped by automatic scanning.
+
+Your lookup control also works on text that has not been scanned, while scanning is loading, and inside dictionary popups with automatic scanning turned off. Lookup reads the word or selected phrase directly and keeps its sentence as context. If the language is still uncertain, it uses the page language or your first studied language. Paused or disabled sites remain inactive. Protected browser pages, editable fields, image text, and PDF viewers are not supported.
 
 ## Grammar analysis with UDPipe
 

@@ -102,7 +102,13 @@ export function installReaderInput(
       timer = setTimeout(
         () =>
           void popup
-            .show(word.term, word.range, word.context)
+            .show(
+              word.term,
+              word.range,
+              word.context,
+              word.occurrence,
+              word.focusRanges,
+            )
             .catch(console.warn),
         260,
       );

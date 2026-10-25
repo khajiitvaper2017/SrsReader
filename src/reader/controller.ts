@@ -92,9 +92,7 @@ export function startReader(
     input.cancel();
     active =
       settings.setupComplete &&
-      (options.onLookup
-        ? settings.scanPopups
-        : isWebsiteEnabled(settings, location.hostname));
+      (!!options.onLookup || isWebsiteEnabled(settings, location.hostname));
     console.info("[SrsReader] Reader configured", {
       context: options.onLookup ? "popup" : "page",
       active,
