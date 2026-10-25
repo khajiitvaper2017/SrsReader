@@ -163,4 +163,8 @@ export function installMigrations(database: Dexie) {
   });
   database.version(12).stores({ spanishdict: "term" });
   database.version(13).stores({ importTasks: "id" });
+  database.version(14).stores({
+    entries: "id, revisionId, [revisionId+folded]",
+    entryMatches: "id, [revisionId+folded]",
+  });
 }

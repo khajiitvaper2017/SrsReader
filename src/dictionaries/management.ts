@@ -27,6 +27,7 @@ const tagSchema = z.tuple([
   z.string(),
   z.number(),
 ]);
+const singleLatinWord = /^[\p{Script=Latin}\p{M}\p{Nd}]+$/u;
 export async function removeRevision(id: string) {
   await db.transaction(
     "rw",
@@ -41,7 +42,7 @@ export async function removeRevision(id: string) {
     ],
     async () => {
       await db.entries.where("revisionId").equals(id).delete();
-      await db.entryMatches.where("revisionId").equals(id).delete();
+      await db.entryMatches.where(":id").startsWith(`${id}:`).delete();
       await db.frequencies.where("revisionId").equals(id).delete();
       await db.tags.where("revisionId").equals(id).delete();
       await db.dictionaryMedia.where("revisionId").equals(id).delete();
@@ -144,26 +145,33 @@ async function importRevision(
               sequence,
             };
           });
-        await db.transaction("rw", [db.entries, db.entryMatches], async () => {
-          await db.entries.bulkAdd(batch);
-          await db.entryMatches.bulkAdd(batch.map(entryMatch));
-        });
         const phrases = batch.flatMap((entry) => {
-          const segments = [...segmenter.segment(entry.folded)].filter(
-            (s) => s.isWordLike,
-          );
-          return segments.length > 1
-            ? [
+          if (singleLatinWord.test(entry.folded)) return [];
+          let first: string | undefined;
+          for (const segment of segmenter.segment(entry.folded)) {
+            if (!segment.isWordLike) continue;
+            if (first !== undefined)
+              return [
                 {
                   id: `${revisionId}:${entry.folded}`,
                   revisionId,
-                  first: segments[0]!.segment,
+                  first,
                   text: entry.folded,
                 },
-              ]
-            : [];
+              ];
+            first = segment.segment;
+          }
+          return [];
         });
-        await db.phrases.bulkPut(phrases);
+        await db.transaction(
+          "rw",
+          [db.entries, db.entryMatches, db.phrases],
+          async () => {
+            await db.entries.bulkAdd(batch);
+            await db.entryMatches.bulkAdd(batch.map(entryMatch));
+            if (phrases.length) await db.phrases.bulkPut(phrases);
+          },
+        );
         progress({
           phase: t("reading", { filename: file.filename }),
           done: bankNumber + Math.min(offset + 1000, rows.length) / rows.length,
