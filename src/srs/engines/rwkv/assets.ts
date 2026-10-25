@@ -7,18 +7,18 @@ import {
 import { BlobReader, Uint8ArrayWriter, ZipReader } from "@zip.js/zip.js";
 
 const release =
-  "https://github.com/JSchoreels/anki-rwkv/releases/download/small-model-sm55-2026-10-22/sm55-package.zip";
+  "https://github.com/JSchoreels/anki-rwkv/releases/download/small-model-sm56-2026-10-24/sm56-package.zip";
 
 const archiveHash =
-  "3e7e43dbe7ef9d9e4d230c743695234964198b4ab7eb5d258a32d9cd932bd622";
+  "7b1790f49fdabf1279510247cc9bc3bf3ac461b67cf0135ab8e51589b5efe71a";
 
 export const weightHash =
-  "5e6a6ff69d9a3c0eba7dd167206c0a633d254cc5cad74e9bfb99b531d620a4be";
+  "479b3e2bc6a1c900ba8a4a45d629965c6df2a20cc8ff294583f5aeaeea3b4fdd";
 
 export const specHash =
   "9bd41f1189dc0113277d371223ce805612aaec07101804160fe86312eed15de3";
 
-export const cacheName = "srs-reader-rwkv-sm55";
+export const cacheName = "srs-reader-rwkv-sm56";
 
 export const assetUrl = (file: string) => `${release}/${file}`;
 
@@ -51,7 +51,7 @@ export async function downloadModel() {
       ["weights.int8.bin", weightHash],
       ["architecture.json", specHash],
     ]) {
-      const entry = entries.find((entry) => entry.filename === `sm55/${file}`);
+      const entry = entries.find((entry) => entry.filename === `sm56/${file}`);
       if (!entry || entry.directory || !entry.getData)
         throw new Error(t("rwkv_invalid_package"));
       const bytes = await entry.getData(new Uint8ArrayWriter());

@@ -34,6 +34,7 @@ export const reviewSchema = z.object({
     "ts-fsrs@5.4.2/FSRS-6",
     "rwkv-sm40v2-w8-s8",
     "rwkv-sm55-w8-s8",
+    "rwkv-sm56-w8-s8",
   ]),
   sequence: z.number().int().nonnegative().default(0),
   active: z.boolean().default(true),

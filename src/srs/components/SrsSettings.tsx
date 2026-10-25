@@ -138,7 +138,7 @@ export function SrsSettings({
         disabled={busy}
         data={[
           { value: "fsrs", label: "FSRS-6 (ts-fsrs 5.4.2)" },
-          { value: "rwkv", label: "RWKV w64 (SM55)" },
+          { value: "rwkv", label: "RWKV w64 (SM56)" },
         ]}
         onChange={(algorithm) => {
           if (
