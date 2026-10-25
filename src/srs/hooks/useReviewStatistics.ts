@@ -3,17 +3,16 @@ import { srsClient } from "@/srs/client";
 import type { ReviewStatistics } from "@/srs/statistics";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useReviewStatistics(language: string) {
+export function useReviewStatistics() {
   const [year, setYear] = useState<number>();
   const revision = useRef(0);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ReviewStatistics>();
   const [error, setError] = useState("");
-  useEffect(() => setData(undefined), [language]);
   const load = useCallback(() => {
     const current = ++revision.current;
     setLoading(true);
-    void srsClient({ action: "reviewStats", language, year })
+    void srsClient({ action: "reviewStats", year })
       .then((value) => {
         if (current !== revision.current) return;
         setData(value);
@@ -25,7 +24,7 @@ export function useReviewStatistics(language: string) {
       .finally(() => {
         if (current === revision.current) setLoading(false);
       });
-  }, [year, language]);
+  }, [year]);
   useEffect(() => {
     load();
     const timer = setInterval(load, 60000);

@@ -102,10 +102,7 @@ async function execute(request: Request, settings: Settings) {
     case "preview":
       return preview(await getWord(request.id), request.durationMs, request.id);
     case "reviewStats":
-      return reviewStatistics(
-        { ...settings, studyLanguage: request.language },
-        request.year,
-      );
+      return reviewStatistics(settings, request.year);
     case "stats": {
       const words = (
         await Promise.all(settings.studyLanguages.map(languageWords))

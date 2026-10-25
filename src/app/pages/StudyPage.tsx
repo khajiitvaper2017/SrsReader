@@ -27,7 +27,6 @@ import { srsClient } from "@/srs/client";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
 import type { Responses } from "@/srs/contracts";
 import {
-  BookOpen,
   Eraser,
   List,
   MoreHorizontal,
@@ -224,7 +223,7 @@ export function StudyPage({
           {t("study_overview_help")}
         </Text>
       </Paper>
-      <ReviewStatistics settings={settings} />
+      <ReviewStatistics />
       <Modal
         opened={modal !== null}
         onClose={() => {
@@ -392,11 +391,7 @@ function StudyRows({
           style={{ cursor: busy || !deck.total ? "default" : "pointer" }}
         >
           <Table.Td pl={deck.id ? "xl" : undefined}>
-            <Button
-              variant="transparent"
-              leftSection={!deck.id ? <BookOpen size={16} /> : undefined}
-              disabled={busy || !deck.total}
-            >
+            <Button variant="transparent" disabled={busy || !deck.total}>
               {deck.name}
             </Button>
           </Table.Td>

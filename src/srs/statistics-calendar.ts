@@ -23,13 +23,7 @@ export function calendarStatistics(
     if (entry) entry.studied = review.count;
   }
   for (const word of words) {
-    if (
-      word.language !== settings.studyLanguage ||
-      word.known ||
-      word.suspended ||
-      !word.card ||
-      word.card.state === 0
-    )
+    if (word.known || word.suspended || !word.card || word.card.state === 0)
       continue;
     const day = Math.max(today, studyDay(word.card.due, settings.rolloverHour));
     const entry = days[day - start];

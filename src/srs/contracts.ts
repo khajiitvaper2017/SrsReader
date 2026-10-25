@@ -62,7 +62,6 @@ export const requests = [
   z.object({ action: z.literal("stats") }),
   z.object({
     action: z.literal("reviewStats"),
-    language: languageSchema,
     year: z.number().int().min(1970).max(9998).optional(),
   }),
 ] as const;

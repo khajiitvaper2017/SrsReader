@@ -45,9 +45,6 @@ export const reviewSchema = z.object({
 });
 
 export type Review = z.infer<typeof reviewSchema>;
-export type ReviewSummary = Pick<Review, "time" | "rating" | "durationMs"> & {
-  state: number;
-};
 
 export type SrsMeta = {
   id: string;

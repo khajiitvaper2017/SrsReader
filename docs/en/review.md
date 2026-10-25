@@ -62,15 +62,11 @@ Open **Settings → Controls → Review controls**. Each action has one binding.
 
 Number keys work on the main keyboard and numeric keypad. In study sessions, **Show answer / Grade Good** reveals the answer first and grades Good on the next press. In lookup popups, the answer is already visible, so it grades Good. **Undo** restores the latest review. Bindings do not run while you use an input, button, link, menu, or dialog. Holding a key does not repeat the action. **Use only Again and Good** disables the Hard and Easy bindings.
 
-## Queue counts, statistics, and upcoming reviews
+## Queue counts and review calendar
 
 The review header shows New, Learning, Relearning, and Review cards ready in the current queue. Learning and Relearning include cards available through learn-ahead. A note shows how many are available early. The card badge shows its current phase. Reviewed today counts answers, including repetitions of the same card and ratings while reading.
 
-Choose **Statistics language** below the language list to view one language’s figures. The yearly calendar shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history for this language. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
-
-Open **Statistics** below the calendar to see saved-word counts and results for the last 30 study days. Recall measures successful answers on normal Review cards. It excludes learning, relearning, and undone answers. Study time includes only answers with a recorded duration.
-
-Open **Upcoming reviews** and choose **7 days** or **30 days**. The forecast counts each active scheduled card once at its current due date. Overdue cards appear under today. New, mastered, and suspended cards are excluded. The forecast does not apply daily limits or predict additional repetitions after future answers. All dates use your study-day rollover.
+The yearly calendar below the language list includes all languages. It shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history across all languages. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
 
 ## Scheduling
 
