@@ -2,9 +2,21 @@ import { languagesClient } from "@/languages/client";
 import { languageCode } from "@/languages/codes";
 import type { Detector } from "@/platform/browser-ai";
 import { ai } from "@/platform/browser-ai";
+import { guessLanguage } from "@/languages/guess";
 
 let detector: Promise<Detector> | undefined;
 const cache = new Map<string, string | null>();
+
+// Synchronous lookup uses the same guesses as scanning, without waiting for IPC.
+export function knownLanguage(text: string) {
+  const sample = languageSample(text);
+  const language = cache.get(sample) || guessLanguage(sample);
+  if (language) {
+    cache.set(sample, language);
+    if (cache.size > 500) cache.delete(cache.keys().next().value!);
+  }
+  return language;
+}
 
 export function languageSample(text: string) {
   const trimmed = text.trim();
@@ -36,11 +48,12 @@ export async function detectLanguages(
   const samples = texts.map(languageSample);
   for (const sample of new Set(samples)) {
     if (cache.has(sample)) continue;
-    if (/[řěů]/iu.test(sample.normalize("NFC"))) cache.set(sample, "cs");
+    const guess = guessLanguage(sample);
+    if (guess) cache.set(sample, guess);
   }
   const missing = [
     ...new Set(
-      samples.filter((sample) => sample.length >= 120 && !cache.has(sample)),
+      samples.filter((sample) => sample.length >= 40 && !cache.has(sample)),
     ),
   ];
   if (missing.length) {
