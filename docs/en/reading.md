@@ -34,7 +34,7 @@ Under **Settings → Reading → Word colors**, choose text or background colors
 
 **Settings → Reading → Parse websites automatically** starts parsing on websites by default. It is on by default. Turn it off to choose sites manually. In the extension toolbar, use **Enabled on [site]** to turn parsing on or off for the current site. Your choice is saved for that hostname and applies to all its pages. Sites you enable manually stay enabled when automatic parsing is off. Sites you disable stay disabled when automatic parsing is on. The toolbar also has the automatic parsing switch. Dictionary popups use the separate **Scan dictionary popups** setting.
 
-Under **Settings → Reading**, choose a language in **Language-specific settings**, then select **Load and color words**:
+Under **Settings → Reading**, select a language tab, then select **Load and color words**:
 
 - **Automatic** (default): color local words first and update online words as their entries arrive. All dictionaries follow their **Show**, **If needed**, and **Hide** settings. Cached entries are reused.
 - **When opened**: load and color words only when you open them with a lookup control. Other words stay uncolored, including words in installed dictionaries or the cache.
@@ -51,7 +51,7 @@ Your lookup control also works on text that has not been scanned, while scanning
 
 Open **Settings → Reading → Use UDPipe** to enable grammar analysis in context. It is off by default. The switch is available when UDPipe supports at least one studied language. It applies to all supported studied languages. SrsReader selects the model for that language automatically. Firefox also asks for permission to send website content. Without that permission, parsing stays local.
 
-Under **Settings → Reading**, choose a language in **Language-specific settings**, then use **UDPipe model** to choose the corpus that best matches your reading. Each option shows the corpus name and its main text types. The default favors fiction or literary text. Some default corpora also contain other text types. Your choice is saved separately for each study language.
+Under **Settings → Reading**, select a language tab, then use **UDPipe model** to choose the corpus that best matches your reading. Each option shows the corpus name and its main text types. The default favors fiction or literary text. Some default corpora also contain other text types. Your choice is saved separately for each study language.
 
 The selector appears for these languages:
 

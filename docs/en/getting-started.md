@@ -1,13 +1,15 @@
 # Getting started
 
 1. Add one or more **Studied languages** and confirm your **Native language**. The native language is suggested from your browser and is used for translations.
-2. Under **Dictionaries**, use **Language-specific settings** to choose a language and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
+2. Under **Dictionaries**, select a language tab and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
 3. Choose a lookup control, such as **Middle mouse** or **Shift + hover**. None is selected by default.
 4. Choose **Finish setup**. Available word forms and example sentences download for each studied language.
 
 Open a website, use your lookup control on a word, and choose **Mine word**. Open **Review** to study saved words.
 
 Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as native language**; other native languages use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
+
+Select a settings section first, then a language tab below it. The address keeps the selected section, language, and dictionary type. Reload the page or use Back and Forward to return to that selection.
 
 The **Studied languages** list shows supported features below each language: grammar analysis with UDPipe, extra word forms, the Nechybujte online dictionary, and downloadable example sentences. Languages with more features appear first. Languages with the same number of features are in alphabetical order for your interface language. Labels show support even if a feature is disabled or its data has not been downloaded. Text-to-speech depends on voices installed on your device and does not affect the order.
 

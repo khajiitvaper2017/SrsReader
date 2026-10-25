@@ -51,7 +51,9 @@ const SearchPage = React.lazy(() =>
 );
 const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
 export function App() {
-  const [page, setPage] = useState(location.hash.slice(1) || "review");
+  const [hash, setHash] = useState(location.hash.slice(1) || "review");
+  const [page = "review", query] = hash.split("?");
+  const params = new URLSearchParams(query);
   const [settings, setSettings] = useSettings();
   const tasks = useSettingsTask();
   const [stats, setStats] = useState<{
@@ -71,7 +73,7 @@ export function App() {
   }, [loadStats]);
   useEffect(() => {
     const hash = () => {
-      setPage(location.hash.slice(1) || "review");
+      setHash(location.hash.slice(1) || "review");
       stopAudio();
     };
     addEventListener("hashchange", hash);
@@ -162,6 +164,8 @@ export function App() {
                 settings={settings}
                 setSettings={setSettings}
                 tasks={tasks}
+                language={params.get("language") || undefined}
+                dictionaryTab={params.get("dictionary") || undefined}
                 setup
               />
             ) : page === "settings" || page.startsWith("settings/") ? (
@@ -170,6 +174,8 @@ export function App() {
                 setSettings={setSettings}
                 tasks={tasks}
                 tab={page.split("/")[1]}
+                language={params.get("language") || undefined}
+                dictionaryTab={params.get("dictionary") || undefined}
               />
             ) : page === "words" || page.startsWith("words/") ? (
               <WordsPage

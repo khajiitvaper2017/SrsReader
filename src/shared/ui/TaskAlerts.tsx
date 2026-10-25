@@ -1,4 +1,6 @@
 import { Affix, Notification, Stack, getDefaultZIndex } from "@mantine/core";
+import { useTimeout } from "@mantine/hooks";
+import { useEffect } from "react";
 import type { ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
@@ -19,6 +21,13 @@ export function TaskAlerts({
   onDismissError: () => void;
   onDismissNotice: () => void;
 }) {
+  const { start, clear } = useTimeout(onDismissNotice, 5000);
+
+  useEffect(() => {
+    if (!busy && notice) start();
+    return clear;
+  }, [busy, notice, start, clear]);
+
   if (!busy && !error && !notice) return null;
   return (
     <Affix

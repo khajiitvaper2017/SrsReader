@@ -9,6 +9,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { onlineDictionaries } from "@/dictionaries/online";
 import {
   languageIso3,
   languageName,
@@ -37,7 +38,9 @@ export function LanguageSettings({
       features: [
         udpipeModel(language) && t("language_feature_grammar"),
         morphologyLanguage(language) && t("language_feature_word_forms"),
-        language === "cs" && t("language_feature_online_dictionary"),
+        onlineDictionaries.some(
+          (dictionary) => dictionary.language === language,
+        ) && t("language_feature_online_dictionary"),
         languageIso3(language) && t("language_feature_examples"),
       ].filter(Boolean),
     }))

@@ -955,7 +955,6 @@
   "language_feature_online_dictionary": "Online dictionary (Nechybujte)",
   "language_feature_examples": "Downloadable examples",
   "language_settings_for": "Language-specific settings",
-  "language_settings_for_help": "Choose a language for dictionaries, parser models, audio, or maintenance. General review settings apply to every studied language.",
   "studied_reading_help": "Automatically detects and parses text in your studied languages. Short passages can use the page language. Text in other or unidentified languages is skipped.",
   "dictionary_types": "Dictionary types",
   "vocabulary_dictionaries": "Vocabulary",

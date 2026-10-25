@@ -138,7 +138,7 @@ The default targets are 90% up to rank 1,000, 85% up to 5,000, 80% up to 20,000,
 
 In **Words**, set **Retention for this word** to override the rules. Leave it empty for automatic retention. A word override also works when frequency rules are off.
 
-Settings affect future answers. To apply current retention and interval settings to existing cards, use **Maintenance → Reschedule existing cards**. Choose the language with **Language-specific settings**. This affects active Review cards in that language. It skips new, learning, mastered, and suspended cards. It does not add reviews or advance memory. Overdue cards can remain overdue.
+Settings affect future answers. To apply current retention and interval settings to existing cards, use **Maintenance → Reschedule existing cards**. Select the language tab. This affects active Review cards in that language. It skips new, learning, mastered, and suspended cards. It does not add reviews or advance memory. Overdue cards can remain overdue.
 
 ## Leeches and saved words
 

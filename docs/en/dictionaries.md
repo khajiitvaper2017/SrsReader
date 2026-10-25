@@ -18,7 +18,7 @@ Open **Settings → Dictionaries**:
 
 - **Vocabulary → Wiktionary dictionaries:** choose a definition language, then **Import**. **Definitions** contains full entries; **Translations** contains shorter glosses. Choose the same language on both sides for monolingual definitions.
 - **Frequency:** choose a corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
-- **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Choose **Language-specific settings** first if the ZIP lacks language information.
+- **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Select a language tab first if the ZIP lacks language information.
 
 Dictionary downloads and imports run in the background while the browser is open. You can close the SrsReader app tab and reopen it later. Switching app pages, settings tabs, or browser tabs does not stop the task. A floating alert shows progress on every app page. Reopening SrsReader restores the current progress or the result. When the total is known, the alert estimates the time left in the current step. Use the close button to dismiss a result. Once installed, dictionaries work offline.
 

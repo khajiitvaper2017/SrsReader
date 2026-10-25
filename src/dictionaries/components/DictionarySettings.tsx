@@ -1,6 +1,6 @@
 import { isOnlineDictionary } from "@/dictionaries/online";
 import { ImmersionWeight } from "@/dictionaries/components/ImmersionWeight";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   ActionIcon,
   Anchor,
@@ -43,12 +43,16 @@ export function DictionarySettings({
   reload: load,
   tasks,
   children,
+  role,
+  onRoleChange,
 }: {
   settings: Settings;
   dictionaries: Dictionary[];
   reload: () => void;
   tasks: SettingsTask;
   children?: ReactNode;
+  role: DictionaryRole;
+  onRoleChange: (role: DictionaryRole) => void;
 }) {
   const {
     busy,
@@ -69,7 +73,6 @@ export function DictionarySettings({
     reload: load,
     tasks,
   });
-  const [role, setRole] = useState<DictionaryRole>("vocabulary");
   const visible = dictionaries
     .filter(
       (dictionary) =>
@@ -294,7 +297,7 @@ export function DictionarySettings({
           </Group>
           <Tabs
             value={role}
-            onChange={(value) => setRole(value as DictionaryRole)}
+            onChange={(value) => onRoleChange(value as DictionaryRole)}
             keepMounted={false}
           >
             <Tabs.List mb="sm" aria-label={t("dictionary_types")}>

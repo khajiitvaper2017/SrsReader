@@ -1,10 +1,10 @@
+import type { DictionaryRole } from "@/dictionaries/display";
 import { isOnlineDictionary } from "@/dictionaries/online";
 import {
   Anchor,
   Button,
   Group,
   Paper,
-  Select,
   Switch,
   Tabs,
   Text,
@@ -48,19 +48,29 @@ import {
 } from "lucide-react";
 import { WordColors } from "@/settings/components/WordColors";
 import { AppearanceSettings } from "@/settings/components/AppearanceSettings";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 export function SettingsPage({
   settings: preferences,
   setSettings,
   tasks,
   setup = false,
   tab = "general",
+  language = preferences.studyLanguage,
+  dictionaryTab = "vocabulary",
 }: {
   settings: Settings;
   setSettings: (settings: Settings) => void;
   tasks: ReturnType<typeof useSettingsTask>;
   setup?: boolean;
   tab?: string;
+  language?: string;
+  dictionaryTab?: string;
 }) {
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const languages = [
@@ -73,7 +83,6 @@ export function SettingsPage({
         : []),
     ]),
   ];
-  const [language, setLanguage] = useState(preferences.studyLanguage);
   const selectedLanguage = languages.includes(language)
     ? language
     : preferences.studyLanguage;
@@ -175,12 +184,50 @@ export function SettingsPage({
   const selected = sections.some((section) => section.value === tab)
     ? tab
     : "general";
+  const dictionaryRole: DictionaryRole =
+    dictionaryTab === "frequency" ? "frequency" : "vocabulary";
+  function navigate(
+    section: string,
+    language = selectedLanguage,
+    role = dictionaryRole,
+  ) {
+    const params = new URLSearchParams({ language, dictionary: role });
+    location.hash = `${setup ? "setup" : `settings/${section}`}?${params}`;
+  }
+  function withLanguageTabs(content: ReactNode) {
+    return (
+      <Tabs
+        value={selectedLanguage}
+        onChange={(value) => {
+          if (value) navigate(selected, value);
+        }}
+      >
+        {languages.length > 0 && (
+          <Tabs.List mb="md" aria-label={t("language_settings_for")}>
+            {languages.map((value) => (
+              <Tabs.Tab
+                key={value}
+                value={value}
+                disabled={busy}
+                data-srs-reader
+              >
+                {languageName(value)}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        )}
+        <Tabs.Panel value={selectedLanguage}>{content}</Tabs.Panel>
+      </Tabs>
+    );
+  }
   const dictionarySettings = (
     <DictionarySettings
       settings={settings}
       dictionaries={dictionaries}
       reload={load}
       tasks={tasks}
+      role={dictionaryRole}
+      onRoleChange={(role) => navigate(selected, selectedLanguage, role)}
     >
       <LanguageDataSettings
         settings={settings}
@@ -189,157 +236,149 @@ export function SettingsPage({
       />
     </DictionarySettings>
   );
+  const content = setup ? (
+    withLanguageTabs(
+      <>
+        <LanguageSettings settings={settings} onChange={update} setup />
+        {dictionarySettings}
+        <LookupSettings settings={settings} onChange={update} />
+        <Group justify="flex-end">
+          <Button
+            variant="filled"
+            loading={busy}
+            leftSection={<Check size={16} />}
+            disabled={
+              !settings.lookupBindings.length ||
+              !dictionaries.some(
+                (dictionary) =>
+                  dictionary.enabled &&
+                  settings.studyLanguages.includes(dictionary.language) &&
+                  dictionary.count > 0,
+              )
+            }
+            onClick={() => void finishSetup()}
+          >
+            {t("finish_setup")}
+          </Button>
+        </Group>
+      </>,
+    )
+  ) : (
+    <Tabs
+      value={selected}
+      onChange={(value) => {
+        if (value) navigate(value);
+      }}
+      keepMountedMode="display-none"
+    >
+      <Tabs.List mb="md" aria-label={t("settings_sections")}>
+        {sections.map((section) => (
+          <Tabs.Tab
+            data-srs-reader
+            key={section.value}
+            value={section.value}
+            leftSection={section.icon}
+          >
+            {section.label}
+          </Tabs.Tab>
+        ))}
+      </Tabs.List>
+      <Tabs.Panel value="general">
+        <Stack>
+          <LanguageSettings settings={settings} onChange={update} />
+          <AppearanceSettings settings={settings} onChange={update} />
+          <Paper>
+            <Group justify="space-between">
+              <Group>
+                <Languages size={18} />
+                <Text>{t("settings_setup_help")}</Text>
+              </Group>
+              <Button component="a" href="#setup">
+                {t("open_setup")}
+              </Button>
+            </Group>
+          </Paper>
+        </Stack>
+      </Tabs.Panel>
+      <Tabs.Panel value="reading">
+        {withLanguageTabs(
+          <Stack>
+            <ReadingSettings
+              settings={settings}
+              onChange={update}
+              dictionaries={dictionaries}
+            />
+            <WordColors settings={settings} onChange={update} />
+          </Stack>,
+        )}
+      </Tabs.Panel>
+      <Tabs.Panel value="dictionaries">
+        {withLanguageTabs(<Stack>{dictionarySettings}</Stack>)}
+      </Tabs.Panel>
+      <Tabs.Panel value="review">
+        {withLanguageTabs(
+          <ReviewSettings
+            settings={settings}
+            onChange={update}
+            dictionaries={dictionaries}
+            onError={setError}
+          />,
+        )}
+      </Tabs.Panel>
+      <Tabs.Panel value="controls">
+        <Stack>
+          <LookupSettings settings={settings} onChange={update} />
+          <ReviewControls settings={settings} onChange={update} />
+        </Stack>
+      </Tabs.Panel>
+      <Tabs.Panel value="audio">
+        {withLanguageTabs(
+          <Stack>
+            <AudioSettings settings={settings} onChange={update} />
+            <Paper>
+              <Stack>
+                <Title order={2}>{t("translation")}</Title>
+                <Switch
+                  label={t("auto_translate_sentences")}
+                  description={t("auto_translate_sentences_help")}
+                  checked={settings.autoTranslateSentences}
+                  onChange={(event) =>
+                    void update({
+                      autoTranslateSentences: event.currentTarget.checked,
+                    })
+                  }
+                />
+                <Switch
+                  label={t("auto_translate_definitions")}
+                  description={t("auto_translate_definitions_help")}
+                  checked={settings.autoTranslateDefinitions}
+                  onChange={(event) =>
+                    void update({
+                      autoTranslateDefinitions: event.currentTarget.checked,
+                    })
+                  }
+                />
+                <Text variant="supporting">
+                  {t("translation_stays_on_your_device_models_download_on")}
+                </Text>
+                <Anchor href="#docs/reading">{t("docs_reading")}</Anchor>
+              </Stack>
+            </Paper>
+          </Stack>,
+        )}
+      </Tabs.Panel>
+      <Tabs.Panel value="backups">
+        <BackupSettings setSettings={setSettings} tasks={tasks} />
+      </Tabs.Panel>
+    </Tabs>
+  );
   return (
     <Stack>
       <Stack>
         <Title order={1}>{t(setup ? "setup" : "settings")}</Title>
         {setup && <Text variant="supporting">{t("settings_setup_intro")}</Text>}
       </Stack>
-      {(setup ||
-        ["reading", "dictionaries", "review", "audio"].includes(selected)) &&
-        languages.length > 0 && (
-          <Select
-            label={t("language_settings_for")}
-            description={t("language_settings_for_help")}
-            value={selectedLanguage}
-            disabled={busy}
-            data={languages.map((value) => ({
-              value,
-              label: languageName(value),
-            }))}
-            onChange={(value) => {
-              if (value) setLanguage(value);
-            }}
-          />
-        )}
-      {setup ? (
-        <>
-          <LanguageSettings settings={settings} onChange={update} setup />
-          {dictionarySettings}
-          <LookupSettings settings={settings} onChange={update} />
-          <Group justify="flex-end">
-            <Button
-              variant="filled"
-              loading={busy}
-              leftSection={<Check size={16} />}
-              disabled={
-                !settings.lookupBindings.length ||
-                !dictionaries.some(
-                  (dictionary) =>
-                    dictionary.enabled &&
-                    settings.studyLanguages.includes(dictionary.language) &&
-                    dictionary.count > 0,
-                )
-              }
-              onClick={() => void finishSetup()}
-            >
-              {t("finish_setup")}
-            </Button>
-          </Group>
-        </>
-      ) : (
-        <Tabs
-          value={selected}
-          onChange={(value) => {
-            location.hash = `settings/${value}`;
-          }}
-          keepMountedMode="display-none"
-        >
-          <Tabs.List mb="md" aria-label={t("settings_sections")}>
-            {sections.map((section) => (
-              <Tabs.Tab
-                data-srs-reader
-                key={section.value}
-                value={section.value}
-                leftSection={section.icon}
-              >
-                {section.label}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-          <Tabs.Panel value="general">
-            <Stack>
-              <LanguageSettings settings={settings} onChange={update} />
-              <AppearanceSettings settings={settings} onChange={update} />
-              <Paper>
-                <Group justify="space-between">
-                  <Group>
-                    <Languages size={18} />
-                    <Text>{t("settings_setup_help")}</Text>
-                  </Group>
-                  <Button component="a" href="#setup">
-                    {t("open_setup")}
-                  </Button>
-                </Group>
-              </Paper>
-            </Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="reading">
-            <Stack>
-              <ReadingSettings
-                settings={settings}
-                onChange={update}
-                dictionaries={dictionaries}
-              />
-              <WordColors settings={settings} onChange={update} />
-            </Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="dictionaries">
-            <Stack>{dictionarySettings}</Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="review">
-            <ReviewSettings
-              settings={settings}
-              onChange={update}
-              dictionaries={dictionaries}
-              onError={setError}
-            />
-          </Tabs.Panel>
-          <Tabs.Panel value="controls">
-            <Stack>
-              <LookupSettings settings={settings} onChange={update} />
-              <ReviewControls settings={settings} onChange={update} />
-            </Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="audio">
-            <Stack>
-              <AudioSettings settings={settings} onChange={update} />
-              <Paper>
-                <Stack>
-                  <Title order={2}>{t("translation")}</Title>
-                  <Switch
-                    label={t("auto_translate_sentences")}
-                    description={t("auto_translate_sentences_help")}
-                    checked={settings.autoTranslateSentences}
-                    onChange={(event) =>
-                      void update({
-                        autoTranslateSentences: event.currentTarget.checked,
-                      })
-                    }
-                  />
-                  <Switch
-                    label={t("auto_translate_definitions")}
-                    description={t("auto_translate_definitions_help")}
-                    checked={settings.autoTranslateDefinitions}
-                    onChange={(event) =>
-                      void update({
-                        autoTranslateDefinitions: event.currentTarget.checked,
-                      })
-                    }
-                  />
-                  <Text variant="supporting">
-                    {t("translation_stays_on_your_device_models_download_on")}
-                  </Text>
-                  <Anchor href="#docs/reading">{t("docs_reading")}</Anchor>
-                </Stack>
-              </Paper>
-            </Stack>
-          </Tabs.Panel>
-          <Tabs.Panel value="backups">
-            <BackupSettings setSettings={setSettings} tasks={tasks} />
-          </Tabs.Panel>
-        </Tabs>
-      )}
+      {content}
     </Stack>
   );
 }
