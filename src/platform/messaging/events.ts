@@ -1,6 +1,7 @@
 import type { ScanSpan } from "@/reader/scan";
 import type { Occurrence } from "@/languages/analysis";
 import type { WordState } from "@/vocabulary/state";
+import type { ScanResult } from "@/reader/contracts";
 
 export type ChangeScope =
   | "frequency"
@@ -34,4 +35,8 @@ export type ParsedOccurrenceMessage = {
   candidates: ScanSpan["candidates"];
 };
 export type RuntimeEvent =
-  ChangeMessage | ParsedMessage | ParsedOccurrenceMessage | FrameMessage;
+  | ChangeMessage
+  | ParsedMessage
+  | ParsedOccurrenceMessage
+  | FrameMessage
+  | { event: "scanResult"; session: string; text: string; result: ScanResult };

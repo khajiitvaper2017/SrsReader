@@ -53,6 +53,7 @@ class ReaderDatabase extends Dexie {
     string
   >;
   nechybujte!: Table<{ term: string; result: LookupResult }, string>;
+  spanishdict!: Table<{ term: string; result: LookupResult }, string>;
   exampleCorpora!: Table<
     { language: string; corpus: Blob; count: number; updated: number },
     string

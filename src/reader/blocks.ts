@@ -4,7 +4,7 @@ import { languageTag } from "@/languages/detection";
 export const blockSelector =
   "p,li,h1,h2,h3,h4,h5,h6,td,th,blockquote,pre,figcaption,div,section,article,main,body";
 export const excludedSelector =
-  'script,style,noscript,textarea,input,select,button,[role="button"],[role="slider"],[role="progressbar"],[role="scrollbar"],code,[contenteditable]:not([contenteditable="false"]),[aria-hidden="true"],[data-srs-reader]';
+  'script,style,noscript,textarea,input,select,button,nav,[role="menu"],[role="menubar"],[role="toolbar"],[role="navigation"],[role="button"],[role="slider"],[role="progressbar"],[role="scrollbar"],code,[contenteditable]:not([contenteditable="false"]),[aria-hidden="true"],[data-srs-reader]';
 export function makeRange(parts: Part[], start: number, end: number) {
   const first = parts.find((p) => start >= p.start && start < p.end);
   const last = parts.find((p) => end > p.start && end <= p.end);

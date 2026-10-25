@@ -1,3 +1,4 @@
+import { isOnlineDictionary } from "@/dictionaries/online";
 import type { Dictionary, Meaning, LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { folded } from "@/languages/text";
@@ -12,9 +13,13 @@ export function dictionaryDisplay(
 ): DictionaryDisplay {
   const preference = settings.dictionaryPreferences[id];
   const enabled =
-    id === "nechybujte" ? settings.nechybujte : preference?.enabled !== false;
+    id === "nechybujte"
+      ? settings.nechybujte
+      : isOnlineDictionary(id)
+        ? preference?.enabled === true
+        : preference?.enabled !== false;
   if (!enabled) return "hide";
-  return (preference?.fallback ?? id === "nechybujte") ? "fallback" : "show";
+  return (preference?.fallback ?? isOnlineDictionary(id)) ? "fallback" : "show";
 }
 
 export function displayedMeanings(
@@ -30,7 +35,7 @@ export function displayedMeanings(
       ? Number.MAX_SAFE_INTEGER
       : (settings.dictionaryPreferences[id]?.order ??
         metadata.get(id)?.order ??
-        Number.MAX_SAFE_INTEGER - (id === "nechybujte" ? 0 : 1));
+        Number.MAX_SAFE_INTEGER - (isOnlineDictionary(id) ? 0 : 1));
   const visible: Meaning[] = [];
   for (const meaning of [...meanings].sort(
     (a, b) => order(a.dictionaryId) - order(b.dictionaryId),

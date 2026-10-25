@@ -1,3 +1,5 @@
+import { isOnlineDictionary, onlineDictionaries } from "@/dictionaries/online";
+import { dictionaryDisplay } from "@/dictionaries/display";
 import { immersionDictionary } from "@/dictionaries/immersion";
 import { immersionId } from "@/dictionaries/immersion-model";
 import type { Request } from "@/dictionaries/contracts";
@@ -19,7 +21,8 @@ export async function setDictionaryDisplay(
   const enabled = request.display !== "hide";
   if (request.role === "vocabulary") {
     if (request.id === "nechybujte") settings.nechybujte = enabled;
-    else await db.dictionaries.update(request.id, { enabled });
+    else if (!isOnlineDictionary(request.id))
+      await db.dictionaries.update(request.id, { enabled });
   }
   const preferences =
     request.role === "frequency"
@@ -61,7 +64,7 @@ export async function reorderDictionary(
           ? await listFrequencyDictionaries(settings)
           : all.filter(
               (dictionary) =>
-                dictionary.count > 0 || dictionary.id === "nechybujte",
+                dictionary.count > 0 || isOnlineDictionary(dictionary.id),
             )
       ).filter((dictionary) => dictionary.language === source.language);
       const index = dictionaries.findIndex(
@@ -76,7 +79,7 @@ export async function reorderDictionary(
       const currentSettings =
         (await db.settings.get("main"))?.value || settings;
       for (const [order, dictionary] of dictionaries.entries()) {
-        if (request.role === "vocabulary" && dictionary.id !== "nechybujte")
+        if (request.role === "vocabulary" && !isOnlineDictionary(dictionary.id))
           await db.dictionaries.update(dictionary.id, { order });
         const preference = { enabled: dictionary.enabled, order };
         if (request.role === "frequency")
@@ -86,7 +89,7 @@ export async function reorderDictionary(
             ...preference,
             fallback:
               currentSettings.dictionaryPreferences[dictionary.id]?.fallback ??
-              dictionary.id === "nechybujte",
+              isOnlineDictionary(dictionary.id),
           };
       }
       await saveSettings(currentSettings);
@@ -143,21 +146,24 @@ export async function listDictionaries(settings?: Settings) {
         order: (dictionaries.at(-1)?.order ?? -1) + 1,
       });
   }
-  const preference = settings.dictionaryPreferences.nechybujte;
-  const online: Dictionary = {
-    id: "nechybujte",
-    revisionId: "nechybujte",
-    language: "cs",
-    target: "cs",
-    index: { title: t("nechybujte_online"), format: 3, revision: "" },
-    enabled: settings.nechybujte,
-    order: preference?.order ?? (dictionaries.at(-1)?.order ?? -1) + 1,
-    count: 0,
-    frequencyCount: 0,
-    maxFrequency: 0,
-    imported: 0,
-    styles: "",
-  };
+  const online: Dictionary[] = onlineDictionaries.map(
+    ({ id, language, target }, index) => ({
+      id,
+      revisionId: id,
+      language,
+      target,
+      index: { title: t(`${id}_online`), format: 3, revision: "" },
+      enabled: dictionaryDisplay(id, settings) !== "hide",
+      order:
+        settings.dictionaryPreferences[id]?.order ??
+        (dictionaries.at(-1)?.order ?? -1) + index + 1,
+      count: 0,
+      frequencyCount: 0,
+      maxFrequency: 0,
+      imported: 0,
+      styles: "",
+    }),
+  );
   return [
     ...dictionaries.map((dictionary) =>
       dictionary.immersion
@@ -167,7 +173,7 @@ export async function listDictionaries(settings?: Settings) {
           }
         : dictionary,
     ),
-    online,
+    ...online,
   ].sort((a, b) => a.order - b.order);
 }
 export const dictionaryTags = (revisions: string[]) =>

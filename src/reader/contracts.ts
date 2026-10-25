@@ -7,6 +7,7 @@ export const requests = [
     action: z.literal("scan"),
     language: languageSchema,
     source: z.enum(["website", "popup"]),
+    session: z.string(),
     texts: z.array(z.string()),
   }),
 ] as const;

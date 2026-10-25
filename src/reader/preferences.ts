@@ -7,6 +7,9 @@ export const readerPreferencesSchema = z.object({
   preventMiddleMouse: inputPreventionSchema,
   preventBackForward: inputPreventionSchema,
   paused: z.boolean().default(false),
+  wordLoading: z
+    .record(z.string(), z.enum(["automatic", "onLookup"]))
+    .default({}),
   enabledHosts: z.array(z.string()).default([]),
   disabledHosts: z.array(z.string()).default([]),
   theme: z.enum(["system", "light", "dark", "oled"]).default("system"),

@@ -60,6 +60,24 @@ export function ReadingSettings({
             }
           />
           <Text variant="supporting">{t("studied_reading_help")}</Text>
+          <Select
+            label={t("word_loading")}
+            description={t("word_loading_help")}
+            value={settings.wordLoading[settings.studyLanguage] ?? "automatic"}
+            allowDeselect={false}
+            data={[
+              { value: "automatic", label: t("automatic") },
+              { value: "onLookup", label: t("word_loading_on_lookup") },
+            ]}
+            onChange={(value) =>
+              void update({
+                wordLoading: {
+                  ...settings.wordLoading,
+                  [settings.studyLanguage]: value as "automatic" | "onLookup",
+                },
+              })
+            }
+          />
           <Switch
             label={t("use_udpipe")}
             description={t("udpipe_help")}

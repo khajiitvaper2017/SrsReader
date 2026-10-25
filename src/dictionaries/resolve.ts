@@ -1,8 +1,9 @@
+import { isOnlineDictionary, mergeOnline } from "@/dictionaries/online";
+import { lookupSpanishDict } from "@/dictionaries/spanishdict";
 import { lookupMany } from "@/dictionaries/lookup";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import {
   lookupNechybujte,
-  mergeNechybujte,
   nechybujteCacheKey,
   normalizeCzechReflexive,
 } from "@/dictionaries/nechybujte";
@@ -47,13 +48,16 @@ export async function lookup(
   const matches = await lookupMany(terms, settings.studyLanguage);
   const dictionaries = await listDictionaries(settings);
   const online = dictionaries.find(
-    (dictionary) => dictionary.id === "nechybujte",
-  )!;
-  const onlineMode = dictionaryDisplay(online.id, settings);
+    (dictionary) =>
+      isOnlineDictionary(dictionary.id) &&
+      dictionary.language === settings.studyLanguage,
+  );
+  const onlineMode = online ? dictionaryDisplay(online.id, settings) : "hide";
   const higher = new Set(
     dictionaries
       .filter(
-        (dictionary) => dictionary.enabled && dictionary.order < online.order,
+        (dictionary) =>
+          dictionary.enabled && dictionary.order < (online?.order ?? Infinity),
       )
       .map((dictionary) => dictionary.id),
   );
@@ -72,13 +76,14 @@ export async function lookup(
   };
   let warning: string | undefined;
   if (
-    settings.studyLanguage === "cs" &&
+    online &&
     (onlineMode === "show" || (onlineMode === "fallback" && !higherMatch))
   ) {
     try {
       const first = terms[0]!;
       // Unknown lemmas can return unrelated fuzzy matches from Nechybujte.
       const onlineTerm =
+        online.id === "nechybujte" &&
         contextual &&
         !contextual.grammar.group &&
         !preferred.words.some(
@@ -88,22 +93,24 @@ export async function lookup(
           : first;
       if (onlineTerm !== first)
         matches.set(normalize(first), { words: [], unresolved: [] });
-      const online = await lookupNechybujte(onlineTerm, refreshOnline);
+      const fetched = await (
+        online.id === "nechybujte" ? lookupNechybujte : lookupSpanishDict
+      )(onlineTerm, refreshOnline);
       if (onlineTerm !== first)
         await db.nechybujte.put({
           term: nechybujteCacheKey(first),
-          result: online,
+          result: fetched,
         });
       matches.set(
         normalize(first),
-        mergeNechybujte(
+        mergeOnline(
           onlineTerm === first ? preferred : { words: [], unresolved: [] },
-          online,
+          fetched,
           first,
         ),
       );
     } catch (error) {
-      warning = t("nechybujte_unavailable", {
+      warning = t(`${online.id}_unavailable`, {
         message: (error as Error).message,
       });
     }

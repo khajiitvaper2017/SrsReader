@@ -38,6 +38,7 @@ export function createScanner(
   );
   let scanning = false;
   let generation = 0;
+  let session = crypto.randomUUID();
   const parsed = new Map<string, ScanResult>();
   let scanTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -131,6 +132,12 @@ export function createScanner(
           block.spans.push(span);
           block.ranges.push(range);
           highlights.get(span.state)!.add(range);
+          const key = JSON.stringify([language, block.text]);
+          parsed.set(key, {
+            ...parsed.get(key),
+            language,
+            spans: block.spans.map(({ range: _range, ...span }) => span),
+          });
         }
   }
   function applyParsedOccurrence(
@@ -162,25 +169,69 @@ export function createScanner(
     if (previous) {
       const { text, parts } = readBlock(element);
       if (text === previous.text) {
-        const result = parsed.get(JSON.stringify([previous.language, text]));
-        if (result && (!result.retryAt || result.retryAt > Date.now())) {
-          if (
-            rebuildRanges ||
-            parts.length !== previous.parts.length ||
-            parts.some((part, index) => {
-              const old = previous.parts[index]!;
-              return (
-                part.node !== old.node ||
-                part.start !== old.start ||
-                part.end !== old.end
-              );
-            })
-          )
-            render(element, text, parts, result, generation);
-          return false;
-        }
+        const result = parsed.get(
+          JSON.stringify([previous.language, text]),
+        ) || {
+          language: previous.language,
+          spans: previous.spans,
+        };
+        if (
+          rebuildRanges ||
+          parts.length !== previous.parts.length ||
+          parts.some((part, index) => {
+            const old = previous.parts[index]!;
+            return (
+              part.node !== old.node ||
+              part.start !== old.start ||
+              part.end !== old.end
+            );
+          })
+        )
+          render(element, text, parts, result, generation);
+        return false;
       }
-      deleteBlock(element);
+      let prefix = 0;
+      while (
+        prefix < text.length &&
+        prefix < previous.text.length &&
+        text[prefix] === previous.text[prefix]
+      )
+        prefix++;
+      let suffix = 0;
+      while (
+        suffix < text.length - prefix &&
+        suffix < previous.text.length - prefix &&
+        text[text.length - suffix - 1] ===
+          previous.text[previous.text.length - suffix - 1]
+      )
+        suffix++;
+      const shift = text.length - previous.text.length;
+      const spans = previous.spans.flatMap((span) => {
+        const offset =
+          span.end <= prefix
+            ? 0
+            : span.start >= previous.text.length - suffix
+              ? shift
+              : undefined;
+        return offset === undefined
+          ? []
+          : [
+              {
+                ...span,
+                start: span.start + offset,
+                end: span.end + offset,
+                occurrence: undefined,
+                related: undefined,
+              },
+            ];
+      });
+      render(
+        element,
+        text,
+        parts,
+        { language: previous.language, spans },
+        generation,
+      );
     }
     queued.add(element);
     return true;
@@ -215,8 +266,10 @@ export function createScanner(
         delayMs: 500,
       });
     }
-    if (scanTimer !== undefined) debounceResets++;
-    clearTimeout(scanTimer);
+    if (scanTimer !== undefined) {
+      debounceResets++;
+      return;
+    }
     scanTimer = setTimeout(() => {
       scanTimer = undefined;
       void drain();
@@ -229,7 +282,28 @@ export function createScanner(
     result: ScanResult,
     version: number,
   ) {
-    deleteBlock(element);
+    const previous = blocks.get(element);
+    const partsByNode = new Map(parts.map((part) => [part.node, part]));
+    const states = new Map(
+      previous?.spans.map((span) => [span.range, span.state]),
+    );
+    const reusable = new Map<string, Range>();
+    for (const range of previous?.ranges || []) {
+      const first = partsByNode.get(range.startContainer as Text);
+      const last = partsByNode.get(range.endContainer as Text);
+      if (first && last)
+        reusable.set(
+          JSON.stringify([
+            first.start + range.startOffset,
+            last.start + range.endOffset,
+            states.get(range) || "unparsed",
+          ]),
+          range,
+        );
+    }
+    const rangeFor = (start: number, end: number, state: ScanSpan["state"]) =>
+      reusable.get(JSON.stringify([start, end, state])) ||
+      makeRange(parts, start, end);
     const block: Block = {
       language: result.language,
       text,
@@ -242,16 +316,13 @@ export function createScanner(
     for (const value of result.spans) {
       const span = { ...value };
       updateSpanState(span);
-      const range = makeRange(parts, span.start, span.end);
+      const range = rangeFor(span.start, span.end, span.state);
       if (!range) continue;
       block.spans.push({ ...span, range });
       block.ranges.push(range);
       highlights.get(span.state).add(range);
     }
-    if (
-      getSettings().wordColorsEnabled &&
-      getSettings().wordStyles.unparsed.mode !== "none"
-    ) {
+    if (getSettings().wordLoading[block.language] !== "onLookup") {
       let matched = 0;
       for (const segment of new Intl.Segmenter(block.language, {
         granularity: "word",
@@ -267,16 +338,32 @@ export function createScanner(
           block.spans[matched]!.start <= segment.index
         )
           continue;
-        const range = makeRange(
-          parts,
+        const range = rangeFor(
           segment.index,
           segment.index + segment.segment.length,
+          "unparsed",
         );
         if (range) {
           block.ranges.push(range);
           highlights.get("unparsed").add(range);
         }
       }
+    }
+    const retained = new Set(block.ranges);
+    for (const range of previous?.ranges || [])
+      if (!retained.has(range))
+        for (const highlight of highlights.values()) highlight.delete(range);
+  }
+  function applyScanResult(id: string, text: string, result: ScanResult) {
+    if (id !== session || !isActive()) return;
+    const key = JSON.stringify([result.language, text]);
+    if (JSON.stringify(parsed.get(key)) === JSON.stringify(result)) return;
+    parsed.set(key, result);
+    for (const [element, block] of blocks) {
+      if (block.language !== result.language || block.text !== text) continue;
+      const current = readBlock(element);
+      if (element.isConnected && current.text === text)
+        render(element, text, current.parts, result, generation);
     }
   }
   function scheduleRetry() {
@@ -373,10 +460,20 @@ export function createScanner(
       });
       const key = (language: string, text: string) =>
         JSON.stringify([language, text]);
+      for (const snapshot of eligible)
+        if (blocks.get(snapshot.element)?.text !== snapshot.text)
+          render(
+            snapshot.element,
+            snapshot.text,
+            readBlock(snapshot.element).parts,
+            { language: snapshot.language, spans: [] },
+            version,
+          );
       const groups = new Map<string, Set<string>>();
       for (const snapshot of eligible) {
         const hit = parsed.get(key(snapshot.language, snapshot.text));
         if (hit && (!hit.retryAt || hit.retryAt > Date.now())) continue;
+        parsed.delete(key(snapshot.language, snapshot.text));
         const texts = groups.get(snapshot.language) || new Set<string>();
         texts.add(snapshot.text);
         groups.set(snapshot.language, texts);
@@ -384,15 +481,27 @@ export function createScanner(
       await Promise.all(
         [...groups].map(async ([language, texts]) => {
           const missing = [...texts];
-          const results = await readerClient({
-            action: "scan",
-            source: options.onLookup ? "popup" : "website",
-            language,
-            texts: missing,
-          });
+          const results: ScanResult[] =
+            preferences.wordLoading[language] === "onLookup"
+              ? missing.map((text) => ({
+                  language,
+                  spans:
+                    [...blocks.values()].find(
+                      (block) =>
+                        block.language === language && block.text === text,
+                    )?.spans || [],
+                }))
+              : await readerClient({
+                  action: "scan",
+                  source: options.onLookup ? "popup" : "website",
+                  session,
+                  language,
+                  texts: missing,
+                });
           if (generation !== version || !isActive()) return;
           for (const [index, text] of missing.entries())
-            parsed.set(key(language, text), results[index]!);
+            if (!parsed.has(key(language, text)))
+              parsed.set(key(language, text), results[index]!);
         }),
       );
       if (generation !== version || !isActive()) return;
@@ -640,6 +749,7 @@ export function createScanner(
   }
   function clear() {
     generation++;
+    session = crypto.randomUUID();
     observer?.disconnect();
     clearTimeout(scanTimer);
     clearTimeout(retryTimer);
@@ -663,14 +773,17 @@ export function createScanner(
             : record.target.parentElement;
         if (element?.closest("[data-srs-reader]")) continue;
         if (element && record.type === "attributes") {
-          for (const block of pageTexts.keys())
-            if (element === block || element.contains(block))
-              pageTexts.delete(block);
           for (const block of blocks.keys())
             if (element === block || element.contains(block)) {
-              deleteBlock(block);
+              if (
+                record.attributeName === "lang" ||
+                record.attributeName === "data-reading-language"
+              )
+                queued.add(block);
+              else queueBlock(block);
             }
           collect(element);
+          if (queued.size) schedule();
           continue;
         }
         if (element) {
@@ -740,6 +853,7 @@ export function createScanner(
     updateWord,
     applyParsedTerm,
     applyParsedOccurrence,
+    applyScanResult,
     dispose: clear,
   };
 }

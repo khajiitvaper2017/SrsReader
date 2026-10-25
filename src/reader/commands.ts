@@ -66,6 +66,23 @@ async function execute(request: Request, settings: Settings) {
         settings,
         analyses.map((analysis) => analysis.surfaces),
         immersion,
+        async (index, spans) => {
+          await broadcast({
+            event: "scanResult",
+            session: request.session,
+            text: request.texts[index]!,
+            result: {
+              language: request.language,
+              spans,
+              retryAt: analyses[index]?.retryAt,
+            },
+          });
+          await cacheScannedTexts(
+            [request.texts[index]!],
+            [spans],
+            request.language,
+          );
+        },
       );
       const spans = parsed.map((result) => result.spans);
       if (immersion) {

@@ -1,5 +1,7 @@
 import { analyzeWords } from "@/languages/morphology";
 import { lookupMany } from "@/dictionaries/lookup";
+import { lookup } from "@/dictionaries/resolve";
+import { isOnlineDictionary } from "@/dictionaries/online";
 import { listDictionaries } from "@/dictionaries/storage";
 import { displayedWords } from "@/dictionaries/display";
 import type { Settings } from "@/settings/model";
@@ -8,6 +10,7 @@ import { folded, normalize } from "@/languages/text";
 import type { Occurrence, SurfaceAnalysis } from "@/languages/analysis";
 import { db } from "@/platform/database/db";
 import { stateOf } from "@/vocabulary/model";
+import { getSettings } from "@/settings/store";
 import type { WordState } from "@/vocabulary/state";
 
 export type ScanSpan = {
@@ -27,8 +30,9 @@ export async function scanTexts(
   texts: string[],
   language: string,
   settings: Settings,
-  analyses: SurfaceAnalysis[][] = [],
-  collectImmersion = false,
+  analyses: SurfaceAnalysis[][],
+  collectImmersion: boolean,
+  onProgress: (index: number, spans: ScanSpan[]) => Promise<void>,
 ) {
   const started = performance.now();
   const ordered = await listDictionaries(settings);
@@ -178,7 +182,7 @@ export async function scanTexts(
       .map((v) => [v.id, v]),
   );
   const vocabularyFinished = performance.now();
-  const results = blocks.map((candidates) => {
+  function present(candidates: (typeof blocks)[number]) {
     const spans: ScanSpan[] = [];
     const lemmas: string[][] = [];
     let end = -1;
@@ -224,7 +228,55 @@ export async function scanTexts(
       end = candidate.end;
     }
     return { spans, lemmas };
-  });
+  }
+  const results = blocks.map(present);
+  const emitted = results.map((result) => JSON.stringify(result.spans));
+  if (
+    settings.wordLoading[language] !== "onLookup" &&
+    ordered.some(
+      (dictionary) =>
+        dictionary.language === language &&
+        dictionary.enabled &&
+        isOnlineDictionary(dictionary.id),
+    )
+  ) {
+    const terms = new Map<string, Set<number>>();
+    for (const [index, candidates] of blocks.entries())
+      for (const candidate of candidates) {
+        const term = candidate.analysis?.terms[0] || candidate.term;
+        const indices = terms.get(term) || new Set<number>();
+        indices.add(index);
+        terms.set(term, indices);
+      }
+    void (async () => {
+      for (const [term, indices] of terms) {
+        const current = await getSettings();
+        if (
+          current.wordLoading[language] === "onLookup" ||
+          !current.studyLanguages.includes(language)
+        )
+          break;
+        const result = await lookup(term, {
+          ...current,
+          studyLanguage: language,
+        });
+        matches.set(normalize(term), result);
+        for (const word of await db.vocabulary.bulkGet(
+          result.words.map((word) => word.id),
+        ))
+          if (word) vocabulary.set(word.id, word);
+        for (const index of indices) {
+          const spans = present(blocks[index]!).spans;
+          const value = JSON.stringify(spans);
+          if (emitted[index] === value) continue;
+          emitted[index] = value;
+          await onProgress(index, spans);
+        }
+      }
+    })().catch((error) =>
+      console.warn("SrsReader: online word loading failed", error),
+    );
+  }
   console.info("[SrsReader] Dictionary scan finished", {
     blocks: texts.length,
     phrases: phrases.length,

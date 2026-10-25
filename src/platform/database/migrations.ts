@@ -161,4 +161,5 @@ export function installMigrations(database: Dexie) {
     immersionWords: "id, dictionaryId, [dictionaryId+score]",
     immersionPassages: "id, dictionaryId",
   });
+  database.version(12).stores({ spanishdict: "term" });
 }

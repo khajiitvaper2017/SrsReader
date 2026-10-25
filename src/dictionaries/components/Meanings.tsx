@@ -1,3 +1,4 @@
+import { isOnlineDictionary } from "@/dictionaries/online";
 import { ActionIcon, Group, Anchor, Badge, Stack, Text } from "@mantine/core";
 import { Structured } from "@/dictionaries/components/StructuredContent";
 import { mapDefinitionSenses } from "@/dictionaries/definitions";
@@ -221,8 +222,10 @@ export function Meanings({
                       meaning.dictionaryId === "personal" ||
                       meaning.customDefinitions
                         ? settings.nativeLanguage
-                        : meaning.dictionaryId === "nechybujte"
-                          ? "cs"
+                        : isOnlineDictionary(meaning.dictionaryId)
+                          ? meaning.dictionaryId === "nechybujte"
+                            ? "cs"
+                            : "en"
                           : definitionLanguages[meaning.dictionaryId] || ""
                     }
                     className="dictionary-content"
@@ -231,9 +234,8 @@ export function Meanings({
                     }
                   >
                     {meaning.customDefinitions ||
-                    ["nechybujte", "personal"].includes(
-                      meaning.dictionaryId,
-                    ) ? (
+                    isOnlineDictionary(meaning.dictionaryId) ||
+                    meaning.dictionaryId === "personal" ? (
                       <ol data-sc-content="glosses">
                         {values.map((definition, j) => (
                           <li key={j}>

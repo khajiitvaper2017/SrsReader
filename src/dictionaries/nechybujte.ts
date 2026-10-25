@@ -213,32 +213,3 @@ export function lookupNechybujte(
   cache.set(key, request);
   return request;
 }
-
-export function mergeNechybujte(
-  local: LookupResult,
-  online: LookupResult,
-  term: string,
-): LookupResult {
-  const words = [...local.words];
-  for (const word of online.words) {
-    const index = words.findIndex((candidate) => candidate.id === word.id);
-    if (index < 0) words.push(word);
-    else
-      words[index] = {
-        ...words[index]!,
-        meanings: [
-          ...words[index]!.meanings.filter(
-            (meaning) => meaning.dictionaryId !== "nechybujte",
-          ),
-          ...word.meanings,
-        ],
-      };
-  }
-  const lemma = folded(term, "cs");
-  words.sort(
-    (a, b) =>
-      Number(folded(b.lemma, "cs") === lemma) -
-      Number(folded(a.lemma, "cs") === lemma),
-  );
-  return { words, unresolved: words.length ? [] : local.unresolved };
-}

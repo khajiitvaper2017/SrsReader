@@ -1,3 +1,4 @@
+import { isOnlineDictionary } from "@/dictionaries/online";
 import {
   Alert,
   Anchor,
@@ -68,7 +69,7 @@ export function SettingsPage({
       ...preferences.studyLanguages,
       ...(setup || tab === "dictionaries"
         ? dictionaries
-            .filter((dictionary) => dictionary.id !== "nechybujte")
+            .filter((dictionary) => !isOnlineDictionary(dictionary.id))
             .map((dictionary) => dictionary.language)
         : []),
     ]),

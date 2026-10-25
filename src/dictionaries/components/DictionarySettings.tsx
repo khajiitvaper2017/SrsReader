@@ -1,3 +1,4 @@
+import { isOnlineDictionary } from "@/dictionaries/online";
 import { ImmersionWeight } from "@/dictionaries/components/ImmersionWeight";
 import { useState, type ReactNode } from "react";
 import {
@@ -75,7 +76,7 @@ export function DictionarySettings({
         dictionary.language === settings.studyLanguage &&
         (role === "frequency"
           ? dictionary.frequencyCount > 0 || !!dictionary.immersion
-          : dictionary.count > 0 || dictionary.id === "nechybujte"),
+          : dictionary.count > 0 || isOnlineDictionary(dictionary.id)),
     )
     .sort((a, b) =>
       role === "frequency"
@@ -99,8 +100,8 @@ export function DictionarySettings({
               <Stack gap={0} miw={160} flex={1}>
                 <strong>{dictionary.index.title}</strong>
                 <Text variant="supporting">
-                  {dictionary.id === "nechybujte" ? (
-                    t("nechybujte_online_help")
+                  {isOnlineDictionary(dictionary.id) ? (
+                    t(`${dictionary.id}_online_help`)
                   ) : dictionary.immersion ? (
                     t("immersion_collection_help")
                   ) : (
@@ -148,7 +149,7 @@ export function DictionarySettings({
                     })}
                   </Button>
                 )}
-                {dictionary.id !== "nechybujte" && (
+                {!isOnlineDictionary(dictionary.id) && (
                   <>
                     <ActionIcon
                       title={t("export_zip")}
@@ -286,7 +287,7 @@ export function DictionarySettings({
               {t("dictionaries_installed", {
                 count: visible.filter(
                   (dictionary) =>
-                    dictionary.id !== "nechybujte" && !dictionary.immersion,
+                    !isOnlineDictionary(dictionary.id) && !dictionary.immersion,
                 ).length,
               })}
             </Badge>

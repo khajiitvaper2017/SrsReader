@@ -5,7 +5,9 @@ import type {
   LookupResult,
   LookupWord,
 } from "@/dictionaries/model";
-import { mergeNechybujte, nechybujteCacheKey } from "@/dictionaries/nechybujte";
+import { nechybujteCacheKey } from "@/dictionaries/nechybujte";
+import { isOnlineDictionary, mergeOnline } from "@/dictionaries/online";
+import { spanishDictCacheKey } from "@/dictionaries/spanishdict";
 import { analyzeWords } from "@/languages/morphology";
 import {
   parsingCandidates,
@@ -284,7 +286,7 @@ export async function lookupMany(
           word.meanings.some(
             (meaning) =>
               meaning.dictionaryId === "personal" ||
-              meaning.dictionaryId === "nechybujte",
+              isOnlineDictionary(meaning.dictionaryId),
           )),
     )
     .toArray();
@@ -308,7 +310,7 @@ export async function lookupMany(
               ...saved.meanings.filter(
                 (meaning) =>
                   meaning.dictionaryId === "personal" ||
-                  meaning.dictionaryId === "nechybujte",
+                  isOnlineDictionary(meaning.dictionaryId),
               ),
               ...word.meanings,
             ],
@@ -320,7 +322,7 @@ export async function lookupMany(
       const meanings = word.meanings.filter(
         (meaning) =>
           meaning.dictionaryId === "personal" ||
-          meaning.dictionaryId === "nechybujte" ||
+          isOnlineDictionary(meaning.dictionaryId) ||
           !!word.definitionOverrides?.[meaningKey(meaning)],
       );
       if (meanings.length) words.unshift({ ...word, meanings, forms: [] });
@@ -331,16 +333,17 @@ export async function lookupMany(
     });
   }
   const savedMergeFinished = performance.now();
-  if (language === "cs") {
-    const keys = terms.map(nechybujteCacheKey);
-    const stored = await db.nechybujte.bulkGet(keys);
+  if (language === "cs" || language === "es") {
+    const keys = terms.map(
+      language === "cs" ? nechybujteCacheKey : spanishDictCacheKey,
+    );
+    const stored = await (
+      language === "cs" ? db.nechybujte : db.spanishdict
+    ).bulkGet(keys);
     for (const [index, record] of stored.entries())
       if (record) {
         const term = normalize(terms[index]!);
-        results.set(
-          term,
-          mergeNechybujte(results.get(term)!, record.result, term),
-        );
+        results.set(term, mergeOnline(results.get(term)!, record.result, term));
       }
   }
   for (const result of results.values())

@@ -34,6 +34,15 @@ Under **Settings → Reading → Word colors**, choose text or background colors
 
 **Settings → Reading → Parse websites automatically** starts parsing on websites by default. It is on by default. Turn it off to choose sites manually. In the extension toolbar, use **Enabled on [site]** to turn parsing on or off for the current site. Your choice is saved for that hostname and applies to all its pages. Sites you enable manually stay enabled when automatic parsing is off. Sites you disable stay disabled when automatic parsing is on. The toolbar also has the automatic parsing switch. Dictionary popups use the separate **Scan dictionary popups** setting.
 
+Under **Settings → Reading**, choose a language in **Language-specific settings**, then select **Load and color words**:
+
+- **Automatic** (default): color local words first and update online words as their entries arrive. All dictionaries follow their **Show**, **If needed**, and **Hide** settings. Cached entries are reused.
+- **When opened**: load and color words only when you open them with a lookup control. Other words stay uncolored, including words in installed dictionaries or the cache.
+
+The choice applies to all dictionaries for that language, on websites and in scanned dictionary popups. Each language has its own choice. Online dictionaries set to **Hide** are never contacted. Online dictionaries receive individual words according to their display settings.
+
+New text, including added subtitle words, is processed separately. Existing colors stay visible while results load. Menu and toolbar changes do not trigger a text lookup.
+
 Parsing detects text in any language in **Settings → General → Studied languages**. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
 
 ## Grammar analysis with UDPipe

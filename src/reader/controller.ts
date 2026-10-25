@@ -46,7 +46,7 @@ export function startReader(
     ? () => {}
     : installInputPrevention(() => (active ? settings : undefined), "webpages");
   ctx.onInvalidated(removeInputPrevention);
-  async function configure(preservePopup = false) {
+  async function configure(preservePopup = false, refreshDictionaries = false) {
     const started = performance.now();
     const previous = settings;
     settings = await settingsClient({ action: "settings" });
@@ -57,14 +57,33 @@ export function startReader(
     );
     if (ctx.isInvalid) return;
     highlights.configure(settings);
-    const { ignoredTags: oldTags, ...oldSettings } = previous;
-    const { ignoredTags: newTags, ...newSettings } = settings;
+    const parsingKeys = [
+      "setupComplete",
+      "studyLanguages",
+      "paused",
+      "enabledHosts",
+      "disabledHosts",
+      "wordLoading",
+      "scanPopups",
+      "udpipe",
+      "udpipeModels",
+      "nechybujte",
+      "matureIntervalDays",
+    ] as const;
     if (
       preservePopup &&
-      JSON.stringify(oldTags) !== JSON.stringify(newTags) &&
-      JSON.stringify(oldSettings) === JSON.stringify(newSettings)
+      !refreshDictionaries &&
+      parsingKeys.every(
+        (key) =>
+          JSON.stringify(previous[key]) === JSON.stringify(settings[key]),
+      )
     ) {
-      scanner.refreshTags();
+      if (
+        JSON.stringify(previous.ignoredTags) !==
+          JSON.stringify(settings.ignoredTags) ||
+        previous.ignoreProperNames !== settings.ignoreProperNames
+      )
+        scanner.refreshTags();
       return;
     }
     input.cancel();
@@ -85,6 +104,10 @@ export function startReader(
     scanner.reset();
   }
   const onMessage = (message: RuntimeEvent) => {
+    if (message.event === "scanResult") {
+      scanner.applyScanResult(message.session, message.text, message.result);
+      return;
+    }
     if (
       (message.event === "parsed" || message.event === "parsedOccurrence") &&
       active &&
@@ -110,7 +133,10 @@ export function startReader(
       }
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(
-        () => void configure(true).catch(console.warn),
+        () =>
+          void configure(true, message.scope !== "settings").catch(
+            console.warn,
+          ),
         180,
       );
     }
