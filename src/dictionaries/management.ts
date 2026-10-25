@@ -33,6 +33,7 @@ const tagSchema = z.tuple([
 ]);
 
 const singleLatinWord = /^[\p{Script=Latin}\p{M}\p{Nd}]+$/u;
+const importBatchSize = 10_000;
 export async function importDictionary(
   blob: Blob,
   language: string,
@@ -94,9 +95,9 @@ async function importRevision(
       const rows: unknown = JSON.parse(await file.getData!(new TextWriter()));
       if (!Array.isArray(rows))
         throw new Error(t("invalid_term_bank", { filename: file.filename }));
-      for (let offset = 0; offset < rows.length; offset += 1000) {
+      for (let offset = 0; offset < rows.length; offset += importBatchSize) {
         const batch: Entry[] = rows
-          .slice(offset, offset + 1000)
+          .slice(offset, offset + importBatchSize)
           .map((row, i) => {
             const parsed = termSchema.safeParse(row);
             if (!parsed.success)
@@ -146,9 +147,12 @@ async function importRevision(
             if (phrases.length) await db.phrases.bulkPut(phrases);
           },
         );
+        rows.fill(null, offset, offset + importBatchSize);
         progress({
           phase: t("reading", { filename: file.filename }),
-          done: bankNumber + Math.min(offset + 1000, rows.length) / rows.length,
+          done:
+            bankNumber +
+            Math.min(offset + importBatchSize, rows.length) / rows.length,
           total: totalBanks,
         });
       }
@@ -164,9 +168,9 @@ async function importRevision(
         throw new Error(
           t("invalid_term_metadata_bank", { filename: file.filename }),
         );
-      for (let offset = 0; offset < rows.length; offset += 1000) {
+      for (let offset = 0; offset < rows.length; offset += importBatchSize) {
         const batch: Frequency[] = rows
-          .slice(offset, offset + 1000)
+          .slice(offset, offset + importBatchSize)
           .flatMap((row, i) => {
             const parsed = termMetaSchema.safeParse(row);
             if (!parsed.success)
@@ -210,12 +214,13 @@ async function importRevision(
             ];
           });
         await db.frequencies.bulkAdd(batch);
+        rows.fill(null, offset, offset + importBatchSize);
         progress({
           phase: t("reading", { filename: file.filename }),
           done:
             banks.length +
             bankNumber +
-            Math.min(offset + 1000, rows.length) / rows.length,
+            Math.min(offset + importBatchSize, rows.length) / rows.length,
           total: totalBanks,
         });
       }
