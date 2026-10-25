@@ -2,6 +2,8 @@ import { immersionRanks } from "@/dictionaries/immersion";
 import { listFrequencyDictionaries } from "@/dictionaries/storage";
 import type { LookupWord } from "@/dictionaries/model";
 import { clearLookupCache, lookupMany } from "@/dictionaries/lookup";
+import { analyzeWords } from "@/languages/morphology";
+import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -132,18 +134,30 @@ async function frequencyDeckWords(dictionaryId: string, limit: number) {
   const words = new Map<string, LookupWord>();
   for (let offset = 0; offset < selected.length; offset += 100) {
     const batch = selected.slice(offset, offset + 100);
-    const results = await lookupMany(
-      batch.map((entry) => entry.key),
-      dictionary.language,
-    );
+    const terms = batch.map((entry) => entry.key);
+    const [results, analyses] = await Promise.all([
+      lookupMany(terms, dictionary.language),
+      analyzeWords(terms, dictionary.language),
+    ]);
     for (const entry of batch) {
-      const result = results
-        .get(entry.key)
-        ?.words.find(
+      const key = folded(entry.key, dictionary.language);
+      const candidates = results.get(normalize(entry.key))?.words ?? [];
+      if (
+        folded(analyses.get(entry.key) ?? entry.key, dictionary.language) !==
+          key ||
+        candidates.some(
           (word) =>
-            isFrequencyWord(word.lemma) &&
-            (entry.reading === null || word.reading === entry.reading),
-        );
+            word.forms.length > 0 &&
+            folded(word.lemma, dictionary.language) !== key,
+        )
+      )
+        continue;
+      const result = candidates.find(
+        (word) =>
+          isFrequencyWord(word.lemma) &&
+          folded(word.lemma, dictionary.language) === key &&
+          (entry.reading === null || word.reading === entry.reading),
+      );
       if (result?.meanings.length) words.set(result.id, result);
     }
   }

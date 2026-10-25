@@ -31,6 +31,7 @@ export function Meanings({
   hiddenDictionaries = [],
   onToggleDictionary,
   onToggleHiddenDictionary,
+  renderExample,
 }: {
   meanings: Meaning[];
   language: string;
@@ -42,6 +43,8 @@ export function Meanings({
   hiddenDictionaries?: string[];
   onToggleDictionary?: (id: string) => void;
   onToggleHiddenDictionary?: (id: string) => void;
+  /** Render a matching sentence below a dictionary entry. */
+  renderExample?: (meaning: Meaning) => ReactNode;
 }) {
   const {
     visible: displayed,
@@ -67,18 +70,9 @@ export function Meanings({
       );
       const title = entries[0]!.title;
       const conflictsExist = entries.some(
-        (meaning) =>
-          filtered.get(meaning) !== meaning ||
-          Object.keys(grammarConflicts(meaning, grammar)).length,
+        (meaning) => filtered.get(meaning) !== meaning,
       );
-      const visible = hidden
-        ? []
-        : expanded
-          ? entries
-          : entries.filter(
-              (meaning) =>
-                !Object.keys(grammarConflicts(meaning, grammar)).length,
-            );
+      const visible = hidden ? [] : entries;
       return {
         dictionaryId,
         entries,
@@ -296,6 +290,7 @@ export function Meanings({
                     </style>
                     {translation || renderDefinitions(definitions)}
                     {failure}
+                    {renderExample?.(meaning)}
                     {meaning.attribution &&
                       (!settings.hideDictionarySources ||
                         !(

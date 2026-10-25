@@ -7,7 +7,7 @@ import type { Deck } from "@/srs/deck-model";
 import { useDebouncedValue } from "@mantine/hooks";
 import type { Request } from "@/vocabulary/contracts";
 import { vocabularyClient } from "@/vocabulary/client";
-import type { ReadingContext } from "@/vocabulary/model";
+import type { SentenceExample } from "@/examples/model";
 import { type Vocabulary } from "@/vocabulary/model";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -20,7 +20,7 @@ export function useWords({
   language: string;
   deckId?: string;
 }) {
-  const [contexts, setContexts] = useState<ReadingContext[]>([]);
+  const [contexts, setContexts] = useState<SentenceExample[]>([]);
   const [words, setWords] = useState<Vocabulary[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const overview = settings.studyLanguages.map((language) => ({

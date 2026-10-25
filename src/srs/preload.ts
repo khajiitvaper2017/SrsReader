@@ -4,10 +4,7 @@ import { preparePronunciation } from "@/audio/prepare";
 import { mapDefinitionSenses } from "@/dictionaries/definitions";
 import { displayedMeanings } from "@/dictionaries/display";
 import { wordFrequencies } from "@/dictionaries/frequency";
-import {
-  filterPrepositionSenses,
-  grammarConflicts,
-} from "@/dictionaries/grammar";
+import { filterPrepositionSenses } from "@/dictionaries/grammar";
 import { listDictionaries } from "@/dictionaries/storage";
 import type { Settings } from "@/settings/model";
 import { srsClient } from "@/srs/client";
@@ -168,11 +165,6 @@ export function createReviewPreload(settings: Settings) {
         const expanded = result.saved.expandedDictionaries?.includes(
           meaning.dictionaryId,
         );
-        if (
-          !expanded &&
-          Object.keys(grammarConflicts(meaning, result.grammar)).length
-        )
-          continue;
         const definitions = (
           expanded ? meaning : filterPrepositionSenses(meaning, result.grammar)
         ).definitions;

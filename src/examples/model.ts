@@ -1,4 +1,7 @@
 import type { ReadingContext } from "@/vocabulary/model";
+import type { OccurrenceGrammar } from "@/languages/analysis";
+
+export type SentenceExample = ReadingContext & { grammar?: OccurrenceGrammar };
 
 export type Corpus = {
   sentences: [number, string, string][];

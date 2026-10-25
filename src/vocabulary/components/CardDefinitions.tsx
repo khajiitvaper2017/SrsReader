@@ -12,12 +12,16 @@ import { useDictionaryVisibility } from "@/vocabulary/hooks/useDictionaryVisibil
 import type { ReadingContext } from "@/vocabulary/model";
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { meaningsMatchPartOfSpeech } from "@/dictionaries/grammar";
+import type { SentenceExample } from "@/examples/model";
+import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 
 export function CardDefinitions({
   id,
   settings,
   context,
   contextLoading = false,
+  examples = [],
   loadDefinitions,
   onError,
 }: {
@@ -26,6 +30,8 @@ export function CardDefinitions({
   context?: ReadingContext;
   /** Wait for sentence selection before looking up definitions. */
   contextLoading?: boolean;
+  /** Parsed examples supply a sentence for entries with another part of speech. */
+  examples?: SentenceExample[];
   /** Reuse review preparation; refresh bypasses an existing prepared result. */
   loadDefinitions?: (
     id: string,
@@ -97,6 +103,22 @@ export function CardDefinitions({
         hiddenDictionaries={visibility.hiddenDictionaries}
         onToggleDictionary={visibility.toggleDictionary}
         onToggleHiddenDictionary={visibility.toggleHiddenDictionary}
+        renderExample={(meaning) => {
+          if (meaningsMatchPartOfSpeech([meaning], result.grammar)) return null;
+          const example = examples.find(
+            (example) =>
+              example.grammar &&
+              meaningsMatchPartOfSpeech([meaning], example.grammar),
+          );
+          return example ? (
+            <ContextSentence
+              word={result.word}
+              context={example}
+              settings={settings}
+              onError={onError}
+            />
+          ) : null;
+        }}
       />
     </Stack>
   );

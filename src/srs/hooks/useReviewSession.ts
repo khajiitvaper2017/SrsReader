@@ -3,12 +3,20 @@ import { stopAudio } from "@/audio/playback";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { srsClient } from "@/srs/client";
-import type { Responses } from "@/srs/contracts";
-import type { ReadingContext } from "@/vocabulary/model";
+import type { Request, Responses } from "@/srs/contracts";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { useReviewPreload } from "@/srs/hooks/useReviewPreload";
+import { studyDay } from "@/srs/study-day";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+export type SessionAnswer = {
+  id: string;
+  rating: number;
+  introduced: boolean;
+  recall: boolean;
+  durationMs: number;
+};
 
 export function useReviewSession({
   settings,
@@ -18,6 +26,9 @@ export function useReviewSession({
   deckId?: string;
 }) {
   const [queue, setQueue] = useState<Responses["queue"]>();
+  const [answers, setAnswers] = useState<SessionAnswer[]>([]);
+  const limits =
+    useRef<Extract<Request, { action: "queue" }>["limits"]>(undefined);
   const [revealed, setRevealed] = useState(false);
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
@@ -37,7 +48,7 @@ export function useReviewSession({
   });
   const [sentences, setSentences] = useState<{
     id: string;
-    contexts: ReadingContext[];
+    contexts: Responses["sentenceExamples"];
     loading: boolean;
   }>({ id: "", contexts: [], loading: false });
   const contexts = sentences.id === word?.id ? sentences.contexts : [];
@@ -72,17 +83,23 @@ export function useReviewSession({
     };
   }, [word?.id, word?.version, settings, sentenceRevision, preload]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
+  const fetchQueue = useCallback(
+    () =>
+      srsClient({
+        action: "queue",
+        language: settings.studyLanguage,
+        deckId,
+        limits: limits.current,
+      }),
+    [deckId, settings.studyLanguage],
+  );
   const loadQueue = useCallback(
     (preserveCurrent: boolean) => {
       if (busyRef.current) return;
       const revision = preserveCurrent
         ? queueRevision.current
         : ++queueRevision.current;
-      void srsClient({
-        action: "queue",
-        language: settings.studyLanguage,
-        deckId,
-      })
+      void fetchQueue()
         .then((value) => {
           if (revision !== queueRevision.current) return;
           setQueue((current) => {
@@ -102,7 +119,7 @@ export function useReviewSession({
           if (revision === queueRevision.current) setError(error.message);
         });
     },
-    [deckId, settings.studyLanguage],
+    [fetchQueue],
   );
   const load = useCallback(() => loadQueue(false), [loadQueue]);
   const refresh = useCallback(() => loadQueue(true), [loadQueue]);
@@ -159,6 +176,8 @@ export function useReviewSession({
     setError("");
     stopAudio();
     try {
+      const durationMs = duration();
+      const time = Date.now();
       const result = await srsClient({
         action: "grade",
         id: word.id,
@@ -166,9 +185,24 @@ export function useReviewSession({
         rating,
         version: word.srsVersion,
         source: "review",
-        durationMs: duration(),
-        time: Date.now(),
+        durationMs,
+        time,
       });
+      const card = word.card!;
+      setAnswers((answers) => [
+        ...answers,
+        {
+          id: result.reviewId,
+          rating,
+          introduced: card.state === 0,
+          recall:
+            card.state === 2 ||
+            (card.last_review !== null &&
+              studyDay(card.last_review, settings.rolloverHour) <
+                studyDay(time, settings.rolloverHour)),
+          durationMs,
+        },
+      ]);
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
       setQueue(
@@ -179,11 +213,7 @@ export function useReviewSession({
           },
       );
       setRevealed(false);
-      void srsClient({
-        action: "queue",
-        language: settings.studyLanguage,
-        deckId,
-      })
+      await fetchQueue()
         .then((value) => {
           if (revision === queueRevision.current) setQueue(value);
         })
@@ -217,16 +247,53 @@ export function useReviewSession({
     onUndo: last && !busy ? () => void undo() : undefined,
   });
   async function undo() {
+    if (busyRef.current || !last) return;
+    busyRef.current = true;
+    const revision = ++queueRevision.current;
+    setBusy(true);
+    setError("");
     try {
       await srsClient({ action: "undo", id: last });
+      setAnswers((answers) => answers.filter((answer) => answer.id !== last));
       setLast("");
       sessionStorage.removeItem("last-review");
-      load();
+      const value = await fetchQueue();
+      if (revision === queueRevision.current) setQueue(value);
     } catch (error) {
       setError((error as Error).message);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+  async function studyMore() {
+    if (busyRef.current || !queue) return;
+    busyRef.current = true;
+    const revision = ++queueRevision.current;
+    setBusy(true);
+    setError("");
+    const before = limits.current;
+    limits.current = {
+      newLimit: queue.limits.newLimit + 10,
+      reviewLimit:
+        queue.limits.reviewLimit === null
+          ? null
+          : queue.limits.reviewLimit + 50,
+    };
+    try {
+      const value = await fetchQueue();
+      if (revision === queueRevision.current) setQueue(value);
+    } catch (error) {
+      limits.current = before;
+      setError((error as Error).message);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
   }
   return {
+    answers,
+    studyMore,
     preload,
     queue,
     revealed,

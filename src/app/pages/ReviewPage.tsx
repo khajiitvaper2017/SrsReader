@@ -20,14 +20,14 @@ import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
 import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { Empty } from "@/shared/ui/Empty";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
-import { Ratings, intervalLabel } from "@/srs/components/Ratings";
+import { Ratings } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { useReviewSession } from "@/srs/hooks/useReviewSession";
+import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
-import { Check, Eye, Pause, Undo2, Upload } from "lucide-react";
+import { Check, Eye, Pause, Undo2 } from "lucide-react";
 
 export function ReviewPage({
   settings,
@@ -37,6 +37,8 @@ export function ReviewPage({
   deckId?: string;
 }) {
   const {
+    answers,
+    studyMore,
     preload,
     queue,
     revealed,
@@ -65,7 +67,12 @@ export function ReviewPage({
   if (!queue && !error) return <SrsProgress />;
   return (
     <Stack
-      h="calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
+      mih="calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
+      h={
+        word
+          ? "calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
+          : undefined
+      }
       gap="xs"
     >
       <SrsProgress />
@@ -198,6 +205,7 @@ export function ReviewPage({
                       id={word.id}
                       context={context}
                       contextLoading={sentenceLoading}
+                      examples={contexts}
                       loadDefinitions={preload.loadDefinitions}
                       settings={settings}
                       onError={setError}
@@ -267,43 +275,32 @@ export function ReviewPage({
           </Box>
         </>
       ) : (
-        <Paper flex={1}>
-          <Empty
-            title={queue?.total ? t("no_reviews_due") : t("no_saved_words")}
-          >
-            {queue?.waiting && (
-              <Text>
-                {t("next_review_in", {
-                  value1: intervalLabel(queue.waiting, settings.rolloverHour),
-                })}
-              </Text>
-            )}
-            {!queue?.total && (
-              <Stack>
-                <Text>{t("use_your_lookup_control_on_a_word_to")}</Text>
-                <Button
-                  component="a"
-                  href="#settings"
-                  variant="filled"
-                  leftSection={<Upload aria-hidden="true" size={16} />}
-                >
-                  {t("import_dictionary")}
-                </Button>
-              </Stack>
-            )}
-          </Empty>
-        </Paper>
+        <Stack flex={1} justify="center" align="center">
+          {queue && !busy ? (
+            <SessionSummary
+              answers={answers}
+              queue={queue}
+              settings={settings}
+              busy={busy}
+              canUndo={!!last}
+              onStudyMore={() => void studyMore()}
+              onUndo={() => void undo()}
+            />
+          ) : (
+            <SrsProgress />
+          )}
+        </Stack>
       )}
-      <Group component="footer" justify="space-between" align="center">
-        <ActionIcon
-          title={t("undo_last_review")}
-          aria-label={t("undo_last_review")}
-          disabled={!last || busy}
-          onClick={() => void undo()}
-        >
-          <Undo2 aria-hidden="true" size={16} />
-        </ActionIcon>
-        {word && (
+      {word && (
+        <Group component="footer" justify="space-between" align="center">
+          <ActionIcon
+            title={t("undo_last_review")}
+            aria-label={t("undo_last_review")}
+            disabled={!last || busy}
+            onClick={() => void undo()}
+          >
+            <Undo2 aria-hidden="true" size={16} />
+          </ActionIcon>
           <Group>
             <Button
               variant="subtle"
@@ -339,8 +336,8 @@ export function ReviewPage({
               {t("suspend_word")}
             </Button>
           </Group>
-        )}
-      </Group>
+        </Group>
+      )}
     </Stack>
   );
 }

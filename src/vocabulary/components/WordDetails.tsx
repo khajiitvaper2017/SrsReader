@@ -63,15 +63,13 @@ export function WordDetails({
           key={word.id}
           id={word.id}
           context={contexts[0]}
+          examples={contexts}
           settings={settings}
           onError={setError}
         />
-        <WordExamples
-          key={word.id}
-          word={word}
-          settings={settings}
-          surface={contexts[0]?.surface}
-        />
+        {!contexts.length && (
+          <WordExamples key={word.id} word={word} settings={settings} />
+        )}
         {contexts.map((context, i) => (
           <ContextSentence
             key={`${word.id}:${i}`}

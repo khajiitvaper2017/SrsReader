@@ -14,7 +14,7 @@ Manage the list under **Settings → General → Studied languages**, or use **A
 4. Enter a deck name, or leave it empty for an automatic name.
 5. Select **Add frequency deck**.
 
-The deck checks the first N unique entries that contain letters. Punctuation, symbols, and number-only entries are skipped. These entries are also hidden in existing frequency decks. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
+The deck checks the first N unique entries that contain letters. Punctuation, symbols, and number-only entries are skipped. These entries are also hidden in existing frequency decks. Entries identified as forms of other words by your dictionaries or downloaded word-form data are skipped. Download additional forms in **Settings → Dictionaries → Word forms** to recognize more forms. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
 
 After an app or dictionary update, open the deck’s three-dot menu in **Study** and select **Refresh deck**. This rebuilds the deck with its original word limit and the current frequency dictionary. It removes entries that do not pass the word filters and updates definitions. New matching words start as new cards. Review history, custom definitions, mastered words, and suspended words are kept. Words you mined stay in **Mined words**. Removed words keep their saved progress if they return in a later refresh.
 
@@ -35,11 +35,13 @@ Confirm the action in the dialog. These actions cannot be undone. Review history
 
 ## Sentences from reading
 
-Review sentences come from the permanent cache of texts you have parsed. Each sentence has more than four words. With **Settings → Reading → Use UDPipe** enabled, sentences with a different part of speech for the target word are excluded. If a sentence contains several matches, a matching occurrence is used. Sentences where all words except the target word are known come first. If none are available, sentences with fewer other unknown words come next. Mark words as mastered to improve this selection. Parse more pages to add examples. Sentences and their translations stay in the reading cache, not in cards.
+Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Example sentences**. With **Settings → Reading → Use UDPipe** enabled, the target word must match a part of speech in its definitions. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
 
 ## Review session
 
 Select a language or deck. Choose **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The default grading keys are **1–4**. After revealing the answer, **Space** grades Good. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
+
+When the queue is empty, the completion card shows this session’s answers, introduced cards, recall rate, active answer time, and grade counts. Recall rate includes scheduled reviews and learning cards last seen on an earlier study day. Same-day learning repeats are excluded. Undo removes an answer from the summary. The streak covers all languages. The three-day forecast covers the selected language or deck. Select **Back to decks** to leave. Select **Study more** to add up to 10 new cards and 50 due reviews beyond the daily limits for this session. This button is disabled when no additional new or due cards are available. Saved limits and due dates stay unchanged. Session totals and extra allowances reset when you leave or reload the session.
 
 While you review, upcoming cards in the current daily queue load in the background. This includes their first example sentence, definitions, frequency ranks, audio, and enabled translations. Cards load one at a time in review order. Daily limits and the selected language or deck apply. Audio preparation uses your enabled audio sources.
 
@@ -148,7 +150,7 @@ Use the **Leeches** filter in **Words** to find marked words. Word details show 
 
 **Master** excludes a word from SRS while preserving its history. **Unmaster** restores its schedule. **Suspend** pauses review until **Resume**. Neither action resets memory.
 
-Cards use current entries from your enabled dictionaries. Their order and **If needed** settings also apply to cards. When sentence parsing is enabled, definitions use the sentence’s part of speech and grammar, as in popups. Use **Show more** to reveal excluded meanings. Use the eye button to hide a dictionary for one card. Hidden dictionaries appear below visible ones. These choices are remembered for that word in cards and popups.
+Cards use current entries from your enabled dictionaries. Their order and **If needed** settings also apply to cards. Definitions stay visible when their part of speech differs from the current sentence. With sentence parsing enabled, a definition with a different part of speech shows its own matching example when one is available. Matching uses part of speech, not the exact dictionary sense. For prepositions, use **Show more** to reveal senses excluded by the sentence’s case. Use the eye button to hide a dictionary for one card. Hidden dictionaries appear below visible ones. These choices are remembered for that word in cards and popups.
 
 The frequency badge beside the word shows its rank from enabled frequency dictionaries. Select it to see the individual ranks.
 

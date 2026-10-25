@@ -9,7 +9,7 @@ import { DefinitionEditor } from "@/vocabulary/components/DefinitionEditor";
 import { meaningKey } from "@/vocabulary/definitions";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 export type DefinitionEditing = "add" | number | Meaning | null;
 
@@ -29,6 +29,7 @@ export function EditableMeanings({
   onToggleDictionary,
   onToggleHiddenDictionary,
   onIgnoreTag,
+  renderExample,
 }: {
   word: LookupWord;
   term?: string;
@@ -45,6 +46,8 @@ export function EditableMeanings({
   onToggleDictionary: (id: string) => void;
   onToggleHiddenDictionary: (id: string) => void;
   onIgnoreTag?: (tag: string) => void;
+  /** Render a matching sentence below a dictionary entry. */
+  renderExample?: (meaning: Meaning) => ReactNode;
 }) {
   const [busy, setBusy] = useState(false);
   const personalIndex = (meaning: Meaning) =>
@@ -112,6 +115,7 @@ export function EditableMeanings({
       onToggleDictionary={onToggleDictionary}
       onToggleHiddenDictionary={onToggleHiddenDictionary}
       onIgnoreTag={onIgnoreTag}
+      renderExample={renderExample}
       actions={(meaning) => (
         <Group gap={0} wrap="nowrap">
           <ActionIcon

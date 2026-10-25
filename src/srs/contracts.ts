@@ -3,7 +3,7 @@ import type { reviewQueue } from "@/srs/queue";
 import type { ReviewStatistics } from "@/srs/statistics";
 import type { Settings } from "@/settings/model";
 import { selection } from "@/vocabulary/contracts";
-import type { ReadingContext } from "@/vocabulary/model";
+import type { SentenceExample } from "@/examples/model";
 import type { studyOverview } from "@/srs/decks";
 import type { Deck } from "@/srs/deck-model";
 import { z } from "zod";
@@ -25,6 +25,12 @@ export const requests = [
     action: z.literal("queue"),
     language: languageSchema,
     deckId: z.string().optional(),
+    limits: z
+      .object({
+        newLimit: z.number().int().nonnegative(),
+        reviewLimit: z.number().int().nonnegative().nullable(),
+      })
+      .optional(),
   }),
   z.object({ action: z.literal("studyOverview") }),
   z.object({
@@ -71,7 +77,7 @@ export type Responses = {
   studyOverview: Awaited<ReturnType<typeof studyOverview>>;
   createFrequencyDeck: Deck;
   manageDeck: void;
-  sentenceExamples: ReadingContext[];
+  sentenceExamples: SentenceExample[];
   grade: { word: Vocabulary; reviewId: string };
   undo: void;
   queue: Awaited<ReturnType<typeof reviewQueue>>;

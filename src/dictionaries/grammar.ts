@@ -146,6 +146,7 @@ export function filterPrepositionSenses(
   meaning: Meaning,
   grammar?: OccurrenceGrammar,
 ): Meaning {
+  if (!meaningsMatchPartOfSpeech([meaning], grammar)) return meaning;
   const cases = grammar?.sentence.tokens
     .filter(
       (token) => grammar.tokenIds.includes(token.id) && token.upos === "ADP",

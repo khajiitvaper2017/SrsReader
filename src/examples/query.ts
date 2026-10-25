@@ -38,6 +38,7 @@ export async function wordExamples(
   lemma: string,
   language: string,
   surface: string,
+  minimumWords = 1,
 ): Promise<ExamplesResult> {
   language = languageCode(language);
   const corpus = await getCorpus(language);
@@ -78,6 +79,7 @@ export async function wordExamples(
     const words = [...segmenter.segment(sentence)].filter(
       (word) => word.isWordLike,
     );
+    if (words.length < minimumWords) continue;
     if (
       findMatch(
         words.map((word) => folded(word.segment, language)),
@@ -106,6 +108,7 @@ export async function wordExamples(
     const words = [...segmenter.segment(sentence)].filter(
       (word) => word.isWordLike,
     );
+    if (words.length < minimumWords) continue;
     const foldedWords = words.map((word) => folded(word.segment, language));
     const surfaceMatch = findMatch(foldedWords, surfaceQuery);
     if (reflexive && !surfaceMatch && !foldedWords.includes(query[1]!))

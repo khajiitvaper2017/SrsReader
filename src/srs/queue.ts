@@ -8,10 +8,19 @@ import { studyGroups, wordsInDeck } from "@/srs/deck-words";
 import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
 import type { Vocabulary } from "@/vocabulary/model";
+import type { SchedulingPreferences } from "@/srs/preferences";
 
-export async function reviewQueue(language: string, deckId?: string) {
-  const settings = { ...(await getSettings()), studyLanguage: language },
-    now = Date.now();
+export async function reviewQueue(
+  language: string,
+  deckId?: string,
+  limits?: Pick<SchedulingPreferences, "newLimit" | "reviewLimit">,
+) {
+  const settings = {
+    ...(await getSettings()),
+    ...limits,
+    studyLanguage: language,
+  };
+  const now = Date.now();
   const [saved, decks] = await Promise.all([
     languageWords(settings.studyLanguage),
     db.decks.where("language").equals(settings.studyLanguage).toArray(),
@@ -58,5 +67,27 @@ export async function reviewQueue(language: string, deckId?: string) {
     ...buildQueue(words, counts, settings, now, orderedNew, deckOrder),
     today: counts.today,
     total: saved.length,
+    limits: {
+      newLimit: Math.max(settings.newLimit, counts.introduced),
+      reviewLimit:
+        settings.reviewLimit === null
+          ? null
+          : Math.max(settings.reviewLimit, counts.reviews),
+    },
+    canStudyMore:
+      newWords.length > 0 ||
+      words.some(
+        (word) =>
+          (word.card!.state === 2 || word.card!.interday) &&
+          word.card!.due <= now,
+      ),
+    forecast: [1, 2, 3].map((days) => ({
+      days,
+      count: words.filter(
+        (word) =>
+          word.card!.state !== 0 &&
+          studyDay(word.card!.due, settings.rolloverHour) === day + days,
+      ).length,
+    })),
   };
 }

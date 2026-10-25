@@ -98,7 +98,7 @@ async function execute(request: Request, settings: Settings) {
       await notify(await undoReview(request.id));
       return;
     case "queue":
-      return reviewQueue(request.language, request.deckId);
+      return reviewQueue(request.language, request.deckId, request.limits);
     case "preview":
       return preview(await getWord(request.id), request.durationMs, request.id);
     case "reviewStats":
