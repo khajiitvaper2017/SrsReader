@@ -26,7 +26,10 @@ export function createBlockReader(
     const language = languageTag(marked);
     return !language || getSettings().studyLanguages.includes(language);
   }
-  function readBlock(element: Element): { text: string; parts: Part[] } {
+  function readBlock(
+    element: Element,
+    includeOtherLanguages = false,
+  ): { text: string; parts: Part[] } {
     const walker = document.createTreeWalker(
       element,
       NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
@@ -44,7 +47,7 @@ export function createBlockReader(
       if (
         !parent ||
         parent.closest(excluded) ||
-        !matchesLanguage(parent) ||
+        (!includeOtherLanguages && !matchesLanguage(parent)) ||
         parent.closest(blockSelector) !== element
       )
         continue;

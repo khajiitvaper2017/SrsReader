@@ -4,6 +4,7 @@ import {
   detectLanguages,
   languageSample,
   languageTag,
+  knownLanguage,
 } from "@/languages/detection";
 import type { ScanResult } from "@/reader/contracts";
 import { folded } from "@/languages/text";
@@ -46,6 +47,70 @@ export function createScanner(
   let queuedAt: number | undefined;
   let debounceResets = 0;
   let scanSequence = 0;
+  let pageLanguage: string | null | undefined;
+
+  function readingLanguage(language: string | null | undefined) {
+    const studied = getSettings().studyLanguages;
+    if (language === "no" && !studied.includes("no") && studied.includes("nb"))
+      return "nb";
+    if (language === "nb" && !studied.includes("nb") && studied.includes("no"))
+      return "no";
+    return language;
+  }
+
+  // Lookup must also work before scanning finishes, on unknown pages, and when
+  // automatic popup scanning is off. These snapshots do not create highlights.
+  function lookupBlock(
+    element: Element,
+    start: Node,
+    end = start,
+  ): Block | undefined {
+    if (!root.contains(element)) return;
+    const marked = (
+      start instanceof Element ? start : start.parentElement
+    )?.closest("[lang],[data-reading-language]");
+    const declared =
+      marked &&
+      root.contains(marked) &&
+      (marked !== root || marked.hasAttribute("data-reading-language"))
+        ? languageTag(marked)
+        : null;
+    const previous = blocks.get(element);
+    if (
+      previous &&
+      !queued.has(element) &&
+      (!declared || declared === previous.language) &&
+      [start, end].every((node) =>
+        previous.parts.some((part) => part.node === node),
+      )
+    )
+      return previous;
+    const { text, parts } = readBlock(element, true);
+    if (!text.trim() || !parts.length) return;
+    if (
+      previous?.text === text &&
+      (!declared || declared === previous.language)
+    )
+      return { ...previous, parts };
+    const guessed = knownLanguage(text);
+    if (
+      !declared &&
+      !guessed &&
+      !options.language &&
+      pageLanguage === undefined
+    )
+      pageLanguage = knownLanguage(root.innerText);
+    const language = readingLanguage(
+      declared ||
+        guessed ||
+        options.language ||
+        pageLanguage ||
+        languageTag(element) ||
+        getSettings().studyLanguages[0],
+    );
+    if (!language) return;
+    return { language, text, parts, spans: [], ranges: [], generation };
+  }
   function deleteBlock(element: Element) {
     const old = blocks.get(element);
     if (!old) return;
@@ -237,7 +302,12 @@ export function createScanner(
     return true;
   }
   function collect(element: Element) {
-    if (!isActive() || element.closest(excluded)) return;
+    if (
+      !isActive() ||
+      (options.onLookup && !getSettings().scanPopups) ||
+      element.closest(excluded)
+    )
+      return;
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     const candidates = new Set<Element>();
     let node: Node | null;
@@ -438,7 +508,7 @@ export function createScanner(
           ])
         : [];
       if (generation !== version || !isActive()) return;
-      const pageLanguage = detectedPage || languageTag(root);
+      pageLanguage = detectedPage || options.language || languageTag(root);
       const eligible = snapshots.flatMap((snapshot, index) => {
         const marked = snapshot.element.closest(
           "[lang],[data-reading-language]",
@@ -447,8 +517,9 @@ export function createScanner(
           marked && root.contains(marked) && marked !== root
             ? languageTag(marked)
             : null;
-        const language =
-          declared || detectedBlocks[index] || options.language || pageLanguage;
+        const language = readingLanguage(
+          declared || detectedBlocks[index] || options.language || pageLanguage,
+        );
         if (!language || !preferences.studyLanguages.includes(language)) {
           deleteBlock(snapshot.element);
           return [];
@@ -565,9 +636,11 @@ export function createScanner(
     const segments = new Intl.Segmenter(block.language, {
       granularity: "sentence",
     }).segment(block.text);
-    const segment = [...segments].find(
-      (s) => span.start >= s.index && span.start < s.index + s.segment.length,
-    );
+    const containing = segments.containing(span.start);
+    const segment =
+      containing && span.end <= containing.index + containing.segment.length
+        ? containing
+        : undefined;
     const start = segment?.index || 0;
     const sentence = segment?.segment || block.text;
     return {
@@ -598,9 +671,17 @@ export function createScanner(
       pointer.clientX,
       pointer.clientY,
     );
-    if (!caret || caret.offsetNode.nodeType !== Node.TEXT_NODE) return;
+    if (
+      !caret ||
+      caret.offsetNode.nodeType !== Node.TEXT_NODE ||
+      !root.contains(caret.offsetNode) ||
+      caret.offsetNode.parentElement?.closest(excluded)
+    )
+      return;
     const element = caret.offsetNode.parentElement?.closest(blockSelector);
-    const block = element && blocks.get(element);
+    const block =
+      element &&
+      lookupBlock(root.contains(element) ? element : root, caret.offsetNode);
     if (!block) return;
     const part = block.parts.find((part) => part.node === caret.offsetNode);
     if (!part) return;
@@ -611,17 +692,12 @@ export function createScanner(
       (span) => offset >= span.start && offset < span.end,
     );
     if (!span) {
-      const segment = [
-        ...new Intl.Segmenter(block.language, {
-          granularity: "word",
-        }).segment(block.text),
-      ].find(
-        (segment) =>
-          segment.isWordLike &&
-          offset >= segment.index &&
-          offset < segment.index + segment.segment.length,
-      );
-      if (segment)
+      const segment = new Intl.Segmenter(block.language, {
+        granularity: "word",
+      })
+        .segment(block.text)
+        .containing(offset);
+      if (segment?.isWordLike)
         span = {
           start: segment.index,
           end: segment.index + segment.segment.length,
@@ -696,15 +772,20 @@ export function createScanner(
     const range = selection.getRangeAt(0).cloneRange();
     if (
       !root.contains(range.startContainer) ||
+      !root.contains(range.endContainer) ||
       range.startContainer.parentElement?.closest(excluded) ||
-      (options.onLookup &&
-        (!matchesLanguage(range.startContainer.parentElement!) ||
-          !matchesLanguage(range.endContainer.parentElement!)))
+      range.endContainer.parentElement?.closest(excluded)
     )
       return;
     const term = selection.toString().trim();
     const element = range.startContainer.parentElement?.closest(blockSelector);
-    const block = element && blocks.get(element);
+    const block =
+      element &&
+      lookupBlock(
+        root.contains(element) ? element : root,
+        range.startContainer,
+        range.endContainer,
+      );
     const first = block?.parts.find(
       (part) => part.node === range.startContainer,
     );
@@ -717,8 +798,10 @@ export function createScanner(
           })
         : {
             language:
-              languageTag(range.startContainer.parentElement!) ||
+              block?.language ||
               options.language ||
+              knownLanguage(term) ||
+              languageTag(range.startContainer.parentElement!) ||
               getSettings().studyLanguages[0],
             sentence: term,
             surface: term,
@@ -749,6 +832,7 @@ export function createScanner(
   }
   function clear() {
     generation++;
+    pageLanguage = undefined;
     session = crypto.randomUUID();
     observer?.disconnect();
     clearTimeout(scanTimer);
@@ -764,7 +848,7 @@ export function createScanner(
   }
   function reset() {
     clear();
-    if (!isActive()) return;
+    if (!isActive() || (options.onLookup && !getSettings().scanPopups)) return;
     observer = new MutationObserver((records) => {
       for (const record of records) {
         const element =
