@@ -29,8 +29,7 @@ export function WordsPage({
   deckId?: string;
 }) {
   const controller = useWords({ settings, language, deckId });
-  const { query, setQuery, filter, setFilter, error, word, visible } =
-    controller;
+  const { query, setQuery, filter, setFilter, error, word, total } = controller;
   const { overview, loading } = controller;
   const row = overview.find((row) => row.language === language);
   const deckName = !deckId
@@ -44,7 +43,7 @@ export function WordsPage({
       <Group justify="space-between">
         <Title order={1}>{t("words")}</Title>
         <Text variant="supporting">
-          {t("words_result_count", { count: visible.length })}
+          {t("words_result_count", { count: total })}
         </Text>
       </Group>
       <ErrorBox error={error} />
@@ -113,7 +112,7 @@ export function WordsPage({
         </Stack>
       </Paper>
       {loading && <Loader />}
-      {!loading && !error && !visible.length ? (
+      {!loading && !error && !total ? (
         <Paper>
           <Empty title={t("no_words_found")}>
             {t(
@@ -124,7 +123,7 @@ export function WordsPage({
           </Empty>
         </Paper>
       ) : (
-        visible.length > 0 && (
+        total > 0 && (
           <Grid align="start">
             <Grid.Col span={{ base: 12, md: word ? 5 : 12 }}>
               <WordList settings={settings} controller={controller} />

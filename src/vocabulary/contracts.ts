@@ -70,6 +70,20 @@ export const requests = [
     action: z.literal("words"),
     language: languageSchema.optional(),
     deckId: z.string().optional(),
+    query: z.string().max(1000).default(""),
+    filter: z
+      .enum([
+        "all",
+        "leeches",
+        "known",
+        "suspended",
+        "new",
+        "due",
+        "review",
+        "learning",
+      ])
+      .default("all"),
+    page: z.number().int().positive().default(1),
   }),
   z.object({
     action: z.literal("retentionOverride"),
@@ -97,6 +111,6 @@ export type Responses = {
   suspend: void;
   deleteWord: void;
   refreshWord: void;
-  words: Vocabulary[];
+  words: { words: Vocabulary[]; total: number; page: number };
   retentionOverride: void;
 };
