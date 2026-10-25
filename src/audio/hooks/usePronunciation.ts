@@ -1,22 +1,25 @@
 import { audioClient } from "@/audio/client";
 import type { AudioInfo } from "@/audio/model";
 import { localVoices, playBlob, speak, stopAudio } from "@/audio/playback";
-import { getAudio } from "@/audio/storage";
+import { preparePronunciation } from "@/audio/prepare";
 import type { LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export function usePronunciation({
   word,
   sentence,
   settings,
   onError,
+  prepareRecording,
 }: {
   word?: Pick<LookupWord, "id" | "lemma" | "language">;
   sentence?: string;
   settings: Settings;
   onError: (message: string) => void;
+  /** Reuse recordings prepared by the review session. */
+  prepareRecording?: typeof preparePronunciation;
 }) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
@@ -28,6 +31,18 @@ export function usePronunciation({
   const hold = useRef<number | undefined>(undefined);
   const held = useRef(false);
   const playback = useRef(0);
+  const prepare = useMemo(() => {
+    let pending: ReturnType<typeof preparePronunciation> | undefined;
+    return (source?: AudioInfo) => {
+      if (!word || sentence) return Promise.resolve(undefined);
+      if (prepareRecording) return prepareRecording(word.id, source);
+      if (source) {
+        pending = undefined;
+        return preparePronunciation(word.id, source);
+      }
+      return (pending ??= preparePronunciation(word.id));
+    };
+  }, [word?.id, sentence, settings.audioSources, prepareRecording]);
   useEffect(() => {
     setOpen(false);
     setSources([]);
@@ -99,28 +114,14 @@ export function usePronunciation({
       }
       if (source) {
         setActive(source.url);
-        await audioClient({
-          action: "audio",
-          id: word.id,
-          download: true,
-          source,
-        });
-        const record = await getAudio(word.id);
+        const record = await prepare(source);
         if (attempt !== playback.current) return;
         if (!record || record.url !== source.url)
           throw new Error(t("audio_source_unavailable"));
         await playBlob(record.blob, settings.normalizeAudio);
         return;
       }
-      let record = await getAudio(word.id);
-      if (!record) {
-        try {
-          await audioClient({ action: "audio", id: word.id, download: true });
-          record = await getAudio(word.id);
-        } catch {
-          /* The system voice remains available when the recording service is offline. */
-        }
-      }
+      const record = await prepare();
       if (attempt !== playback.current) return;
       if (record) {
         try {

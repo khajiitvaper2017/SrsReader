@@ -60,7 +60,31 @@ type BergamotModule = {
   ) => Bergamot;
 };
 
-export async function translateSentence(
+const translations = new Map<string, Promise<string>>();
+
+export function clearTranslationCache() {
+  translations.clear();
+}
+
+export function translateSentence(
+  text: string,
+  sourceLanguage: string,
+  targetLanguage: string,
+  progress: (message: string) => void,
+): Promise<string> {
+  const key = JSON.stringify([text, sourceLanguage, targetLanguage]);
+  let result = translations.get(key);
+  if (!result) {
+    result = translateText(text, sourceLanguage, targetLanguage, progress);
+    translations.set(key, result);
+    void result.catch(() => {
+      if (translations.get(key) === result) translations.delete(key);
+    });
+  }
+  return result;
+}
+
+async function translateText(
   text: string,
   sourceLanguage: string,
   targetLanguage: string,

@@ -8,6 +8,7 @@ import {
   Button,
   Group,
   Paper,
+  ScrollArea,
   Stack,
   Text,
   Title,
@@ -36,6 +37,7 @@ export function ReviewPage({
   deckId?: string;
 }) {
   const {
+    preload,
     queue,
     revealed,
     times,
@@ -96,132 +98,136 @@ export function ReviewPage({
       <ErrorBox error={error} />
       {word ? (
         <>
-          <Paper
-            key={`${word.id}:${word.card?.reps}`}
-            flex={1}
-            mih={0}
-            style={{ overflowY: "auto" }}
-          >
-            <Stack h="100%">
-              <Group justify="center">
-                <SegmentedControl
-                  fullWidth
-                  w="100%"
-                  maw={360}
-                  value={front}
-                  onChange={(value) => setFront(value as typeof front)}
-                  data={[
-                    { value: "word", label: t("word") },
-                    { value: "sentence", label: t("in_context") },
-                  ]}
-                />
-              </Group>
-              <Stack align="center" ta="center" py="lg">
-                <Badge>
-                  {t(
-                    [
-                      "new",
-                      "srs_queue_learning",
-                      "review",
-                      "srs_queue_relearning",
-                    ][word.card!.state]!,
-                  )}
-                </Badge>
-                {front === "sentence" && context ? (
-                  <Sentence context={context} language={word.language} />
-                ) : (
-                  <Title lang={word.language} order={1}>
-                    {word.lemma}
-                  </Title>
-                )}
-                {word.reading && (
-                  <Text variant="supporting">{word.reading}</Text>
-                )}
-                {partsOfSpeech.length > 0 && (
-                  <Text variant="supporting" data-srs-reader>
-                    {partsOfSpeech.join(" / ")}
-                  </Text>
-                )}
-                {front === "sentence" && !context && (
-                  <Text variant="supporting">
-                    {t(
-                      sentenceLoading
-                        ? "study_sentence_loading"
-                        : "study_no_cached_sentence",
-                    )}
-                  </Text>
-                )}
-              </Stack>
-              <Box display="grid" flex={1}>
-                <Stack
-                  justify="center"
-                  align="center"
-                  ta="center"
-                  style={{
-                    gridArea: "1 / 1",
-                    visibility: revealed ? "hidden" : "visible",
-                  }}
-                  aria-hidden={revealed}
-                  inert={revealed}
-                >
-                  <Text variant="supporting">{t("study_reveal_hint")}</Text>
-                </Stack>
-                <Stack
-                  style={{
-                    gridArea: "1 / 1",
-                    visibility: revealed ? "visible" : "hidden",
-                  }}
-                  aria-hidden={!revealed}
-                  inert={!revealed}
-                >
-                  <Stack align="center" ta="center" gap="xs">
-                    {front === "sentence" && (
-                      <Title order={2} lang={word.language}>
-                        {word.lemma}
-                      </Title>
-                    )}
-                    <Group justify="center" gap="xs">
-                      <FrequencyBadge word={{ ...word, forms: [] }} />
-                      <AudioButton
-                        word={word}
-                        settings={settings}
-                        onError={setError}
-                      />
-                    </Group>
-                  </Stack>
-                  <CardDefinitions
-                    key={word.id}
-                    id={word.id}
-                    context={context}
-                    contextLoading={sentenceLoading}
-                    settings={settings}
-                    onError={setError}
+          <Paper key={`${word.id}:${word.card?.reps}`} flex={1} mih={0}>
+            <ScrollArea
+              h="100%"
+              type="never"
+              scrollbars="y"
+              viewportProps={{ tabIndex: 0 }}
+              styles={{ content: { display: "flex", minHeight: "100%" } }}
+            >
+              <Stack flex={1} miw={0}>
+                <Group justify="center">
+                  <SegmentedControl
+                    fullWidth
+                    w="100%"
+                    maw={360}
+                    value={front}
+                    onChange={(value) => setFront(value as typeof front)}
+                    data={[
+                      { value: "word", label: t("word") },
+                      { value: "sentence", label: t("in_context") },
+                    ]}
                   />
-                  {context && (
-                    <ContextSentence
-                      key={`${word.id}:${example}`}
-                      word={word}
+                </Group>
+                <Stack align="center" ta="center" py="lg">
+                  <Badge>
+                    {t(
+                      [
+                        "new",
+                        "srs_queue_learning",
+                        "review",
+                        "srs_queue_relearning",
+                      ][word.card!.state]!,
+                    )}
+                  </Badge>
+                  {front === "sentence" && context ? (
+                    <Sentence context={context} language={word.language} />
+                  ) : (
+                    <Title lang={word.language} order={1}>
+                      {word.lemma}
+                    </Title>
+                  )}
+                  {word.reading && (
+                    <Text variant="supporting">{word.reading}</Text>
+                  )}
+                  {partsOfSpeech.length > 0 && (
+                    <Text variant="supporting" data-srs-reader>
+                      {partsOfSpeech.join(" / ")}
+                    </Text>
+                  )}
+                  {front === "sentence" && !context && (
+                    <Text variant="supporting">
+                      {t(
+                        sentenceLoading
+                          ? "study_sentence_loading"
+                          : "study_no_cached_sentence",
+                      )}
+                    </Text>
+                  )}
+                </Stack>
+                <Box display="grid" flex={1}>
+                  <Stack
+                    justify="center"
+                    align="center"
+                    ta="center"
+                    display={revealed ? "none" : undefined}
+                    style={{ gridArea: "1 / 1" }}
+                    aria-hidden={revealed}
+                    inert={revealed}
+                  >
+                    <Text variant="supporting">{t("study_reveal_hint")}</Text>
+                  </Stack>
+                  <Stack
+                    display={revealed ? undefined : "none"}
+                    style={{ gridArea: "1 / 1" }}
+                    aria-hidden={!revealed}
+                    inert={!revealed}
+                  >
+                    <Stack align="center" ta="center" gap="xs">
+                      {front === "sentence" && (
+                        <Title order={2} lang={word.language}>
+                          {word.lemma}
+                        </Title>
+                      )}
+                      <Group justify="center" gap="xs">
+                        <FrequencyBadge
+                          word={{ ...word, forms: [] }}
+                          loadFrequencies={preload.loadFrequencies}
+                        />
+                        <AudioButton
+                          word={word}
+                          settings={settings}
+                          onError={setError}
+                          prepareRecording={preload.loadAudio}
+                        />
+                      </Group>
+                    </Stack>
+                    <CardDefinitions
+                      key={word.id}
+                      id={word.id}
                       context={context}
+                      contextLoading={sentenceLoading}
+                      loadDefinitions={preload.loadDefinitions}
                       settings={settings}
                       onError={setError}
-                      position={
-                        contexts.length > 1
-                          ? t("example_position", {
-                              current: example + 1,
-                              total: contexts.length,
-                            })
-                          : undefined
-                      }
-                      onNext={
-                        contexts.length > 1
-                          ? () => setExample((example + 1) % contexts.length)
-                          : undefined
-                      }
                     />
-                  )}
-                </Stack>
-              </Box>
-            </Stack>
+                    {context && (
+                      <ContextSentence
+                        key={`${word.id}:${example}`}
+                        word={word}
+                        context={context}
+                        settings={settings}
+                        onError={setError}
+                        position={
+                          contexts.length > 1
+                            ? t("example_position", {
+                                current: example + 1,
+                                total: contexts.length,
+                              })
+                            : undefined
+                        }
+                        onNext={
+                          contexts.length > 1
+                            ? () => setExample((example + 1) % contexts.length)
+                            : undefined
+                        }
+                      />
+                    )}
+                  </Stack>
+                </Box>
+              </Stack>
+            </ScrollArea>
           </Paper>
           <Box display="grid">
             <Box

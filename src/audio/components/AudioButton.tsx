@@ -1,5 +1,6 @@
 import { ActionIcon, Box, Loader, Menu, Stack, Text } from "@mantine/core";
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
+import type { preparePronunciation } from "@/audio/prepare";
 import type { LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -9,11 +10,14 @@ export function AudioButton({
   sentence,
   settings,
   onError,
+  prepareRecording,
 }: {
   word: Pick<LookupWord, "id" | "lemma" | "language">;
   sentence?: string;
   settings: Settings;
   onError: (message: string) => void;
+  /** Reuse the review session's prepared recording. */
+  prepareRecording?: typeof preparePronunciation;
 }) {
   const {
     busy,
@@ -28,7 +32,7 @@ export function AudioButton({
     held,
     play,
     label,
-  } = usePronunciation({ word, sentence, settings, onError });
+  } = usePronunciation({ word, sentence, settings, onError, prepareRecording });
   return (
     <Text data-srs-reader="" component="span" inherit>
       <Menu opened={open} onChange={setOpen} closeOnItemClick={false}>

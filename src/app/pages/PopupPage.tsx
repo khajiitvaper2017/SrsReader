@@ -1,5 +1,6 @@
 import { Stack, ActionIcon, Button, Group, Switch, Text } from "@mantine/core";
 import { dictionariesClient } from "@/dictionaries/client";
+import { isWebsiteEnabled } from "@/reader/preferences";
 import { settingsClient } from "@/settings/client";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
@@ -52,10 +53,14 @@ export function Popup() {
   }
   async function toggle(site: boolean) {
     try {
+      const enabled = !isWebsiteEnabled(settings, host);
       const next = site
         ? {
             ...settings,
-            disabledHosts: settings.disabledHosts.includes(host)
+            enabledHosts: enabled
+              ? [...settings.enabledHosts, host]
+              : settings.enabledHosts.filter((h) => h !== host),
+            disabledHosts: enabled
               ? settings.disabledHosts.filter((h) => h !== host)
               : [...settings.disabledHosts, host],
           }
@@ -93,15 +98,15 @@ export function Popup() {
       )}
       <Group align="center">
         <Switch
-          aria-label={t("parse_websites")}
+          aria-label={t("parse_websites_automatically")}
           checked={!settings.paused}
           onChange={() => void toggle(false)}
-          label={<span>{t("parse_websites")}</span>}
+          label={t("parse_websites_automatically")}
         />
         {host && (
           <Switch
             aria-label={t("enabled_on_host", { host })}
-            checked={!settings.disabledHosts.includes(host)}
+            checked={isWebsiteEnabled(settings, host)}
             onChange={() => void toggle(true)}
             label={
               <Text component="span" inherit>

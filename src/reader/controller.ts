@@ -4,6 +4,7 @@ import { createHighlights } from "@/reader/highlights";
 import { installReaderInput } from "@/reader/input";
 import { installInputPrevention } from "@/reader/input-prevention";
 import { createPopup } from "@/reader/popup";
+import { isWebsiteEnabled } from "@/reader/preferences";
 import { createScanner } from "@/reader/scanner";
 import type { ReaderOptions } from "@/reader/types";
 import { settingsClient } from "@/settings/client";
@@ -69,10 +70,9 @@ export function startReader(
     input.cancel();
     active =
       settings.setupComplete &&
-      !settings.paused &&
       (options.onLookup
         ? settings.scanPopups
-        : !settings.disabledHosts.includes(location.hostname));
+        : isWebsiteEnabled(settings, location.hostname));
     console.info("[SrsReader] Reader configured", {
       context: options.onLookup ? "popup" : "page",
       active,

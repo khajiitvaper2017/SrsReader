@@ -50,7 +50,6 @@ async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "saveTranslation":
       await saveTranslation(request);
-      await notify(request.id);
       return;
     case "word":
       return getWord(request.id);

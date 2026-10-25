@@ -7,6 +7,7 @@ export const readerPreferencesSchema = z.object({
   preventMiddleMouse: inputPreventionSchema,
   preventBackForward: inputPreventionSchema,
   paused: z.boolean().default(false),
+  enabledHosts: z.array(z.string()).default([]),
   disabledHosts: z.array(z.string()).default([]),
   theme: z.enum(["system", "light", "dark", "oled"]).default("system"),
   accentColor: z
@@ -26,3 +27,10 @@ export const readerPreferencesSchema = z.object({
   matureIntervalDays: z.number().int().min(1).default(28),
 });
 export type ReaderPreferences = z.infer<typeof readerPreferencesSchema>;
+
+export function isWebsiteEnabled(settings: ReaderPreferences, host: string) {
+  return (
+    !settings.disabledHosts.includes(host) &&
+    (!settings.paused || settings.enabledHosts.includes(host))
+  );
+}

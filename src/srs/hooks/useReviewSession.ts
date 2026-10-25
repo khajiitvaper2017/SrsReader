@@ -7,6 +7,7 @@ import type { Responses } from "@/srs/contracts";
 import type { ReadingContext } from "@/vocabulary/model";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
+import { useReviewPreload } from "@/srs/hooks/useReviewPreload";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useReviewSession({
@@ -22,14 +23,17 @@ export function useReviewSession({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
+  const queueRevision = useRef(0);
   const [last, setLast] = useState(sessionStorage.getItem("last-review") || "");
   const [front, setFront] = useState(settings.front);
   const [example, setExample] = useState(0);
   const word = queue?.words[0];
+  const preload = useReviewPreload(settings, queue);
   const { play: playAudio } = usePronunciation({
     word,
     settings,
     onError: setError,
+    prepareRecording: preload.loadAudio,
   });
   const [sentences, setSentences] = useState<{
     id: string;
@@ -50,7 +54,8 @@ export function useReviewSession({
     let alive = true;
     setSentences({ id: word?.id || "", contexts: [], loading: !!word });
     if (word)
-      void srsClient({ action: "sentenceExamples", id: word.id })
+      void preload
+        .loadSentences(word.id)
         .then((value) => {
           if (alive) {
             setSentences({ id: word.id, contexts: value, loading: false });
@@ -65,20 +70,49 @@ export function useReviewSession({
     return () => {
       alive = false;
     };
-  }, [word?.id, word?.version, settings, sentenceRevision]);
+  }, [word?.id, word?.version, settings, sentenceRevision, preload]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
-  const load = useCallback(() => {
-    if (busyRef.current) return;
-    void srsClient({
-      action: "queue",
-      language: settings.studyLanguage,
-      deckId,
-    })
-      .then((value) => setQueue(value))
-      .catch((error) => setError(error.message));
-  }, [deckId, settings.studyLanguage]);
-  useEffect(load, [load]);
-  useChanges(load, [
+  const loadQueue = useCallback(
+    (preserveCurrent: boolean) => {
+      if (busyRef.current) return;
+      const revision = preserveCurrent
+        ? queueRevision.current
+        : ++queueRevision.current;
+      void srsClient({
+        action: "queue",
+        language: settings.studyLanguage,
+        deckId,
+      })
+        .then((value) => {
+          if (revision !== queueRevision.current) return;
+          setQueue((current) => {
+            const word = current?.words[0];
+            return preserveCurrent && word
+              ? {
+                  ...value,
+                  words: [
+                    word,
+                    ...value.words.filter((next) => next.id !== word.id),
+                  ],
+                }
+              : value;
+          });
+        })
+        .catch((error) => {
+          if (revision === queueRevision.current) setError(error.message);
+        });
+    },
+    [deckId, settings.studyLanguage],
+  );
+  const load = useCallback(() => loadQueue(false), [loadQueue]);
+  const refresh = useCallback(() => loadQueue(true), [loadQueue]);
+  useEffect(() => {
+    load();
+    return () => {
+      queueRevision.current++;
+    };
+  }, [load]);
+  useChanges(refresh, [
     "vocabulary",
     "srs",
     "settings",
@@ -112,14 +146,15 @@ export function useReviewSession({
   useEffect(() => {
     if (!queue?.wakeAt) return;
     const timer = setTimeout(
-      load,
+      refresh,
       Math.min(Math.max(500, queue.wakeAt - Date.now() + 50), 60000),
     );
     return () => clearTimeout(timer);
-  }, [queue, load]);
+  }, [queue, refresh]);
   async function gradeWord(rating: number) {
     if (!word || !revealed || busyRef.current) return;
     busyRef.current = true;
+    queueRevision.current++;
     setBusy(true);
     setError("");
     stopAudio();
@@ -146,13 +181,6 @@ export function useReviewSession({
       setRevealed(false);
     } catch (error) {
       setError((error as Error).message);
-      setQueue(
-        await srsClient({
-          action: "queue",
-          language: settings.studyLanguage,
-          deckId,
-        }),
-      );
     } finally {
       busyRef.current = false;
       setBusy(false);
@@ -188,6 +216,7 @@ export function useReviewSession({
     }
   }
   return {
+    preload,
     queue,
     revealed,
     times,

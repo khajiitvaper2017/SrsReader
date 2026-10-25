@@ -102,17 +102,36 @@ function normalizationGain(buffer: AudioBuffer): number {
   return Math.min(0.0625 / Math.sqrt(energy / samples), 0.475 / peak, 4);
 }
 
+const preparedBlobs = new WeakMap<
+  Blob,
+  Promise<{ buffer: AudioBuffer; gain: number }>
+>();
+
+/** Decode silently and keep the result only while the recording is in use. */
+export async function prepareBlob(blob: Blob) {
+  let prepared = preparedBlobs.get(blob);
+  if (!prepared) {
+    const context = (audioContext ??= new AudioContext());
+    prepared = blob
+      .arrayBuffer()
+      .then((data) => context.decodeAudioData(data))
+      .then((buffer) => ({ buffer, gain: normalizationGain(buffer) }));
+    preparedBlobs.set(blob, prepared);
+  }
+  return prepared;
+}
+
 export async function playBlob(blob: Blob, normalize: boolean) {
   stopAudio();
   const version = playbackVersion;
   const context = (audioContext ??= new AudioContext());
   await context.resume();
-  const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+  const prepared = await prepareBlob(blob);
   if (version !== playbackVersion) return;
   const source = context.createBufferSource();
   const gain = context.createGain();
-  source.buffer = buffer;
-  gain.gain.value = normalize ? normalizationGain(buffer) : 1;
+  source.buffer = prepared.buffer;
+  gain.gain.value = normalize ? prepared.gain : 1;
   source.connect(gain);
   gain.connect(context.destination);
   source.onended = () => {

@@ -81,7 +81,6 @@ async function processBatch(
     const settings = await getSettings();
     if (
       !settings.udpipe ||
-      settings.paused ||
       udpipeModel(language, settings.udpipeModels[language]) !== model ||
       !(await udpipePermission())
     ) {
@@ -89,7 +88,6 @@ async function processBatch(
         batch,
         attempt,
         enabled: settings.udpipe,
-        paused: settings.paused,
         studyLanguage: settings.studyLanguage,
       });
       break;

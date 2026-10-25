@@ -18,6 +18,7 @@ export function CardDefinitions({
   settings,
   context,
   contextLoading = false,
+  loadDefinitions,
   onError,
 }: {
   id: string;
@@ -25,6 +26,12 @@ export function CardDefinitions({
   context?: ReadingContext;
   /** Wait for sentence selection before looking up definitions. */
   contextLoading?: boolean;
+  /** Reuse review preparation; refresh bypasses an existing prepared result. */
+  loadDefinitions?: (
+    id: string,
+    context?: ReadingContext,
+    refresh?: boolean,
+  ) => Promise<Responses["cardDefinitions"]>;
   onError: (message: string) => void;
 }) {
   const [loaded, setLoaded] = useState<{
@@ -33,27 +40,31 @@ export function CardDefinitions({
   }>();
   const [editing, setEditing] = useState<DefinitionEditing>(null);
   const pending = useRef(0);
-  const reload = useCallback(async () => {
-    if (contextLoading) return;
-    const request = ++pending.current;
-    try {
-      const result = await vocabularyClient({
-        action: "cardDefinitions",
-        id,
-        context,
-      });
-      if (request === pending.current) setLoaded({ context, result });
-    } catch (error) {
-      if (request === pending.current) onError((error as Error).message);
-    }
-  }, [id, context, contextLoading, settings, onError]);
+  const reload = useCallback(
+    async (refresh = false) => {
+      if (contextLoading) return;
+      const request = ++pending.current;
+      try {
+        const result = await (loadDefinitions
+          ? loadDefinitions(id, context, refresh)
+          : vocabularyClient({ action: "cardDefinitions", id, context }));
+        if (request === pending.current) setLoaded({ context, result });
+      } catch (error) {
+        if (request === pending.current) onError((error as Error).message);
+      }
+    },
+    [id, context, contextLoading, settings, onError, loadDefinitions],
+  );
   useEffect(() => {
     void reload();
     return () => {
       pending.current++;
     };
   }, [reload]);
-  useChanges(reload, ["vocabulary", "settings", "dictionaries"]);
+  useChanges(
+    useCallback(() => void reload(true), [reload]),
+    ["vocabulary", "settings", "dictionaries"],
+  );
   const visibility = useDictionaryVisibility(id, loaded?.result.saved, onError);
   if (!loaded) return <Loader size="sm" aria-label={t("looking_up")} />;
   const { result, context: definitionContext } = loaded;
@@ -80,7 +91,7 @@ export function CardDefinitions({
         grammar={result.grammar}
         editing={editing}
         onEditingChange={setEditing}
-        onSaved={reload}
+        onSaved={() => reload(true)}
         onError={onError}
         expandedDictionaries={visibility.expandedDictionaries}
         hiddenDictionaries={visibility.hiddenDictionaries}

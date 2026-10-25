@@ -13,10 +13,7 @@ export const handleReader = execute;
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "scan": {
-      if (
-        settings.paused ||
-        !settings.studyLanguages.includes(request.language)
-      )
+      if (!settings.studyLanguages.includes(request.language))
         return request.texts.map(() => ({
           language: request.language,
           spans: [],

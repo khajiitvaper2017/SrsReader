@@ -53,6 +53,7 @@ export function ReadingSettings({
           <Title order={2}>{t("settings_page_reading")}</Title>
           <Switch
             label={t("parse_websites_automatically")}
+            description={t("parse_websites_automatically_help")}
             checked={!settings.paused}
             onChange={(event) =>
               void update({ paused: !event.currentTarget.checked })
@@ -128,6 +129,7 @@ export function ReadingSettings({
                       variant="subtle"
                       onClick={() =>
                         void update({
+                          enabledHosts: [...settings.enabledHosts, host],
                           disabledHosts: settings.disabledHosts.filter(
                             (h) => h !== host,
                           ),

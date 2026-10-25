@@ -26,13 +26,15 @@ Open **Settings → Controls → Lookup controls**. Enable a preset or select th
 
 Mouse and keyboard bindings can look up selected text. Some system and browser shortcuts cannot be overridden.
 
-**Input action prevention** blocks normal middle-click or Back/Forward actions when the matching lookup binding is used. Choose where it applies; paused or disabled websites retain normal browser actions.
+**Input action prevention** blocks normal middle-click or Back/Forward actions when the matching lookup binding is used. Choose where it applies. Websites with parsing off retain normal browser actions.
 
 ## Colors and parsing
 
 Under **Settings → Reading → Word colors**, choose text or background colors for unsaved, saved, young, mature, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
 
-The toolbar pauses parsing or disables the current site. Parsing automatically detects text in any language in **Settings → General → Studied languages**. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
+**Settings → Reading → Parse websites automatically** starts parsing on websites by default. It is on by default. Turn it off to choose sites manually. In the extension toolbar, use **Enabled on [site]** to turn parsing on or off for the current site. Your choice is saved for that hostname and applies to all its pages. Sites you enable manually stay enabled when automatic parsing is off. Sites you disable stay disabled when automatic parsing is on. The toolbar also has the automatic parsing switch. Dictionary popups use the separate **Scan dictionary popups** setting.
+
+Parsing detects text in any language in **Settings → General → Studied languages**. Short passages can use the page language. Foreign text and text with no known language are skipped. Protected browser pages, editable fields, image text, and PDF viewers cannot be scanned.
 
 ## Grammar analysis with UDPipe
 

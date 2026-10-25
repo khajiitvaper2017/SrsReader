@@ -4,7 +4,14 @@ import type { LookupWord } from "@/dictionaries/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { number, t } from "@/shared/i18n/i18n";
 import { useCallback, useEffect, useState } from "react";
-export function FrequencyBadge({ word }: { word: LookupWord }) {
+export function FrequencyBadge({
+  word,
+  loadFrequencies = wordFrequencies,
+}: {
+  word: LookupWord;
+  /** Reuse frequency ranks prepared by the review session. */
+  loadFrequencies?: typeof wordFrequencies;
+}) {
   const [rows, setRows] = useState<Awaited<ReturnType<typeof wordFrequencies>>>(
     [],
   );
@@ -16,7 +23,7 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
   useEffect(() => {
     let alive = true;
     setRows([]);
-    void wordFrequencies(word)
+    void loadFrequencies(word)
       .then((rows) => {
         if (alive) setRows(rows);
       })
@@ -24,7 +31,7 @@ export function FrequencyBadge({ word }: { word: LookupWord }) {
     return () => {
       alive = false;
     };
-  }, [word.lemma, word.reading, word.language, revision]);
+  }, [word.lemma, word.reading, word.language, revision, loadFrequencies]);
   if (!rows.length) return null;
   const rank = Math.round(harmonicRank(rows.map((row) => row.rank)));
   const details = rows

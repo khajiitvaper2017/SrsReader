@@ -41,6 +41,10 @@ Review sentences come from the permanent cache of texts you have parsed. Each se
 
 Select a language or deck. Choose **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The default grading keys are **1–4**. After revealing the answer, **Space** grades Good. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
 
+While you review, upcoming cards in the current daily queue load in the background. This includes their first example sentence, definitions, frequency ranks, audio, and enabled translations. Cards load one at a time in review order. Daily limits and the selected language or deck apply. Audio preparation uses your enabled audio sources.
+
+Enable **Settings → Audio & translation → Pronunciation → Play audio on reveal** for automatic word audio. Revealing the answer plays the prepared recording. If no usable recording is available, the system voice reads the word. Turn the setting off to disable automatic playback.
+
 **Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions and cached translations stay in place. Undone answers remain in the backup history but do not count as reviews.
 
 ## Review controls
