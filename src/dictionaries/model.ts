@@ -175,5 +175,6 @@ export type LookupResult = {
   words: LookupWord[];
   unresolved: string[];
   warning?: string;
+  onlinePending?: boolean;
   grammar?: OccurrenceGrammar;
 };

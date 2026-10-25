@@ -36,6 +36,7 @@ export const requests = [
     language: languageSchema,
     term: selection.term,
     occurrence: selection.occurrence,
+    localOnly: z.boolean().optional(),
   }),
 ] as const;
 export const requestSchema = z.discriminatedUnion("action", requests);

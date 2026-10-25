@@ -110,6 +110,7 @@ export function useLookupWord({
     const ctx = new ContentScriptContext("popup-reader");
     startReader(ctx, {
       root,
+      settings,
       language: word.language,
       source: {
         url: word.meanings[0]?.sourceUrl || location.href,
@@ -131,32 +132,55 @@ export function useLookupWord({
   }, [word?.id]);
   useEffect(() => {
     let alive = true;
+    const show = (lookup: LookupResult) => {
+      if (!alive) return;
+      setResult(lookup);
+      setError(lookup.warning || "");
+      setSelected(
+        (current) =>
+          (
+            lookup.words.find(
+              (word) => word.id === (current || page.selected),
+            ) ||
+            lookup.words.find((word) =>
+              wordMatchesGrammar(word, lookup.grammar),
+            ) ||
+            lookup.words[0]
+          )?.id || "",
+      );
+    };
+    void (async () => {
+      const request = {
+        action: "lookup" as const,
+        language: settings.studyLanguage,
+        term,
+        occurrence,
+      };
+      const local = await dictionariesClient({ ...request, localOnly: true });
+      if (!alive) return;
+      if (local.words.length || !local.onlinePending) show(local);
+      if (local.onlinePending) show(await dictionariesClient(request));
+    })().catch((error) => {
+      if (alive) setError(error.message);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [term, occurrence, settings.studyLanguage]);
+  const refreshDefinitions = useCallback(() => {
     void dictionariesClient({
       action: "lookup",
       language: settings.studyLanguage,
       term,
       occurrence,
     })
-      .then((lookup) => {
-        if (!alive) return;
-        const restored = lookup.words.find((word) => word.id === page.selected);
-        setResult(lookup);
-        setError(lookup.warning || "");
-        setSelected(
-          (
-            restored ||
-            lookup.words.find((word) =>
-              wordMatchesGrammar(word, lookup.grammar),
-            ) ||
-            lookup.words[0]
-          )?.id || "",
-        );
+      .then((value) => {
+        setResult(value);
+        setError(value.warning || "");
       })
       .catch((error) => setError(error.message));
-    return () => {
-      alive = false;
-    };
-  }, [term, occurrence, settings.studyLanguage]);
+  }, [settings.studyLanguage, term, occurrence]);
+  useChanges(refreshDefinitions, ["dictionaries", "settings", "vocabulary"]);
   const pending = useRef(0);
   const reload = useCallback(() => {
     const request = ++pending.current;
@@ -164,21 +188,11 @@ export function useLookupWord({
     void Promise.all([
       vocabularyClient({ action: "word", id: selected }),
       srsClient({ action: "preview", id: selected, durationMs: duration() }),
-      settingsClient({ action: "settings" }),
-      dictionariesClient({
-        action: "lookup",
-        language: settings.studyLanguage,
-        term,
-        occurrence,
-      }),
     ])
-      .then(([word, times, settings, result]) => {
+      .then(([word, times]) => {
         if (request !== pending.current) return;
         setSaved(word);
         setTimes(times);
-        setSettings(settings);
-        setResult(result);
-        setError(result.warning || "");
       })
       .catch((error) => {
         if (request === pending.current) setError(error.message);

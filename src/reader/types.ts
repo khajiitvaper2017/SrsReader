@@ -15,6 +15,7 @@ export type Block = {
 };
 export type ReaderOptions = {
   language?: string;
+  settings?: import("@/settings/model").Settings;
   root?: HTMLElement;
   onLookup?: (
     term: string,

@@ -49,7 +49,10 @@ export function startReader(
   async function configure(preservePopup = false, refreshDictionaries = false) {
     const started = performance.now();
     const previous = settings;
-    settings = await settingsClient({ action: "settings" });
+    settings =
+      !preservePopup && options.settings
+        ? options.settings
+        : await settingsClient({ action: "settings" });
     const settingsMs = Math.round(performance.now() - started);
     await setInterfaceLanguage(
       settings.interfaceLanguage,

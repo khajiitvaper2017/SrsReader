@@ -54,6 +54,7 @@ async function execute(request: Request, settings: Settings) {
         settings,
         false,
         request.occurrence,
+        request.localOnly,
       );
       const words = result.words.filter(
         (word) =>

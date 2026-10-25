@@ -24,6 +24,7 @@ export async function lookup(
   settings: Settings,
   refreshOnline = false,
   occurrence?: Occurrence,
+  localOnly = false,
 ): Promise<LookupResult> {
   const lookupTerm =
     settings.studyLanguage === "cs" ? normalizeCzechReflexive(term) : term;
@@ -75,10 +76,10 @@ export async function lookup(
     unresolved: [],
   };
   let warning: string | undefined;
-  if (
-    online &&
-    (onlineMode === "show" || (onlineMode === "fallback" && !higherMatch))
-  ) {
+  const needsOnline =
+    !!online &&
+    (onlineMode === "show" || (onlineMode === "fallback" && !higherMatch));
+  if (!localOnly && needsOnline && online) {
     try {
       const first = terms[0]!;
       // Unknown lemmas can return unrelated fuzzy matches from Nechybujte.
@@ -119,6 +120,7 @@ export async function lookup(
     words: [],
     unresolved: [],
     warning,
+    onlinePending: localOnly && needsOnline,
     grammar: contextual?.grammar,
   };
   for (const candidate of terms) {
