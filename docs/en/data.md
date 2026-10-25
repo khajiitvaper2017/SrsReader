@@ -20,6 +20,12 @@ Immersion hit counts and text fingerprints are included in learning and full bac
 
 Export before uninstalling, clearing browser data, or moving to another browser. There is no account or cloud backup.
 
+## Database cleanup
+
+Use **Settings → Backups → Clean up database** to remove unused dictionary revisions left by interrupted or failed imports and updates. Cleanup checks entries, lookup indexes, frequency and phrase records, tags, media, and original archives. It keeps every installed dictionary, including disabled dictionaries, and preserves your vocabulary, review history, recordings, settings, corpora, and model downloads. The result reports how many unused records were removed, or tells you that none were found.
+
+Cleanup is unavailable while an import is running. Imports also use the same cleanup before starting. If an earlier import was interrupted, you can clean up before exporting a full backup so it does not include those leftovers.
+
 ## What stays local
 
 Local parsing, reviews, and translation run on your device. Optional UDPipe analysis sends page text in supported studied languages to LINDAT. LINDAT may use that text to improve its systems. Page URLs are not added to these requests. Successful analyses stay cached in this browser until extension data is cleared. The parser cache is included in full backups, but not in settings or learning-only exports. Downloads contact dictionary publishers, Tatoeba, word-form and translation-model providers, and GitHub for the RWKV model. Optional pronunciation downloads send the word to Wikimedia Commons, LanguagePod101, or Forvo. These requests do not include your sentences or website URLs. Opening **Audio sources** also sends the word to enabled providers. Disable a provider under **Settings → Audio & translation → Pronunciation → Audio sources** to stop requests to it.

@@ -19,6 +19,10 @@ import { t } from "@/shared/i18n/i18n";
 import { httpsUrl } from "@/shared/url";
 import { BlobReader, BlobWriter, TextWriter, ZipReader } from "@zip.js/zip.js";
 import { z } from "zod";
+import {
+  cleanupUnusedRevisions,
+  removeRevision,
+} from "@/dictionaries/revisions";
 
 const tagSchema = z.tuple([
   z.string(),
@@ -27,30 +31,8 @@ const tagSchema = z.tuple([
   z.string(),
   z.number(),
 ]);
+
 const singleLatinWord = /^[\p{Script=Latin}\p{M}\p{Nd}]+$/u;
-export async function removeRevision(id: string) {
-  await db.transaction(
-    "rw",
-    [
-      db.entries,
-      db.entryMatches,
-      db.frequencies,
-      db.tags,
-      db.dictionaryMedia,
-      db.archives,
-      db.phrases,
-    ],
-    async () => {
-      await db.entries.where("revisionId").equals(id).delete();
-      await db.entryMatches.where(":id").startsWith(`${id}:`).delete();
-      await db.frequencies.where("revisionId").equals(id).delete();
-      await db.tags.where("revisionId").equals(id).delete();
-      await db.dictionaryMedia.where("revisionId").equals(id).delete();
-      await db.archives.delete(id);
-      await db.phrases.where("revisionId").equals(id).delete();
-    },
-  );
-}
 export async function importDictionary(
   blob: Blob,
   language: string,
@@ -58,15 +40,7 @@ export async function importDictionary(
   expectedId?: string,
 ) {
   return navigator.locks.request("srs-reader-dictionary-write", async () => {
-    const active = new Set(
-      (await db.dictionaries.toArray()).map((d) => d.revisionId),
-    );
-    const revisions = new Set([
-      ...(await db.entries.orderBy("revisionId").uniqueKeys()),
-      ...(await db.frequencies.orderBy("revisionId").uniqueKeys()),
-    ]);
-    for (const revision of revisions)
-      if (!active.has(String(revision))) await removeRevision(String(revision));
+    await cleanupUnusedRevisions();
     return importRevision(blob, language, progress, expectedId);
   });
 }
@@ -334,8 +308,11 @@ async function importRevision(
       await removeRevision(existing.revisionId).catch(console.error);
     return dictionary;
   } finally {
-    await zip.close();
-    if (!activated) await removeRevision(revisionId);
+    try {
+      await zip.close();
+    } finally {
+      if (!activated) await removeRevision(revisionId);
+    }
   }
 }
 export async function checkUpdate(dictionary: Dictionary) {

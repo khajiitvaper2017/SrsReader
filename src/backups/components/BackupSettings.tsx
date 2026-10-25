@@ -15,7 +15,7 @@ import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { useRef } from "react";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, Eraser } from "lucide-react";
 export function BackupSettings({
   setSettings,
   tasks,
@@ -23,7 +23,7 @@ export function BackupSettings({
   setSettings: (settings: Settings) => void;
   tasks: SettingsTask;
 }) {
-  const { busy, task, fileImport, fullExport } = useBackups({
+  const { busy, task, fileImport, fullExport, cleanup } = useBackups({
     setSettings,
     tasks,
   });
@@ -122,6 +122,19 @@ export function BackupSettings({
             </Group>
           </Stack>
         </SimpleGrid>
+        <Stack>
+          <Title order={3}>{t("cleanup_title")}</Title>
+          <Text variant="supporting">{t("cleanup_description")}</Text>
+          <Group>
+            <Button
+              variant="default"
+              disabled={busy}
+              onClick={() => void cleanup()}
+            >
+              <Eraser aria-hidden="true" size={16} /> {t("cleanup_database")}
+            </Button>
+          </Group>
+        </Stack>
         <Alert color="yellow">
           {t("imports_replace_the_selected_category_export_your_progress")}
         </Alert>

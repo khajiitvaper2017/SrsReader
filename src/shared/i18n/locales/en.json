@@ -982,5 +982,12 @@
   "full_backup_invalid": "This is not a valid SrsReader full backup, or the archive is incomplete or damaged.",
   "full_backup_version": "This full backup uses a different data format. Restore it with the same SrsReader database version.",
   "full_backup_confirm": "Replace all local app data and downloaded models with this backup ({{words}} words and {{dictionaries}} dictionaries)? This does not merge with current data.",
-  "full_backup_restored": "Full backup restored."
+  "full_backup_restored": "Full backup restored.",
+  "cleanup_title": "Database cleanup",
+  "cleanup_database": "Clean up database",
+  "cleanup_description": "Remove unused dictionary data left by interrupted imports. Installed dictionaries, saved words, reviews, recordings, settings, and downloaded models are preserved.",
+  "cleanup_running": "Cleaning unused dictionary data",
+  "cleanup_complete": "Removed {{records}} unused records from {{revisions}} dictionary revisions.",
+  "cleanup_empty": "No unused dictionary data found.",
+  "cleanup_import_running": "Finish the current dictionary or language-data import before cleaning the database."
 }

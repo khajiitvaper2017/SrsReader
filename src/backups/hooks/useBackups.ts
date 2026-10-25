@@ -1,9 +1,10 @@
 import { readLearning, readSettings } from "@/backups/archive";
 import { restoreLearning, restoreSettings } from "@/backups/restore";
+import { dictionariesClient } from "@/dictionaries/client";
 import { rpc } from "@/platform/messaging/send";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
-import { t } from "@/shared/i18n/i18n";
+import { number, t } from "@/shared/i18n/i18n";
 
 export function useBackups({
   setSettings,
@@ -75,5 +76,21 @@ export function useBackups({
       await exportFull(tasks.setProgress);
     });
   }
-  return { busy, task, fileImport, fullExport };
+  async function cleanup() {
+    await task(async () => {
+      tasks.setProgress({ phase: t("cleanup_running"), done: 0, total: 0 });
+      const result = await dictionariesClient({
+        action: "cleanupDictionaries",
+      });
+      setNotice(
+        result.records
+          ? t("cleanup_complete", {
+              records: number(result.records),
+              revisions: number(result.revisions),
+            })
+          : t("cleanup_empty"),
+      );
+    });
+  }
+  return { busy, task, fileImport, fullExport, cleanup };
 }

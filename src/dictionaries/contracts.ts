@@ -5,6 +5,7 @@ import { selection } from "@/vocabulary/contracts";
 import { z } from "zod";
 
 export const requests = [
+  z.object({ action: z.literal("cleanupDictionaries") }),
   z.object({
     action: z.literal("setImmersionWeight"),
     language: languageSchema,
@@ -42,6 +43,7 @@ export const requests = [
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
+  cleanupDictionaries: { revisions: number; records: number };
   setImmersionWeight: void;
   dictionaries: Dictionary[];
   searchDictionaries: {

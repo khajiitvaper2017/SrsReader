@@ -3,7 +3,7 @@ import { dictionaryDisplay } from "@/dictionaries/display";
 import { immersionDictionary } from "@/dictionaries/immersion";
 import { immersionId } from "@/dictionaries/immersion-model";
 import type { Request } from "@/dictionaries/contracts";
-import { removeRevision } from "@/dictionaries/management";
+import { removeRevision } from "@/dictionaries/revisions";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
