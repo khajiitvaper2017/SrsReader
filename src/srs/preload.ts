@@ -215,8 +215,10 @@ export function createReviewPreload(settings: Settings) {
     });
   }
   function start(words: Vocabulary[]) {
-    retain(words);
-    queue = [...words];
+    const upcoming = words.slice(0, 3);
+    retain(upcoming);
+    queue = upcoming;
+    if (document.hidden) return;
     run();
   }
   function stop() {

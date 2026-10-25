@@ -154,7 +154,7 @@ export function useReviewSession({
   async function gradeWord(rating: number) {
     if (!word || !revealed || busyRef.current) return;
     busyRef.current = true;
-    queueRevision.current++;
+    const revision = ++queueRevision.current;
     setBusy(true);
     setError("");
     stopAudio();
@@ -172,13 +172,24 @@ export function useReviewSession({
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
       setQueue(
-        await srsClient({
-          action: "queue",
-          language: settings.studyLanguage,
-          deckId,
-        }),
+        (current) =>
+          current && {
+            ...current,
+            words: current.words.filter((entry) => entry.id !== word.id),
+          },
       );
       setRevealed(false);
+      void srsClient({
+        action: "queue",
+        language: settings.studyLanguage,
+        deckId,
+      })
+        .then((value) => {
+          if (revision === queueRevision.current) setQueue(value);
+        })
+        .catch((error) => {
+          if (revision === queueRevision.current) setError(error.message);
+        });
     } catch (error) {
       setError((error as Error).message);
     } finally {

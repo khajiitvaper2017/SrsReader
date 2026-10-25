@@ -11,20 +11,20 @@ export function useReviewPreload(
 ) {
   const preload = useMemo(() => createReviewPreload(settings), [settings]);
   useChanges(
-    useCallback(
-      (message) =>
-        preload.invalidate(
-          message.scope === "dictionaryVisibility"
-            ? message.word?.id
-            : undefined,
-        ),
-      [preload],
-    ),
+    useCallback((message) => preload.invalidate(message.word?.id), [preload]),
     ["vocabulary", "dictionaries", "frequency", "dictionaryVisibility"],
   );
   useEffect(() => {
-    preload.start(queue?.words || []);
-    return preload.stop;
+    const start = () => {
+      if (document.hidden) preload.stop();
+      else preload.start(queue?.words || []);
+    };
+    start();
+    document.addEventListener("visibilitychange", start);
+    return () => {
+      preload.stop();
+      document.removeEventListener("visibilitychange", start);
+    };
   }, [preload, queue]);
   useEffect(() => clearTranslationCache, []);
   return preload;
