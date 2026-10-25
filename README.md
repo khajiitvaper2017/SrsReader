@@ -6,16 +6,16 @@ Read the [user guide](docs/README.md), also available in the app’s **Docs** ta
 
 ## Build
 
-Requires Node.js 22 or newer.
+Requires Node.js 22.13 or newer and pnpm 12.15.0. See the [pnpm installation guide](https://pnpm.io/installation) if pnpm is not installed.
 
 ```sh
-npm install
-npm run zip
-npm run zip:firefox
+pnpm install --frozen-lockfile
+pnpm zip
+pnpm zip:firefox
 ```
 
 Load the builds using the [installation guide](docs/en/getting-started.md).
 
-For automatic reloads during development, run `npm run dev` or `npm run dev:firefox` and load the development build once. Keep the command running while you edit files. See the [automatic reload setup](docs/en/getting-started.md#automatic-reloads).
+For automatic reloads during development, run `pnpm dev` or `pnpm dev:firefox` and load the development build once. Keep the command running while you edit files. See the [automatic reload setup](docs/en/getting-started.md#automatic-reloads).
 
-Run `npm run fix` to apply ESLint fixes and Prettier formatting; `npm run typecheck` checks TypeScript.
+Run `pnpm fix` to apply ESLint fixes and Prettier formatting; `pnpm typecheck` checks TypeScript.

@@ -1,18 +1,18 @@
 ## Build and development
 
-- Use Node.js 22 or newer and npm. Run `npm ci` to install from `package-lock.json`. Installation also runs `wxt prepare`.
-- Run `npm run dev` for Chromium or `npm run dev:firefox` for Firefox.
-- Run `npm run build` for Chromium or `npm run build:firefox` for Firefox. WXT writes builds to `.output/`.
-- Run `npm run zip` or `npm run zip:firefox` to create installable archives.
-- Treat `.wxt/` and `.output/` as generated files. Do not edit them. Run `npx wxt prepare` if generated WXT types are missing.
+- Use Node.js 22.13 or newer and pnpm 12.15.0. Run `pnpm install --frozen-lockfile` to install from `pnpm-lock.yaml`. Installation also runs `wxt prepare`.
+- Run `pnpm dev` for Chromium or `pnpm dev:firefox` for Firefox.
+- Run `pnpm build` for Chromium or `pnpm build:firefox` for Firefox. WXT writes builds to `.output/`.
+- Run `pnpm zip` or `pnpm zip:firefox` to create installable archives.
+- Treat `.wxt/` and `.output/` as generated files. Do not edit them. Run `pnpm exec wxt prepare` if generated WXT types are missing.
 - Always rebuild for chrome after finishing the work.
 
 ## Linting and fixes
 
-- Run `npm run typecheck` to check TypeScript and `npx eslint .` to lint. There is no `lint` script.
-- Run `npm run format:check` to check Prettier formatting.
-- Run `npm run fix` to apply ESLint fixes and Prettier formatting across the repo. `npm run format` only applies formatting.
-- For a small change, use `npx eslint <files> --fix` and `npx prettier --write <files>` to avoid unrelated edits.
+- Run `pnpm typecheck` to check TypeScript and `pnpm exec eslint .` to lint. There is no `lint` script.
+- Run `pnpm format:check` to check Prettier formatting.
+- Run `pnpm fix` to apply ESLint fixes and Prettier formatting across the repo. `pnpm format` only applies formatting.
+- For a small change, use `pnpm exec eslint <files> --fix` and `pnpm exec prettier --write <files>` to avoid unrelated edits.
 - Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
 - Do not add tests unless asked. If asked, add only end-to-end tests that check app behavior.
 - Run checks that fit the change. Do not repeat checks the user already completed. Report any checks you did not run.
