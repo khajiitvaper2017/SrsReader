@@ -1,6 +1,5 @@
 import { isOnlineDictionary } from "@/dictionaries/online";
 import {
-  Alert,
   Anchor,
   Button,
   Group,
@@ -35,7 +34,6 @@ import { useSettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
-import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { ReviewSettings } from "@/srs/components/ReviewSettings";
 import { ReviewControls } from "@/srs/components/ReviewControls";
 import {
@@ -50,7 +48,7 @@ import {
 } from "lucide-react";
 import { WordColors } from "@/settings/components/WordColors";
 import { AppearanceSettings } from "@/settings/components/AppearanceSettings";
-import { TaskProgress } from "@/shared/ui/TaskProgress";
+import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { useCallback, useEffect, useMemo, useState } from "react";
 export function SettingsPage({
   settings: preferences,
@@ -83,8 +81,16 @@ export function SettingsPage({
     [preferences, selectedLanguage],
   );
   const tasks = useSettingsTask();
-  const { error, setError, notice, busy, setBusy, progress, setProgress } =
-    tasks;
+  const {
+    error,
+    setError,
+    notice,
+    setNotice,
+    busy,
+    setBusy,
+    progress,
+    setProgress,
+  } = tasks;
   const languageData = useLanguageData(settings.studyLanguage, tasks);
   const load = useCallback(() => {
     void dictionariesClient({ action: "dictionaries" })
@@ -198,17 +204,14 @@ export function SettingsPage({
         <Title order={1}>{t(setup ? "setup" : "settings")}</Title>
         {setup && <Text variant="supporting">{t("settings_setup_intro")}</Text>}
       </Stack>
-      <ErrorBox error={error} />
-      {notice && (
-        <Alert color="green" role="status">
-          {notice}
-        </Alert>
-      )}
-      {busy && progress && (
-        <Paper>
-          <TaskProgress progress={progress} />
-        </Paper>
-      )}
+      <TaskAlerts
+        busy={busy}
+        progress={progress}
+        error={error}
+        notice={notice}
+        onDismissError={() => setError("")}
+        onDismissNotice={() => setNotice("")}
+      />
       {(setup ||
         ["reading", "dictionaries", "review", "audio"].includes(selected)) &&
         languages.length > 0 && (

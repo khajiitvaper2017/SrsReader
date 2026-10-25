@@ -405,6 +405,8 @@
   "words_progress": "Words & progress",
   "words_without_frequency": "Words without frequency",
   "working": "Working…",
+  "dismiss_notification": "Dismiss notification",
+  "task_time_remaining": "About {{duration}} left in this step",
   "young": "Young",
   "srs_algorithm": "Scheduling algorithm",
   "srs_algorithm_ready": "Scheduling model is ready. Review cards have been rescheduled.",

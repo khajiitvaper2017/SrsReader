@@ -22,6 +22,7 @@ import { settingsClient } from "@/settings/client";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { number, t } from "@/shared/i18n/i18n";
+import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { srsClient } from "@/srs/client";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
@@ -133,7 +134,7 @@ export function StudyPage({
     if (!action) return;
     setBusy(true);
     setError("");
-    setNotice(action.operation === "refresh" ? t("study_refreshing_deck") : "");
+    setNotice("");
     try {
       await srsClient({
         action: "manageDeck",
@@ -184,12 +185,13 @@ export function StudyPage({
           </Button>
         </Group>
       </Group>
-      <ErrorBox error={error} />
-      {notice && (
-        <Text variant="supporting" role="status">
-          {notice}
-        </Text>
-      )}
+      <TaskAlerts
+        busy={busy}
+        error={modal || confirmation ? "" : error}
+        notice={notice}
+        onDismissError={() => setError("")}
+        onDismissNotice={() => setNotice("")}
+      />
       <Paper>
         {!languages && !error && <Loader />}
         <Table.ScrollContainer minWidth={480}>

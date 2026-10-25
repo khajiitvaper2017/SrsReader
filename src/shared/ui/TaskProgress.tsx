@@ -1,8 +1,32 @@
 import { Group, Progress, Stack, Text } from "@mantine/core";
 import type { ImportProgress } from "@/shared/download";
-import { downloadSize, number } from "@/shared/i18n/i18n";
+import { downloadSize, number, t } from "@/shared/i18n/i18n";
+import { useEffect, useRef, useState } from "react";
 export function TaskProgress({ progress }: { progress: ImportProgress }) {
   const { phase, done, total, unit } = progress;
+  const timing = useRef({ phase, unit, done, lastDone: done, at: 0 });
+  const [remaining, setRemaining] = useState<number>();
+  useEffect(() => {
+    const now = performance.now();
+    const start = timing.current;
+    if (
+      !start.at ||
+      start.phase !== phase ||
+      start.unit !== unit ||
+      done < start.lastDone
+    ) {
+      timing.current = { phase, unit, done, lastDone: done, at: now };
+      setRemaining(undefined);
+      return;
+    }
+    start.lastDone = done;
+    const elapsed = now - start.at;
+    setRemaining(
+      total > done && done > start.done && elapsed >= 1000
+        ? Math.ceil(((elapsed / 1000) * (total - done)) / (done - start.done))
+        : undefined,
+    );
+  }, [phase, unit, done, total]);
   const percent = total ? Math.min(100, (done / total) * 100) : undefined;
   const detail =
     unit === "bytes"
@@ -37,6 +61,20 @@ export function TaskProgress({ progress }: { progress: ImportProgress }) {
           withAria={false}
         />
       </Progress.Root>
+      {remaining !== undefined && (
+        <Text variant="supporting">
+          {t("task_time_remaining", {
+            duration: number(
+              remaining < 60 ? remaining : Math.ceil(remaining / 60),
+              {
+                style: "unit",
+                unit: remaining < 60 ? "second" : "minute",
+                unitDisplay: "short",
+              },
+            ),
+          })}
+        </Text>
+      )}
     </Stack>
   );
 }

@@ -413,6 +413,8 @@
   "words_progress": "Слова та прогрес",
   "words_without_frequency": "Слова без частоти",
   "working": "Обробка…",
+  "dismiss_notification": "Закрити сповіщення",
+  "task_time_remaining": "До завершення цього етапу — приблизно {{duration}}",
   "young": "Молоді",
   "srs_algorithm": "Алгоритм повторення",
   "srs_algorithm_ready": "Модель повторення готова. Картки переплановано.",
