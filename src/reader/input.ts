@@ -73,15 +73,7 @@ export function installReaderInput(
         : wordAtPointer();
     if (!word) return false;
     clearTimeout(timer);
-    void popup
-      .show(
-        word.term,
-        word.range,
-        word.context,
-        word.occurrence,
-        word.focusRanges,
-      )
-      .catch(console.warn);
+    void popup.show(word).catch(console.warn);
     return true;
   }
   function hover(
@@ -99,25 +91,13 @@ export function installReaderInput(
       return;
     const word = wordAtPointer();
     if (word)
-      timer = setTimeout(
-        () =>
-          void popup
-            .show(
-              word.term,
-              word.range,
-              word.context,
-              word.occurrence,
-              word.focusRanges,
-            )
-            .catch(console.warn),
-        260,
-      );
+      timer = setTimeout(() => void popup.show(word).catch(console.warn), 260);
   }
   function consume(event: Event) {
     event.preventDefault();
     event.stopImmediatePropagation();
   }
-  ctx.addEventListener(window, "scroll", popup.updateVisibility, {
+  ctx.addEventListener(window, "scroll", popup.reposition, {
     capture: true,
     passive: true,
   });

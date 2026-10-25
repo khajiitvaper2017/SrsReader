@@ -16,7 +16,7 @@ export async function canAutoTranslate(
         (await ai.Translator.availability({
           sourceLanguage,
           targetLanguage,
-        })) === "available"
+        })) !== "unavailable"
       )
         return true;
     } catch {
@@ -61,6 +61,80 @@ type BergamotModule = {
 };
 
 const translations = new Map<string, Promise<string>>();
+const modelDownloads = new Map<string, Promise<boolean>>();
+const modelPrompts: {
+  sourceLanguage: string;
+  targetLanguage: string;
+  enable: (progress: (message: string) => void) => Promise<void>;
+  skip: () => void;
+}[] = [];
+const modelListeners = new Set<() => void>();
+
+export function subscribeTranslationModel(listener: () => void) {
+  modelListeners.add(listener);
+  return () => {
+    modelListeners.delete(listener);
+  };
+}
+
+export function getTranslationModelPrompt() {
+  return modelPrompts[0];
+}
+
+function createBrowserTranslator(
+  sourceLanguage: string,
+  targetLanguage: string,
+  progress: (message: string) => void,
+) {
+  return ai.Translator!.create({
+    sourceLanguage,
+    targetLanguage,
+    monitor(monitor) {
+      monitor.addEventListener("downloadprogress", (event) => {
+        progress(
+          t("downloading_translation_model_2", {
+            value1: Math.round(event.loaded * 100),
+          }),
+        );
+      });
+    },
+  });
+}
+
+function requestTranslationModel(
+  sourceLanguage: string,
+  targetLanguage: string,
+) {
+  const key = JSON.stringify([sourceLanguage, targetLanguage]);
+  let download = modelDownloads.get(key);
+  if (!download) {
+    download = new Promise<boolean>((resolve) => {
+      const finish = (enabled: boolean) => {
+        modelPrompts.splice(modelPrompts.indexOf(prompt), 1);
+        resolve(enabled);
+        for (const listener of modelListeners) listener();
+      };
+      const prompt = {
+        sourceLanguage,
+        targetLanguage,
+        enable: async (progress: (message: string) => void) => {
+          const translator = await createBrowserTranslator(
+            sourceLanguage,
+            targetLanguage,
+            progress,
+          );
+          translator.destroy();
+          finish(true);
+        },
+        skip: () => finish(false),
+      };
+      modelPrompts.push(prompt);
+      for (const listener of modelListeners) listener();
+    });
+    modelDownloads.set(key, download);
+  }
+  return download;
+}
 
 export function clearTranslationCache() {
   translations.clear();
@@ -106,6 +180,14 @@ async function translateText(
       // A website's Permissions Policy can block the browser API in its popup.
     }
   }
+  if (
+    (availability === "downloadable" || availability === "downloading") &&
+    !navigator.userActivation.isActive
+  ) {
+    progress(t("browser_translation_setup"));
+    if (!(await requestTranslationModel(sourceLanguage, targetLanguage)))
+      availability = "unavailable";
+  }
   if (ai.Translator && availability !== "unavailable") {
     progress(
       availability === "available"
@@ -115,18 +197,11 @@ async function translateText(
     let translator:
       Awaited<ReturnType<typeof ai.Translator.create>> | undefined;
     try {
-      translator = await ai.Translator.create({
-        ...options,
-        monitor(monitor) {
-          monitor.addEventListener("downloadprogress", (event) => {
-            progress(
-              t("downloading_translation_model_2", {
-                value1: Math.round(event.loaded * 100),
-              }),
-            );
-          });
-        },
-      });
+      translator = await createBrowserTranslator(
+        sourceLanguage,
+        targetLanguage,
+        progress,
+      );
       progress(t("translating"));
       console.info("[translation] browser request", { text, ...options });
       const response = await translator.translate(text);

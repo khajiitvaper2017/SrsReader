@@ -37,7 +37,7 @@ Under **Settings → Reading → Word colors**, choose text or background colors
 Under **Settings → Reading**, select a language tab, then select **Load and color words**:
 
 - **Automatic** (default): color local words first and update online words as their entries arrive. All dictionaries follow their **Show**, **If needed**, and **Hide** settings. Cached entries are reused.
-- **When opened**: load and color words only when you open them with a lookup control. Other words stay uncolored, including words in installed dictionaries or the cache.
+- **When opened**: use a lookup control on a word to parse and color its full sentence, then open its dictionary entry. Other sentences are not scanned automatically. If grammar analysis is enabled, the lookup uses the word's grammar in that sentence.
 
 The choice applies to all dictionaries for that language, on websites and in scanned dictionary popups. Each language has its own choice. Online dictionaries set to **Hide** are never contacted. Online dictionaries receive individual words according to their display settings.
 
@@ -103,7 +103,7 @@ Translations replace the displayed definitions or example sentence. Click the cr
 - **Automatically translate example sentences:** translates example and reading sentences into your native language when you open them.
 - **Automatically translate dictionary definitions:** translates dictionary definitions into your native language when you open them.
 
-Both switches are off by default. Unsupported language pairs stay in the original language. Local models can download on first use. If the browser translator needs activation, click a translation button once to prepare it. You can still use the translation button to show the original.
+Both switches are off by default. Unsupported language pairs stay in the original language. If **Set up browser translation** appears, click **Enable translation**. Keep the popup or app page open while the browser prepares its model. The dialog shows download progress, and translations continue automatically when setup finishes. **Use Bergamot** uses the alternative local translator for that language pair on the current page. Closing the dialog also selects Bergamot. If setup fails, try again or choose Bergamot.
 
 Translations use your native language and run locally. Models download on first use; not every language pair is supported. Saved translations work offline. Editing a sentence removes its old translation.
 

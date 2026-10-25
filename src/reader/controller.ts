@@ -23,7 +23,6 @@ export function startReader(
   let active = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   const highlights = createHighlights(settings);
-  const popup = createPopup(options, () => settings, highlights);
   const scanner = createScanner(
     root,
     excluded,
@@ -32,6 +31,7 @@ export function startReader(
     () => active,
     highlights,
   );
+  const popup = createPopup(options, () => settings, highlights, scanner);
   const input = installReaderInput(
     ctx,
     root,

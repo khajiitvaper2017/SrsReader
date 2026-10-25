@@ -430,10 +430,44 @@ export function createScanner(
     if (JSON.stringify(parsed.get(key)) === JSON.stringify(result)) return;
     parsed.set(key, result);
     for (const [element, block] of blocks) {
-      if (block.language !== result.language || block.text !== text) continue;
+      if (block.language !== result.language || !block.text.includes(text))
+        continue;
       const current = readBlock(element);
-      if (element.isConnected && current.text === text)
+      if (!element.isConnected || current.text !== block.text) continue;
+      if (block.text === text) {
         render(element, text, current.parts, result, generation);
+        continue;
+      }
+      const sentences = [
+        ...new Intl.Segmenter(block.language, {
+          granularity: "sentence",
+        }).segment(block.text),
+      ].filter((sentence) => sentence.segment === text);
+      if (!sentences.length) continue;
+      const spans = block.spans
+        .filter((span) =>
+          sentences.every(
+            ({ index }) =>
+              span.end <= index || span.start >= index + text.length,
+          ),
+        )
+        .map(({ range: _range, ...span }) => span);
+      for (const { index } of sentences)
+        spans.push(
+          ...result.spans.map((span) => ({
+            ...span,
+            start: span.start + index,
+            end: span.end + index,
+            related: span.related?.map(({ start, end }) => ({
+              start: start + index,
+              end: end + index,
+            })),
+          })),
+        );
+      spans.sort((a, b) => a.start - b.start);
+      const merged = { ...result, spans };
+      parsed.set(JSON.stringify([block.language, block.text]), merged);
+      render(element, block.text, current.parts, merged, generation);
     }
   }
   function scheduleRetry() {
@@ -542,6 +576,7 @@ export function createScanner(
           );
       const groups = new Map<string, Set<string>>();
       for (const snapshot of eligible) {
+        if (preferences.wordLoading[snapshot.language] === "onLookup") continue;
         const hit = parsed.get(key(snapshot.language, snapshot.text));
         if (hit && (!hit.retryAt || hit.retryAt > Date.now())) continue;
         parsed.delete(key(snapshot.language, snapshot.text));
@@ -552,23 +587,14 @@ export function createScanner(
       await Promise.all(
         [...groups].map(async ([language, texts]) => {
           const missing = [...texts];
-          const results: ScanResult[] =
-            preferences.wordLoading[language] === "onLookup"
-              ? missing.map((text) => ({
-                  language,
-                  spans:
-                    [...blocks.values()].find(
-                      (block) =>
-                        block.language === language && block.text === text,
-                    )?.spans || [],
-                }))
-              : await readerClient({
-                  action: "scan",
-                  source: options.onLookup ? "popup" : "website",
-                  session,
-                  language,
-                  texts: missing,
-                });
+          const results = await readerClient({
+            action: "scan",
+            source: options.onLookup ? "popup" : "website",
+            lookup: false,
+            session,
+            language,
+            texts: missing,
+          });
           if (generation !== version || !isActive()) return;
           for (const [index, text] of missing.entries())
             if (!parsed.has(key(language, text)))
@@ -830,6 +856,79 @@ export function createScanner(
       }),
     };
   }
+  async function prepareLookup(
+    word: NonNullable<ReturnType<typeof wordAtPointer>>,
+  ) {
+    const { context, range } = word;
+    if (
+      !context.language ||
+      getSettings().wordLoading[context.language] !== "onLookup" ||
+      word.occurrence
+    )
+      return word;
+    const parent = range.startContainer.parentElement?.closest(blockSelector);
+    const element = parent && root.contains(parent) ? parent : root;
+    const block = lookupBlock(
+      element,
+      range.startContainer,
+      range.endContainer,
+    );
+    const first = block?.parts.find(
+      (part) => part.node === range.startContainer,
+    );
+    if (!block || !first) return word;
+    const offset = first.start + range.startOffset - context.start;
+    render(
+      element,
+      block.text,
+      block.parts,
+      {
+        language: block.language,
+        spans: block.spans,
+      },
+      generation,
+    );
+    const id = session;
+    const key = JSON.stringify([context.language, context.sentence]);
+    parsed.delete(key);
+    const [result] = await readerClient({
+      action: "scan",
+      source: options.onLookup ? "popup" : "website",
+      lookup: true,
+      session: id,
+      language: context.language,
+      texts: [context.sentence],
+    });
+    if (session !== id || readBlock(element).text !== block.text) return word;
+    const ready = parsed.get(key) || result!;
+    applyScanResult(id, context.sentence, ready);
+    const span =
+      ready.spans.find(
+        (span) => span.start <= context.start && span.end >= context.end,
+      ) ||
+      ready.spans.find(
+        (span) =>
+          span.start === context.start &&
+          span.related?.some(({ end }) => end === context.end),
+      );
+    if (!span) return word;
+    return {
+      term: span.term,
+      range:
+        makeRange(block.parts, offset + span.start, offset + span.end) || range,
+      context: {
+        ...context,
+        surface: span.term,
+        start: span.start,
+        end: span.end,
+      },
+      occurrence: span.occurrence,
+      focusRanges: span.related?.flatMap(({ start, end }) => {
+        const range = makeRange(block.parts, offset + start, offset + end);
+        return range ? [range] : [];
+      }),
+    };
+  }
   function clear() {
     generation++;
     pageLanguage = undefined;
@@ -932,6 +1031,7 @@ export function createScanner(
     collect,
     wordAtPointer,
     selectedWord,
+    prepareLookup,
     reset,
     refreshTags,
     updateWord,

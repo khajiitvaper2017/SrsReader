@@ -66,6 +66,7 @@ async function execute(request: Request, settings: Settings) {
         settings,
         analyses.map((analysis) => analysis.surfaces),
         immersion,
+        request.lookup,
         async (index, spans) => {
           await broadcast({
             event: "scanResult",

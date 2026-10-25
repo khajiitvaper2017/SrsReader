@@ -1,18 +1,18 @@
 import { lookupClient } from "@/lookup/client";
-import type { Occurrence } from "@/languages/analysis";
 import type { ReaderHighlights } from "@/reader/highlights";
+import type { ReaderScanner } from "@/reader/scanner";
 import type {
   ReaderOptions,
   ReaderConfiguration as Settings,
 } from "@/reader/types";
 import { t } from "@/shared/i18n/i18n";
-import type { ReadingContext } from "@/vocabulary/model";
 import { browser } from "wxt/browser";
 
 export function createPopup(
   options: ReaderOptions,
   getSettings: () => Settings,
   highlights: ReaderHighlights,
+  scanner: ReaderScanner,
 ) {
   let popup: HTMLIFrameElement | undefined;
   let container: HTMLDivElement | undefined;
@@ -20,8 +20,6 @@ export function createPopup(
   let popupSession: string | undefined;
   let popupReady = false;
   let anchor: HTMLElement | undefined;
-  let originalAnchor = "";
-  let originalAnchorPriority = "";
   let side: "above" | "below" | "left" | "right" = "above";
   let manualSize: { width: number; height: number } | undefined;
   let manualOffset: { left: number; top: number } | undefined;
@@ -47,15 +45,6 @@ export function createPopup(
   function closePopup() {
     finishResize();
     observer.disconnect();
-    if (anchor) {
-      if (originalAnchor)
-        anchor.style.setProperty(
-          "anchor-name",
-          originalAnchor,
-          originalAnchorPriority,
-        );
-      else anchor.style.removeProperty("anchor-name");
-    }
     anchor = undefined;
     manualOffset = undefined;
     clipping.length = 0;
@@ -68,23 +57,34 @@ export function createPopup(
     highlights.clearFocus();
   }
   async function show(
-    term: string,
-    range: Range,
-    context: ReadingContext,
-    occurrence?: Occurrence,
-    focusRanges?: Range[],
+    word: NonNullable<ReturnType<ReaderScanner["wordAtPointer"]>>,
   ) {
+    const requestedRange = word.range;
     if (
       popupRange &&
-      popupRange.compareBoundaryPoints(Range.START_TO_START, range) === 0
+      popupRange.compareBoundaryPoints(Range.START_TO_START, requestedRange) ===
+        0
     )
       return;
     closePopup();
+    popupRange = requestedRange;
+    try {
+      word = await scanner.prepareLookup(word);
+    } catch (error) {
+      console.warn("SrsReader: sentence lookup failed", error);
+    }
+    if (
+      popupRange !== requestedRange ||
+      !word.range.startContainer.isConnected ||
+      word.range.collapsed
+    )
+      return;
+    const { term, range, context, occurrence, focusRanges } = word;
+    popupRange = range;
     if (options.onLookup) {
       options.onLookup(term, context, occurrence);
       return;
     }
-    popupRange = range;
     const session = await lookupClient({
       action: "createSession",
       term,
@@ -102,14 +102,6 @@ export function createPopup(
     anchor = (
       node instanceof Element ? node : node.parentElement
     ) as HTMLElement;
-    originalAnchor = anchor.style.getPropertyValue("anchor-name");
-    originalAnchorPriority = anchor.style.getPropertyPriority("anchor-name");
-    const name = `--srs-reader-${session}`;
-    const existing = getComputedStyle(anchor).getPropertyValue("anchor-name");
-    anchor.style.setProperty(
-      "anchor-name",
-      existing && existing !== "none" ? `${existing}, ${name}` : name,
-    );
     for (
       let parent: Element | null = anchor;
       parent;
@@ -187,7 +179,6 @@ export function createPopup(
       maxHeight: `${maxHeight}px`,
       transform: side === "above" ? "translateY(-100%)" : "none",
     });
-    container.style.setProperty("position-anchor", name);
     container.addEventListener("pointerdown", (event) => {
       if (!container || !popupRange || event.button !== 0) return;
       const bounds = container.getBoundingClientRect();
@@ -225,7 +216,6 @@ export function createPopup(
       return;
     }
     const box = popupRange.getBoundingClientRect();
-    const origin = anchor.getBoundingClientRect();
     const { width, height } = appliedSize;
     const left = manualOffset
       ? box.left + manualOffset.left
@@ -247,8 +237,8 @@ export function createPopup(
         : side === "below"
           ? box.bottom + 4
           : Math.max(8, Math.min(innerHeight - height - 8, box.top));
-    container.style.left = `calc(anchor(left) + ${left - origin.left}px)`;
-    container.style.top = `calc(anchor(top) + ${top - origin.top}px)`;
+    container.style.left = `${left}px`;
+    container.style.top = `${top}px`;
     updateVisibility();
   }
   function updateVisibility() {

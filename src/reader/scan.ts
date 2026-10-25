@@ -32,6 +32,7 @@ export async function scanTexts(
   settings: Settings,
   analyses: SurfaceAnalysis[][],
   collectImmersion: boolean,
+  explicitLookup: boolean,
   onProgress: (index: number, spans: ScanSpan[]) => Promise<void>,
 ) {
   const started = performance.now();
@@ -232,7 +233,7 @@ export async function scanTexts(
   const results = blocks.map(present);
   const emitted = results.map((result) => JSON.stringify(result.spans));
   if (
-    settings.wordLoading[language] !== "onLookup" &&
+    (explicitLookup || settings.wordLoading[language] !== "onLookup") &&
     ordered.some(
       (dictionary) =>
         dictionary.language === language &&
@@ -252,7 +253,7 @@ export async function scanTexts(
       for (const [term, indices] of terms) {
         const current = await getSettings();
         if (
-          current.wordLoading[language] === "onLookup" ||
+          (!explicitLookup && current.wordLoading[language] === "onLookup") ||
           !current.studyLanguages.includes(language)
         )
           break;

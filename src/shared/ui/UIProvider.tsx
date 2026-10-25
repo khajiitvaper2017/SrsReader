@@ -17,6 +17,7 @@ import { createUITheme } from "@/shared/ui/theme";
 import type { PageScope } from "@/reader/input-prevention";
 import { useTranslation } from "react-i18next";
 import { browser } from "wxt/browser";
+import { TranslationModelPrompt } from "@/translation/components/TranslationModelPrompt";
 
 export const SettingsContext = createContext<
   readonly [Settings, Dispatch<SetStateAction<Settings>>]
@@ -108,6 +109,7 @@ export function UIProvider({
         }
       >
         {children}
+        <TranslationModelPrompt />
       </MantineProvider>
     </SettingsContext.Provider>
   );
