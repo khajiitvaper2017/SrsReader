@@ -5,12 +5,9 @@ import {
   Button,
   Container,
   Group,
+  Loader,
 } from "@mantine/core";
-import { ReviewPage } from "@/app/pages/ReviewPage";
-import { StudyPage } from "@/app/pages/StudyPage";
-import { SettingsPage } from "@/app/pages/SettingsPage";
-import { WordsPage } from "@/app/pages/WordsPage";
-import { SearchPage } from "@/app/pages/SearchPage";
+
 import { stopAudio } from "@/audio/playback";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
@@ -25,6 +22,31 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+const ReviewPage = React.lazy(() =>
+  import("@/app/pages/ReviewPage").then((module) => ({
+    default: module.ReviewPage,
+  })),
+);
+const StudyPage = React.lazy(() =>
+  import("@/app/pages/StudyPage").then((module) => ({
+    default: module.StudyPage,
+  })),
+);
+const SettingsPage = React.lazy(() =>
+  import("@/app/pages/SettingsPage").then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
+const WordsPage = React.lazy(() =>
+  import("@/app/pages/WordsPage").then((module) => ({
+    default: module.WordsPage,
+  })),
+);
+const SearchPage = React.lazy(() =>
+  import("@/app/pages/SearchPage").then((module) => ({
+    default: module.SearchPage,
+  })),
+);
 const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
 export function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "review");
@@ -127,36 +149,43 @@ export function App() {
       </AppShell.Header>
       <AppShell.Main>
         <Container size={reviewing ? "sm" : "lg"} px={0}>
-          {docs ? (
-            <React.Suspense fallback={null}>
-              <DocsPage topic={page.split("/")[1] || "getting-started"} />
-            </React.Suspense>
-          ) : setup ? (
-            <SettingsPage settings={settings} setSettings={setSettings} setup />
-          ) : page === "settings" || page.startsWith("settings/") ? (
-            <SettingsPage
-              settings={settings}
-              setSettings={setSettings}
-              tab={page.split("/")[1]}
-            />
-          ) : page === "words" || page.startsWith("words/") ? (
-            <WordsPage
-              key={page}
-              settings={settings}
-              language={page.split("/")[1] || settings.studyLanguage}
-              deckId={page.split("/")[2]}
-            />
-          ) : page === "search" ? (
-            <SearchPage settings={settings} />
-          ) : reviewing && settings.studyLanguages.includes(reviewLanguage) ? (
-            <ReviewPage
-              key={`${reviewLanguage}:${deckId || ""}`}
-              settings={reviewSettings}
-              deckId={deckId}
-            />
-          ) : (
-            <StudyPage settings={settings} setSettings={setSettings} />
-          )}
+          <React.Suspense fallback={<Loader aria-label={t("working")} />}>
+            {docs ? (
+              <React.Suspense fallback={<Loader aria-label={t("working")} />}>
+                <DocsPage topic={page.split("/")[1] || "getting-started"} />
+              </React.Suspense>
+            ) : setup ? (
+              <SettingsPage
+                settings={settings}
+                setSettings={setSettings}
+                setup
+              />
+            ) : page === "settings" || page.startsWith("settings/") ? (
+              <SettingsPage
+                settings={settings}
+                setSettings={setSettings}
+                tab={page.split("/")[1]}
+              />
+            ) : page === "words" || page.startsWith("words/") ? (
+              <WordsPage
+                key={page}
+                settings={settings}
+                language={page.split("/")[1] || settings.studyLanguage}
+                deckId={page.split("/")[2]}
+              />
+            ) : page === "search" ? (
+              <SearchPage settings={settings} />
+            ) : reviewing &&
+              settings.studyLanguages.includes(reviewLanguage) ? (
+              <ReviewPage
+                key={`${reviewLanguage}:${deckId || ""}`}
+                settings={reviewSettings}
+                deckId={deckId}
+              />
+            ) : (
+              <StudyPage settings={settings} setSettings={setSettings} />
+            )}
+          </React.Suspense>
         </Container>
       </AppShell.Main>
     </AppShell>
