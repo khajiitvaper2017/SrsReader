@@ -15,11 +15,31 @@ export function useBackups({
   const { busy, setNotice, run: task } = tasks;
   async function fileImport(
     file: File | undefined,
-    category: "settings" | "learning",
+    category: "settings" | "learning" | "full",
   ) {
     if (!file || busy) return;
     await task(async () => {
-      if (category === "settings") {
+      if (category === "full") {
+        const { readFull, restoreFull } = await import("@/backups/full");
+        const backup = await readFull(file, tasks.setProgress);
+        try {
+          if (
+            !confirm(
+              t("full_backup_confirm", {
+                words: backup.words,
+                dictionaries: backup.dictionaries,
+              }),
+            )
+          )
+            return;
+          setSettings(await restoreFull(backup, tasks.setProgress));
+          sessionStorage.removeItem("last-review");
+          await rpc({ action: "invalidate" });
+          setNotice(t("full_backup_restored"));
+        } finally {
+          await backup.close();
+        }
+      } else if (category === "settings") {
         const value = await readSettings(file);
         if (
           !confirm(t("replace_your_settings_with_this_file_dictionaries_words"))
@@ -49,5 +69,11 @@ export function useBackups({
       }
     });
   }
-  return { busy, task, fileImport };
+  async function fullExport() {
+    await task(async () => {
+      const { exportFull } = await import("@/backups/full");
+      await exportFull(tasks.setProgress);
+    });
+  }
+  return { busy, task, fileImport, fullExport };
 }

@@ -184,6 +184,9 @@ importers:
       dexie:
         specifier: ^4.4.7
         version: 4.4.7
+      dexie-export-import:
+        specifier: ^4.4.2
+        version: 4.4.2(dexie@4.4.7)
       i18next:
         specifier: ^26.5.8
         version: 26.5.8(@typescript/typescript6@6.0.2)
@@ -954,6 +957,11 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  dexie-export-import@4.4.2:
+    resolution: {integrity: sha512-bvDkLkgvo1ZDpfiAi11Jj6CmaCJx9QUrhA5Q8T3MMQHDcFqlC8lZdhg151+jj3gvqEPEyvryYF9/kJZeC34sOw==}
+    peerDependencies:
+      dexie: ^4.4.7
 
   dexie@4.4.7:
     resolution: {integrity: sha512-wemFiCl3DTCnfzyqepUTX1ugbYbkTrw3aEZOG7YjAOUoEQB5g5PrEywPzk5JpbX/SxqQ9IvjUpxCDIEjoOWEfA==}
@@ -2589,6 +2597,10 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dexie-export-import@4.4.2(dexie@4.4.7):
+    dependencies:
+      dexie: 4.4.7
 
   dexie@4.4.7: {}
 

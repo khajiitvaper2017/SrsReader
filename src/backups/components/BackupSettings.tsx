@@ -14,6 +14,7 @@ import { useBackups } from "@/backups/hooks/useBackups";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
+import { useRef } from "react";
 import { Download, Upload } from "lucide-react";
 export function BackupSettings({
   setSettings,
@@ -22,11 +23,47 @@ export function BackupSettings({
   setSettings: (settings: Settings) => void;
   tasks: SettingsTask;
 }) {
-  const { busy, task, fileImport } = useBackups({ setSettings, tasks });
+  const { busy, task, fileImport, fullExport } = useBackups({
+    setSettings,
+    tasks,
+  });
+  const resetFullInput = useRef<() => void>(null);
   return (
     <Paper>
       <Stack>
         <Title order={2}>{t("import_export")}</Title>
+        <Stack>
+          <Title order={3}>{t("full_backup")}</Title>
+          <Text variant="supporting">{t("full_backup_description")}</Text>
+          <Text variant="supporting">{t("full_backup_limits")}</Text>
+          <Group>
+            <Button
+              disabled={busy}
+              variant="default"
+              onClick={() => void fullExport()}
+            >
+              <Download aria-hidden="true" size={16} />{" "}
+              {t("full_backup_export")}
+            </Button>
+            <FileButton
+              accept=".zip"
+              resetRef={resetFullInput}
+              disabled={busy}
+              onChange={(file) => {
+                void fileImport(file ?? undefined, "full").finally(() =>
+                  resetFullInput.current?.(),
+                );
+              }}
+            >
+              {(props) => (
+                <Button {...props} disabled={busy}>
+                  <Upload aria-hidden="true" size={16} />{" "}
+                  {t("full_backup_import")}
+                </Button>
+              )}
+            </FileButton>
+          </Group>
+        </Stack>
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Stack>
             <Title order={3}>{t("settings")}</Title>

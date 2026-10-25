@@ -24,6 +24,7 @@
     "@zip.js/zip.js": "^2.24.0",
     "bzip2": "^0.1.1",
     "dexie": "^4.4.7",
+    "dexie-export-import": "^4.4.2",
     "i18next": "^26.5.8",
     "linkedom": "^0.18.14",
     "lucide-react": "^1.61.0",
