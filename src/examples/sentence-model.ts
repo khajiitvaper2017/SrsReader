@@ -11,6 +11,7 @@ export const sentenceSchema = z.object({
   mined: z.number().finite(),
   translation: contextSchema.shape.translation,
   wordIds: z.array(z.string()),
+  selectedWordIds: z.array(z.string()).optional(),
   tokens: z.array(
     z.object({
       start: z.number().int().nonnegative(),
@@ -72,6 +73,12 @@ export function mergeSentence(
     mined: Math.min(before.mined, next.mined),
     translation: next.translation || before.translation,
     wordIds: [...new Set([...before.wordIds, ...next.wordIds])],
+    selectedWordIds: [
+      ...new Set([
+        ...(before.selectedWordIds || []),
+        ...(next.selectedWordIds || []),
+      ]),
+    ],
     tokens: [...tokens.values()],
   };
 }

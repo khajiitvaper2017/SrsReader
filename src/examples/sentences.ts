@@ -32,7 +32,10 @@ export async function cacheContext(
 ) {
   if (context)
     await storeSentences([
-      sentenceFromContext(word.language, context, word.id),
+      {
+        ...sentenceFromContext(word.language, context, word.id),
+        selectedWordIds: [word.id],
+      },
     ]);
 }
 
@@ -179,7 +182,10 @@ export async function sentenceExamples(
                 analysis.start === target.start && analysis.end === target.end,
             )?.occurrence;
             const analysis = await occurrenceAnalysis(occurrence, surface);
-            if (!meaningsMatchPartOfSpeech(meanings, analysis?.grammar))
+            if (
+              !record.selectedWordIds?.includes(word.id) &&
+              !meaningsMatchPartOfSpeech(meanings, analysis?.grammar)
+            )
               continue;
             return {
               sentence: record.sentence,
