@@ -23,6 +23,7 @@ export function CardDefinitions({
   contextLoading = false,
   examples = [],
   loadDefinitions,
+  saveTranslation = true,
   onError,
 }: {
   id: string;
@@ -32,6 +33,8 @@ export function CardDefinitions({
   contextLoading?: boolean;
   /** Parsed examples supply a sentence for entries with another part of speech. */
   examples?: SentenceExample[];
+  /** Save example translations with cached sentences; disable during reviews. */
+  saveTranslation?: boolean;
   /** Reuse review preparation; refresh bypasses an existing prepared result. */
   loadDefinitions?: (
     id: string,
@@ -112,6 +115,7 @@ export function CardDefinitions({
           );
           return example ? (
             <ContextSentence
+              saveTranslation={saveTranslation}
               word={result.word}
               context={example}
               settings={settings}

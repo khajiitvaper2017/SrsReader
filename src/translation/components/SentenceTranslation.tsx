@@ -41,7 +41,7 @@ export function TextTranslation({
     (Translation & { parts?: string[] }) | undefined
   >(initialTranslation);
   const inputKey = JSON.stringify(text);
-  const [shown, setShown] = useState(!collapsed);
+  const [shown, setShown] = useState(autoTranslate && !collapsed);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -50,7 +50,11 @@ export function TextTranslation({
     setTranslation(initialTranslation);
     setError("");
   }, [inputKey, initialTranslation]);
+  useEffect(() => {
+    setShown(autoTranslate && !collapsed);
+  }, [inputKey, autoTranslate, collapsed]);
   async function translate() {
+    setShown(true);
     if (translation?.language === settings.nativeLanguage) {
       console.info("[translation] text cache hit", {
         text,
@@ -58,7 +62,6 @@ export function TextTranslation({
         targetLanguage: settings.nativeLanguage,
         response: translation.text,
       });
-      setShown(true);
       return;
     }
     setBusy(true);
@@ -81,7 +84,6 @@ export function TextTranslation({
         language: settings.nativeLanguage,
       };
       setTranslation(value);
-      setShown(true);
       await onTranslated?.({ text: value.text, language: value.language });
     } catch (error) {
       setError((error as Error).message);

@@ -37,6 +37,8 @@ Confirm the action in the dialog. These actions cannot be undone. Review history
 
 Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Example sentences**. With **Settings → Reading → Use UDPipe** enabled, the target word must match a part of speech in its definitions. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
 
+Sentence translations made during reviews are not saved.
+
 ## Review session
 
 Select a language or deck. Set **Default card front** in **Settings → Review** to **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The default grading keys are **1–4**. After revealing the answer, **Space** grades Good. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
@@ -81,7 +83,7 @@ Open **Settings → Review**.
 - **Mature interval (days):** default 28. A scheduled interval below this value is Young. An interval at or above it is Mature. This does not depend on the age of the word.
 - **Default card front:** show the word alone or in its sentence.
 - **Show part of speech on card fronts:** enabled by default. Shows the word’s part of speech from its saved dictionary entries. If several are available, they are listed together. Nothing is shown if no part of speech is available. Turn this off to hide the label.
-- **Show sentence translations:** show translations after revealing the answer.
+- **Show sentence translations:** enables sentence translations after revealing the answer. Turn on **Automatically translate example sentences** in **Settings → Audio & translation → Translation** to show them automatically. When automatic translation is off, use **Translate sentence** to show a translation.
 
 ### Display order
 

@@ -17,6 +17,7 @@ export function ContextSentence({
   position,
   onNext,
   variant,
+  saveTranslation = true,
 }: {
   word: Pick<LookupWord, "id" | "lemma" | "language">;
   context: ReadingContext;
@@ -26,6 +27,8 @@ export function ContextSentence({
   onNext?: () => void;
   /** Center and enlarge the sentence below the word on review cards. */
   variant?: "review";
+  /** Save translations with the cached sentence; disable during reviews. */
+  saveTranslation?: boolean;
 }) {
   const { ref: controlsRef, width: controlsWidth } = useElementSize();
   return (
@@ -37,7 +40,7 @@ export function ContextSentence({
       autoTranslate={
         settings.autoTranslateSentences && settings.showSentenceTranslation
       }
-      wordId={word.id}
+      wordId={saveTranslation ? word.id : undefined}
     >
       {(translationButton, translation, failure) => (
         <Stack gap="xs">

@@ -126,13 +126,6 @@ export function createReviewPreload(settings: Settings) {
         ),
         language: settings.nativeLanguage,
       };
-      await vocabularyClient({
-        action: "saveTranslation",
-        id: word.id,
-        sentence: context.sentence,
-        start: context.start,
-        translation,
-      });
       context.translation = translation;
     }
     const texts = new Set<string>();

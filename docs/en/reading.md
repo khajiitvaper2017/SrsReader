@@ -100,7 +100,7 @@ Translations replace the displayed definitions or example sentence. Click the cr
 
 **Settings → Audio & translation → Translation** has two independent switches:
 
-- **Automatically translate example sentences:** translates example and reading sentences into your native language when you open them.
+- **Automatically translate example sentences:** translates example and reading sentences into your native language when you open them. When off, sentences open in the original language, even if a translation is saved. Use **Translate sentence** to show the translation.
 - **Automatically translate dictionary definitions:** translates dictionary definitions into your native language when you open them.
 
 Both switches are off by default. Unsupported language pairs stay in the original language. If **Set up browser translation** appears, click **Enable translation**. Keep the popup or app page open while the browser prepares its model. The dialog shows download progress, and translations continue automatically when setup finishes. **Use Bergamot** uses the alternative local translator for that language pair on the current page. Closing the dialog also selects Bergamot. If setup fails, try again or choose Bergamot.

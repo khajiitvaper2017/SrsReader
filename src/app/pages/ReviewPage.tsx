@@ -203,6 +203,7 @@ export function ReviewPage({
                     {context && (
                       <ContextSentence
                         variant="review"
+                        saveTranslation={false}
                         key={`${word.id}:${example}`}
                         word={word}
                         context={context}
@@ -224,6 +225,7 @@ export function ReviewPage({
                       />
                     )}
                     <CardDefinitions
+                      saveTranslation={false}
                       key={word.id}
                       id={word.id}
                       context={context}
