@@ -51,6 +51,8 @@ Enable **Settings → Audio & translation → Pronunciation → Play audio on re
 
 **Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions and cached translations stay in place. Undone answers remain in the backup history but do not count as reviews.
 
+Use your lookup control on the word, example sentence, or dictionary definitions on a review card. Configure these controls in **Settings → Controls → Lookup controls**. The lookup popup closes when you move to another card.
+
 ## Review controls
 
 Open **Settings → Controls → Review controls**. Each action has one binding. Select its input, then press a key or mouse button over it. You can include Ctrl, Alt, Shift, or Meta. Escape cancels capture. Tab moves to the next input. Select the clear button to disable a binding. Each review action must have a different binding.

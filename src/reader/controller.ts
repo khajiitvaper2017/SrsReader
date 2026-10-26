@@ -18,6 +18,7 @@ export function startReader(
   options: ReaderOptions = {},
 ) {
   const root = options.root || document.body;
+  const scope = options.scope || (options.onLookup ? "popups" : "webpages");
   const excluded = excludedSelector;
   let settings: Settings = defaults;
   let active = false;
@@ -42,9 +43,10 @@ export function startReader(
     popup,
     scanner,
   );
-  const removeInputPrevention = options.onLookup
-    ? () => {}
-    : installInputPrevention(() => (active ? settings : undefined), "webpages");
+  const removeInputPrevention =
+    scope === "webpages"
+      ? installInputPrevention(() => (active ? settings : undefined), scope)
+      : () => {};
   ctx.onInvalidated(removeInputPrevention);
   async function configure(preservePopup = false, refreshDictionaries = false) {
     const started = performance.now();
@@ -92,9 +94,9 @@ export function startReader(
     input.cancel();
     active =
       settings.setupComplete &&
-      (!!options.onLookup || isWebsiteEnabled(settings, location.hostname));
+      (scope !== "webpages" || isWebsiteEnabled(settings, location.hostname));
     console.info("[SrsReader] Reader configured", {
-      context: options.onLookup ? "popup" : "page",
+      context: scope,
       active,
       studyLanguages: settings.studyLanguages,
       udpipeEnabled: settings.udpipe,

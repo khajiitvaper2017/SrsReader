@@ -3,6 +3,7 @@ import type { LanguagesPreferences } from "@/languages/preferences";
 import type { ReaderPreferences } from "@/reader/preferences";
 import type { ReadingContext } from "@/vocabulary/model";
 import type { Occurrence } from "@/languages/analysis";
+import type { PageScope } from "@/reader/input-prevention";
 
 export type Part = { node: Text; start: number; end: number };
 export type Block = {
@@ -14,6 +15,7 @@ export type Block = {
   generation: number;
 };
 export type ReaderOptions = {
+  scope?: PageScope;
   language?: string;
   settings?: import("@/settings/model").Settings;
   root?: HTMLElement;

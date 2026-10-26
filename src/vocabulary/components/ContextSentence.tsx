@@ -43,7 +43,11 @@ export function ContextSentence({
       wordId={saveTranslation ? word.id : undefined}
     >
       {(translationButton, translation, failure) => (
-        <Stack gap="xs">
+        <Stack
+          gap="xs"
+          data-reading-source-url={context.url}
+          data-reading-source-title={context.title}
+        >
           <Group
             pos="relative"
             wrap="nowrap"

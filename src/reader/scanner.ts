@@ -589,7 +589,10 @@ export function createScanner(
           const missing = [...texts];
           const results = await readerClient({
             action: "scan",
-            source: options.onLookup ? "popup" : "website",
+            source:
+              options.onLookup || options.scope === "extensionPages"
+                ? "popup"
+                : "website",
             lookup: false,
             session,
             language,
@@ -893,7 +896,10 @@ export function createScanner(
     parsed.delete(key);
     const [result] = await readerClient({
       action: "scan",
-      source: options.onLookup ? "popup" : "website",
+      source:
+        options.onLookup || options.scope === "extensionPages"
+          ? "popup"
+          : "website",
       lookup: true,
       session: id,
       language: context.language,

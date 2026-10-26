@@ -34,6 +34,7 @@ export function ReviewPage({
   deckId?: string;
 }) {
   const {
+    readingRef,
     answers,
     studyMore,
     preload,
@@ -101,7 +102,12 @@ export function ReviewPage({
       <ErrorBox error={error} />
       {word ? (
         <>
-          <Paper key={`${word.id}:${word.card?.reps}`} flex={1} mih={0}>
+          <Paper
+            ref={readingRef}
+            key={`${word.id}:${word.card?.reps}`}
+            flex={1}
+            mih={0}
+          >
             <ScrollArea
               h="100%"
               type="never"
@@ -111,6 +117,7 @@ export function ReviewPage({
             >
               <Stack flex={1} miw={0} gap="xs">
                 <Box
+                  data-srs-reader
                   display="grid"
                   style={{
                     gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
@@ -159,7 +166,9 @@ export function ReviewPage({
                     </Title>
                   )}
                   {word.reading && (
-                    <Text variant="supporting">{word.reading}</Text>
+                    <Text variant="supporting" data-srs-reader>
+                      {word.reading}
+                    </Text>
                   )}
                   {partsOfSpeech.length > 0 && (
                     <Text variant="supporting" data-srs-reader>
@@ -186,7 +195,9 @@ export function ReviewPage({
                     aria-hidden={revealed}
                     inert={revealed}
                   >
-                    <Text variant="supporting">{t("study_reveal_hint")}</Text>
+                    <Text variant="supporting" data-srs-reader>
+                      {t("study_reveal_hint")}
+                    </Text>
                   </Stack>
                   <Stack
                     gap="xs"

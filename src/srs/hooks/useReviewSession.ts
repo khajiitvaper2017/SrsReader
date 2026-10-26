@@ -8,7 +8,9 @@ import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { useReviewPreload } from "@/srs/hooks/useReviewPreload";
 import { studyDay } from "@/srs/study-day";
+import { startReader } from "@/reader/controller";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ContentScriptContext } from "wxt/utils/content-script-context";
 
 export type SessionAnswer = {
   id: string;
@@ -37,7 +39,19 @@ export function useReviewSession({
   const queueRevision = useRef(0);
   const [last, setLast] = useState(sessionStorage.getItem("last-review") || "");
   const [example, setExample] = useState(0);
+  const readingRef = useRef<HTMLDivElement>(null);
   const word = queue?.words[0];
+  useEffect(() => {
+    if (!word) return;
+    const ctx = new ContentScriptContext("review-reader");
+    startReader(ctx, {
+      root: readingRef.current!,
+      scope: "extensionPages",
+      settings,
+      language: word.language,
+    });
+    return () => ctx.abort();
+  }, [word?.id, word?.card?.reps, settings]);
   const preload = useReviewPreload(settings, queue);
   const { play: playAudio } = usePronunciation({
     word,
@@ -288,6 +302,7 @@ export function useReviewSession({
     }
   }
   return {
+    readingRef,
     answers,
     studyMore,
     preload,
