@@ -36,7 +36,6 @@ export function useReviewSession({
   const busyRef = useRef(false);
   const queueRevision = useRef(0);
   const [last, setLast] = useState(sessionStorage.getItem("last-review") || "");
-  const [front, setFront] = useState(settings.front);
   const [example, setExample] = useState(0);
   const word = queue?.words[0];
   const preload = useReviewPreload(settings, queue);
@@ -137,9 +136,6 @@ export function useReviewSession({
     "frequency",
     "collection",
   ]);
-  useEffect(() => {
-    setFront(settings.front);
-  }, [settings.front]);
   useEffect(() => {
     setRevealed(false);
     setExample(0);
@@ -302,8 +298,6 @@ export function useReviewSession({
     setError,
     busy,
     last,
-    front,
-    setFront,
     example,
     setExample,
     word,

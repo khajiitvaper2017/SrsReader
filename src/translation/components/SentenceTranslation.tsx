@@ -123,6 +123,7 @@ export function TextTranslation({
       renderTranslation(translation.parts || [translation.text])
     ) : (
       <Text
+        inherit
         data-srs-reader=""
         lang={translation.language}
         dir="auto"

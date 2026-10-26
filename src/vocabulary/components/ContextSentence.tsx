@@ -1,4 +1,5 @@
 import { ActionIcon, Anchor, Box, Group, Stack, Text } from "@mantine/core";
+import { useElementSize } from "@mantine/hooks";
 import { AudioButton } from "@/audio/components/AudioButton";
 import type { LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
@@ -15,6 +16,7 @@ export function ContextSentence({
   onError,
   position,
   onNext,
+  variant,
 }: {
   word: Pick<LookupWord, "id" | "lemma" | "language">;
   context: ReadingContext;
@@ -22,7 +24,10 @@ export function ContextSentence({
   onError: (message: string) => void;
   position?: string;
   onNext?: () => void;
+  /** Center and enlarge the sentence below the word on review cards. */
+  variant?: "review";
 }) {
+  const { ref: controlsRef, width: controlsWidth } = useElementSize();
   return (
     <SentenceTranslation
       compact
@@ -36,13 +41,30 @@ export function ContextSentence({
     >
       {(translationButton, translation, failure) => (
         <Stack gap="xs">
-          <Group wrap="nowrap" align="flex-start">
-            <Box miw={0} flex={1}>
+          <Group
+            pos="relative"
+            wrap="nowrap"
+            align={variant === "review" ? "center" : "flex-start"}
+          >
+            <Box
+              miw={0}
+              flex={1}
+              ta={variant === "review" ? "center" : undefined}
+              fz={variant === "review" ? "lg" : undefined}
+              px={
+                variant === "review"
+                  ? `calc(${controlsWidth}px + var(--mantine-spacing-xs))`
+                  : undefined
+              }
+            >
               {(settings.showSentenceTranslation && translation) || (
                 <Sentence context={context} language={word.language} />
               )}
             </Box>
             <Group
+              ref={controlsRef}
+              pos={variant === "review" ? "absolute" : undefined}
+              right={variant === "review" ? 0 : undefined}
               gap={0}
               wrap="nowrap"
               data-srs-reader

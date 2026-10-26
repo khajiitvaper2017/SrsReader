@@ -1,10 +1,7 @@
 import { languageName } from "@/languages/codes";
 import {
-  SegmentedControl,
   Badge,
   Box,
-  Kbd,
-  ActionIcon,
   Button,
   Group,
   Paper,
@@ -47,8 +44,6 @@ export function ReviewPage({
     setError,
     busy,
     last,
-    front,
-    setFront,
     example,
     setExample,
     word,
@@ -60,6 +55,7 @@ export function ReviewPage({
     reveal,
     undo,
   } = useReviewSession({ settings, deckId });
+  const front = settings.front;
   const partsOfSpeech =
     word && settings.showPartOfSpeech
       ? dictionaryPartsOfSpeech(word.meanings)
@@ -113,22 +109,15 @@ export function ReviewPage({
               viewportProps={{ tabIndex: 0 }}
               styles={{ content: { display: "flex", minHeight: "100%" } }}
             >
-              <Stack flex={1} miw={0}>
-                <Group justify="center">
-                  <SegmentedControl
-                    fullWidth
-                    w="100%"
-                    maw={360}
-                    value={front}
-                    onChange={(value) => setFront(value as typeof front)}
-                    data={[
-                      { value: "word", label: t("word") },
-                      { value: "sentence", label: t("in_context") },
-                    ]}
-                  />
-                </Group>
-                <Stack align="center" ta="center" py="lg">
-                  <Badge>
+              <Stack flex={1} miw={0} gap="xs">
+                <Box
+                  display="grid"
+                  style={{
+                    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+                    alignItems: "center",
+                  }}
+                >
+                  <Badge style={{ gridColumn: 2 }}>
                     {t(
                       [
                         "new",
@@ -138,6 +127,30 @@ export function ReviewPage({
                       ][word.card!.state]!,
                     )}
                   </Badge>
+                  <Group
+                    gap="xs"
+                    wrap="nowrap"
+                    justify="flex-end"
+                    style={{
+                      gridColumn: 3,
+                      visibility: revealed ? "visible" : "hidden",
+                    }}
+                    aria-hidden={!revealed}
+                    inert={!revealed}
+                  >
+                    <FrequencyBadge
+                      word={{ ...word, forms: [] }}
+                      loadFrequencies={preload.loadFrequencies}
+                    />
+                    <AudioButton
+                      word={word}
+                      settings={settings}
+                      onError={setError}
+                      prepareRecording={preload.loadAudio}
+                    />
+                  </Group>
+                </Box>
+                <Stack align="center" ta="center" py="xs" gap="xs">
                   {front === "sentence" && context ? (
                     <Sentence context={context} language={word.language} />
                   ) : (
@@ -176,42 +189,20 @@ export function ReviewPage({
                     <Text variant="supporting">{t("study_reveal_hint")}</Text>
                   </Stack>
                   <Stack
+                    gap="xs"
                     display={revealed ? undefined : "none"}
                     style={{ gridArea: "1 / 1" }}
                     aria-hidden={!revealed}
                     inert={!revealed}
                   >
-                    <Stack align="center" ta="center" gap="xs">
-                      {front === "sentence" && (
-                        <Title order={2} lang={word.language}>
-                          {word.lemma}
-                        </Title>
-                      )}
-                      <Group justify="center" gap="xs">
-                        <FrequencyBadge
-                          word={{ ...word, forms: [] }}
-                          loadFrequencies={preload.loadFrequencies}
-                        />
-                        <AudioButton
-                          word={word}
-                          settings={settings}
-                          onError={setError}
-                          prepareRecording={preload.loadAudio}
-                        />
-                      </Group>
-                    </Stack>
-                    <CardDefinitions
-                      key={word.id}
-                      id={word.id}
-                      context={context}
-                      contextLoading={sentenceLoading}
-                      examples={contexts}
-                      loadDefinitions={preload.loadDefinitions}
-                      settings={settings}
-                      onError={setError}
-                    />
+                    {front === "sentence" && (
+                      <Title order={2} lang={word.language} ta="center">
+                        {word.lemma}
+                      </Title>
+                    )}
                     {context && (
                       <ContextSentence
+                        variant="review"
                         key={`${word.id}:${example}`}
                         word={word}
                         context={context}
@@ -232,6 +223,16 @@ export function ReviewPage({
                         }
                       />
                     )}
+                    <CardDefinitions
+                      key={word.id}
+                      id={word.id}
+                      context={context}
+                      contextLoading={sentenceLoading}
+                      examples={contexts}
+                      loadDefinitions={preload.loadDefinitions}
+                      settings={settings}
+                      onError={setError}
+                    />
                   </Stack>
                 </Box>
               </Stack>
@@ -252,7 +253,6 @@ export function ReviewPage({
                 disabled={busy}
                 variant="filled"
                 leftSection={<Eye aria-hidden="true" size={16} />}
-                rightSection={<Kbd>{t("space")}</Kbd>}
               >
                 {t("show_answer")}
               </Button>
@@ -293,14 +293,15 @@ export function ReviewPage({
       )}
       {word && (
         <Group component="footer" justify="space-between" align="center">
-          <ActionIcon
+          <Button
+            variant="subtle"
             title={t("undo_last_review")}
-            aria-label={t("undo_last_review")}
+            leftSection={<Undo2 aria-hidden="true" size={16} />}
             disabled={!last || busy}
             onClick={() => void undo()}
           >
-            <Undo2 aria-hidden="true" size={16} />
-          </ActionIcon>
+            {t("undo")}
+          </Button>
           <Group>
             <Button
               variant="subtle"
@@ -333,7 +334,7 @@ export function ReviewPage({
                   .catch((error) => setError(error.message))
               }
             >
-              {t("suspend_word")}
+              {t("suspend")}
             </Button>
           </Group>
         </Group>
