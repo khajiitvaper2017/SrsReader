@@ -1,4 +1,5 @@
 import type { ScanSpan } from "@/reader/scan";
+import { dictionariesClient } from "@/dictionaries/client";
 import type { Occurrence } from "@/languages/analysis";
 import {
   detectLanguages,
@@ -863,6 +864,31 @@ export function createScanner(
     word: NonNullable<ReturnType<typeof wordAtPointer>>,
   ) {
     const { context, range } = word;
+    const languages = getSettings().studyLanguages;
+    if (
+      !options.language &&
+      (!context.language || !languages.includes(context.language))
+    ) {
+      const matches = await Promise.all(
+        languages.map((language) =>
+          dictionariesClient({
+            action: "lookup",
+            language,
+            term: word.term,
+            localOnly: true,
+          }),
+        ),
+      );
+      const index = matches.findIndex((result) => result.words.length > 0);
+      return {
+        ...word,
+        context: {
+          ...context,
+          language: languages[index < 0 ? 0 : index]!,
+        },
+        occurrence: undefined,
+      };
+    }
     if (
       !context.language ||
       getSettings().wordLoading[context.language] !== "onLookup" ||
