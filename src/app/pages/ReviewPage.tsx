@@ -161,7 +161,11 @@ export function ReviewPage({
                   {front === "sentence" && context ? (
                     <Sentence context={context} language={word.language} />
                   ) : (
-                    <Title lang={word.language} order={1}>
+                    <Title
+                      lang={word.language}
+                      order={1}
+                      data-srs-reader-no-color
+                    >
                       {word.lemma}
                     </Title>
                   )}
@@ -207,7 +211,12 @@ export function ReviewPage({
                     inert={!revealed}
                   >
                     {front === "sentence" && (
-                      <Title order={2} lang={word.language} ta="center">
+                      <Title
+                        order={2}
+                        lang={word.language}
+                        ta="center"
+                        data-srs-reader-no-color
+                      >
                         {word.lemma}
                       </Title>
                     )}
