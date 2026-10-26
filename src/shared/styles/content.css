@@ -47,6 +47,14 @@ body {
 .dictionary-content summary {
   cursor: pointer;
 }
+.dictionary-content [data-sc-content="preamble"] > details {
+  /* Keep a box for each toggle when dictionary styles use display: contents. */
+  display: block !important;
+}
+.dictionary-content [data-sc-content="preamble"] > details[open] {
+  flex: 1 1 100%;
+  min-width: 0;
+}
 .dictionary-content img {
   max-width: 100%;
   height: auto;

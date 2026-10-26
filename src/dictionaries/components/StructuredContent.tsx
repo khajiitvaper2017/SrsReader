@@ -1,6 +1,14 @@
 import { ImageContent } from "@/dictionaries/components/DictionaryImage";
 import { safeUrl } from "@/dictionaries/sanitize";
+import { t } from "@/shared/i18n/i18n";
+import { Group, Tooltip } from "@mantine/core";
 import type { ReactNode } from "react";
+
+const relatedWordLabels: Record<string, string> = {
+  "synonym-item": "dictionary_synonym",
+  "antonym-item": "dictionary_antonym",
+  "coordinate-term-item": "dictionary_coordinate_term",
+};
 
 const allowedTags = new Set([
   "div",
@@ -179,5 +187,28 @@ export function Structured({
       ),
     );
   if (node.tag === "br") return <br />;
+  const contentType = props["data-sc-content"];
+  if (node.tag === "div" && contentType === "preamble")
+    return (
+      <Group {...props} display="flex" align="flex-start" gap="xs">
+        {content}
+      </Group>
+    );
+  const relatedWordLabel =
+    typeof contentType === "string"
+      ? relatedWordLabels[contentType]
+      : undefined;
+  if (relatedWordLabel)
+    return (
+      <Tooltip
+        label={t(relatedWordLabel)}
+        events={{ hover: true, focus: true, touch: false }}
+        interactive
+      >
+        <Tag {...props} tabIndex={0}>
+          {content}
+        </Tag>
+      </Tooltip>
+    );
   return <Tag {...props}>{content}</Tag>;
 }

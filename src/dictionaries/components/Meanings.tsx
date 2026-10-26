@@ -86,7 +86,7 @@ export function Meanings({
     })
     .sort((a, b) => Number(!a.visible.length) - Number(!b.visible.length));
   return (
-    <Stack>
+    <Stack gap="xs">
       {dictionaries.map(
         ({
           dictionaryId,
@@ -183,7 +183,7 @@ export function Meanings({
             );
           };
           return (
-            <Stack key={dictionaryId} data-dictionary={dictionaryId}>
+            <Stack key={dictionaryId} data-dictionary={dictionaryId} gap="xs">
               {!visible.length && (
                 <Group justify="space-between" data-srs-reader>
                   <Group style={{ flex: 1, minWidth: 0 }}>
@@ -211,6 +211,7 @@ export function Meanings({
                 });
                 const renderDefinitions = (values: Definition[]) => (
                   <Stack
+                    gap="xs"
                     data-meaning={index}
                     data-reading-language={
                       meaning.dictionaryId === "personal" ||
@@ -242,7 +243,7 @@ export function Meanings({
                       </ol>
                     ) : (
                       values.map((definition: Definition, j) => (
-                        <Stack key={j}>
+                        <Stack key={j} gap="xs">
                           <Structured
                             value={definition}
                             dictionaryId={meaning.dictionaryId}
@@ -257,7 +258,7 @@ export function Meanings({
                   translation?: ReactNode,
                   failure?: ReactNode,
                 ) => (
-                  <Stack key={`${meaning.dictionaryId}:${i}`}>
+                  <Stack key={`${meaning.dictionaryId}:${i}`} gap="xs">
                     <Group wrap="nowrap" align="flex-start" data-srs-reader>
                       <Group style={{ flex: 1, minWidth: 0 }}>
                         <Text variant="supporting" component="span">
