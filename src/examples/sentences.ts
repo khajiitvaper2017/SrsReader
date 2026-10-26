@@ -155,6 +155,7 @@ export async function sentenceExamples(
     (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
   );
   const examples: SentenceExample[] = [];
+  const fallbackExamples: SentenceExample[] = [];
   for (const candidates of pools) {
     const first = examples.length;
     for (
@@ -175,6 +176,7 @@ export async function sentenceExamples(
         : [];
       const matched = await Promise.all(
         batch.map(async ({ record, targets }, index) => {
+          let fallback: SentenceExample | undefined;
           for (const target of targets) {
             const surface = record.sentence.slice(target.start, target.end);
             const occurrence = analyses[index]?.surfaces.find(
@@ -182,12 +184,7 @@ export async function sentenceExamples(
                 analysis.start === target.start && analysis.end === target.end,
             )?.occurrence;
             const analysis = await occurrenceAnalysis(occurrence, surface);
-            if (
-              !record.selectedWordIds?.includes(word.id) &&
-              !meaningsMatchPartOfSpeech(meanings, analysis?.grammar)
-            )
-              continue;
-            return {
+            const context: SentenceExample = {
               sentence: record.sentence,
               surface,
               start: target.start,
@@ -198,12 +195,24 @@ export async function sentenceExamples(
               translation: record.translation,
               grammar: analysis?.grammar,
             };
+            if (
+              record.selectedWordIds?.includes(word.id) ||
+              meaningsMatchPartOfSpeech(meanings, analysis?.grammar)
+            )
+              return { context, matching: true };
+            fallback ??= context;
           }
+          return fallback ? { context: fallback, matching: false } : undefined;
         }),
       );
-      examples.push(...matched.filter((context) => context !== undefined));
+      for (const example of matched)
+        if (example)
+          (example.matching ? examples : fallbackExamples).push(
+            example.context,
+          );
     }
   }
+  if (!examples.length) return fallbackExamples.slice(0, 20);
   const matching = meanings.flatMap((meaning) => {
     const example = examples.find(
       (example) =>

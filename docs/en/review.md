@@ -35,7 +35,7 @@ Confirm the action in the dialog. These actions cannot be undone. Review history
 
 ## Sentences from reading
 
-Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Example sentences**. With **Settings → Reading → Use UDPipe** enabled, the target word must match a part of speech in its definitions. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
+Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Example sentences**. With **Settings → Reading → Use UDPipe** enabled, sentences whose target word matches a part of speech in its definitions are preferred. If none match, other examples of the word are used. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
 
 Sentence translations made during reviews are not saved.
 
