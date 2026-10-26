@@ -54,7 +54,11 @@ export function displayedMeanings(
       continue;
     visible.push(meaning);
   }
-  return visible;
+  return visible.sort(
+    (a, b) =>
+      Number(b.dictionaryId === "personal") -
+      Number(a.dictionaryId === "personal"),
+  );
 }
 
 export function displayedWords(
