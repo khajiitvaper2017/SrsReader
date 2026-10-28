@@ -111,7 +111,7 @@ export function App() {
     active: page.split("/")[0] === link.id,
     badge:
       link.id === "review" && stats.due > 0 ? (
-        <Badge>{stats.due}</Badge>
+        <Badge size="sm">{stats.due}</Badge>
       ) : undefined,
   }));
   return (
@@ -132,12 +132,18 @@ export function App() {
                   component="nav"
                   aria-label={t("pages")}
                   visibleFrom="md"
+                  flex={1}
+                  justify="center"
+                  align="center"
                   gap="xs"
                   wrap="nowrap"
                 >
                   {links.map(({ id, label, icon: Icon, active, badge }) => (
                     <Button
                       component="a"
+                      size="sm"
+                      h="var(--button-height)"
+                      py={0}
                       key={id}
                       href={`#${id}`}
                       variant={active ? "light" : "subtle"}
