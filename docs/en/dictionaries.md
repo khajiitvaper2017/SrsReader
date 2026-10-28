@@ -6,7 +6,7 @@ A ZIP that contains definitions and rankings appears in both tabs. Vocabulary us
 
 ## Search
 
-Open the **Search** tab and choose a language. **Word or reading** finds dictionary words and readings that contain your text. **Definition** finds words whose definitions contain your text. For example, search English definitions for **animal** to find words with that meaning in the selected language.
+Open the **Search** tab and choose a language. **Word / reading** finds dictionary words and readings that contain your text. **Definition** finds words whose definitions contain your text. For example, search English definitions for **animal** to find words with that meaning in the selected language.
 
 Enter your text and press Enter or choose **Search**. Searches ignore letter case and use enabled, installed definition dictionaries. Online dictionaries and frequency-only dictionaries are not searched. Choose a result to expand its full definition. Choose **Load more** to see the next 50 entries. Large dictionaries can take longer to search.
 
@@ -58,7 +58,7 @@ Each exact text block counts only once per language, including across websites, 
 
 Select **Enabled** to collect hits and combine its ranks with other enabled frequency dictionaries. Disable the other frequency dictionaries to use it alone. Select **Disabled** to stop counting and exclude its ranks. Saved counts, ranks, and counted-block history stay available. Select **Enabled** again to resume counting.
 
-**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Data and Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Enabled states, vocabulary display options, and ordering are included in the settings export.
+**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Data → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Enabled states, vocabulary display options, and ordering are included in the settings export.
 
 ## Missing words
 
@@ -70,7 +70,7 @@ For missing Czech **-čovat** forms, such as **dosvědčoval**, lookup can use t
 
 ## Nechybujte online
 
-In **Settings → Dictionaries**, find **Nechybujte (online)** in the ordered list. Choose **Show** or **If needed** to use its Czech definitions, grammar, and examples. The default is **Hide**. No API key is needed. **Settings → Reading → Load and color words** controls loading separately for each language. **When opened** loads words from the sentence where you use a lookup control. **Automatic** also loads entries during page scanning and follows the dictionary’s display setting.
+In **Settings → Dictionaries**, find **Nechybujte (online)** in the ordered list. Choose **Show** or **If needed** to use its Czech definitions, grammar, and examples. The default is **Hide**. No API key is needed. **Settings → Reading → Load words** controls loading separately for each language. **When opened** loads words from the sentence where you use a lookup control. **Automatic** also loads entries during page scanning and follows the dictionary’s display setting.
 
 **If needed** makes no request when a dictionary above Nechybujte already has an entry for any candidate of the word. Dictionaries below it do not block the request. **Show** uses Nechybujte even when another dictionary has an entry. Both reuse cached results. Fetched entries and word forms stay on this device without expiration. **Hide** stops requests and excludes these cached entries from lookup and page scanning. It does not delete the cache or saved vocabulary. **Refresh from dictionary** on a saved word fetches a fresh copy when Nechybujte's display rule permits it. Mined entries are included in vocabulary exports.
 
@@ -82,8 +82,8 @@ SpanishDict supplies English translations, parts of speech, usage labels, and Sp
 
 SpanishDict sends one request at a time without a fixed delay. Local entries appear first. Online entries color words as they arrive. You can open words during loading. If SpanishDict limits requests, the warning shows how long to wait before trying again. The wait follows the server's retry time, or defaults to one minute. Cached entries remain available.
 
-**Show** includes SpanishDict even when another dictionary has a match. **If needed** sends a request only when dictionaries above it have no matching entry. Drag the row to change this order. **Settings → Reading → Load and color words** controls loading for Spanish. **When opened** loads words from the sentence where you use a lookup control. **Automatic** also loads entries during page scanning and follows the dictionary’s display setting.
+**Show** includes SpanishDict even when another dictionary has a match. **If needed** sends a request only when dictionaries above it have no matching entry. Drag the row to change this order. **Settings → Reading → Load words** controls loading for Spanish. **When opened** loads words from the sentence where you use a lookup control. **Automatic** also loads entries during page scanning and follows the dictionary’s display setting.
 
 Fetched entries stay on this device without expiration. Cached words and fetched forms work offline during lookup and page scanning. **Hide** stops requests and excludes cached SpanishDict entries. It keeps the cache and saved vocabulary. **Refresh from dictionary** on a saved word fetches a fresh copy when the display rule permits it. Saved definitions are included in vocabulary exports. If SpanishDict is unavailable, the popup shows a warning and keeps results from other dictionaries.
 
-For frequency-based retention, select rank dictionaries under **Spaced repetition → Dynamic desired retention**. A rank of 1 means the most frequent word. Occurrence counts are not ranks. Words without a matching selected rank use global retention.
+For frequency-based retention, select rank dictionaries under **Spaced repetition → Dynamic retention**. A rank of 1 means the most frequent word. Occurrence counts are not ranks. Words without a matching selected rank use global retention.

@@ -7,7 +7,7 @@
 
 Open a website, use your lookup control on a word, and choose **Mine word**. Open **Review** to study saved words.
 
-Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as first native language**. Automatic selection uses the first native language; languages other than English and Ukrainian use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
+Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Automatic**. Automatic selection uses the first native language; languages other than English and Ukrainian use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
 
 Select at least one language under **Native languages**. The first language is the translation target. All selected native languages are included in the Wiktionary download filter, and dictionary definitions in these languages are shown without translation. Drag selected languages to change their order. For keyboard control, focus the input and press Left Arrow to select a language, then use Alt + Left Arrow or Alt + Right Arrow to move it. Language selectors and tabs show flags beside language names.
 

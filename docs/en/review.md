@@ -1,18 +1,19 @@
 # Study and saved words
 
-Open **Study** to see your learning languages and frequency decks. The table shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. **Back to decks** ends the session. Each word belongs to one group. Daily limits apply to the language.
+Open **Study** to see your learning languages and frequency decks. The list shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. **Back to decks** ends the session. Each word belongs to one group. Daily limits apply to the language.
 
-Select **Mined words** under a language to review words you saved or rated while reading. Frequency imports do not add words to this deck. Mining a word from a frequency deck moves it to Mined words without resetting its progress. Click anywhere in a language or deck row to start reviewing.
+Select **Mined words** under a language to review words you saved or rated while reading. Frequency imports do not add words to this deck. Mining a word from a frequency deck moves it to Mined words without resetting its progress. Select a language or deck name to start reviewing.
 
-Manage the list under **Settings → General → Studied languages**, or use **Add language** in Study. Reading detects any listed language automatically. Review sessions contain one language each, so you can study different languages in separate tabs. Removing a language from the list keeps its words, decks, and progress.
+Manage the list under **Settings → General → Studied languages**, or select **Add → Add language** in Study. Reading detects any listed language automatically. Review sessions contain one language each, so you can study different languages in separate tabs. Removing a language from the list keeps its words, decks, and progress.
 
 ## Frequency decks
 
-1. Select **Add frequency deck**.
-2. Select a language and an installed, enabled frequency dictionary with ranks, where lower ranks mean more frequent words.
-3. Enter how many entries to include, from 1 to 10,000.
-4. Enter a deck name, or leave it empty for an automatic name.
-5. Select **Add frequency deck**.
+1. Open **Add** in **Study**.
+2. Select **Add frequency deck**.
+3. Select a language and an installed, enabled frequency dictionary with ranks, where lower ranks mean more frequent words.
+4. Enter how many entries to include, from 1 to 10,000.
+5. Enter a deck name, or leave it empty for an automatic name.
+6. Select **Add frequency deck**.
 
 The deck checks the first N unique entries that contain letters. Punctuation, symbols, and number-only entries are skipped. These entries are also hidden in existing frequency decks. Entries identified as forms of other words by your dictionaries or downloaded word-form data are skipped. Download additional forms in **Settings → Dictionaries → Word forms** to recognize more forms. Words already saved, words in other decks, and words without definitions in your enabled dictionaries are skipped. It can contain fewer than N words. All added cards start as new words. Existing schedules and mastered words stay unchanged. Install dictionaries in **Settings → Dictionaries**.
 
@@ -22,7 +23,7 @@ After an app or dictionary update, open the deck’s three-dot menu in **Study**
 
 In **Study**, open a deck’s three-dot menu and select **View words**. The **Words** page opens with that language and deck selected.
 
-Use **Language** and **Deck** to browse another group. **All decks** combines mined words and frequency decks without duplicates. The list includes mastered and suspended words. Browsing a language does not change your studied-languages list or other review sessions. Search by word or reading and use the status filter to narrow the list. Lists show 50 words per page. Select a word to open its details and edit its definition, mastery, suspension, or retention setting.
+Use **Language** and **Deck** to browse another group. **All decks** combines mined words and frequency decks without duplicates. The list includes mastered and suspended words. Browsing a language does not change your studied-languages list or other review sessions. Search by word or reading and use the status filter to narrow the list. Lists show 50 words per page. Select a word to open its details. Use **Actions** to change mastery, suspend or resume the word, or delete it. Definitions and retention are editable in the same panel.
 
 ## Clear or delete a deck
 
@@ -31,27 +32,29 @@ Open the three-dot menu at the end of a deck row in **Study**.
 - **Clear deck** deletes all words in that deck and downloaded recordings. This includes mastered and suspended words. The empty deck remains in the list. Use this action to empty **Mined words**.
 - **Delete deck** also removes the frequency deck from the list.
 
-Confirm the action in the dialog. These actions cannot be undone. Review history, cached sentences, dictionaries, and words in other groups are kept. Past reviews still count in statistics and daily limits. Export **Words & progress** in **Settings → Data and Backups** if you want a copy first.
+Confirm the action in the dialog. These actions cannot be undone. Review history, cached sentences, dictionaries, and words in other groups are kept. Past reviews still count in statistics and daily limits. Export **Words & progress** in **Settings → Data** if you want a copy first.
 
 ## Sentences from reading
 
-Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Example sentences**. With **Settings → Reading → Use UDPipe** enabled, sentences whose target word matches a part of speech in its definitions are preferred. If none match, other examples of the word are used. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
+Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Examples**. With **Settings → Reading → Use UDPipe** enabled, sentences whose target word matches a part of speech in its definitions are preferred. If none match, other examples of the word are used. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
 
 Sentence translations made during reviews are not saved.
 
 ## Review session
 
-Select a language or deck. Set **Default card front** in **Settings → Review** to **Word** or **In context**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The default grading keys are **1–4**. After revealing the answer, **Space** grades Good. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
+Select a language or deck. Set **Card front** in **Settings → Review** to **Word** or **Sentence**. Press **Show answer** or **Space**, then rate your answer with **Again**, **Hard**, **Good**, or **Easy**. The default grading keys are **1–4**. After revealing the answer, **Space** grades Good. Day-based intervals are shown as study days, not hours until rollover. The next review date shows no time for these cards. Learning steps within a day still show minutes or hours. Button intervals are estimates for the time shown. RWKV also uses answer duration, so the interval can change before you answer.
 
 When the queue is empty, the completion card shows this session’s answers, introduced cards, recall rate, active answer time, and grade counts. Recall rate includes scheduled reviews and learning cards last seen on an earlier study day. Same-day learning repeats are excluded. Undo removes an answer from the summary. The streak covers all languages. The three-day forecast covers the selected language or deck. Select **Back to decks** to leave. Select **Study more** to add up to 10 new cards and 50 due reviews beyond the daily limits for this session. This button is disabled when no additional new or due cards are available. Saved limits and due dates stay unchanged. Session totals and extra allowances reset when you leave or reload the session.
 
 While you review, upcoming cards in the current daily queue load in the background. This includes their first example sentence, definitions, frequency ranks, audio, and enabled translations. Cards load one at a time in review order. Daily limits and the selected language or deck apply. Audio preparation uses your enabled audio sources.
 
-Enable **Settings → Audio & translation → Pronunciation → Play audio on reveal** for automatic word audio. Revealing the answer plays the prepared recording. If no usable recording is available, the system voice reads the word. Turn the setting off to disable automatic playback.
+Enable **Settings → Audio & translation → Pronunciation → Play on reveal** for automatic word audio. Revealing the answer plays the prepared recording. If no usable recording is available, the system voice reads the word. Turn the setting off to disable automatic playback.
 
 **Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions and cached translations stay in place. Undone answers remain in the backup history but do not count as reviews.
 
 Use your lookup control on the word, example sentence, or dictionary definitions on a review card. Configure these controls in **Settings → Controls → Lookup controls**. The lookup popup closes when you move to another card.
+
+Use **Actions** below the review card to mark the word as mastered or suspend it. **Undo** stays beside the menu.
 
 ## Review controls
 
@@ -66,7 +69,7 @@ Open **Settings → Controls → Review controls**. Each action has one binding.
 | Show answer / Grade Good | Space   |
 | Undo                     | Z       |
 
-Number keys work on the main keyboard and numeric keypad. In study sessions, **Show answer / Grade Good** reveals the answer first and grades Good on the next press. In lookup popups, the answer is already visible, so it grades Good. **Undo** restores the latest review. Bindings do not run while you use an input, button, link, menu, or dialog. Holding a key does not repeat the action. **Use only Again and Good** disables the Hard and Easy bindings.
+Number keys work on the main keyboard and numeric keypad. In study sessions, **Show answer / Grade Good** reveals the answer first and grades Good on the next press. In lookup popups, the answer is already visible, so it grades Good. **Undo** restores the latest review. Bindings do not run while you use an input, button, link, menu, or dialog. Holding a key does not repeat the action. **Only Again and Good** disables the Hard and Easy bindings.
 
 ## Queue counts and review calendar
 
@@ -78,14 +81,14 @@ The yearly calendar below the language list includes all languages. It shows pas
 
 Open **Settings → Review**.
 
-- **Scheduling algorithm:** FSRS is the default. Select **RWKV w64 (SM56)** to download its model from GitHub and prepare your review history. Keep the page open until preparation finishes. You can resume interrupted preparation later. Both algorithms work offline. Switching algorithms opens a confirmation dialog. Choose **Switch and reschedule** to apply the model and recalculate dates for all review cards in all languages, including suspended and mastered cards. New and learning cards keep their current steps. Review history stays unchanged. Interrupted rescheduling resumes when you next use reviews.
-- **RWKV scheduling mode:** available when RWKV is selected. **Curve** is the default. It uses the forgetting curve saved after an answer. **Instant** queries recall at future review dates to find an interval for your desired retention. It can take longer. Both modes work offline and use the same review history. Switching modes does not require another download or rebuild. Switching modes opens the same confirmation dialog and automatically recalculates review dates in all languages. In Instant mode, a card already below the target can become due today. The search ends at the Curve interval. If no sampled date reaches the target sooner, Instant uses that interval. Curve is the recommended mode for scheduling. After a model update, RWKV downloads the current model and prepares its state from your saved history. Review dates are recalculated automatically for the new model, including unusually long intervals.
-- **Desired retention:** default 80%; accepts 70–99%. Higher values usually mean more reviews. Existing profiles keep their saved value.
-- **Use only Again and Good:** hides Hard and Easy. New profiles show all four answers.
+- **Algorithm:** FSRS is the default. Select **RWKV w64 (SM56)** to download its model from GitHub and prepare your review history. Keep the page open until preparation finishes. You can resume interrupted preparation later. Both algorithms work offline. Switching algorithms opens a confirmation dialog. Choose **Switch and reschedule** to apply the model and recalculate dates for all review cards in all languages, including suspended and mastered cards. New and learning cards keep their current steps. Review history stays unchanged. Interrupted rescheduling resumes when you next use reviews.
+- **RWKV mode:** available when RWKV is selected. **Curve** is the default. It uses the forgetting curve saved after an answer. **Instant** queries recall at future review dates to find an interval for your desired retention. It can take longer. Both modes work offline and use the same review history. Switching modes does not require another download or rebuild. Switching modes opens the same confirmation dialog and automatically recalculates review dates in all languages. In Instant mode, a card already below the target can become due today. The search ends at the Curve interval. If no sampled date reaches the target sooner, Instant uses that interval. Curve is the recommended mode for scheduling. After a model update, RWKV downloads the current model and prepares its state from your saved history. Review dates are recalculated automatically for the new model, including unusually long intervals.
+- **Retention:** default 80%; accepts 70–99%. Higher values usually mean more reviews. Existing profiles keep their saved value.
+- **Only Again and Good:** hides Hard and Easy. New profiles show all four answers.
 - **Mature interval (days):** default 28. A scheduled interval below this value is Young. An interval at or above it is Mature. This does not depend on the age of the word.
-- **Default card front:** show the word alone or in its sentence.
-- **Show part of speech on card fronts:** enabled by default. Shows the word’s part of speech from its saved dictionary entries. If several are available, they are listed together. Nothing is shown if no part of speech is available. Turn this off to hide the label.
-- **Show sentence translations:** enables sentence translations after revealing the answer. Turn on **Automatically translate example sentences** in **Settings → Audio & translation → Translation** to show them automatically. When automatic translation is off, use **Translate sentence** to show a translation.
+- **Card front:** show the word alone or in its sentence.
+- **Part of speech on front:** enabled by default. Shows the word’s part of speech from its saved dictionary entries. If several are available, they are listed together. Nothing is shown if no part of speech is available. Turn this off to hide the label.
+- **Sentence translations:** enables sentence translations after revealing the answer. Turn on **Translate sentences automatically** in **Settings → Audio & translation → Translation** to show them automatically. When automatic translation is off, use **Translate sentence** to show a translation.
 
 ### Display order
 
@@ -94,24 +97,24 @@ Open **Settings → Review → Display order**. These settings apply to every la
 **Choose new words** picks which words fill your daily limit:
 
 - **Most common first** is the default. It picks more frequent words first, using combined ranks from enabled dictionaries. **Words without frequency** controls words with no matching rank.
-- **Deck, then oldest first** starts with Mined words, then frequency decks in name order. Within each deck, older additions come first.
-- **Deck, then random** uses the same deck order and selects words at random within each deck.
-- **Oldest added first** and **Newest added first** use the date the word was added.
+- **Deck → oldest** starts with Mined words, then frequency decks in name order. Within each deck, older additions come first.
+- **Deck → random** uses the same deck order and selects words at random within each deck.
+- **Oldest first** and **Newest first** use the date the word was added.
 - **Random** selects words at random across the selected language or deck.
 
-**Order chosen words** controls how the picked words appear. **Keep chosen order** keeps the order from the first setting. **Random** shuffles the same words. To study by frequency, choose **Most common first**, then **Keep chosen order**.
+**New word order** controls how the picked words appear. **As selected** keeps the order from the first setting. **Random** shuffles the same words. To study by frequency, choose **Most common first**, then **As selected**.
 
-**New/review order** accepts **Show before reviews**, **Mix with reviews**, or **Show after reviews**. The default is **Mix with reviews**. This places new cards relative to regular reviews and interday learning cards.
+**New/review order** accepts **Before reviews**, **Mix with reviews**, or **After reviews**. The default is **Mix with reviews**. This places new cards relative to regular reviews and interday learning cards.
 
-**Interday learning/review order** uses the same three choices. It places learning and relearning steps that crossed a study-day boundary relative to regular reviews. The default is **Mix with reviews**. These learning cards receive space in the daily review limit before regular reviews, regardless of their display order.
+**Learning from earlier days** uses the same three choices. It places learning and relearning steps that crossed a study-day boundary relative to regular reviews. The default is **Mix with reviews**. These learning cards receive space in the daily review limit before regular reviews, regardless of their display order.
 
-**Review sort order** sorts regular reviews before the daily review limit:
+**Review order** sorts regular reviews before the daily review limit:
 
 - **Due date** puts earlier due dates first.
-- **Due date, then random** shuffles cards due on the same study day.
-- **Due date, then deck** groups cards due on the same study day by deck.
-- **Deck, then due date** groups cards by deck, with earlier due dates first within each deck.
-- **Shortest intervals first** and **Longest intervals first** use each card's scheduled interval.
+- **Due date → random** shuffles cards due on the same study day.
+- **Due date → deck** groups cards due on the same study day by deck.
+- **Deck → due date** groups cards by deck, with earlier due dates first within each deck.
+- **Shortest intervals** and **Longest intervals** use each card's scheduled interval.
 - **Random** is the default. It shuffles all due review cards.
 
 Deck order starts with Mined words, then frequency decks by name. Random order stays stable within the study day and changes at the next day boundary. Mix preserves the order within each group and chooses between groups in proportion to their remaining cards. Due same-day learning steps always come first. Each word has one card, so there are no card-type or sibling ordering options.
@@ -130,21 +133,21 @@ Again returns to the first step. Good advances or finishes learning. Easy finish
 
 ### Daily workload
 
-**New words per day** defaults to 20 and accepts 0–10,000. A word counts once when first studied. **Maximum daily reviews** is unlimited when empty. A review limit also stops new introductions. Same-day learning steps remain available.
+**New words per day** defaults to 20 and accepts 0–10,000. A word counts once when first studied. **Reviews per day** is unlimited when empty. A review limit also stops new introductions. Same-day learning steps remain available.
 
 Limits apply separately to each study language. Ratings while reading remain available after reaching a limit. They still update memory and daily counts.
 
-Enable **Spread review intervals slightly** to distribute normal review dates. It does not change learning steps.
+Enable **Vary review intervals slightly** to distribute normal review dates. It does not change learning steps.
 
 ## Dynamic desired retention
 
-Enable **Set retention by word frequency rank** to use frequency rules with either algorithm. Select dictionaries that contain ranks, where 1 means the most frequent word. Do not select dictionaries that contain occurrence counts. Known Leipzig rank dictionaries are selected by default. Matching selected ranks are combined using their harmonic mean.
+Enable **Retention by frequency** to use frequency rules with either algorithm. Select dictionaries that contain ranks, where 1 means the most frequent word. Do not select dictionaries that contain occurrence counts. Known Leipzig rank dictionaries are selected by default. Matching selected ranks are combined using their harmonic mean.
 
 The default targets are 90% up to rank 1,000, 85% up to 5,000, 80% up to 20,000, and 75% for higher ranks. You can add or remove ranges and save new limits and targets. Limits must increase. Targets accept 70–99%. Words without a rank use global retention.
 
-In **Words**, set **Retention for this word** to override the rules. Leave it empty for automatic retention. A word override also works when frequency rules are off.
+In **Words**, set **Retention (%)** to override the rules. Leave it empty for automatic retention. A word override also works when frequency rules are off.
 
-Settings affect future answers. To apply current retention and interval settings to existing cards, use **Maintenance → Reschedule existing cards**. Select the language tab. This affects active Review cards in that language. It skips new, learning, mastered, and suspended cards. It does not add reviews or advance memory. Overdue cards can remain overdue.
+Settings affect future answers. To apply current retention and interval settings to existing cards, use **Maintenance → Reschedule cards**. Select the language tab. This affects active Review cards in that language. It skips new, learning, mastered, and suspended cards. It does not add reviews or advance memory. Overdue cards can remain overdue.
 
 ## Leeches and saved words
 

@@ -45,7 +45,6 @@ export function AppearanceSettings({
         />
         <ColorInput
           label={t("accent_color")}
-          description={t("accent_color_help")}
           maw={480}
           value={accentColor}
           onChange={setAccentColor}

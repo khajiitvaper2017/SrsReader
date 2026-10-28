@@ -26,15 +26,15 @@ Open **Settings → Controls → Lookup controls**. Enable a preset or select th
 
 Mouse and keyboard bindings can look up selected text. Some system and browser shortcuts cannot be overridden.
 
-**Input action prevention** blocks normal middle-click or Back/Forward actions when the matching lookup binding is used. Choose where it applies. Websites with parsing off retain normal browser actions.
+**Block default mouse actions** blocks normal middle-click or Back/Forward actions when the matching lookup binding is used. Choose where it applies. Websites with parsing off retain normal browser actions.
 
 ## Colors and parsing
 
 Under **Settings → Reading → Word colors**, choose text or background colors for unsaved, saved, young, mature, due, mastered, suspended, and unparsed words. Turning colors off leaves parsing enabled.
 
-**Settings → Reading → Parse websites automatically** starts parsing on websites by default. It is on by default. Turn it off to choose sites manually. In the extension toolbar, use **Enabled on [site]** to turn parsing on or off for the current site. Your choice is saved for that hostname and applies to all its pages. Sites you enable manually stay enabled when automatic parsing is off. Sites you disable stay disabled when automatic parsing is on. The toolbar also has the automatic parsing switch. Dictionary popups use the separate **Scan dictionary popups** setting.
+**Settings → Reading → Scan websites automatically** starts parsing on websites by default. It is on by default. Turn it off to choose sites manually. In the extension toolbar, use **Enabled on [site]** to turn parsing on or off for the current site. Your choice is saved for that hostname and applies to all its pages. Sites you enable manually stay enabled when automatic parsing is off. Sites you disable stay disabled when automatic parsing is on. The toolbar also has the automatic parsing switch. Dictionary popups use the separate **Scan dictionary popups** setting.
 
-Under **Settings → Reading**, select a language tab, then select **Load and color words**:
+Under **Settings → Reading**, select a language tab, then select **Load words**:
 
 - **Automatic** (default): color local words first and update online words as their entries arrive. All dictionaries follow their **Show**, **If needed**, and **Hide** settings. Cached entries are reused.
 - **When opened**: use a lookup control on a word to parse and color its full sentence, then open its dictionary entry. Other sentences are not scanned automatically. If grammar analysis is enabled, the lookup uses the word's grammar in that sentence.
@@ -82,7 +82,7 @@ Definitions for the selected word stay visible when their grammatical tags diffe
 
 For prepositions, the parsed case also filters individual senses with leading case labels, such as **(na + akuzativ)** or **(na + lokál)**. A sense stays visible if its label includes the parsed case. Senses without a recognized case label stay visible. Use the dictionary’s **Show more** arrow to see all senses.
 
-Enable **Automatically ignore proper names** to give recognized names the Ignored appearance. Names stay searchable. This does not save them as ignored. Saved vocabulary states take priority. Words annotated as nationalities are excluded. Name recognition can make mistakes.
+Enable **Ignore proper names** to give recognized names the Ignored appearance. Names stay searchable. This does not save them as ignored. Saved vocabulary states take priority. Words annotated as nationalities are excluded. Name recognition can make mistakes.
 
 LINDAT may use submitted text to improve its systems. Its models have noncommercial use restrictions. See the [service terms](https://lindat.mff.cuni.cz/services/udpipe/api-reference.php).
 
@@ -93,26 +93,26 @@ Popups prioritize downloaded Tatoeba examples containing the form you looked up,
 Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading → Hide source links**.
 
 - **Translate sentence:** translate a displayed example.
-- **Translate current sentence:** translate your reading sentence. Mining keeps that translation with the original.
+- **Translate sentence:** translate your reading sentence. Mining keeps that translation with the original.
 - **Translate definition:** translate a monolingual dictionary definition.
 
 Translations replace the displayed definitions or example sentence. Click the crossed translation button to restore the original. Click it again to show the saved translation.
 
 **Settings → Audio & translation → Translation** has two independent switches:
 
-- **Automatically translate example sentences:** translates example and reading sentences into your native language when you open them. When off, sentences open in the original language, even if a translation is saved. Use **Translate sentence** to show the translation.
-- **Automatically translate dictionary definitions:** translates dictionary definitions into your native language when you open them.
+- **Translate sentences automatically:** translates example and reading sentences into your native language when you open them. When off, sentences open in the original language, even if a translation is saved. Use **Translate sentence** to show the translation.
+- **Translate definitions automatically:** translates dictionary definitions into your native language when you open them.
 
-Both switches are off by default. Unsupported language pairs stay in the original language. If **Set up browser translation** appears, click **Enable translation**. Keep the popup or app page open while the browser prepares its model. The dialog shows download progress, and translations continue automatically when setup finishes. **Use Bergamot** uses the alternative local translator for that language pair on the current page. Closing the dialog also selects Bergamot. If setup fails, try again or choose Bergamot.
+Both switches are off by default. Unsupported language pairs stay in the original language. If **Browser translation** appears, click **Enable translation**. Keep the popup or app page open while the browser prepares its model. The dialog shows download progress, and translations continue automatically when setup finishes. **Use Bergamot** uses the alternative local translator for that language pair on the current page. Closing the dialog also selects Bergamot. If setup fails, try again or choose Bergamot.
 
 Translations use your native language and run locally. Models download on first use; not every language pair is supported. Saved translations work offline. Editing a sentence removes its old translation.
 
-Download or update examples under **Settings → Dictionaries → Example sentences**, or import a detailed Tatoeba `.tsv` or `.bz2` export.
+Download or update examples under **Settings → Dictionaries → Examples**, or import a detailed Tatoeba `.tsv` or `.bz2` export.
 
 ## Audio
 
 Use the speaker to hear a word or sentence. Right-click, Shift-click, or hold it to open **Audio sources**. Click a recording or system voice to try it. Recording credits are hidden by default. Turn off **Settings → Reading → Hide source links** to show them in this menu. Choose an installed local voice under **Settings → Audio & translation → Pronunciation**. If none is available, install a system voice for your study language.
 
-**Settings → Audio & translation → Pronunciation → Audio sources** controls which sources download word recordings when you play or save a word. Only the word is sent. Use each switch to enable or disable Wikimedia Commons (including Lingua Libre), LanguagePod101, or Forvo. All three are enabled by default. Drag the handle beside a source to set its priority. You can also focus the handle and press Up or Down. Enabled sources are checked from top to bottom. Disabled sources receive no requests. If all sources are disabled, words use saved recordings or the system voice. Source settings also apply when you open **Audio sources**. Saved recordings remain available and are reused before downloading another recording. Open **Audio sources** to choose another recording. LanguagePod101 is available only for languages with a Pod101 or Class101 dictionary. Forvo uses recordings for your study language. If a provider is unavailable, the other providers remain available. Forvo can block automated requests. Saved recordings work offline. Sentence audio uses the system voice. **Play audio on reveal** enables automatic playback during review.
+**Settings → Audio & translation → Pronunciation → Audio sources** controls which sources download word recordings when you play or save a word. Only the word is sent. Use each switch to enable or disable Wikimedia Commons (including Lingua Libre), LanguagePod101, or Forvo. All three are enabled by default. Drag the handle beside a source to set its priority. You can also focus the handle and press Up or Down. Enabled sources are checked from top to bottom. Disabled sources receive no requests. If all sources are disabled, words use saved recordings or the system voice. Source settings also apply when you open **Audio sources**. Saved recordings remain available and are reused before downloading another recording. Open **Audio sources** to choose another recording. LanguagePod101 is available only for languages with a Pod101 or Class101 dictionary. Forvo uses recordings for your study language. If a provider is unavailable, the other providers remain available. Forvo can block automated requests. Saved recordings work offline. Sentence audio uses the system voice. **Play on reveal** enables automatic playback during review.
 
-**Settings → Audio & translation → Pronunciation → Normalize recording volume** is enabled by default. It levels the loudness of recordings during playback, with limited amplification and peak protection. Stored audio is unchanged. System TTS uses device volume.
+**Settings → Audio & translation → Pronunciation → Normalize volume** is enabled by default. It levels the loudness of recordings during playback, with limited amplification and peak protection. Stored audio is unchanged. System TTS uses device volume.

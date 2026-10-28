@@ -2,7 +2,7 @@
 
 ## Export and restore
 
-Open **Settings → Data and Backups**:
+Open **Settings → Data**:
 
 - **Full backup → Export full backup:** one ZIP containing settings, vocabulary and personal definitions, decks, saved sentences and translations, review history and scheduling state, recordings, installed dictionaries and their media and original archives, frequency and immersion data, word-form tables, Tatoeba corpora, online lookup and UDPipe caches, saved RWKV state, and downloaded RWKV and Bergamot model files.
 - **Settings → Export JSON:** languages, controls, appearance, review settings, and dictionary ordering.
@@ -22,11 +22,11 @@ Export before uninstalling, clearing browser data, or moving to another browser.
 
 ## Browser storage
 
-Open **Settings → Data and Backups** to see **Browser storage used**. This is the browser’s estimate for the extension’s database and cached offline models, including installed dictionaries, media, and learning data. It refreshes when you open the page, after backup or cleanup operations, and when app data changes. The browser may round the value. It does not include the installed extension files or models managed by the browser.
+Open **Settings → Data** to see **Storage used**. This is the browser’s estimate for the extension’s database and cached offline models, including installed dictionaries, media, and learning data. It refreshes when you open the page, after backup or cleanup operations, and when app data changes. The browser may round the value. It does not include the installed extension files or models managed by the browser.
 
 ## Database cleanup
 
-Use **Settings → Data and Backups → Clean up database** to remove unused dictionary revisions left by interrupted or failed imports and updates. Cleanup checks entries, lookup indexes, frequency and phrase records, tags, media, and original archives. It keeps every installed dictionary, including disabled dictionaries, and preserves your vocabulary, review history, recordings, settings, corpora, and model downloads. The result reports how many unused records were removed, or tells you that none were found.
+Use **Settings → Data → Clean up** to remove unused dictionary revisions left by interrupted or failed imports and updates. Cleanup checks entries, lookup indexes, frequency and phrase records, tags, media, and original archives. It keeps every installed dictionary, including disabled dictionaries, and preserves your vocabulary, review history, recordings, settings, corpora, and model downloads. The result reports how many unused records were removed, or tells you that none were found.
 
 Cleanup is unavailable while an import is running. Imports also use the same cleanup before starting. If an earlier import was interrupted, you can clean up before exporting a full backup so it does not include those leftovers.
 

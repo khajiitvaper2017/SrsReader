@@ -349,7 +349,6 @@ export function SettingsPage({
                 <Title order={2}>{t("translation")}</Title>
                 <Switch
                   label={t("auto_translate_sentences")}
-                  description={t("auto_translate_sentences_help")}
                   checked={settings.autoTranslateSentences}
                   onChange={(event) =>
                     void update({
@@ -359,7 +358,6 @@ export function SettingsPage({
                 />
                 <Switch
                   label={t("auto_translate_definitions")}
-                  description={t("auto_translate_definitions_help")}
                   checked={settings.autoTranslateDefinitions}
                   onChange={(event) =>
                     void update({

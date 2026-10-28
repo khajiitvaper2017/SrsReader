@@ -103,11 +103,6 @@ export function ReviewSettings({
               ]}
             />
           </SimpleGrid>
-          {settings.newGatherOrder === "frequency" && (
-            <Text variant="supporting">
-              {t("new_words_follow_combined_frequency_ranks_from_most")}
-            </Text>
-          )}
         </Stack>
       </Paper>
       <Paper>
@@ -116,33 +111,16 @@ export function ReviewSettings({
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             {(
               [
-                [
-                  "newGatherOrder",
-                  "srs_new_gather_order",
-                  "srs_new_gather_help",
-                ],
-                ["newSortOrder", "srs_new_sort_order", "srs_new_sort_help"],
-                [
-                  "newReviewOrder",
-                  "srs_new_review_order",
-                  "srs_new_review_help",
-                ],
-                [
-                  "interdayReviewOrder",
-                  "srs_interday_review_order",
-                  "srs_interday_review_help",
-                ],
-                [
-                  "reviewSortOrder",
-                  "srs_review_sort_order",
-                  "srs_review_sort_help",
-                ],
+                ["newGatherOrder", "srs_new_gather_order"],
+                ["newSortOrder", "srs_new_sort_order"],
+                ["newReviewOrder", "srs_new_review_order"],
+                ["interdayReviewOrder", "srs_interday_review_order"],
+                ["reviewSortOrder", "srs_review_sort_order"],
               ] as const
-            ).map(([key, label, help]) => (
+            ).map(([key, label]) => (
               <Select
                 key={key}
                 label={t(label)}
-                description={t(help)}
                 value={settings[key]}
                 allowDeselect={false}
                 maxDropdownHeight="calc(100dvh - 16px)"

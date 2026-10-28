@@ -236,7 +236,6 @@ export function SrsSettings({
                   "srs_learn_ahead_help",
                 )}
               </SimpleGrid>
-              <Text variant="supporting">{t("srs_single_step_help")}</Text>
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
