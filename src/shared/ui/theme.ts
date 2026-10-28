@@ -26,7 +26,6 @@ import {
   Pagination,
   Radio,
   Select,
-  SegmentedControl,
   SimpleGrid,
   Stack,
   Tabs,
@@ -189,10 +188,6 @@ export function createUITheme(
             minHeight: `max(${popup ? "34px" : "0px"}, var(--srs-touch-target, 0px))`,
           },
         },
-      }),
-      SegmentedControl: SegmentedControl.extend({
-        defaultProps: { size: controlSize, "data-srs-reader": true },
-        styles: { label: { whiteSpace: "normal" } },
       }),
       NavLink: NavLink.extend({
         defaultProps: { "data-srs-reader": true },

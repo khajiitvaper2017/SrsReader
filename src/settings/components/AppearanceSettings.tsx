@@ -1,12 +1,4 @@
-import {
-  ColorInput,
-  Paper,
-  SegmentedControl,
-  Stack,
-  Title,
-  useMantineTheme,
-} from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
+import { ColorInput, Paper, NativeSelect, Stack, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -18,22 +10,19 @@ export function AppearanceSettings({
   settings: Settings;
   onChange: (patch: Partial<Settings>) => Promise<void>;
 }) {
-  const theme = useMantineTheme();
-  const narrow = useMediaQuery(`(max-width: ${theme.breakpoints.xs})`);
   const [accentColor, setAccentColor] = useState(settings.accentColor);
   useEffect(() => setAccentColor(settings.accentColor), [settings.accentColor]);
   return (
     <Paper>
       <Stack>
         <Title order={2}>{t("appearance")}</Title>
-        <SegmentedControl
-          w="100%"
+        <NativeSelect
           maw={480}
-          fullWidth
-          orientation={narrow ? "vertical" : "horizontal"}
           value={settings.theme}
-          onChange={(theme) =>
-            void onChange({ theme: theme as Settings["theme"] })
+          onChange={(event) =>
+            void onChange({
+              theme: event.currentTarget.value as Settings["theme"],
+            })
           }
           aria-label={t("appearance")}
           data={[

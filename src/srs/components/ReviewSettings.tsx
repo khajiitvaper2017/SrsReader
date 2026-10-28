@@ -1,7 +1,7 @@
 import {
   NumberInput,
   Paper,
-  SegmentedControl,
+  NativeSelect,
   Select,
   SimpleGrid,
   Stack,
@@ -31,25 +31,20 @@ export function ReviewSettings({
       <Paper>
         <Stack>
           <Title order={2}>{t("settings_review_session")}</Title>
-          <Stack>
-            <Text fw={500} id="card-front-label">
-              {t("default_card_front")}
-            </Text>
-            <SegmentedControl
-              w="100%"
-              maw={480}
-              fullWidth
-              aria-labelledby="card-front-label"
-              value={settings.front}
-              onChange={(front) =>
-                void update({ front: front as Settings["front"] })
-              }
-              data={[
-                { value: "word", label: t("word_only") },
-                { value: "sentence", label: t("word_in_sentence") },
-              ]}
-            />
-          </Stack>
+          <NativeSelect
+            label={t("default_card_front")}
+            maw={480}
+            value={settings.front}
+            onChange={(event) =>
+              void update({
+                front: event.currentTarget.value as Settings["front"],
+              })
+            }
+            data={[
+              { value: "word", label: t("word_only") },
+              { value: "sentence", label: t("word_in_sentence") },
+            ]}
+          />
           <Switch
             label={t("show_part_of_speech_on_card_fronts")}
             checked={settings.showPartOfSpeech}
