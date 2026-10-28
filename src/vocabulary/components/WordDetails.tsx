@@ -10,6 +10,8 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { CardEditor } from "@/vocabulary/components/CardEditor";
+import { CardFields } from "@/vocabulary/components/CardFields";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
 import { ContextSentence } from "@/vocabulary/components/ContextSentence";
@@ -65,10 +67,17 @@ export function WordDetails({
             {word.lemma}
           </Title>
           <Group gap="xs">
+            <CardEditor
+              key={word.id}
+              word={word}
+              contexts={contexts}
+              nativeLanguage={settings.nativeLanguage}
+            />
             <FrequencyBadge word={{ ...word, forms: [] }} />
             <AudioButton word={word} settings={settings} onError={setError} />
           </Group>
         </Group>
+        <CardFields fields={word.customFields} />
         <CardDefinitions
           key={word.id}
           id={word.id}

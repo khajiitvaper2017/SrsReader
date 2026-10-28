@@ -43,6 +43,8 @@ export async function handle(request: Request) {
       return handleLookup(request);
     case "word":
     case "cardDefinitions":
+    case "saveCardFields":
+    case "saveCustomTranslation":
     case "saveTranslation":
     case "mine":
     case "defineWord":

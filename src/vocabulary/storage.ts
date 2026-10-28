@@ -110,6 +110,42 @@ export function replaceMeanings(id: string, meanings: Vocabulary["meanings"]) {
     });
 }
 
+export async function saveCardFields(
+  request: Extract<Request, { action: "saveCardFields" }>,
+) {
+  await db.vocabulary
+    .where("id")
+    .equals(request.id)
+    .modify((word) => {
+      word.customFields = request.fields;
+      word.version++;
+      word.updated = Date.now();
+    });
+}
+
+export async function saveCustomTranslation(
+  request: Extract<Request, { action: "saveCustomTranslation" }>,
+) {
+  await db.transaction("rw", [db.vocabulary, db.sentences], async () => {
+    const word = await db.vocabulary.get(request.id);
+    if (!word) throw new Error(t("word_not_found"));
+    await cacheContext(word, request.context);
+    const id = sentenceId(word.language, request.context.sentence);
+    const sentence = await db.sentences.get(id);
+    const translations = { ...sentence?.customTranslations };
+    if (request.text) translations[request.language] = request.text;
+    else delete translations[request.language];
+    await db.sentences.update(id, { customTranslations: translations });
+    await db.vocabulary
+      .where("id")
+      .anyOf(sentence?.wordIds || [word.id])
+      .modify((saved) => {
+        saved.version++;
+        saved.updated = Date.now();
+      });
+  });
+}
+
 export async function setMastered(word: LookupWord, value: boolean) {
   return db.transaction("rw", db.vocabulary, async () => {
     const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
@@ -181,6 +217,7 @@ export async function deleteWords(ids: string[]) {
       db.vocabulary,
       db.decks,
       db.audio,
+      db.cardMedia,
       db.rwkvMeta,
       db.rwkvEntities,
       db.rwkvCards,
@@ -192,6 +229,7 @@ export async function deleteWords(ids: string[]) {
         deck.wordIds = deck.wordIds.filter((id) => !removed.has(id));
       });
       await db.audio.bulkDelete(ids);
+      await db.cardMedia.where("wordId").anyOf(ids).delete();
       await invalidateRwkv();
       await db.srsMeta.update("main", { undo: undefined });
     },

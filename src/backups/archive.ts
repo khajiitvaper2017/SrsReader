@@ -2,6 +2,7 @@ import {
   immersionArchiveSchema,
   immersionScore,
 } from "@/dictionaries/immersion-model";
+import { cardMediaInfoSchema } from "@/media/model";
 import { audioInfoSchema } from "@/audio/model";
 import { db } from "@/platform/database/db";
 import { settingsSchema } from "@/settings/model";
@@ -70,7 +71,7 @@ const archivedWordSchema = vocabularySchema.extend({
 });
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
-  version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   immersion: z.array(immersionArchiveSchema).default([]),
   vocabulary: z.array(archivedWordSchema),
   decks: z.array(deckSchema).default([]),
@@ -87,6 +88,9 @@ const learningSchema = z.object({
         .nullable(),
     }),
   ),
+  cardMedia: z
+    .array(cardMediaInfoSchema.safeExtend({ path: z.string() }))
+    .default([]),
   audio: z.array(
     audioInfoSchema.extend({ path: z.string(), mime: z.string() }),
   ),
@@ -99,6 +103,7 @@ export async function exportLearning() {
       db.vocabulary,
       db.reviews,
       db.audio,
+      db.cardMedia,
       db.decks,
       db.sentences,
       db.dictionaries,
@@ -125,6 +130,7 @@ export async function exportLearning() {
       vocabulary: await db.vocabulary.toArray(),
       reviews: await db.reviews.toArray(),
       audio: await db.audio.toArray(),
+      cardMedia: await db.cardMedia.toArray(),
       decks: await db.decks.toArray(),
       sentences: await db.sentences.toArray(),
     }),
@@ -140,18 +146,24 @@ export async function exportLearning() {
     new TextReader(
       JSON.stringify({
         format: "srs-reader-learning",
-        version: 3,
+        version: 4,
         immersion: snapshot.immersion,
         vocabulary: snapshot.vocabulary,
         decks: snapshot.decks,
         sentences: snapshot.sentences,
         reviews: snapshot.reviews,
         audio,
+        cardMedia: snapshot.cardMedia.map(({ blob: _blob, ...info }, i) => ({
+          ...info,
+          path: `media/${i}`,
+        })),
       }),
     ),
   );
   for (const [i, item] of snapshot.audio.entries())
     await writer.add(`audio/${i}`, new BlobReader(item.blob));
+  for (const [i, item] of snapshot.cardMedia.entries())
+    await writer.add(`media/${i}`, new BlobReader(item.blob));
   saveBlob(
     await writer.close(),
     `srs-reader-learning-${new Date().toISOString().slice(0, 10)}.zip`,
@@ -250,6 +262,22 @@ export async function readLearning(file: File) {
       const { path, mime, ...info } = item;
       audio.push({ ...info, blob: await entry.getData(new BlobWriter(mime)) });
     }
+    if (
+      new Set(data.cardMedia.map((item) => item.id)).size !==
+        data.cardMedia.length ||
+      data.cardMedia.some((item) => !ids.has(item.wordId))
+    )
+      throw new Error(t("card_media_invalid"));
+    const cardMedia = [];
+    for (const item of data.cardMedia) {
+      const entry = files.find((file) => file.filename === item.path);
+      if (!entry?.getData || !/^media\/\d+$/.test(item.path))
+        throw new Error(t("card_media_unavailable"));
+      const { path: _path, ...info } = item;
+      const blob = await entry.getData(new BlobWriter(info.mime));
+      if (!blob.size) throw new Error(t("card_media_invalid"));
+      cardMedia.push({ ...info, blob });
+    }
     if (data.version === 1) {
       for (const word of data.vocabulary) word.srsVersion = word.version;
       data.reviews.sort((a, b) => a.time - b.time || a.id.localeCompare(b.id));
@@ -264,7 +292,7 @@ export async function readLearning(file: File) {
         data.reviews.length
     )
       throw new Error(t("invalid_review_references_in_learning_archive"));
-    return { ...data, audio };
+    return { ...data, audio, cardMedia };
   } finally {
     await zip.close();
   }

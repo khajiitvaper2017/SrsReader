@@ -115,6 +115,7 @@ export function createReviewPreload(settings: Settings) {
       context &&
       settings.autoTranslateSentences &&
       settings.showSentenceTranslation &&
+      !context.customTranslations?.[settings.nativeLanguage] &&
       context.translation?.language !== settings.nativeLanguage
     ) {
       const translation = {

@@ -27,13 +27,17 @@ import {
   mine,
   replaceMeanings,
   saveTranslation,
+  saveCardFields,
+  saveCustomTranslation,
   setMastered,
   setRetentionOverride,
   setSuspended,
 } from "@/vocabulary/storage";
 
 export function handleVocabulary(request: Request, settings: Settings) {
-  return request.action === "mine" ||
+  return request.action === "saveCardFields" ||
+    request.action === "saveCustomTranslation" ||
+    request.action === "mine" ||
     request.action === "defineWord" ||
     request.action === "deleteDefinition" ||
     request.action === "restoreDefinition" ||
@@ -47,6 +51,14 @@ export function handleVocabulary(request: Request, settings: Settings) {
 }
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
+    case "saveCardFields":
+      await saveCardFields(request);
+      await notify(request.id);
+      return;
+    case "saveCustomTranslation":
+      await saveCustomTranslation(request);
+      await notify(undefined, "vocabulary");
+      return;
     case "saveTranslation":
       await saveTranslation(request);
       return;

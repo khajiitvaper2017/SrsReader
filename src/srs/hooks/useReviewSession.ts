@@ -122,7 +122,12 @@ export function useReviewSession({
               ? {
                   ...value,
                   words: [
-                    word,
+                    {
+                      ...word,
+                      customFields:
+                        value.words.find((next) => next.id === word.id)
+                          ?.customFields ?? word.customFields,
+                    },
                     ...value.words.filter((next) => next.id !== word.id),
                   ],
                 }

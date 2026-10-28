@@ -6,7 +6,13 @@ import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
 import type { ReadingContext } from "@/vocabulary/model";
 import { Languages } from "lucide-react";
-import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 type Translation = NonNullable<ReadingContext["translation"]>;
 export function TextTranslation({
   text,
@@ -201,14 +207,22 @@ export function SentenceTranslation({
     failure: ReactNode,
   ) => ReactNode;
 }) {
+  const custom = context.customTranslations?.[settings.nativeLanguage];
+  const initialTranslation = useMemo(
+    () =>
+      custom
+        ? { text: custom, language: settings.nativeLanguage }
+        : context.translation,
+    [custom, context.translation, settings.nativeLanguage],
+  );
   return (
     <TextTranslation
       key={`${context.sentence}:${context.start}:${settings.nativeLanguage}`}
       text={context.sentence}
       language={language}
       settings={settings}
-      autoTranslate={autoTranslate}
-      initialTranslation={context.translation}
+      autoTranslate={autoTranslate || !!custom}
+      initialTranslation={initialTranslation}
       label={label}
       collapsed={collapsed}
       compact={compact}

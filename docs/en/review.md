@@ -168,3 +168,15 @@ The sentence’s translation, speaker, and next-example buttons sit beside it.
 Use **Maintenance → Rebuild RWKV state** to rebuild its cache from saved answers. This does not change due dates or remove history.
 
 Editing a definition keeps the word in its current deck. Custom dictionary edits remain available when a dictionary update changes the original definition.
+
+## Card media and custom content
+
+Open **Edit card** below a review card or in the word details on the **Words** page. Select **Upload file** under **Background image or video** to add a JPEG, PNG, GIF, WebP, AVIF, BMP, WebM, MP4, or Ogg file. The media appears behind the card content and fades toward the bottom. Videos loop without sound. With reduced motion enabled on your device, videos start paused.
+
+Under **Sentence audio**, select a saved sentence and upload an MP3, M4A, Ogg, WAV, WebM, FLAC, or AAC file. The speaker button beside that sentence plays the recording instead of the system voice. Without a recording, it uses the selected local voice. Playback depends on the formats your browser supports.
+
+**Word audio** lets you upload a custom word recording. The pronunciation button and automatic word playback use this recording first. Remove it to use the configured pronunciation sources again. Each word can have one background, one word recording, and one audio file for each saved sentence. Select **Replace file** or **Remove file** to manage an attachment. Files are stored locally and included in learning and full backups. Deleting the word also deletes its media.
+
+In **Custom sentence translation**, enter a translation in your current native language and select **Save**. It appears when **Show sentence translations** is enabled, even if automatic translation is off. Your text takes priority over automatic translations. Clear the field and save to remove your translation. Translations are shared by saved words that use the same sentence. You can save a separate translation for each native language.
+
+Under **Optional fields**, select **Add field**. Enter a name, such as Source or Explanation, and its content. Both values are required for each added field. Names can contain up to 200 characters, and content and translations can contain up to 30,000 characters. Add as many fields as you need. Use the trash button to remove a field. Select **Save** before closing the editor. These fields appear on the answer side and in word details. They are included in backups.

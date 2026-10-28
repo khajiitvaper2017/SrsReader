@@ -21,6 +21,9 @@ export const contextSchema = z
     title: z.string(),
     mined: z.number().finite(),
     translation: translationSchema.optional(),
+    customTranslations: z
+      .record(languageSchema, z.string().min(1).max(30000))
+      .optional(),
   })
   .refine(
     (c) =>
@@ -32,7 +35,13 @@ export const contextSchema = z
 
 export type ReadingContext = z.infer<typeof contextSchema>;
 
+export const cardFieldSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  value: z.string().trim().min(1).max(30000),
+});
+
 export const vocabularySchema = z.object({
+  customFields: z.array(cardFieldSchema).optional(),
   id: z.string(),
   language: z.string(),
   lemma: z.string().min(1),

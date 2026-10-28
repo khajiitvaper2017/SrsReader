@@ -1,5 +1,9 @@
 import { translationSchema } from "@/translation/model";
-import { contextSchema, type Vocabulary } from "@/vocabulary/model";
+import {
+  cardFieldSchema,
+  contextSchema,
+  type Vocabulary,
+} from "@/vocabulary/model";
 import { z } from "zod";
 import { occurrenceSchema } from "@/languages/analysis";
 import { languageSchema } from "@/languages/model";
@@ -12,6 +16,18 @@ export const selection = {
   occurrence: occurrenceSchema.optional(),
 };
 export const requests = [
+  z.object({
+    action: z.literal("saveCardFields"),
+    id: z.string(),
+    fields: z.array(cardFieldSchema),
+  }),
+  z.object({
+    action: z.literal("saveCustomTranslation"),
+    id: z.string(),
+    context: contextSchema,
+    language: languageSchema,
+    text: z.string().trim().max(30000),
+  }),
   z.object({ action: z.literal("word"), id: z.string() }),
   z.object({
     action: z.literal("cardDefinitions"),
@@ -94,6 +110,8 @@ export const requests = [
 export const requestSchema = z.discriminatedUnion("action", requests);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
+  saveCardFields: void;
+  saveCustomTranslation: void;
   saveTranslation: void;
   word: Vocabulary | undefined;
   cardDefinitions: {

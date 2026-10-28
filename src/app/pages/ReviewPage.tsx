@@ -12,6 +12,9 @@ import {
   Text,
   Title,
 } from "@mantine/core";
+import { CardBackground } from "@/media/components/CardBackground";
+import { CardEditor } from "@/vocabulary/components/CardEditor";
+import { CardFields } from "@/vocabulary/components/CardFields";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { dictionaryPartsOfSpeech } from "@/dictionaries/grammar";
@@ -137,8 +140,12 @@ export function ReviewPage({
             key={`${word.id}:${word.card?.reps}`}
             flex={1}
             mih={240}
+            pos="relative"
+            style={{ isolation: "isolate" }}
           >
+            <CardBackground wordId={word.id} onError={setError} />
             <ScrollArea
+              pos="relative"
               h="100%"
               type="never"
               scrollbars="y"
@@ -312,6 +319,7 @@ export function ReviewPage({
                         }
                       />
                     )}
+                    <CardFields fields={word.customFields} />
                     <CardDefinitions
                       saveTranslation={false}
                       key={word.id}
@@ -386,7 +394,7 @@ export function ReviewPage({
           component="footer"
           justify="space-between"
           align="center"
-          wrap="nowrap"
+          wrap="wrap"
         >
           <Button
             variant="subtle"
@@ -397,6 +405,13 @@ export function ReviewPage({
           >
             {t("undo")}
           </Button>
+          <CardEditor
+            key={word.id}
+            word={word}
+            contexts={contexts}
+            nativeLanguage={settings.nativeLanguage}
+            currentSentence={context?.sentence}
+          />
           <Menu>
             <Menu.Target>
               <Button

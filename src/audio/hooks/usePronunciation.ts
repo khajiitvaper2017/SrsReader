@@ -1,3 +1,5 @@
+import { db } from "@/platform/database/db";
+import { cardMediaId } from "@/media/model";
 import { audioClient } from "@/audio/client";
 import type { AudioInfo } from "@/audio/model";
 import { localVoices, playBlob, speak, stopAudio } from "@/audio/playback";
@@ -106,6 +108,17 @@ export function usePronunciation({
         setActive(`tts:${source.voice}`);
         playVoice(source.voice);
         return;
+      }
+      if (!source) {
+        const recording = await db.cardMedia.get(
+          cardMediaId(word.id, sentence ? "audio" : "wordAudio", sentence),
+        );
+        if (attempt !== playback.current) return;
+        if (recording) {
+          setActive(recording.id);
+          await playBlob(recording.blob, settings.normalizeAudio);
+          return;
+        }
       }
       if (sentence) {
         setActive(`tts:${settings.voice}`);

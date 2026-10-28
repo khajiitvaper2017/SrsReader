@@ -167,4 +167,5 @@ export function installMigrations(database: Dexie) {
     entries: "id, revisionId, [revisionId+folded]",
     entryMatches: "id, [revisionId+folded]",
   });
+  database.version(15).stores({ cardMedia: "id, wordId" });
 }

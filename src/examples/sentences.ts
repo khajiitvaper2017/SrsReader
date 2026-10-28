@@ -193,6 +193,7 @@ export async function sentenceExamples(
               title: record.title,
               mined: record.mined,
               translation: record.translation,
+              customTranslations: record.customTranslations,
               grammar: analysis?.grammar,
             };
             if (

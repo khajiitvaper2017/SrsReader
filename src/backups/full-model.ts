@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cardMediaSchema } from "@/media/model";
 import { audioInfoSchema } from "@/audio/model";
 import {
   definitionSchema,
@@ -113,6 +114,7 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
   decks: deckSchema,
   sentences: sentenceSchema,
   audio: audioInfoSchema.extend({ blob }),
+  cardMedia: cardMediaSchema,
   dictionaries: z.object({
     id,
     revisionId: id,
