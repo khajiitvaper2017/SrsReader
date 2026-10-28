@@ -21,7 +21,6 @@ import { reviewStatistics } from "@/srs/statistics";
 import { clearUndo } from "@/srs/storage";
 import { undoReview } from "@/srs/undo";
 import { dailyCounts } from "@/srs/workload";
-import { stateOf } from "@/vocabulary/model";
 import { snapshot } from "@/vocabulary/snapshot";
 import { getWord, languageWords } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
@@ -107,12 +106,15 @@ async function execute(request: Request, settings: Settings) {
       const words = (
         await Promise.all(settings.studyLanguages.map(languageWords))
       ).flat();
+      const overview = await studyOverview(settings);
       return {
         total: words.length,
         known: words.filter((w) => w.known).length,
-        due: words.filter(
-          (w) => stateOf(w, settings.matureIntervalDays) === "due",
-        ).length,
+        due: overview.reduce(
+          (sum, language) =>
+            sum + language.fresh + language.learning + language.due,
+          0,
+        ),
         today: (
           await Promise.all(
             settings.studyLanguages.map((language) =>

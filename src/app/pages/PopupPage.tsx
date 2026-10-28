@@ -37,7 +37,13 @@ export function Popup() {
       .catch((error) => setError(error.message));
   }, []);
   useEffect(load, [load]);
-  useChanges(load, ["vocabulary", "srs", "settings", "dictionaries"]);
+  useChanges(load, [
+    "vocabulary",
+    "srs",
+    "settings",
+    "dictionaries",
+    "collection",
+  ]);
   useEffect(() => {
     void browser.tabs
       .query({ active: true, currentWindow: true })
