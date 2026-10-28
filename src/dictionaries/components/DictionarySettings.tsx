@@ -26,7 +26,7 @@ import {
 } from "@/dictionaries/components/WiktionaryBrowser";
 import { useDictionarySettings } from "@/dictionaries/hooks/useDictionarySettings";
 import type { Dictionary } from "@/dictionaries/model";
-import { languageName } from "@/languages/codes";
+import { languageLabel, languageName } from "@/languages/codes";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -111,11 +111,13 @@ export function DictionarySettings({
                     <>
                       {dictionary.count > 0
                         ? t("dictionary_entries", {
-                            language: dictionary.language,
-                            target: dictionary.target || t("unspecified"),
+                            language: languageLabel(dictionary.language),
+                            target: dictionary.target
+                              ? languageLabel(dictionary.target)
+                              : t("unspecified"),
                             count: dictionary.count,
                           })
-                        : dictionary.language}
+                        : languageLabel(dictionary.language)}
                       {dictionary.frequencyCount > 0 &&
                         t("frequency_count", {
                           count: dictionary.frequencyCount,
