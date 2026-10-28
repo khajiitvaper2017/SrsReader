@@ -117,9 +117,6 @@ export function LanguageSettings({
           />
           <Select
             label={t("interface_language_setting")}
-            description={t("interface_language", {
-              language: languageName(i18n.resolvedLanguage || "en"),
-            })}
             value={settings.interfaceLanguage}
             onChange={(value) =>
               void update({

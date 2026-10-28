@@ -195,7 +195,6 @@
   "includes_sentences_review_history_and_saved_audio": "Речення, повторення, записи й лічильники читання.",
   "indexing_examples": "Індексування прикладів",
   "input_action_prevention": "Блокування дій миші",
-  "interface_language": "Зараз: {{language}}",
   "interface_language_setting": "Мова інтерфейсу",
   "interval_days": "{{count}} дн.",
   "interval_hours": "{{count}} год",

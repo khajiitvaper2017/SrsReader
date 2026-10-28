@@ -189,7 +189,6 @@
   "includes_sentences_review_history_and_saved_audio": "Sentences, reviews, recordings and immersion counts.",
   "indexing_examples": "Indexing examples",
   "input_action_prevention": "Block default mouse actions",
-  "interface_language": "Current language: {{language}}",
   "interface_language_setting": "Interface language",
   "interval_days": "{{count}}d",
   "interval_hours": "{{count}}h",
