@@ -31,6 +31,7 @@ import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
 import {
+  ArrowLeft,
   Check,
   Eye,
   Pause,
@@ -76,9 +77,19 @@ export function ReviewPage({
     word && settings.showPartOfSpeech
       ? dictionaryPartsOfSpeech(word.meanings)
       : [];
-  if (!queue && !error) return <SrsProgress />;
+  const back = (
+    <ActionIcon
+      component="a"
+      href="#review"
+      title={t("study_end_session")}
+      aria-label={t("study_end_session")}
+    >
+      <ArrowLeft aria-hidden size={16} />
+    </ActionIcon>
+  );
   return (
     <Stack
+      data-srs-reader-review
       mih="calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
       h={
         word
@@ -88,9 +99,10 @@ export function ReviewPage({
       gap="xs"
     >
       <SrsProgress />
+      {!word && <Group>{back}</Group>}
       {word && queue && (
-        <SessionProgress queue={queue} answers={answers}>
-          <Group gap={4} wrap="nowrap" justify="flex-end">
+        <SessionProgress queue={queue} answers={answers} back={back}>
+          <Group gap={4} wrap="nowrap" justify="flex-end" align="center">
             <ActionIcon
               variant={timer.enabled ? "light" : "subtle"}
               title={t(
@@ -129,8 +141,105 @@ export function ReviewPage({
                 )}
               </ActionIcon>
             )}
+            <CardEditor
+              iconOnly
+              key={word.id}
+              word={word}
+              contexts={contexts}
+              nativeLanguage={settings.nativeLanguage}
+              currentSentence={context?.sentence}
+            />
+            <Menu>
+              <Menu.Target>
+                <ActionIcon
+                  title={t("actions")}
+                  aria-label={t("actions")}
+                  disabled={busy}
+                >
+                  <MoreHorizontal aria-hidden size={16} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<Check aria-hidden="true" size={16} />}
+                  disabled={busy}
+                  onClick={() =>
+                    void vocabularyClient({
+                      action: "known",
+                      id: word.id,
+                      term: word.lemma,
+                      value: true,
+                    })
+                      .then(load)
+                      .catch((error) => setError(error.message))
+                  }
+                >
+                  {t("master")}
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<Pause aria-hidden="true" size={16} />}
+                  disabled={busy}
+                  onClick={() =>
+                    void vocabularyClient({
+                      action: "suspend",
+                      id: word.id,
+                      value: true,
+                    })
+                      .then(load)
+                      .catch((error) => setError(error.message))
+                  }
+                >
+                  {t("suspend")}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
         </SessionProgress>
+      )}
+      {word && timer.enabled && timer.phase && (
+        <Stack gap="xs" data-srs-reader>
+          <Group justify="center" gap="xs">
+            <Text variant="supporting">
+              {t(
+                timer.phase === "fail"
+                  ? "timed_review_again_in"
+                  : timer.phase === "question"
+                    ? "timed_review_question"
+                    : "timed_review_answer",
+              )}
+            </Text>
+            <Text
+              role="timer"
+              aria-live="off"
+              fw={600}
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
+              {number(Math.floor(timer.seconds / 60))}:
+              {number(timer.seconds % 60, {
+                minimumIntegerDigits: 2,
+              })}
+            </Text>
+            {timer.paused && (
+              <Text variant="supporting">{t("timed_review_paused")}</Text>
+            )}
+            {timer.expired && (
+              <Text role="status">{t("timed_review_expired")}</Text>
+            )}
+          </Group>
+          {settings.timedReview.showBar && (
+            <Progress
+              aria-label={t("timed_review_countdown")}
+              value={
+                timer.duration ? (timer.seconds / timer.duration) * 100 : 0
+              }
+              size="xs"
+              color={
+                timer.phase === "fail" || timer.expired ? "red" : undefined
+              }
+              transitionDuration={timer.paused ? 0 : 1000}
+            />
+          )}
+        </Stack>
       )}
       <ErrorBox error={error} />
       {word ? (
@@ -139,7 +248,7 @@ export function ReviewPage({
             ref={readingRef}
             key={`${word.id}:${word.card?.reps}`}
             flex={1}
-            mih={240}
+            mih={0}
             pos="relative"
             style={{ isolation: "isolate" }}
           >
@@ -147,8 +256,10 @@ export function ReviewPage({
             <ScrollArea
               pos="relative"
               h="100%"
-              type="never"
+              type="auto"
               scrollbars="y"
+              offsetScrollbars="present"
+              overscrollBehavior="contain"
               viewportProps={{ tabIndex: 0 }}
               styles={{ content: { display: "flex", minHeight: "100%" } }}
             >
@@ -157,11 +268,11 @@ export function ReviewPage({
                   data-srs-reader
                   display="grid"
                   style={{
-                    gridTemplateColumns: "auto minmax(0, 1fr)",
+                    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
                     alignItems: "center",
                   }}
                 >
-                  <Badge>
+                  <Badge style={{ gridColumn: 2 }}>
                     {t(
                       [
                         "new",
@@ -173,10 +284,10 @@ export function ReviewPage({
                   </Badge>
                   <Group
                     gap="xs"
-                    wrap="nowrap"
                     justify="flex-end"
+                    miw={0}
                     style={{
-                      gridColumn: 2,
+                      gridColumn: 3,
                       visibility: revealed ? "visible" : "hidden",
                     }}
                     aria-hidden={!revealed}
@@ -194,57 +305,6 @@ export function ReviewPage({
                     />
                   </Group>
                 </Box>
-                {timer.enabled && timer.phase && (
-                  <Stack gap="xs" data-srs-reader>
-                    <Group justify="center" gap="xs">
-                      <Text variant="supporting">
-                        {t(
-                          timer.phase === "fail"
-                            ? "timed_review_again_in"
-                            : timer.phase === "question"
-                              ? "timed_review_question"
-                              : "timed_review_answer",
-                        )}
-                      </Text>
-                      <Text
-                        role="timer"
-                        aria-live="off"
-                        fw={600}
-                        style={{ fontVariantNumeric: "tabular-nums" }}
-                      >
-                        {number(Math.floor(timer.seconds / 60))}:
-                        {number(timer.seconds % 60, {
-                          minimumIntegerDigits: 2,
-                        })}
-                      </Text>
-                      {timer.paused && (
-                        <Text variant="supporting">
-                          {t("timed_review_paused")}
-                        </Text>
-                      )}
-                      {timer.expired && (
-                        <Text role="status">{t("timed_review_expired")}</Text>
-                      )}
-                    </Group>
-                    {settings.timedReview.showBar && (
-                      <Progress
-                        aria-label={t("timed_review_countdown")}
-                        value={
-                          timer.duration
-                            ? (timer.seconds / timer.duration) * 100
-                            : 0
-                        }
-                        size="xs"
-                        color={
-                          timer.phase === "fail" || timer.expired
-                            ? "red"
-                            : undefined
-                        }
-                        transitionDuration={timer.paused ? 0 : 1000}
-                      />
-                    )}
-                  </Stack>
-                )}
                 <Stack align="center" ta="center" py="xs" gap="xs">
                   {front === "sentence" && context ? (
                     <Sentence context={context} language={word.language} />
@@ -336,41 +396,54 @@ export function ReviewPage({
               </Stack>
             </ScrollArea>
           </Paper>
-          <Box display="grid">
-            <Box
-              style={{
-                gridArea: "1 / 1",
-                visibility: revealed ? "hidden" : "visible",
-              }}
-              aria-hidden={revealed}
-              inert={revealed}
+          <Group component="footer" wrap="nowrap" align="center" gap={4}>
+            <ActionIcon
+              size="input-md"
+              title={t("undo_last_review")}
+              aria-label={t("undo_last_review")}
+              disabled={!last || busy}
+              onClick={() => void undo()}
             >
-              <Button
-                fullWidth
-                onClick={reveal}
-                disabled={busy}
-                variant="filled"
-                leftSection={<Eye aria-hidden="true" size={16} />}
+              <Undo2 aria-hidden size={16} />
+            </ActionIcon>
+            <Box display="grid" flex={1} miw={0}>
+              <Box
+                style={{
+                  gridArea: "1 / 1",
+                  visibility: revealed ? "hidden" : "visible",
+                }}
+                aria-hidden={revealed}
+                inert={revealed}
               >
-                {t("show_answer")}
-              </Button>
+                <Button
+                  fullWidth
+                  h="var(--button-height)"
+                  py={0}
+                  onClick={reveal}
+                  disabled={busy}
+                  variant="filled"
+                  leftSection={<Eye aria-hidden="true" size={16} />}
+                >
+                  {t("show_answer")}
+                </Button>
+              </Box>
+              <Box
+                style={{
+                  gridArea: "1 / 1",
+                  visibility: revealed ? "visible" : "hidden",
+                }}
+                aria-hidden={!revealed}
+                inert={!revealed}
+              >
+                <Ratings
+                  times={times}
+                  disabled={busy || !revealed}
+                  onlyAgainGood={settings.onlyAgainGood}
+                  onGrade={(rating) => void gradeWord(rating)}
+                />
+              </Box>
             </Box>
-            <Box
-              style={{
-                gridArea: "1 / 1",
-                visibility: revealed ? "visible" : "hidden",
-              }}
-              aria-hidden={!revealed}
-              inert={!revealed}
-            >
-              <Ratings
-                times={times}
-                disabled={busy || !revealed}
-                onlyAgainGood={settings.onlyAgainGood}
-                onGrade={(rating) => void gradeWord(rating)}
-              />
-            </Box>
-          </Box>
+          </Group>
         </>
       ) : (
         <Stack flex={1} justify="center" align="center">
@@ -388,74 +461,6 @@ export function ReviewPage({
             <SrsProgress />
           )}
         </Stack>
-      )}
-      {word && (
-        <Group
-          component="footer"
-          justify="space-between"
-          align="center"
-          wrap="wrap"
-        >
-          <Button
-            variant="subtle"
-            title={t("undo_last_review")}
-            leftSection={<Undo2 aria-hidden="true" size={16} />}
-            disabled={!last || busy}
-            onClick={() => void undo()}
-          >
-            {t("undo")}
-          </Button>
-          <CardEditor
-            key={word.id}
-            word={word}
-            contexts={contexts}
-            nativeLanguage={settings.nativeLanguage}
-            currentSentence={context?.sentence}
-          />
-          <Menu>
-            <Menu.Target>
-              <Button
-                leftSection={<MoreHorizontal size={16} />}
-                disabled={busy}
-              >
-                {t("actions")}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<Check aria-hidden="true" size={16} />}
-                disabled={busy}
-                onClick={() =>
-                  void vocabularyClient({
-                    action: "known",
-                    id: word.id,
-                    term: word.lemma,
-                    value: true,
-                  })
-                    .then(load)
-                    .catch((error) => setError(error.message))
-                }
-              >
-                {t("master")}
-              </Menu.Item>
-              <Menu.Item
-                leftSection={<Pause aria-hidden="true" size={16} />}
-                disabled={busy}
-                onClick={() =>
-                  void vocabularyClient({
-                    action: "suspend",
-                    id: word.id,
-                    value: true,
-                  })
-                    .then(load)
-                    .catch((error) => setError(error.message))
-                }
-              >
-                {t("suspend")}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
       )}
     </Stack>
   );

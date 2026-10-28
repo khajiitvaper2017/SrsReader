@@ -1,6 +1,5 @@
 import {
   Badge,
-  Box,
   Group,
   HoverCard,
   Progress,
@@ -13,14 +12,16 @@ import type { Responses } from "@/srs/contracts";
 import type { SessionAnswer } from "@/srs/hooks/useReviewSession";
 import { number, t } from "@/shared/i18n/i18n";
 
-/** Session queue counts and grade breakdown, with timed review actions in the header. */
+/** Session counts and review actions, with the answer count in progress details. */
 export function SessionProgress({
   queue,
   answers,
+  back,
   children,
 }: {
   queue: Responses["queue"];
   answers: SessionAnswer[];
+  back: ReactNode;
   children: ReactNode;
 }) {
   const reviews = queue.reviews + queue.learning + queue.relearning;
@@ -39,16 +40,14 @@ export function SessionProgress({
   );
   return (
     <Stack gap="xs" data-srs-reader>
-      <Box
-        display="grid"
-        style={{
-          gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-          alignItems: "center",
-          gap: "var(--mantine-spacing-xs)",
-          fontVariantNumeric: "tabular-nums",
-        }}
+      <Group
+        wrap="nowrap"
+        align="center"
+        gap="xs"
+        style={{ fontVariantNumeric: "tabular-nums" }}
       >
-        <Group gap={4}>
+        {back}
+        <Group flex={1} miw={0} align="center" gap={4}>
           <Badge color="blue" size="sm">
             {t("session_queue_new", { value: number(queue.fresh) })}
           </Badge>
@@ -56,15 +55,8 @@ export function SessionProgress({
             {t("session_queue_review", { value: number(reviews) })}
           </Badge>
         </Group>
-        <Text fw={600} aria-label={label}>
-          {number(answers.length)}
-          <Text span variant="supporting">
-            {" "}
-            / {number(total)}
-          </Text>
-        </Text>
         {children}
-      </Box>
+      </Group>
       <HoverCard
         events={{ hover: true, focus: true, touch: true }}
         role="tooltip"

@@ -1,6 +1,6 @@
 # Study and saved words
 
-Open **Study** to see your learning languages and frequency decks. The list shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. **Back to decks** ends the session. Each word belongs to one group. Daily limits apply to the language.
+Open **Study** to see your learning languages and frequency decks. The list shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. The back arrow above the card ends the session. Each word belongs to one group. Daily limits apply to the language.
 
 Select **Mined words** under a language to review words you saved or rated while reading. Frequency imports do not add words to this deck. Mining a word from a frequency deck moves it to Mined words without resetting its progress. Select a language or deck name to start reviewing.
 
@@ -54,7 +54,7 @@ Enable **Settings → Audio & translation → Pronunciation → Play on reveal**
 
 Use your lookup control on the word, example sentence, or dictionary definitions on a review card. Configure these controls in **Settings → Controls → Lookup controls**. The lookup popup closes when you move to another card.
 
-Use **Actions** below the review card to mark the word as mastered or suspend it. **Undo** stays beside the menu.
+Open **Actions** with the three-dot button above the review card to mark the word as mastered or suspend it. **Undo** is beside **Show answer** and the rating buttons.
 
 ## Review controls
 
@@ -73,7 +73,7 @@ Number keys work on the main keyboard and numeric keypad. In study sessions, **S
 
 ## Queue counts and review calendar
 
-The compact review header shows the remaining new cards in blue and the remaining reviews in green. Reviews include learning and relearning cards. The counter shows answers in this session against those answers plus cards currently ready. It updates when cards enter or leave the queue. The thin bar shows the share of each answer grade. Hover, focus, or tap the bar to see grade counts and pending learning cards. A note in the popup shows cards available through learn-ahead. The card badge shows its current phase. Use the timer button beside the counter to turn timed review on or off.
+The compact review header shows the remaining new cards in blue and the remaining reviews in green. Reviews include learning and relearning cards. The progress bar details show answers in this session against those answers plus cards currently ready. This count updates when cards enter or leave the queue. The thin bar shows the share of each answer grade. Hover, focus, or tap the bar to see grade counts and pending learning cards. A note in the popup shows cards available through learn-ahead. The card badge shows its current phase. Use the stopwatch in the header to turn timed review on or off. The countdown and its bar appear above the card.
 
 The yearly calendar below the language list includes all languages. It shows past answers in your accent color. Scheduled days use gray shades that are distinct from empty days. Their tooltips show the number of scheduled cards. Higher counts look darker in light mode and lighter in dark mode. Hover, focus, or tap a day to see its date and count. Use the arrow keys to move between days. The year controls show the previous year, current year, or next year. The figures below the calendar cover the full review history across all languages. Daily average counts only days with review activity. Days learned is the share of days with activity since the first review. The current streak allows today to be unfinished. Days without reviews break a streak. Undone answers do not count.
 
@@ -171,7 +171,7 @@ Editing a definition keeps the word in its current deck. Custom dictionary edits
 
 ## Card media and custom content
 
-Open **Edit card** below a review card or in the word details on the **Words** page. Select **Upload file** under **Background image or video** to add a JPEG, PNG, GIF, WebP, AVIF, BMP, WebM, MP4, or Ogg file. The media appears behind the card content and fades toward the bottom. Videos loop without sound. With reduced motion enabled on your device, videos start paused.
+Open **Edit card** with the image button above a review card or from the word details on the **Words** page. Select **Upload file** under **Background image or video** to add a JPEG, PNG, GIF, WebP, AVIF, BMP, WebM, MP4, or Ogg file. The media appears behind the card content and fades toward the bottom. Videos loop without sound. With reduced motion enabled on your device, videos start paused.
 
 Under **Sentence audio**, select a saved sentence and upload an MP3, M4A, Ogg, WAV, WebM, FLAC, or AAC file. The speaker button beside that sentence plays the recording instead of the system voice. Without a recording, it uses the selected local voice. Playback depends on the formats your browser supports.
 

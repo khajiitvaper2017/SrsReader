@@ -2,7 +2,8 @@ html {
   overflow-x: clip;
   scrollbar-gutter: stable;
 }
-html[data-srs-reader-lookup] {
+html[data-srs-reader-lookup],
+html:has([data-srs-reader-review]) {
   scrollbar-gutter: auto;
 }
 body {

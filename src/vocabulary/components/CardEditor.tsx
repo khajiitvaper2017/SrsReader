@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Button,
   FileButton,
   Group,
@@ -30,11 +31,14 @@ export function CardEditor({
   contexts,
   nativeLanguage,
   currentSentence,
+  iconOnly = false,
 }: {
   word: Vocabulary;
   contexts: ReadingContext[];
   nativeLanguage: string;
   currentSentence?: string;
+  /** Use an icon-only trigger in review toolbars. */
+  iconOnly?: boolean;
 }) {
   const [opened, setOpened] = useState(false);
   const [sentence, setSentence] = useState(
@@ -44,19 +48,30 @@ export function CardEditor({
     (context) => context.sentence === sentence,
   );
   const wordId = word.id;
+  const open = () => {
+    stopAudio();
+    setSentence(currentSentence || contexts[0]?.sentence || "");
+    setOpened(true);
+  };
   return (
     <>
-      <Button
-        variant="subtle"
-        leftSection={<Images aria-hidden size={16} />}
-        onClick={() => {
-          stopAudio();
-          setSentence(currentSentence || contexts[0]?.sentence || "");
-          setOpened(true);
-        }}
-      >
-        {t("card_media")}
-      </Button>
+      {iconOnly ? (
+        <ActionIcon
+          title={t("card_media")}
+          aria-label={t("card_media")}
+          onClick={open}
+        >
+          <Images aria-hidden size={16} />
+        </ActionIcon>
+      ) : (
+        <Button
+          variant="subtle"
+          leftSection={<Images aria-hidden size={16} />}
+          onClick={open}
+        >
+          {t("card_media")}
+        </Button>
+      )}
       <Modal
         opened={opened}
         onClose={() => setOpened(false)}

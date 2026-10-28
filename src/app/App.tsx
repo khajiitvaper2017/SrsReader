@@ -115,76 +115,73 @@ export function App() {
       ) : undefined,
   }));
   return (
-    <AppShell header={{ height: 58 }} padding={{ base: "xs", sm: "md" }}>
-      <AppShell.Header>
-        <Container size="lg" h="100%" px={{ base: "xs", sm: "md" }}>
-          <Group h="100%" justify="space-between" wrap="nowrap" gap="xs">
-            <Anchor href="#review" underline="never" c="inherit">
-              <Logo small />
-            </Anchor>
-            {reviewing ? (
-              <Button component="a" href="#review" miw={0}>
-                {t("study_end_session")}
-              </Button>
-            ) : (
-              <>
-                <Group
-                  component="nav"
-                  aria-label={t("pages")}
-                  visibleFrom="md"
-                  flex={1}
-                  justify="center"
-                  align="center"
-                  gap="xs"
-                  wrap="nowrap"
-                >
+    <AppShell
+      header={{ height: 58, collapsed: reviewing }}
+      padding={{ base: "xs", sm: "md" }}
+    >
+      {!reviewing && (
+        <AppShell.Header>
+          <Container size="lg" h="100%" px={{ base: "xs", sm: "md" }}>
+            <Group h="100%" justify="space-between" wrap="nowrap" gap="xs">
+              <Anchor href="#review" underline="never" c="inherit">
+                <Logo small />
+              </Anchor>
+              <Group
+                component="nav"
+                aria-label={t("pages")}
+                visibleFrom="md"
+                flex={1}
+                justify="center"
+                align="center"
+                gap="xs"
+                wrap="nowrap"
+              >
+                {links.map(({ id, label, icon: Icon, active, badge }) => (
+                  <Button
+                    component="a"
+                    size="sm"
+                    h="var(--button-height)"
+                    py={0}
+                    key={id}
+                    href={`#${id}`}
+                    variant={active ? "light" : "subtle"}
+                    aria-current={active ? "page" : undefined}
+                    leftSection={<Icon size={16} />}
+                    rightSection={badge}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </Group>
+              <Menu>
+                <Menu.Target>
+                  <ActionIcon
+                    hiddenFrom="md"
+                    size="input-md"
+                    aria-label={t("pages")}
+                  >
+                    <MenuIcon aria-hidden size={20} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown hiddenFrom="md">
                   {links.map(({ id, label, icon: Icon, active, badge }) => (
-                    <Button
+                    <Menu.Item
                       component="a"
-                      size="sm"
-                      h="var(--button-height)"
-                      py={0}
                       key={id}
                       href={`#${id}`}
-                      variant={active ? "light" : "subtle"}
                       aria-current={active ? "page" : undefined}
                       leftSection={<Icon size={16} />}
                       rightSection={badge}
                     >
                       {label}
-                    </Button>
+                    </Menu.Item>
                   ))}
-                </Group>
-                <Menu>
-                  <Menu.Target>
-                    <ActionIcon
-                      hiddenFrom="md"
-                      size="input-md"
-                      aria-label={t("pages")}
-                    >
-                      <MenuIcon aria-hidden size={20} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown hiddenFrom="md">
-                    {links.map(({ id, label, icon: Icon, active, badge }) => (
-                      <Menu.Item
-                        component="a"
-                        key={id}
-                        href={`#${id}`}
-                        aria-current={active ? "page" : undefined}
-                        leftSection={<Icon size={16} />}
-                        rightSection={badge}
-                      >
-                        {label}
-                      </Menu.Item>
-                    ))}
-                  </Menu.Dropdown>
-                </Menu>
-              </>
-            )}
-          </Group>
-        </Container>
-      </AppShell.Header>
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
+          </Container>
+        </AppShell.Header>
+      )}
       <AppShell.Main>
         <Container size={reviewing ? "sm" : "lg"} px={0}>
           <React.Suspense fallback={<Loader aria-label={t("working")} />}>

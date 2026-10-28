@@ -42,7 +42,8 @@ export function Ratings({
           onClick={() => onGrade(i + 1)}
           variant="light"
           color={["red", "orange", "green", "blue"][i]}
-          mih={40}
+          h="var(--button-height)"
+          py={0}
           px={4}
           miw={0}
         >
@@ -58,7 +59,7 @@ export function Ratings({
       ),
   );
   return (
-    <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing="xs">
+    <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing={4}>
       {buttons}
     </SimpleGrid>
   );
