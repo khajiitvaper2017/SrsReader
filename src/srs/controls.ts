@@ -13,6 +13,7 @@ export const reviewActions = [
   "easy",
   "flip",
   "undo",
+  "pause_timer",
 ] as const;
 export type ReviewAction = (typeof reviewActions)[number];
 const shortcutSchema = z.union([
@@ -43,6 +44,7 @@ export const reviewBindingsSchema = z
     easy: shortcutSchema.nullable(),
     flip: shortcutSchema.nullable(),
     undo: shortcutSchema.nullable(),
+    pause_timer: shortcutSchema.nullable().default(null),
   })
   .refine(
     (bindings) => {
@@ -60,6 +62,7 @@ export const reviewBindingsSchema = z
     easy: key("Digit4"),
     flip: key("Space"),
     undo: key("KeyZ"),
+    pause_timer: null,
   });
 
 export function matchesReviewBinding(

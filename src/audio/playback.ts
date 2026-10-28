@@ -24,6 +24,28 @@ let currentGain: GainNode | undefined;
 
 let playbackVersion = 0;
 
+export async function prepareReviewAlert() {
+  await (audioContext ??= new AudioContext()).resume();
+}
+
+export function playReviewAlert() {
+  if (!audioContext || audioContext.state !== "running") return;
+  const tone = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const now = audioContext.currentTime;
+  tone.frequency.value = 660;
+  gain.gain.setValueAtTime(0.08, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+  tone.connect(gain);
+  gain.connect(audioContext.destination);
+  tone.onended = () => {
+    tone.disconnect();
+    gain.disconnect();
+  };
+  tone.start(now);
+  tone.stop(now + 0.15);
+}
+
 export function stopAudio() {
   playbackVersion++;
   if (currentSource) {

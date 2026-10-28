@@ -75,7 +75,10 @@ export function CardDefinitions({
     ["vocabulary", "settings", "dictionaries"],
   );
   const visibility = useDictionaryVisibility(id, loaded?.result.saved, onError);
-  if (!loaded) return <Loader size="sm" aria-label={t("looking_up")} />;
+  if (!loaded)
+    return (
+      <Loader size="sm" aria-label={t("looking_up")} data-review-timer-pause />
+    );
   const { result, context: definitionContext } = loaded;
   return (
     <Stack gap="xs">

@@ -60,7 +60,6 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 - Review UI changes for duplicated controls, inconsistent patterns, and theme overrides. Use existing lint rules to catch violations.
 
 <!-- graft:start -->
-
 ## Graft — repo context graph
 
 This repo is indexed in `graft/`: small linked markdown nodes that explain each

@@ -14,6 +14,7 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { SrsSettings } from "@/srs/components/SrsSettings";
 import { srsPreferencesSchema } from "@/srs/preferences";
+import { TimedReviewSettings } from "@/srs/components/TimedReviewSettings";
 export function ReviewSettings({
   settings,
   onChange: update,
@@ -72,6 +73,7 @@ export function ReviewSettings({
           />
         </Stack>
       </Paper>
+      <TimedReviewSettings settings={settings} onChange={update} />
       <Paper>
         <Stack>
           <Title order={2}>{t("settings_daily_study")}</Title>

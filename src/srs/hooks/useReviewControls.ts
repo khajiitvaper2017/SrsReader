@@ -7,11 +7,13 @@ export function useReviewControls({
   onGrade,
   onFlip,
   onUndo,
+  onPauseTimer,
 }: {
   settings: Settings;
   onGrade?: (rating: number) => void;
   onFlip?: () => void;
   onUndo?: () => void;
+  onPauseTimer?: () => void;
 }) {
   const suppressed = useRef(new Set<number>());
   useEffect(() => {
@@ -42,10 +44,12 @@ export function useReviewControls({
           ? onFlip
           : action === "undo"
             ? onUndo
-            : onGrade &&
-                (!settings.onlyAgainGood || rating === 1 || rating === 3)
-              ? () => onGrade(rating)
-              : undefined;
+            : action === "pause_timer"
+              ? onPauseTimer
+              : onGrade &&
+                  (!settings.onlyAgainGood || rating === 1 || rating === 3)
+                ? () => onGrade(rating)
+                : undefined;
       if (!callback) return;
       if ("button" in event) suppressed.current.add(event.button);
       stop(event);

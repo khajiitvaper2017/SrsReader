@@ -1,10 +1,12 @@
 import { languageName } from "@/languages/codes";
 import {
   Badge,
+  ActionIcon,
   Box,
   Button,
   Group,
   Paper,
+  Progress,
   ScrollArea,
   Stack,
   Text,
@@ -16,7 +18,7 @@ import { dictionaryPartsOfSpeech } from "@/dictionaries/grammar";
 import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
 import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 import type { Settings } from "@/settings/model";
-import { t } from "@/shared/i18n/i18n";
+import { number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Ratings } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
@@ -24,7 +26,7 @@ import { useReviewSession } from "@/srs/hooks/useReviewSession";
 import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
-import { Check, Eye, Pause, Undo2 } from "lucide-react";
+import { Check, Eye, Pause, Play, Timer, Undo2 } from "lucide-react";
 
 export function ReviewPage({
   settings,
@@ -34,6 +36,7 @@ export function ReviewPage({
   deckId?: string;
 }) {
   const {
+    timer,
     readingRef,
     answers,
     studyMore,
@@ -124,6 +127,50 @@ export function ReviewPage({
                     alignItems: "center",
                   }}
                 >
+                  <Group gap={0} style={{ gridColumn: 1 }}>
+                    <ActionIcon
+                      variant={timer.enabled ? "light" : "subtle"}
+                      title={t(
+                        timer.enabled
+                          ? "timed_review_disable"
+                          : "timed_review_enable",
+                      )}
+                      aria-label={t(
+                        timer.enabled
+                          ? "timed_review_disable"
+                          : "timed_review_enable",
+                      )}
+                      aria-pressed={timer.enabled}
+                      disabled={busy}
+                      onClick={timer.toggle}
+                    >
+                      <Timer aria-hidden size={16} />
+                    </ActionIcon>
+                    {timer.enabled && timer.phase && (
+                      <ActionIcon
+                        variant="subtle"
+                        disabled={busy}
+                        title={t(
+                          timer.manualPaused
+                            ? "timed_review_resume"
+                            : "timed_review_pause",
+                        )}
+                        aria-label={t(
+                          timer.manualPaused
+                            ? "timed_review_resume"
+                            : "timed_review_pause",
+                        )}
+                        aria-pressed={timer.manualPaused}
+                        onClick={timer.togglePause}
+                      >
+                        {timer.manualPaused ? (
+                          <Play aria-hidden size={16} />
+                        ) : (
+                          <Pause aria-hidden size={16} />
+                        )}
+                      </ActionIcon>
+                    )}
+                  </Group>
                   <Badge style={{ gridColumn: 2 }}>
                     {t(
                       [
@@ -157,6 +204,57 @@ export function ReviewPage({
                     />
                   </Group>
                 </Box>
+                {timer.enabled && timer.phase && (
+                  <Stack gap="xs" data-srs-reader>
+                    <Group justify="center" gap="xs">
+                      <Text variant="supporting">
+                        {t(
+                          timer.phase === "fail"
+                            ? "timed_review_again_in"
+                            : timer.phase === "question"
+                              ? "timed_review_question"
+                              : "timed_review_answer",
+                        )}
+                      </Text>
+                      <Text
+                        role="timer"
+                        aria-live="off"
+                        fw={600}
+                        style={{ fontVariantNumeric: "tabular-nums" }}
+                      >
+                        {number(Math.floor(timer.seconds / 60))}:
+                        {number(timer.seconds % 60, {
+                          minimumIntegerDigits: 2,
+                        })}
+                      </Text>
+                      {timer.paused && (
+                        <Text variant="supporting">
+                          {t("timed_review_paused")}
+                        </Text>
+                      )}
+                      {timer.expired && (
+                        <Text role="status">{t("timed_review_expired")}</Text>
+                      )}
+                    </Group>
+                    {settings.timedReview.showBar && (
+                      <Progress
+                        aria-label={t("timed_review_countdown")}
+                        value={
+                          timer.duration
+                            ? (timer.seconds / timer.duration) * 100
+                            : 0
+                        }
+                        size="xs"
+                        color={
+                          timer.phase === "fail" || timer.expired
+                            ? "red"
+                            : undefined
+                        }
+                        transitionDuration={timer.paused ? 0 : 1000}
+                      />
+                    )}
+                  </Stack>
+                )}
                 <Stack align="center" ta="center" py="xs" gap="xs">
                   {front === "sentence" && context ? (
                     <Sentence context={context} language={word.language} />

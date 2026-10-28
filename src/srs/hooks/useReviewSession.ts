@@ -7,6 +7,7 @@ import type { Request, Responses } from "@/srs/contracts";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { useReviewPreload } from "@/srs/hooks/useReviewPreload";
+import { useTimedReview } from "@/srs/hooks/useTimedReview";
 import { studyDay } from "@/srs/study-day";
 import { startReader } from "@/reader/controller";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -241,6 +242,16 @@ export function useReviewSession({
     setRevealed(true);
     if (settings.autoplay && word) void playAudio();
   }
+  const timer = useTimedReview({
+    settings: settings.timedReview,
+    identity: word ? `${word.id}:${word.card?.reps}` : "",
+    newCard: word?.card?.state === 0,
+    revealed,
+    ready: !!word && !busy && !sentenceLoading,
+    root: readingRef,
+    onReveal: reveal,
+    onFail: () => void gradeWord(1),
+  });
   useReviewControls({
     settings,
     onGrade:
@@ -255,6 +266,7 @@ export function useReviewSession({
           }
         : undefined,
     onUndo: last && !busy ? () => void undo() : undefined,
+    onPauseTimer: timer.enabled && timer.phase ? timer.togglePause : undefined,
   });
   async function undo() {
     if (busyRef.current || !last) return;
@@ -302,6 +314,7 @@ export function useReviewSession({
     }
   }
   return {
+    timer,
     readingRef,
     answers,
     studyMore,

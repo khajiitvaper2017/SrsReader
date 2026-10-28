@@ -12,7 +12,20 @@ export const retentionBandSchema = z.object({
   upTo: z.number().positive().nullable(),
   retention: z.number().min(0.7).max(0.99),
 });
+export const timedReviewSchema = z.object({
+  enabled: z.boolean().default(false),
+  showBar: z.boolean().default(true),
+  skipNew: z.boolean().default(true),
+  questionEnabled: z.boolean().default(true),
+  questionSeconds: z.number().int().min(1).max(600).default(8),
+  questionAction: z.enum(["reveal", "fail", "alert"]).default("reveal"),
+  answerEnabled: z.boolean().default(false),
+  answerSeconds: z.number().int().min(0).max(600).default(4),
+  answerAction: z.enum(["softFail", "fail"]).default("softFail"),
+  sound: z.boolean().default(true),
+});
 export const srsPreferencesSchema = z.object({
+  timedReview: timedReviewSchema.default(timedReviewSchema.parse({})),
   reviewBindings: reviewBindingsSchema,
   front: z.enum(["word", "sentence"]).default("word"),
   showPartOfSpeech: z.boolean().default(true),
