@@ -3,7 +3,7 @@ import {
   Accordion,
   ActionIcon,
   Group,
-  NativeSelect,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -93,39 +93,30 @@ export function FrequencyBrowser({
         <Accordion.Control>{t("frequency_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Group justify="space-between" align="center">
-              {t("type")}{" "}
-              <NativeSelect
-                aria-label={t("corpus_type")}
-                value={type}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-                  return setType(value);
-                }}
-              >
-                <option value="">{t("all_types")}</option>
-                {types.map((type) => (
-                  <option key={type} value={type}>
-                    {t(typeLabels[type]!)}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Group>
-            <Group justify="space-between" align="center">
-              {t("sort_by")}{" "}
-              <NativeSelect
-                aria-label={t("sort_frequency_dictionaries")}
-                value={sort}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-                  return setSort(value);
-                }}
-              >
-                <option value="language">{t("language")}</option>
-                <option value="type">{t("type")}</option>
-                <option value="size">{t("download_size")}</option>
-              </NativeSelect>
-            </Group>
+            <Select
+              label={t("type")}
+              aria-label={t("corpus_type")}
+              value={type}
+              onChange={(value) => setType(value!)}
+              data={[
+                { value: "", label: t("all_types") },
+                ...types.map((type) => ({
+                  value: type,
+                  label: t(typeLabels[type]!),
+                })),
+              ]}
+            />
+            <Select
+              label={t("sort_by")}
+              aria-label={t("sort_frequency_dictionaries")}
+              value={sort}
+              onChange={(value) => setSort(value!)}
+              data={[
+                { value: "language", label: t("language") },
+                { value: "type", label: t("type") },
+                { value: "size", label: t("download_size") },
+              ]}
+            />
             <TextInput
               type="search"
               aria-label={t("search_frequency_dictionaries")}

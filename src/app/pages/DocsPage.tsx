@@ -1,7 +1,7 @@
 import {
   Anchor,
   Grid,
-  NativeSelect,
+  Select,
   NavLink,
   Paper,
   Typography,
@@ -30,12 +30,12 @@ export default function DocsPage({ topic }: { topic: string }) {
   return (
     <Grid align="start">
       <Grid.Col span={{ base: 12, sm: 3 }}>
-        <NativeSelect
+        <Select
           hiddenFrom="sm"
           label={t("docs_topics")}
           value={selected.id}
-          onChange={(event) => {
-            location.hash = `docs/${event.currentTarget.value}`;
+          onChange={(value) => {
+            location.hash = `docs/${value}`;
           }}
           data={topics.map(({ id, label }) => ({ value: id, label: t(label) }))}
         />

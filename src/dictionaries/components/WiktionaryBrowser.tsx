@@ -3,7 +3,7 @@ import {
   Accordion,
   ActionIcon,
   Group,
-  NativeSelect,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -118,54 +118,46 @@ export function WiktionaryBrowser({
         <Accordion.Control>{t("wiktionary_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <NativeSelect
+            <Select
               label={t("definition_language")}
               aria-label={t("definition_language")}
               value={target}
-              onChange={(event) => {
-                const value = event.currentTarget.value;
-                setTarget(value);
+              onChange={(value) => {
+                setTarget(value!);
                 setType("");
               }}
-            >
-              <option value="">{t("all_languages")}</option>
-              <option value="native">{t("native_languages")}</option>
-              {targets.sort(compareLanguages).map((code) => (
-                <option key={code} value={code}>
-                  {languageLabel(code)}
-                </option>
-              ))}
-            </NativeSelect>
-            <NativeSelect
+              data={[
+                { value: "", label: t("all_languages") },
+                { value: "native", label: t("native_languages") },
+                ...targets
+                  .sort(compareLanguages)
+                  .map((code) => ({ value: code, label: languageLabel(code) })),
+              ]}
+            />
+            <Select
               label={t("type")}
               aria-label={t("dictionary_type")}
               value={type}
-              onChange={(event) => {
-                const value = event.currentTarget.value;
-                return setType(value);
-              }}
-            >
-              <option value="">{t("all_types")}</option>
-              {types
-                .filter((type) => matching.some((entry) => entry.type === type))
-                .map((type) => (
-                  <option key={type} value={type}>
-                    {t(typeLabels[type])}
-                  </option>
-                ))}
-            </NativeSelect>
-            <NativeSelect
+              onChange={(value) => setType(value!)}
+              data={[
+                { value: "", label: t("all_types") },
+                ...types
+                  .filter((type) =>
+                    matching.some((entry) => entry.type === type),
+                  )
+                  .map((type) => ({ value: type, label: t(typeLabels[type]) })),
+              ]}
+            />
+            <Select
               label={t("sort_by")}
               aria-label={t("sort_dictionaries")}
               value={sort}
-              onChange={(event) => {
-                const value = event.currentTarget.value;
-                return setSort(value);
-              }}
-            >
-              <option value="language">{t("language")}</option>
-              <option value="size">{t("download_size")}</option>
-            </NativeSelect>
+              onChange={(value) => setSort(value!)}
+              data={[
+                { value: "language", label: t("language") },
+                { value: "size", label: t("download_size") },
+              ]}
+            />
             <TextInput
               type="search"
               aria-label={t("search_dictionaries")}

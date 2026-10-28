@@ -5,7 +5,7 @@ import {
   Group,
   Image,
   Modal,
-  NativeSelect,
+  Select,
   Stack,
   Text,
   Title,
@@ -83,10 +83,10 @@ export function CardEditor({
             <MediaField wordId={wordId} kind="background" sentence="" />
             <MediaField wordId={wordId} kind="wordAudio" sentence="" />
             {contexts.length > 1 && (
-              <NativeSelect
+              <Select
                 label={t("card_media_sentence")}
                 value={sentence}
-                onChange={(event) => setSentence(event.currentTarget.value)}
+                onChange={(value) => setSentence(value!)}
                 data={[
                   ...new Set(contexts.map((context) => context.sentence)),
                 ].map((value) => ({

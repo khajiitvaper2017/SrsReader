@@ -19,7 +19,6 @@ import {
   Kbd,
   Menu,
   MultiSelect,
-  NativeSelect,
   NumberInput,
   Paper,
   Pill,
@@ -202,9 +201,6 @@ export function createUITheme(
       }),
       ComboboxDropdown: Combobox.Dropdown.extend({
         defaultProps: { "data-srs-reader": true },
-      }),
-      NativeSelect: NativeSelect.extend({
-        defaultProps: { size: controlSize, "data-srs-reader": true },
       }),
       Select: Select.extend({
         defaultProps: {
