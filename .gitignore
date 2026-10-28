@@ -5,5 +5,5 @@ dicts/
 scripts/
 *.log
 
-# graft's local graph cache — regenerable, not committed (run `graft build`).
+# Trail's local graph cache — regenerable, not committed (run `trail build`).
 /graft/

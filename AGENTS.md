@@ -52,15 +52,15 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 
 ### UI consistency
 
-- Before adding UI, use Graft to find existing shared and feature components. Reuse established patterns for page headers, forms, tables, navigation, and action placement.
+- Before adding UI, use Trail to find existing shared and feature components. Reuse established patterns for page headers, forms, tables, navigation, and action placement.
 - Express visual purpose with semantic variants and theme tokens. Add repeated visual roles to the shared theme. Do not bypass it with styling classes, raw colors, or repeated local overrides.
 - Use heading components for headings instead of increasing text sizes. Use sentence case for interface labels.
 - Keep reusable visual components independent of routing, storage, and network requests. Put feature behavior in feature hooks and services.
 - Keep reusable component APIs small. Document their intended use and supported variants when adding or changing them.
 - Review UI changes for duplicated controls, inconsistent patterns, and theme overrides. Use existing lint rules to catch violations.
 
-<!-- graft:start -->
-## Graft — repo context graph
+<!-- trail:start -->
+## Trail — repo context graph
 
 This repo is indexed in `graft/`: small linked markdown nodes that explain each
 system and carry exact file:line spans, kept in sync with the code through git.
@@ -69,34 +69,34 @@ For ANY task here — understanding how something works, finding where code live
 or scoping a change — get context from the graph before grepping or opening
 source files. Re-ask freely (it's cheap) and reuse literal identifiers you
 already have (symbol, error string, file name) as the query. New to this repo?
-Run `graft map` first — a token-budgeted orientation (dir clusters, hubs,
+Run `trail map` first — a token-budgeted orientation (dir clusters, hubs,
 hotspots), no LLM, no key.
 
-- Run `graft ask "<your question>" --source` → ranked nodes with the relevant
+- Run `trail ask "<your question>" --source` → ranked nodes with the relevant
   code spans inlined (each hit's ≤8-line crux by default; `--full` for whole
   definitions when the crux isn't enough). Match the tool to the task shape:
   for understanding or editing, the top node IS the answer — cite its
   `covers:` file:line spans and edit straight from `--source`. For
   exhaustive tasks ("every occurrence / every caller of this pattern"), ranked
-  results are top-N, not complete — run `graft grep "<literal>"` instead
+  results are top-N, not complete — run `trail grep "<literal>"` instead
   (exhaustive over indexed files, grouped by enclosing symbol), falling back
   to raw `grep -rn` only for unindexed files.
-- `graft skeleton <file>` → every definition's signature + span, ~10× cheaper
+- `trail skeleton <file>` → every definition's signature + span, ~10× cheaper
   than reading the file; use it to skim an API surface.
-- `graft callers <symbol>` gives precomputed, exact edges — who calls this.
+- `trail callers <symbol>` gives precomputed, exact edges — who calls this.
   Add `--direction out` for what it calls, or `--depth N` to walk
   transitively for the full blast radius. For structural questions, skip
   ranking and use this directly.
 - Or browse: `graft/INDEX.md` lists every node; follow the links.
 - Monorepos and folders of multiple repos rank fairly across sub-projects —
   hits carry `[scope/]` labels naming which one they're from. Narrow with
-  `graft ask "<task>" --in <scope>/` once you know where you're working.
+  `trail ask "<task>" --in <scope>/` once you know where you're working.
 
 If a returned span is truncated ("+N more lines"), open the file at that exact
 range before finalizing. Only open source files when a node genuinely lacks a
 needed detail, and then at the exact file:line the node points to — never
 re-read whole files.
 
-After big code changes, refresh the graph with `graft build` (deterministic,
+After big code changes, refresh the graph with `trail build` (deterministic,
 no API key, $0).
-<!-- graft:end -->
+<!-- trail:end -->
