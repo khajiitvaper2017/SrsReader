@@ -34,6 +34,7 @@
 Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI patterns form the project's design system. These standards apply to all UI work.
 
 - Use Mantine for all UI controls and layouts. Import its components directly. Do not add another UI library or wrap Mantine components just to rename their props.
+- Use themed Mantine `Select`, `MultiSelect`, or `Combobox` for dropdowns on every screen and at every viewport size. Do not use `NativeSelect`, raw `<select>` or `<option>` controls, or browser-native option menus.
 - Before implementing UI behavior, check the installed Mantine version and official documentation.
 - Prefer Mantine components and hooks over custom implementations.
 - Only implement missing behavior after verifying the gap and explaining it in a progress update.
@@ -60,6 +61,7 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 - Review UI changes for duplicated controls, inconsistent patterns, and theme overrides. Use existing lint rules to catch violations.
 
 <!-- trail:start -->
+
 ## Trail — repo context graph
 
 This repo is indexed in `.trail/cache/`: small linked markdown nodes that explain each
