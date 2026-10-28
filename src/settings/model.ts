@@ -19,6 +19,8 @@ export const settingsSchema = z
   .transform((settings) => ({
     ...settings,
     studyLanguages: [...new Set(settings.studyLanguages)],
+    nativeLanguages: [...new Set(settings.nativeLanguages)],
+    nativeLanguage: settings.nativeLanguages[0]!,
     // Default for language-specific tools; reading and reviews supply their language.
     studyLanguage: settings.studyLanguages[0] || "",
     setupComplete: settings.setupComplete && settings.studyLanguages.length > 0,

@@ -5,7 +5,10 @@ import { z } from "zod";
 
 export const languagesPreferencesSchema = z.object({
   studyLanguages: z.array(languageSchema).default([]),
-  nativeLanguage: languageSchema.default(systemLanguage),
+  nativeLanguages: z
+    .array(languageSchema)
+    .min(1)
+    .default(() => [systemLanguage()]),
   interfaceLanguage: z.enum(["auto", ...interfaceLanguages]).default("auto"),
 });
 export type LanguagesPreferences = z.infer<typeof languagesPreferencesSchema>;

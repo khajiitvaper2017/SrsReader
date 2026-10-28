@@ -129,7 +129,10 @@ export function createReviewPreload(settings: Settings) {
       context.translation = translation;
     }
     const texts = new Set<string>();
-    if (settings.autoTranslateDefinitions) {
+    if (
+      settings.autoTranslateDefinitions &&
+      !settings.nativeLanguages.includes(word.language)
+    ) {
       const rows = (await (dictionaries ??= listDictionaries(settings))).filter(
         (row) => row !== undefined,
       );

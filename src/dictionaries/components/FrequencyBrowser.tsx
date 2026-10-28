@@ -12,6 +12,7 @@ import {
 import catalog from "@/dictionaries/catalogs/frequency-catalog.json";
 import {
   languageCode,
+  languageLabel,
   languageName,
   supportedLanguages,
 } from "@/languages/codes";
@@ -142,7 +143,7 @@ export function FrequencyBrowser({
               <Group key={entry.file} align="center">
                 <Stack>
                   <strong>
-                    {languageName(entry.code)} · {entry.source}
+                    {languageLabel(entry.code)} · {entry.source}
                   </strong>
                   <Text variant="supporting">
                     {entry.region && `${entry.region} · `}

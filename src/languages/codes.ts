@@ -41,6 +41,17 @@ export function languageName(code: string) {
       }).of(code) || code,
   });
 }
+export function languageFlag(code: string) {
+  const region = new Intl.Locale(code).maximize().region;
+  return region && /^[A-Z]{2}$/.test(region)
+    ? String.fromCodePoint(
+        ...[...region].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65),
+      )
+    : "🌐";
+}
+export function languageLabel(code: string) {
+  return `${languageFlag(code)} ${languageName(code)}`;
+}
 export function systemLanguage() {
   return languageCode(navigator.language);
 }

@@ -10,7 +10,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import catalogData from "@/dictionaries/catalogs/wiktionary-catalog.json";
-import { languageCode, languageName } from "@/languages/codes";
+import { languageCode, languageLabel, languageName } from "@/languages/codes";
 import { downloadSize, i18n, t } from "@/shared/i18n/i18n";
 import { Download } from "lucide-react";
 import { useState } from "react";
@@ -49,12 +49,12 @@ const compareLanguages = (a: string, b: string) =>
   languageName(a).localeCompare(languageName(b), i18n.resolvedLanguage);
 export function WiktionaryBrowser({
   language,
-  nativeLanguage,
+  nativeLanguages,
   busy,
   onImport,
 }: {
   language: string;
-  nativeLanguage: string;
+  nativeLanguages: string[];
   busy: boolean;
   onImport: (entry: WiktionaryDownload) => Promise<void>;
 }) {
@@ -62,9 +62,9 @@ export function WiktionaryBrowser({
     downloads.some(
       (entry) =>
         (!language || languageCode(entry.source) === language) &&
-        languageCode(entry.target) === nativeLanguage,
+        nativeLanguages.includes(languageCode(entry.target)),
     )
-      ? nativeLanguage
+      ? "native"
       : "",
   );
   const [type, setType] = useState("");
@@ -81,7 +81,11 @@ export function WiktionaryBrowser({
     ...new Set(available.map((entry) => languageCode(entry.target))),
   ];
   const matching = available.filter(
-    (entry) => !target || languageCode(entry.target) === target,
+    (entry) =>
+      !target ||
+      (target === "native"
+        ? nativeLanguages.includes(languageCode(entry.target))
+        : languageCode(entry.target) === target),
   );
   const query = search.trim().toLocaleLowerCase();
   const entries = matching
@@ -128,9 +132,10 @@ export function WiktionaryBrowser({
                 maw="50%"
               >
                 <option value="">{t("all_languages")}</option>
+                <option value="native">{t("native_languages")}</option>
                 {targets.sort(compareLanguages).map((code) => (
                   <option key={code} value={code}>
-                    {languageName(code)}
+                    {languageLabel(code)}
                   </option>
                 ))}
               </NativeSelect>
@@ -192,8 +197,8 @@ export function WiktionaryBrowser({
               <Group key={wiktionaryName(entry)} align="center">
                 <Stack>
                   <strong>
-                    {languageName(languageCode(entry.source))} →{" "}
-                    {languageName(languageCode(entry.target))}
+                    {languageLabel(languageCode(entry.source))} →{" "}
+                    {languageLabel(languageCode(entry.target))}
                   </strong>
                   <Text variant="supporting">
                     {t(typeLabels[entry.type])} · {downloadSize(entry.size)} ·{" "}

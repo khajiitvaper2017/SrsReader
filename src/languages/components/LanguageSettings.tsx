@@ -12,13 +12,14 @@ import {
 import { onlineDictionaries } from "@/dictionaries/online";
 import {
   languageIso3,
+  languageFlag,
+  languageLabel,
   languageName,
   morphologyLanguage,
   supportedLanguages,
   systemLanguage,
   udpipeModel,
 } from "@/languages/codes";
-import { LanguageSelect } from "@/languages/components/LanguageSelect";
 import type { Settings } from "@/settings/model";
 import { i18n, interfaceLanguages, t } from "@/shared/i18n/i18n";
 
@@ -34,7 +35,7 @@ export function LanguageSettings({
   const languages = supportedLanguages
     .map((language) => ({
       value: language,
-      label: languageName(language),
+      label: languageLabel(language),
       features: [
         udpipeModel(language) && t("language_feature_grammar"),
         morphologyLanguage(language) && t("language_feature_word_forms"),
@@ -47,7 +48,10 @@ export function LanguageSettings({
     .sort(
       (a, b) =>
         b.features.length - a.features.length ||
-        a.label.localeCompare(b.label, i18n.resolvedLanguage),
+        languageName(a.value).localeCompare(
+          languageName(b.value),
+          i18n.resolvedLanguage,
+        ),
     );
 
   return (
@@ -79,17 +83,37 @@ export function LanguageSettings({
             nothingFoundMessage={t("settings_no_languages")}
             onChange={(studyLanguages) => void update({ studyLanguages })}
           />
-          <LanguageSelect
-            label={t("native_language")}
-            description={
-              setup
-                ? t("detected_language", {
-                    language: languageName(systemLanguage()),
-                  })
-                : undefined
-            }
-            value={settings.nativeLanguage}
-            onChange={(nativeLanguage) => void update({ nativeLanguage })}
+          <MultiSelect
+            label={t("native_languages")}
+            description={[
+              t("native_languages_help"),
+              setup &&
+                t("detected_language", {
+                  language: languageName(systemLanguage()),
+                }),
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            searchable
+            required
+            withPillsReorder
+            data={[...supportedLanguages]
+              .filter((language) => languageName(language) !== language)
+              .sort((a, b) =>
+                languageName(a).localeCompare(
+                  languageName(b),
+                  i18n.resolvedLanguage,
+                ),
+              )
+              .map((language) => ({
+                value: language,
+                label: languageLabel(language),
+              }))}
+            nothingFoundMessage={t("settings_no_languages")}
+            value={settings.nativeLanguages}
+            onChange={(nativeLanguages) => {
+              if (nativeLanguages.length) void update({ nativeLanguages });
+            }}
           />
           <Select
             label={t("interface_language_setting")}
@@ -106,9 +130,12 @@ export function LanguageSettings({
               { value: "auto", label: t("same_as_native_language") },
               ...interfaceLanguages.map((language) => ({
                 value: language,
-                label: new Intl.DisplayNames([language], {
-                  type: "language",
-                }).of(language)!,
+                label: `${languageFlag(language)} ${new Intl.DisplayNames(
+                  [language],
+                  {
+                    type: "language",
+                  },
+                ).of(language)!}`,
               })),
             ]}
           />

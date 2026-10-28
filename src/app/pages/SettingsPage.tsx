@@ -20,7 +20,7 @@ import type { Dictionary } from "@/dictionaries/model";
 import { examplesClient } from "@/examples/client";
 import {
   languageIso3,
-  languageName,
+  languageLabel,
   morphologyLanguage,
 } from "@/languages/codes";
 import { LanguageDataSettings } from "@/languages/components/LanguageDataSettings";
@@ -211,7 +211,7 @@ export function SettingsPage({
                 disabled={busy}
                 data-srs-reader
               >
-                {languageName(value)}
+                {languageLabel(value)}
               </Tabs.Tab>
             ))}
           </Tabs.List>

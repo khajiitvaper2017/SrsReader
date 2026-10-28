@@ -321,7 +321,7 @@ export function Meanings({
                 return !meaning.customDefinitions &&
                   (monolingual.includes(meaning.dictionaryId) ||
                     meaning.dictionaryId === "nechybujte") &&
-                  language !== settings.nativeLanguage ? (
+                  !settings.nativeLanguages.includes(language) ? (
                   <TextTranslation
                     compact
                     autoTranslate={settings.autoTranslateDefinitions}

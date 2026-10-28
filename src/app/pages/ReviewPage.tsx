@@ -1,4 +1,4 @@
-import { languageName } from "@/languages/codes";
+import { languageLabel } from "@/languages/codes";
 import {
   Badge,
   ActionIcon,
@@ -77,7 +77,7 @@ export function ReviewPage({
     >
       <SrsProgress />
       <Text variant="supporting" ta="center">
-        {languageName(settings.studyLanguage)}
+        {languageLabel(settings.studyLanguage)}
       </Text>
       <Group justify="center">
         {(

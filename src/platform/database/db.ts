@@ -51,7 +51,7 @@ class ReaderDatabase extends Dexie {
   reviews!: Table<Review, string>;
   audio!: Table<AudioRecord, string>;
   settings!: Table<
-    { id: string; value: Omit<Settings, "studyLanguage"> },
+    { id: string; value: Omit<Settings, "studyLanguage" | "nativeLanguage"> },
     string
   >;
   nechybujte!: Table<{ term: string; result: LookupResult }, string>;

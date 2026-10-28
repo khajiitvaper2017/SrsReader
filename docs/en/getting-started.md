@@ -1,13 +1,15 @@
 # Getting started
 
-1. Add one or more **Studied languages** and confirm your **Native language**. The native language is suggested from your browser and is used for translations.
+1. Add one or more **Studied languages** and **Native languages**. The browser suggests the first native language. This language is used for translations.
 2. Under **Dictionaries**, select a language tab and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
 3. Choose a lookup control, such as **Middle mouse** or **Shift + hover**. None is selected by default.
 4. Choose **Finish setup**. Available word forms and example sentences download for each studied language.
 
 Open a website, use your lookup control on a word, and choose **Mine word**. Open **Review** to study saved words.
 
-Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as native language**; other native languages use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
+Change languages under **Settings → General → Languages**. **Interface language** offers English, Ukrainian, or **Same as first native language**. Automatic selection uses the first native language; languages other than English and Ukrainian use the English interface. You can reopen setup from **Settings → General**. **Docs** stays available during setup.
+
+Select at least one language under **Native languages**. The first language is the translation target. All selected native languages are included in the Wiktionary download filter, and dictionary definitions in these languages are shown without translation. Drag selected languages to change their order. For keyboard control, focus the input and press Left Arrow to select a language, then use Alt + Left Arrow or Alt + Right Arrow to move it. Language selectors and tabs show flags beside language names.
 
 Select a settings section first, then a language tab below it. The address keeps the selected section, language, and dictionary type. Reload the page or use Back and Forward to return to that selection.
 

@@ -16,7 +16,7 @@ import {
 } from "@mantine/core";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { Dictionary } from "@/dictionaries/model";
-import { languageName } from "@/languages/codes";
+import { languageLabel, languageName } from "@/languages/codes";
 import { LanguageSelect } from "@/languages/components/LanguageSelect";
 import { settingsClient } from "@/settings/client";
 import type { Settings } from "@/settings/model";
@@ -253,7 +253,7 @@ export function StudyPage({
               value={language}
               data={settings.studyLanguages.map((value) => ({
                 value,
-                label: languageName(value),
+                label: languageLabel(value),
               }))}
               onChange={(value) => {
                 if (value) setLanguage(value);
@@ -381,7 +381,7 @@ function StudyRows({
   return (
     <>
       {[
-        { ...row, id: undefined, name: languageName(row.language) },
+        { ...row, id: undefined, name: languageLabel(row.language) },
         { ...row.mined, id: "mined", name: t("study_mined_words") },
         ...row.decks,
       ].map((deck) => (

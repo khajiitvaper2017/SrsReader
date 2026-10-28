@@ -10,7 +10,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { languageName } from "@/languages/codes";
+import { languageLabel, languageName } from "@/languages/codes";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { Empty } from "@/shared/ui/Empty";
@@ -56,7 +56,7 @@ export function WordsPage({
               value={language}
               data={[
                 ...new Set([language, ...overview.map((row) => row.language)]),
-              ].map((value) => ({ value, label: languageName(value) }))}
+              ].map((value) => ({ value, label: languageLabel(value) }))}
               onChange={(value) => {
                 if (value) location.hash = `words/${value}`;
               }}

@@ -312,9 +312,9 @@ export function DictionarySettings({
               <Stack>
                 {dictionaryControls}
                 <WiktionaryBrowser
-                  key={`${settings.studyLanguage}:${settings.nativeLanguage}`}
+                  key={`${settings.studyLanguage}:${JSON.stringify(settings.nativeLanguages)}`}
                   language={settings.studyLanguage}
-                  nativeLanguage={settings.nativeLanguage}
+                  nativeLanguages={settings.nativeLanguages}
                   busy={busy}
                   onImport={(entry) =>
                     downloadDictionary(

@@ -28,7 +28,11 @@ import {
 import { z } from "zod";
 
 export async function exportSettings() {
-  const { studyLanguage: _language, ...settings } = await getSettings();
+  const {
+    studyLanguage: _language,
+    nativeLanguage: _nativeLanguage,
+    ...settings
+  } = await getSettings();
   for (const dictionary of await db.dictionaries.toArray())
     settings.dictionaryPreferences[dictionary.id] = {
       fallback:

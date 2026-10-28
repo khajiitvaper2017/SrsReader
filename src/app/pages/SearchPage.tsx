@@ -15,7 +15,7 @@ import {
 import { Meanings } from "@/dictionaries/components/Meanings";
 import { definitionText } from "@/dictionaries/definitions";
 import { useDictionarySearch } from "@/dictionaries/hooks/useDictionarySearch";
-import { languageName } from "@/languages/codes";
+import { languageLabel } from "@/languages/codes";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
@@ -50,7 +50,7 @@ export function SearchPage({ settings }: { settings: Settings }) {
               value={language}
               data={[
                 ...new Set([language, ...dictionaries.map((d) => d.language)]),
-              ].map((value) => ({ value, label: languageName(value) }))}
+              ].map((value) => ({ value, label: languageLabel(value) }))}
               onChange={(value) => {
                 if (value) {
                   setLanguage(value);

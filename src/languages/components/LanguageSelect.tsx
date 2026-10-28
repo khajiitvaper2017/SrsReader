@@ -1,5 +1,9 @@
 import { Select } from "@mantine/core";
-import { languageName, supportedLanguages } from "@/languages/codes";
+import {
+  languageLabel,
+  languageName,
+  supportedLanguages,
+} from "@/languages/codes";
 import { i18n, t } from "@/shared/i18n/i18n";
 
 export function LanguageSelect({
@@ -32,7 +36,7 @@ export function LanguageSelect({
         )
         .map((language) => ({
           value: language,
-          label: languageName(language),
+          label: languageLabel(language),
         }))}
     />
   );
