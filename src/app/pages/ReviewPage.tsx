@@ -1,4 +1,3 @@
-import { languageLabel } from "@/languages/codes";
 import {
   Badge,
   ActionIcon,
@@ -23,6 +22,7 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Ratings } from "@/srs/components/Ratings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { useReviewSession } from "@/srs/hooks/useReviewSession";
+import { SessionProgress } from "@/srs/components/SessionProgress";
 import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
@@ -76,31 +76,49 @@ export function ReviewPage({
       gap="xs"
     >
       <SrsProgress />
-      <Text variant="supporting" ta="center">
-        {languageLabel(settings.studyLanguage)}
-      </Text>
-      <Group justify="center">
-        {(
-          [
-            ["new", queue?.fresh],
-            ["srs_queue_learning", queue?.learning],
-            ["srs_queue_relearning", queue?.relearning],
-            ["review", queue?.reviews],
-            ["reviewed_today", queue?.today],
-          ] as const
-        ).map(([label, count]) => (
-          <Text key={label}>
-            {t(label)}{" "}
-            <Text span inherit fw={700}>
-              {count ?? "—"}
-            </Text>
-          </Text>
-        ))}
-      </Group>
-      {!!queue?.ahead && (
-        <Text variant="supporting">
-          {t("srs_queue_ahead", { count: queue.ahead })}
-        </Text>
+      {word && queue && (
+        <SessionProgress queue={queue} answers={answers}>
+          <Group gap={4} wrap="nowrap" justify="flex-end">
+            <ActionIcon
+              variant={timer.enabled ? "light" : "subtle"}
+              title={t(
+                timer.enabled ? "timed_review_disable" : "timed_review_enable",
+              )}
+              aria-label={t(
+                timer.enabled ? "timed_review_disable" : "timed_review_enable",
+              )}
+              aria-pressed={timer.enabled}
+              disabled={busy}
+              onClick={timer.toggle}
+            >
+              <Timer aria-hidden size={16} />
+            </ActionIcon>
+            {timer.enabled && timer.phase && (
+              <ActionIcon
+                variant="subtle"
+                disabled={busy}
+                title={t(
+                  timer.manualPaused
+                    ? "timed_review_resume"
+                    : "timed_review_pause",
+                )}
+                aria-label={t(
+                  timer.manualPaused
+                    ? "timed_review_resume"
+                    : "timed_review_pause",
+                )}
+                aria-pressed={timer.manualPaused}
+                onClick={timer.togglePause}
+              >
+                {timer.manualPaused ? (
+                  <Play aria-hidden size={16} />
+                ) : (
+                  <Pause aria-hidden size={16} />
+                )}
+              </ActionIcon>
+            )}
+          </Group>
+        </SessionProgress>
       )}
       <ErrorBox error={error} />
       {word ? (
@@ -123,55 +141,11 @@ export function ReviewPage({
                   data-srs-reader
                   display="grid"
                   style={{
-                    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+                    gridTemplateColumns: "auto minmax(0, 1fr)",
                     alignItems: "center",
                   }}
                 >
-                  <Group gap={0} style={{ gridColumn: 1 }}>
-                    <ActionIcon
-                      variant={timer.enabled ? "light" : "subtle"}
-                      title={t(
-                        timer.enabled
-                          ? "timed_review_disable"
-                          : "timed_review_enable",
-                      )}
-                      aria-label={t(
-                        timer.enabled
-                          ? "timed_review_disable"
-                          : "timed_review_enable",
-                      )}
-                      aria-pressed={timer.enabled}
-                      disabled={busy}
-                      onClick={timer.toggle}
-                    >
-                      <Timer aria-hidden size={16} />
-                    </ActionIcon>
-                    {timer.enabled && timer.phase && (
-                      <ActionIcon
-                        variant="subtle"
-                        disabled={busy}
-                        title={t(
-                          timer.manualPaused
-                            ? "timed_review_resume"
-                            : "timed_review_pause",
-                        )}
-                        aria-label={t(
-                          timer.manualPaused
-                            ? "timed_review_resume"
-                            : "timed_review_pause",
-                        )}
-                        aria-pressed={timer.manualPaused}
-                        onClick={timer.togglePause}
-                      >
-                        {timer.manualPaused ? (
-                          <Play aria-hidden size={16} />
-                        ) : (
-                          <Pause aria-hidden size={16} />
-                        )}
-                      </ActionIcon>
-                    )}
-                  </Group>
-                  <Badge style={{ gridColumn: 2 }}>
+                  <Badge>
                     {t(
                       [
                         "new",
@@ -186,7 +160,7 @@ export function ReviewPage({
                     wrap="nowrap"
                     justify="flex-end"
                     style={{
-                      gridColumn: 3,
+                      gridColumn: 2,
                       visibility: revealed ? "visible" : "hidden",
                     }}
                     aria-hidden={!revealed}
