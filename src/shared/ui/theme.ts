@@ -183,6 +183,7 @@ export function createUITheme(
         styles: {
           list: { flexWrap: "wrap" },
           tab: {
+            fontWeight: 700,
             fontSize: popup
               ? "var(--mantine-font-size-sm)"
               : "var(--mantine-font-size-md)",
