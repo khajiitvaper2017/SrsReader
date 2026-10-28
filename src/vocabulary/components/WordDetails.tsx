@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Button,
   Group,
+  Menu,
   Flex,
   NumberInput,
   Paper,
@@ -17,7 +18,15 @@ import { WordExamples } from "@/examples/components/WordExamples";
 import type { Settings } from "@/settings/model";
 import { i18n, number, t } from "@/shared/i18n/i18n";
 import { useWords } from "@/vocabulary/hooks/useWords";
-import { Check, Pause, Play, RefreshCw, Trash2, X } from "lucide-react";
+import {
+  Check,
+  Pause,
+  Play,
+  RefreshCw,
+  Trash2,
+  X,
+  MoreHorizontal,
+} from "lucide-react";
 export function WordDetails({
   settings,
   controller,
@@ -129,42 +138,47 @@ export function WordDetails({
             </span>
           </Stack>
         )}
-        <Group align="center">
+        <Group justify="space-between" wrap="nowrap">
           <ActionIcon
             title={t("refresh_from_dictionary")}
             aria-label={t("refresh_from_dictionary")}
             onClick={() => refreshWord()}
-            variant="subtle"
           >
             <RefreshCw aria-hidden="true" size={16} />
           </ActionIcon>
-          <Button
-            aria-pressed={word.known}
-            onClick={() => toggleMastery()}
-            variant="subtle"
-          >
-            <Check aria-hidden="true" size={16} />
-            {word.known ? t("unmaster") : t("master")}
-          </Button>
-          {!word.known && (
-            <Button onClick={() => toggleSuspension()} variant="subtle">
-              {word.suspended ? (
-                <Play aria-hidden="true" size={16} />
-              ) : (
-                <Pause aria-hidden="true" size={16} />
-              )}{" "}
-              {word.suspended ? t("resume") : t("suspend")}
-            </Button>
-          )}
-          <ActionIcon
-            title={t("delete_word")}
-            aria-label={t("delete_word")}
-            onClick={() => deleteWord()}
-            variant="subtle"
-            color="red"
-          >
-            <Trash2 aria-hidden="true" size={16} />
-          </ActionIcon>
+          <Menu>
+            <Menu.Target>
+              <Button leftSection={<MoreHorizontal size={16} />}>
+                {t("actions")}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<Check size={16} />}
+                onClick={() => toggleMastery()}
+              >
+                {word.known ? t("unmaster") : t("master")}
+              </Menu.Item>
+              {!word.known && (
+                <Menu.Item
+                  leftSection={
+                    word.suspended ? <Play size={16} /> : <Pause size={16} />
+                  }
+                  onClick={() => toggleSuspension()}
+                >
+                  {word.suspended ? t("resume") : t("suspend")}
+                </Menu.Item>
+              )}
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<Trash2 size={16} />}
+                onClick={() => deleteWord()}
+              >
+                {t("delete_word")}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       </Stack>
     </Paper>

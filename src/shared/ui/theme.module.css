@@ -4,3 +4,14 @@
     --srs-touch-font-size: 1rem;
   }
 }
+
+/* Reserve space for typing only while the multi-select search field is focused. */
+.pillSearch {
+  &:not(:focus) {
+    min-width: 0;
+  }
+
+  &:focus {
+    min-width: 6.25rem;
+  }
+}

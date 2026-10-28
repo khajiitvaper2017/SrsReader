@@ -176,32 +176,34 @@ export function StudyPage({
   ));
   return (
     <Stack>
-      <Group justify="space-between" align="center">
+      <Group justify="space-between" align="center" wrap="nowrap">
         <Title order={1}>{t("study_languages")}</Title>
-        <Group>
-          <Button
-            leftSection={<Plus size={16} />}
-            onClick={() => {
-              setLanguage(settings.studyLanguage);
-              setModal("language");
-            }}
-            disabled={busy}
-          >
-            {t("study_add_language")}
-          </Button>
-          <Button
-            variant="filled"
-            leftSection={<Plus size={16} />}
-            onClick={() => {
-              setLanguage(settings.studyLanguage);
-              setName("");
-              setModal("deck");
-            }}
-            disabled={busy}
-          >
-            {t("frequency_deck_add")}
-          </Button>
-        </Group>
+        <Menu>
+          <Menu.Target>
+            <Button leftSection={<Plus size={16} />} disabled={busy}>
+              {t("add")}
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              onClick={() => {
+                setLanguage(settings.studyLanguage);
+                setModal("language");
+              }}
+            >
+              {t("study_add_language")}
+            </Menu.Item>
+            <Menu.Item
+              onClick={() => {
+                setLanguage(settings.studyLanguage);
+                setName("");
+                setModal("deck");
+              }}
+            >
+              {t("frequency_deck_add")}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </Group>
       <TaskAlerts
         busy={busy}

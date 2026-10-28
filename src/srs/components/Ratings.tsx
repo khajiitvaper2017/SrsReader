@@ -25,13 +25,11 @@ export function Ratings({
   disabled,
   onGrade,
   onlyAgainGood,
-  compact = false,
 }: {
   times: number[];
   disabled: boolean;
   onGrade: (rating: number) => void;
   onlyAgainGood: boolean;
-  compact?: boolean;
 }) {
   const [{ rolloverHour }] = useSettings();
   const buttons = [t("again"), t("hard"), t("good"), t("easy")].map(
@@ -44,7 +42,7 @@ export function Ratings({
           onClick={() => onGrade(i + 1)}
           variant="light"
           color={["red", "orange", "green", "blue"][i]}
-          mih={compact ? 40 : undefined}
+          mih={40}
           px={4}
           miw={0}
         >
@@ -59,10 +57,8 @@ export function Ratings({
         </Button>
       ),
   );
-  return compact ? (
-    <>{buttons}</>
-  ) : (
-    <SimpleGrid cols={{ base: 2, xs: onlyAgainGood ? 2 : 4 }}>
+  return (
+    <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing="xs">
       {buttons}
     </SimpleGrid>
   );

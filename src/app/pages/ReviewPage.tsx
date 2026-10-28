@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Group,
+  Menu,
   Paper,
   Progress,
   ScrollArea,
@@ -26,7 +27,15 @@ import { SessionProgress } from "@/srs/components/SessionProgress";
 import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
 import { Sentence } from "@/vocabulary/components/Sentence";
-import { Check, Eye, Pause, Play, Timer, Undo2 } from "lucide-react";
+import {
+  Check,
+  Eye,
+  Pause,
+  Play,
+  Timer,
+  Undo2,
+  MoreHorizontal,
+} from "lucide-react";
 
 export function ReviewPage({
   settings,
@@ -263,19 +272,6 @@ export function ReviewPage({
                 </Stack>
                 <Box display="grid" flex={1}>
                   <Stack
-                    justify="center"
-                    align="center"
-                    ta="center"
-                    display={revealed ? "none" : undefined}
-                    style={{ gridArea: "1 / 1" }}
-                    aria-hidden={revealed}
-                    inert={revealed}
-                  >
-                    <Text variant="supporting" data-srs-reader>
-                      {t("study_reveal_hint")}
-                    </Text>
-                  </Stack>
-                  <Stack
                     gap="xs"
                     display={revealed ? undefined : "none"}
                     style={{ gridArea: "1 / 1" }}
@@ -386,7 +382,12 @@ export function ReviewPage({
         </Stack>
       )}
       {word && (
-        <Group component="footer" justify="space-between" align="center">
+        <Group
+          component="footer"
+          justify="space-between"
+          align="center"
+          wrap="nowrap"
+        >
           <Button
             variant="subtle"
             title={t("undo_last_review")}
@@ -396,41 +397,49 @@ export function ReviewPage({
           >
             {t("undo")}
           </Button>
-          <Group>
-            <Button
-              variant="subtle"
-              leftSection={<Check aria-hidden="true" size={16} />}
-              disabled={busy}
-              onClick={() =>
-                void vocabularyClient({
-                  action: "known",
-                  id: word.id,
-                  term: word.lemma,
-                  value: true,
-                })
-                  .then(load)
-                  .catch((error) => setError(error.message))
-              }
-            >
-              {t("master")}
-            </Button>
-            <Button
-              variant="subtle"
-              leftSection={<Pause aria-hidden="true" size={16} />}
-              disabled={busy}
-              onClick={() =>
-                void vocabularyClient({
-                  action: "suspend",
-                  id: word.id,
-                  value: true,
-                })
-                  .then(load)
-                  .catch((error) => setError(error.message))
-              }
-            >
-              {t("suspend")}
-            </Button>
-          </Group>
+          <Menu>
+            <Menu.Target>
+              <Button
+                leftSection={<MoreHorizontal size={16} />}
+                disabled={busy}
+              >
+                {t("actions")}
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<Check aria-hidden="true" size={16} />}
+                disabled={busy}
+                onClick={() =>
+                  void vocabularyClient({
+                    action: "known",
+                    id: word.id,
+                    term: word.lemma,
+                    value: true,
+                  })
+                    .then(load)
+                    .catch((error) => setError(error.message))
+                }
+              >
+                {t("master")}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<Pause aria-hidden="true" size={16} />}
+                disabled={busy}
+                onClick={() =>
+                  void vocabularyClient({
+                    action: "suspend",
+                    id: word.id,
+                    value: true,
+                  })
+                    .then(load)
+                    .catch((error) => setError(error.message))
+                }
+              >
+                {t("suspend")}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       )}
     </Stack>

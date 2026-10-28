@@ -18,9 +18,11 @@ import {
   Input,
   Kbd,
   Menu,
+  MultiSelect,
   NativeSelect,
   NumberInput,
   Paper,
+  Pill,
   Pagination,
   Radio,
   Select,
@@ -89,7 +91,15 @@ export function createUITheme(
             },
           },
         }
-      : {}),
+      : {
+          headings: {
+            sizes: {
+              h1: { fontSize: "clamp(1.5rem, 5vw, 2.125rem)" },
+              h2: { fontSize: "clamp(1.25rem, 4vw, 1.625rem)" },
+              h3: { fontSize: "clamp(1.125rem, 3vw, 1.375rem)" },
+            },
+          },
+        }),
     components: {
       ...(popup
         ? {
@@ -212,6 +222,26 @@ export function createUITheme(
           "data-srs-reader": true,
         },
       }),
+      MultiSelect: MultiSelect.extend({
+        defaultProps: {
+          size: controlSize,
+          maxDropdownHeight: 200,
+          comboboxProps: {
+            withinPortal: true,
+            floatingStrategy: "fixed",
+            middlewares: { flip: true, shift: { padding: 4 } },
+          },
+          "data-srs-reader": true,
+        },
+        classNames: { inputField: classes.pillSearch },
+      }),
+      Pill: Pill.extend({
+        defaultProps: {
+          size: "sm",
+          removeButtonProps: { "aria-label": t("remove") },
+        },
+      }),
+      PillGroup: Pill.Group.extend({ defaultProps: { gap: 4 } }),
       ColorPicker: ColorPicker.extend({
         defaultProps: {
           "data-srs-reader": true,

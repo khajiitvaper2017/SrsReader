@@ -7,7 +7,6 @@ import {
   Badge,
   HoverCard,
   Menu,
-  SimpleGrid,
   Stack,
   Text,
   Title,
@@ -470,7 +469,7 @@ function LookupEntry({
             overflowY: "auto",
           }}
         >
-          <SimpleGrid minColWidth="5rem" autoFlow="auto-fit" spacing={4}>
+          <Group grow wrap="nowrap" align="stretch" gap={4}>
             {!saved?.card && !saved?.known && (
               <Button
                 disabled={busy}
@@ -488,13 +487,13 @@ function LookupEntry({
               disabled={busy}
               onClick={() => void toggleMastery()}
               variant="light"
-              h={40}
+              mih={40}
               px={4}
               miw={0}
             >
               {saved?.known ? t("unmaster") : t("master")}
             </Button>
-            {saved?.known || reviewed ? null : saved?.suspended ? (
+            {!saved?.known && !reviewed && saved?.suspended && (
               <Button
                 onClick={() =>
                   void vocabularyClient({
@@ -510,14 +509,6 @@ function LookupEntry({
               >
                 <Play aria-hidden="true" size={16} /> {t("resume")}
               </Button>
-            ) : (
-              <Ratings
-                times={times}
-                compact
-                disabled={busy}
-                onlyAgainGood={settings.onlyAgainGood}
-                onGrade={(rating) => void act(rating)}
-              />
             )}
             {lastReview && (
               <Button
@@ -533,7 +524,15 @@ function LookupEntry({
                 <Undo2 aria-hidden="true" size={16} /> {t("cancel")}
               </Button>
             )}
-          </SimpleGrid>
+          </Group>
+          {!saved?.known && !reviewed && !saved?.suspended && (
+            <Ratings
+              times={times}
+              disabled={busy}
+              onlyAgainGood={settings.onlyAgainGood}
+              onGrade={(rating) => void act(rating)}
+            />
+          )}
           {notice && <VisuallyHidden role="status">{notice}</VisuallyHidden>}
         </Stack>
       )}

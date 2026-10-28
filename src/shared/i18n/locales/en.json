@@ -1,4 +1,6 @@
 {
+  "add": "Add",
+  "actions": "Actions",
   "timed_review": "Timed review",
   "timed_review_help": "Count down before and after showing the answer. Use the stopwatch on a card to turn timed review on or off for this session.",
   "timed_review_default": "Start each session with timed review on",
