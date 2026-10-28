@@ -157,6 +157,7 @@ export function createUITheme(
           size: controlSize,
           inputWrapperOrder: ["label", "input", "description", "error"],
         },
+        styles: { label: { marginBottom: "var(--mantine-spacing-xs)" } },
       }),
       TextInput: TextInput.extend({
         defaultProps: { size: controlSize, "data-srs-reader": true },
