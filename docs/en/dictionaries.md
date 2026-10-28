@@ -58,7 +58,7 @@ Each exact text block counts only once per language, including across websites, 
 
 Select **Enabled** to collect hits and combine its ranks with other enabled frequency dictionaries. Disable the other frequency dictionaries to use it alone. Select **Disabled** to stop counting and exclude its ranks. Saved counts, ranks, and counted-block history stay available. Select **Enabled** again to resume counting.
 
-**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Enabled states, vocabulary display options, and ordering are included in the settings export.
+**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Data and Backups → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Enabled states, vocabulary display options, and ordering are included in the settings export.
 
 ## Missing words
 

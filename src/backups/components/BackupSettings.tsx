@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  Divider,
   FileButton,
   Group,
   Paper,
@@ -13,7 +14,7 @@ import { exportLearning, exportSettings } from "@/backups/archive";
 import { useBackups } from "@/backups/hooks/useBackups";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
-import { t } from "@/shared/i18n/i18n";
+import { downloadSize, t } from "@/shared/i18n/i18n";
 import { useRef } from "react";
 import { Download, Upload, Eraser } from "lucide-react";
 export function BackupSettings({
@@ -23,51 +24,63 @@ export function BackupSettings({
   setSettings: (settings: Settings) => void;
   tasks: SettingsTask;
 }) {
-  const { busy, task, fileImport, fullExport, cleanup } = useBackups({
-    setSettings,
-    tasks,
-  });
+  const { busy, storageUsage, task, fileImport, fullExport, cleanup } =
+    useBackups({
+      setSettings,
+      tasks,
+    });
   const resetFullInput = useRef<() => void>(null);
   return (
     <Paper>
       <Stack>
-        <Title order={2}>{t("import_export")}</Title>
-        <Stack>
-          <Title order={3}>{t("full_backup")}</Title>
-          <Text variant="supporting">{t("full_backup_description")}</Text>
-          <Text variant="supporting">{t("full_backup_limits")}</Text>
-          <Group>
-            <Button
-              disabled={busy}
-              variant="default"
-              onClick={() => void fullExport()}
-            >
-              <Download aria-hidden="true" size={16} />{" "}
-              {t("full_backup_export")}
-            </Button>
-            <FileButton
-              accept=".zip"
-              resetRef={resetFullInput}
-              disabled={busy}
-              onChange={(file) => {
-                void fileImport(file ?? undefined, "full").finally(() =>
-                  resetFullInput.current?.(),
-                );
-              }}
-            >
-              {(props) => (
-                <Button {...props} disabled={busy}>
-                  <Upload aria-hidden="true" size={16} />{" "}
-                  {t("full_backup_import")}
-                </Button>
-              )}
-            </FileButton>
-          </Group>
-        </Stack>
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <Stack>
+        <Group justify="space-between" align="flex-start">
+          <Title order={2}>{t("import_export")}</Title>
+          <Text fw={500} role="status" aria-live="polite">
+            {storageUsage === undefined
+              ? t("storage_usage_loading")
+              : storageUsage === null
+                ? t("storage_usage_unavailable")
+                : t("browser_storage_used", {
+                    size: downloadSize(storageUsage),
+                  })}
+          </Text>
+        </Group>
+        <SimpleGrid cols={{ base: 1, md: 3 }}>
+          <Stack gap="sm">
+            <Title order={3}>{t("full_backup")}</Title>
+            <Text variant="supporting">{t("full_backup_description")}</Text>
+            <Stack gap="xs" mt="auto">
+              <Button
+                disabled={busy}
+                variant="default"
+                onClick={() => void fullExport()}
+              >
+                <Download aria-hidden="true" size={16} />{" "}
+                {t("full_backup_export")}
+              </Button>
+              <FileButton
+                accept=".zip"
+                resetRef={resetFullInput}
+                disabled={busy}
+                onChange={(file) => {
+                  void fileImport(file ?? undefined, "full").finally(() =>
+                    resetFullInput.current?.(),
+                  );
+                }}
+              >
+                {(props) => (
+                  <Button {...props} disabled={busy}>
+                    <Upload aria-hidden="true" size={16} />{" "}
+                    {t("full_backup_import")}
+                  </Button>
+                )}
+              </FileButton>
+            </Stack>
+          </Stack>
+          <Stack gap="sm">
             <Title order={3}>{t("settings")}</Title>
-            <Group align="center">
+            <Text variant="supporting">{t("settings_backup_description")}</Text>
+            <Stack gap="xs" mt="auto">
               <Button
                 disabled={busy}
                 onClick={() => void task(exportSettings)}
@@ -90,14 +103,14 @@ export function BackupSettings({
                   </Button>
                 )}
               </FileButton>
-            </Group>
+            </Stack>
           </Stack>
-          <Stack>
+          <Stack gap="sm">
             <Title order={3}>{t("words_progress")}</Title>
-            <Text>
+            <Text variant="supporting">
               {t("includes_sentences_review_history_and_saved_audio")}
             </Text>
-            <Group align="center">
+            <Stack gap="xs" mt="auto">
               <Button
                 disabled={busy}
                 onClick={() => void task(exportLearning)}
@@ -119,10 +132,12 @@ export function BackupSettings({
                   </Button>
                 )}
               </FileButton>
-            </Group>
+            </Stack>
           </Stack>
         </SimpleGrid>
-        <Stack>
+        <Text variant="supporting">{t("full_backup_limits")}</Text>
+        <Divider />
+        <Stack gap="sm">
           <Title order={3}>{t("cleanup_title")}</Title>
           <Text variant="supporting">{t("cleanup_description")}</Text>
           <Group>

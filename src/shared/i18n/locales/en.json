@@ -539,7 +539,7 @@
   "settings_general": "General",
   "settings_reading": "Reading",
   "settings_audio_translation": "Audio & translation",
-  "settings_backups": "Backups",
+  "settings_backups": "Data and Backups",
   "settings_sections": "Settings sections",
   "settings_setup_intro": "Choose your languages, add a dictionary, and set up a lookup shortcut.",
   "settings_setup_help": "Need help getting started?",
@@ -1037,5 +1037,9 @@
   "session_due_in_days": "{{count}} due in {{days}} days",
   "session_study_more": "Study more",
   "session_more_help": "Add up to 10 new cards and 50 due reviews for this session.",
-  "session_nothing_more": "No additional new or due cards are available in this deck."
+  "session_nothing_more": "No additional new or due cards are available in this deck.",
+  "browser_storage_used": "Browser storage used: {{size}}",
+  "storage_usage_loading": "Calculating browser storage usage…",
+  "storage_usage_unavailable": "Browser storage usage is unavailable.",
+  "settings_backup_description": "Languages, controls, appearance, review settings, and dictionary preferences."
 }

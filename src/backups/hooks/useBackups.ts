@@ -5,6 +5,8 @@ import { rpc } from "@/platform/messaging/send";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { number, t } from "@/shared/i18n/i18n";
+import { useChanges } from "@/shared/hooks/useChanges";
+import { useCallback, useEffect, useState } from "react";
 
 export function useBackups({
   setSettings,
@@ -13,7 +15,21 @@ export function useBackups({
   setSettings: (settings: Settings) => void;
   tasks: SettingsTask;
 }) {
-  const { busy, setNotice, run: task } = tasks;
+  const { busy, setError, setNotice, run: task } = tasks;
+  const [storageUsage, setStorageUsage] = useState<number | null>();
+  const refreshStorage = useCallback(() => {
+    void navigator.storage
+      .estimate()
+      .then(({ usage }) => setStorageUsage(usage ?? null))
+      .catch((error) => {
+        setStorageUsage(null);
+        setError((error as Error).message);
+      });
+  }, [setError]);
+  useEffect(() => {
+    if (!busy) refreshStorage();
+  }, [busy, refreshStorage]);
+  useChanges(refreshStorage);
   async function fileImport(
     file: File | undefined,
     category: "settings" | "learning" | "full",
@@ -92,5 +108,5 @@ export function useBackups({
       );
     });
   }
-  return { busy, task, fileImport, fullExport, cleanup };
+  return { busy, storageUsage, task, fileImport, fullExport, cleanup };
 }

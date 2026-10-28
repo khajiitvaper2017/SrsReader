@@ -31,7 +31,7 @@ Open the three-dot menu at the end of a deck row in **Study**.
 - **Clear deck** deletes all words in that deck and downloaded recordings. This includes mastered and suspended words. The empty deck remains in the list. Use this action to empty **Mined words**.
 - **Delete deck** also removes the frequency deck from the list.
 
-Confirm the action in the dialog. These actions cannot be undone. Review history, cached sentences, dictionaries, and words in other groups are kept. Past reviews still count in statistics and daily limits. Export **Words & progress** in **Settings → Backups** if you want a copy first.
+Confirm the action in the dialog. These actions cannot be undone. Review history, cached sentences, dictionaries, and words in other groups are kept. Past reviews still count in statistics and daily limits. Export **Words & progress** in **Settings → Data and Backups** if you want a copy first.
 
 ## Sentences from reading
 

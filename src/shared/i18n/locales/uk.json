@@ -547,7 +547,7 @@
   "settings_general": "Загальні",
   "settings_reading": "Читання",
   "settings_audio_translation": "Звук і переклад",
-  "settings_backups": "Резервні копії",
+  "settings_backups": "Дані та резервні копії",
   "settings_sections": "Розділи налаштувань",
   "settings_setup_intro": "Виберіть мови, додайте словник і налаштуйте дію для пошуку слів.",
   "settings_setup_help": "Потрібна допомога з початком роботи?",
@@ -1084,5 +1084,9 @@
   "session_due_in_days": "Через {{days}} дні: {{count}}",
   "session_study_more": "Продовжити навчання",
   "session_more_help": "Додайте до 10 нових карток і 50 доступних повторень для цього сеансу.",
-  "session_nothing_more": "У цій колоді немає додаткових нових карток або доступних повторень."
+  "session_nothing_more": "У цій колоді немає додаткових нових карток або доступних повторень.",
+  "browser_storage_used": "Зайнято в сховищі браузера: {{size}}",
+  "storage_usage_loading": "Обчислюємо обсяг даних у сховищі браузера…",
+  "storage_usage_unavailable": "Обсяг даних у сховищі браузера недоступний.",
+  "settings_backup_description": "Мови, керування, тема, налаштування повторень і словників."
 }
