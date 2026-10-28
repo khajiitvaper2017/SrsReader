@@ -1,7 +1,6 @@
 import {
   NumberInput,
   Paper,
-  NativeSelect,
   Select,
   SimpleGrid,
   Stack,
@@ -31,13 +30,13 @@ export function ReviewSettings({
       <Paper>
         <Stack>
           <Title order={2}>{t("settings_review_session")}</Title>
-          <NativeSelect
+          <Select
             label={t("default_card_front")}
             maw={480}
             value={settings.front}
-            onChange={(event) =>
+            onChange={(front) =>
               void update({
-                front: event.currentTarget.value as Settings["front"],
+                front: front as Settings["front"],
               })
             }
             data={[

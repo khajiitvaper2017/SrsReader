@@ -1,4 +1,4 @@
-import { ColorInput, Paper, NativeSelect, Stack, Title } from "@mantine/core";
+import { ColorInput, Paper, Select, Stack, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -16,12 +16,12 @@ export function AppearanceSettings({
     <Paper>
       <Stack>
         <Title order={2}>{t("appearance")}</Title>
-        <NativeSelect
+        <Select
           maw={480}
           value={settings.theme}
-          onChange={(event) =>
+          onChange={(theme) =>
             void onChange({
-              theme: event.currentTarget.value as Settings["theme"],
+              theme: theme as Settings["theme"],
             })
           }
           aria-label={t("appearance")}
