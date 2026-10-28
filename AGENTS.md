@@ -62,7 +62,7 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 <!-- trail:start -->
 ## Trail — repo context graph
 
-This repo is indexed in `graft/`: small linked markdown nodes that explain each
+This repo is indexed in `.trail/cache/`: small linked markdown nodes that explain each
 system and carry exact file:line spans, kept in sync with the code through git.
 
 For ANY task here — understanding how something works, finding where code lives,
@@ -87,7 +87,7 @@ hotspots), no LLM, no key.
   Add `--direction out` for what it calls, or `--depth N` to walk
   transitively for the full blast radius. For structural questions, skip
   ranking and use this directly.
-- Or browse: `graft/INDEX.md` lists every node; follow the links.
+- Or browse: `.trail/cache/INDEX.md` lists every node; follow the links.
 - Monorepos and folders of multiple repos rank fairly across sub-projects —
   hits carry `[scope/]` labels naming which one they're from. Narrow with
   `trail ask "<task>" --in <scope>/` once you know where you're working.
