@@ -5,6 +5,7 @@ import {
   Button,
   Group,
   Paper,
+  NativeSelect,
   Switch,
   Tabs,
   Text,
@@ -271,7 +272,15 @@ export function SettingsPage({
       }}
       keepMountedMode="display-none"
     >
-      <Tabs.List mb="md" aria-label={t("settings_sections")}>
+      <NativeSelect
+        hiddenFrom="sm"
+        mb="md"
+        label={t("settings_sections")}
+        value={selected}
+        onChange={(event) => navigate(event.currentTarget.value)}
+        data={sections.map(({ value, label }) => ({ value, label }))}
+      />
+      <Tabs.List visibleFrom="sm" mb="md" aria-label={t("settings_sections")}>
         {sections.map((section) => (
           <Tabs.Tab
             data-srs-reader

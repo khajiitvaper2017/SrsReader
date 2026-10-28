@@ -3,6 +3,7 @@ import {
   Anchor,
   Button,
   Group,
+  Flex,
   Loader,
   Paper,
   Select,
@@ -77,9 +78,14 @@ export function SearchPage({ settings }: { settings: Settings }) {
               }}
             />
           </SimpleGrid>
-          <Group align="flex-end" wrap="nowrap">
+          <Flex
+            align="flex-end"
+            direction={{ base: "column", xs: "row" }}
+            gap="sm"
+          >
             <TextInput
-              flex={1}
+              flex={{ base: "auto", xs: 1 }}
+              w={{ base: "100%", xs: "auto" }}
               miw={0}
               type="search"
               label={t("dictionary_search_query")}
@@ -93,6 +99,7 @@ export function SearchPage({ settings }: { settings: Settings }) {
               }}
             />
             <Button
+              w={{ base: "100%", xs: "auto" }}
               type="submit"
               leftSection={<Search size={16} />}
               loading={busy}
@@ -100,7 +107,7 @@ export function SearchPage({ settings }: { settings: Settings }) {
             >
               {t("dictionary_search_action")}
             </Button>
-          </Group>
+          </Flex>
           <Text variant="supporting">{t("dictionary_search_help")}</Text>
           {ready && !available && (
             <Text variant="supporting">

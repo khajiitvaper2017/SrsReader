@@ -470,27 +470,13 @@ function LookupEntry({
             overflowY: "auto",
           }}
         >
-          <SimpleGrid
-            cols={
-              (!saved?.card && !saved?.known ? 1 : 0) +
-              1 +
-              (lastReview ? 1 : 0) +
-              (saved?.known || reviewed
-                ? 0
-                : saved?.suspended
-                  ? 1
-                  : settings.onlyAgainGood
-                    ? 2
-                    : 4)
-            }
-            spacing={4}
-          >
+          <SimpleGrid minColWidth="5rem" autoFlow="auto-fit" spacing={4}>
             {!saved?.card && !saved?.known && (
               <Button
                 disabled={busy}
                 onClick={() => void act()}
                 variant="light"
-                h={40}
+                mih={40}
                 px={4}
                 miw={0}
               >
@@ -518,7 +504,7 @@ function LookupEntry({
                   }).then(reload)
                 }
                 variant="light"
-                h={40}
+                mih={40}
                 px={4}
                 miw={0}
               >
@@ -540,7 +526,7 @@ function LookupEntry({
                 disabled={busy}
                 onClick={() => void undo()}
                 variant="light"
-                h={40}
+                mih={40}
                 px={4}
                 miw={0}
               >

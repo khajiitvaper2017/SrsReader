@@ -1,4 +1,11 @@
-import { Anchor, Grid, NavLink, Paper, Typography } from "@mantine/core";
+import {
+  Anchor,
+  Grid,
+  NativeSelect,
+  NavLink,
+  Paper,
+  Typography,
+} from "@mantine/core";
 import { i18n, t } from "@/shared/i18n/i18n";
 import { useEffect } from "react";
 import Markdown from "react-markdown";
@@ -23,7 +30,21 @@ export default function DocsPage({ topic }: { topic: string }) {
   return (
     <Grid align="start">
       <Grid.Col span={{ base: 12, sm: 3 }}>
-        <Paper p="xs" component="nav" aria-label={t("docs_topics")}>
+        <NativeSelect
+          hiddenFrom="sm"
+          label={t("docs_topics")}
+          value={selected.id}
+          onChange={(event) => {
+            location.hash = `docs/${event.currentTarget.value}`;
+          }}
+          data={topics.map(({ id, label }) => ({ value: id, label: t(label) }))}
+        />
+        <Paper
+          visibleFrom="sm"
+          p="xs"
+          component="nav"
+          aria-label={t("docs_topics")}
+        >
           {topics.map((item) => (
             <NavLink
               key={item.id}

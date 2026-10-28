@@ -1,0 +1,6 @@
+.touchControl {
+  @media (pointer: coarse) {
+    --srs-touch-target: 2.75rem;
+    --srs-touch-font-size: 1rem;
+  }
+}

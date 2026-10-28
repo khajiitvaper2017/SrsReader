@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Button,
   Group,
+  Flex,
   NumberInput,
   Paper,
   Stack,
@@ -79,7 +80,11 @@ export function WordDetails({
             onError={setError}
           />
         ))}
-        <Group justify="space-between" align="center" wrap="nowrap">
+        <Flex
+          direction={{ base: "column", xs: "row" }}
+          gap="sm"
+          align={{ base: "stretch", xs: "center" }}
+        >
           <span style={{ flex: 1, minWidth: 0 }}>
             <strong>{t("srs_word_retention")}</strong>
             <Text variant="supporting" component="span" display="block">
@@ -97,10 +102,9 @@ export function WordDetails({
             }
             onChange={changeRetention}
             aria-label={t("srs_word_retention")}
-            w={160}
-            maw="50%"
+            w={{ base: "100%", xs: 160 }}
           />
-        </Group>
+        </Flex>
         {word.card && (
           <Text variant="supporting">
             {t("srs_lapses", { count: word.card.lapses })}

@@ -8,12 +8,15 @@ import {
   NumberInput,
   Paper,
   Select,
+  SimpleGrid,
   Stack,
   Table,
   Text,
   TextInput,
   Title,
+  useMantineTheme,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { Dictionary } from "@/dictionaries/model";
 import { languageLabel, languageName } from "@/languages/codes";
@@ -51,6 +54,8 @@ export function StudyPage({
   settings: Settings;
   setSettings: (settings: Settings) => void;
 }) {
+  const theme = useMantineTheme();
+  const narrow = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
   const [languages, setLanguages] = useState<Responses["studyOverview"]>();
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");
@@ -156,6 +161,19 @@ export function StudyPage({
       setBusy(false);
     }
   }
+  const rows = languages?.map((row) => (
+    <StudyRows
+      key={row.language}
+      row={row}
+      narrow={narrow}
+      busy={busy}
+      start={start}
+      manage={(action) => {
+        if (action.operation === "refresh") void manageDeck(action);
+        else setConfirmation(action);
+      }}
+    />
+  ));
   return (
     <Stack>
       <Group justify="space-between" align="center">
@@ -194,33 +212,24 @@ export function StudyPage({
       />
       <Paper>
         {!languages && !error && <Loader />}
-        <Table.ScrollContainer minWidth={480}>
-          <Table verticalSpacing="sm" highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t("study_language_deck")}</Table.Th>
-                <Table.Th ta="right">{t("new")}</Table.Th>
-                <Table.Th ta="right">{t("srs_queue_learning")}</Table.Th>
-                <Table.Th ta="right">{t("due")}</Table.Th>
-                <Table.Th aria-label={t("study_deck_actions")} />
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {languages?.map((row) => (
-                <StudyRows
-                  key={row.language}
-                  row={row}
-                  busy={busy}
-                  start={start}
-                  manage={(action) => {
-                    if (action.operation === "refresh") void manageDeck(action);
-                    else setConfirmation(action);
-                  }}
-                />
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Table.ScrollContainer>
+        {narrow ? (
+          <Stack>{rows}</Stack>
+        ) : (
+          <Table.ScrollContainer minWidth={480}>
+            <Table verticalSpacing="sm" highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t("study_language_deck")}</Table.Th>
+                  <Table.Th ta="right">{t("new")}</Table.Th>
+                  <Table.Th ta="right">{t("srs_queue_learning")}</Table.Th>
+                  <Table.Th ta="right">{t("due")}</Table.Th>
+                  <Table.Th aria-label={t("study_deck_actions")} />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{rows}</Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
         <Text variant="supporting" mt="md">
           {t("study_overview_help")}
         </Text>
@@ -369,11 +378,13 @@ export function StudyPage({
 
 function StudyRows({
   row,
+  narrow,
   busy,
   start,
   manage,
 }: {
   row: Responses["studyOverview"][number];
+  narrow: boolean | undefined;
   busy: boolean;
   start: (language: string, deckId?: string) => Promise<void>;
   manage: (action: DeckAction) => void;
@@ -384,99 +395,134 @@ function StudyRows({
         { ...row, id: undefined, name: languageLabel(row.language) },
         { ...row.mined, id: "mined", name: t("study_mined_words") },
         ...row.decks,
-      ].map((deck) => (
-        <Table.Tr
-          key={deck.id || row.language}
-          onClick={() => {
-            if (!busy && deck.total) void start(row.language, deck.id);
-          }}
-          style={{ cursor: busy || !deck.total ? "default" : "pointer" }}
-        >
-          <Table.Td pl={deck.id ? "xl" : undefined}>
-            <Button variant="transparent" disabled={busy || !deck.total}>
-              {deck.name}
-            </Button>
-          </Table.Td>
-          <Table.Td ta="right">{number(deck.fresh)}</Table.Td>
-          <Table.Td ta="right">{number(deck.learning)}</Table.Td>
-          <Table.Td ta="right">{number(deck.due)}</Table.Td>
-          <Table.Td ta="right">
-            {deck.id && (
-              <Menu position="bottom-end" withinPortal>
-                <Menu.Target>
-                  <ActionIcon
-                    variant="subtle"
-                    aria-label={t("study_deck_actions_for", {
-                      language: languageName(row.language),
+      ].map((deck) => {
+        const actions = deck.id && (
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <ActionIcon
+                variant="subtle"
+                aria-label={t("study_deck_actions_for", {
+                  language: languageName(row.language),
+                  name: deck.name,
+                })}
+                onClick={(event) => event.stopPropagation()}
+                disabled={busy}
+              >
+                <MoreHorizontal size={16} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+              <Menu.Item
+                component="a"
+                href={`#words/${row.language}/${deck.id}`}
+                leftSection={<List size={16} />}
+              >
+                {t("study_view_words")}
+              </Menu.Item>
+              {deck.id !== "mined" && (
+                <Menu.Item
+                  leftSection={<RefreshCw size={16} />}
+                  onClick={() =>
+                    manage({
+                      language: row.language,
+                      deckId: deck.id!,
                       name: deck.name,
-                    })}
-                    onClick={(event) => event.stopPropagation()}
-                    disabled={busy}
-                  >
-                    <MoreHorizontal size={16} />
-                  </ActionIcon>
-                </Menu.Target>
-                <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
-                  <Menu.Item
-                    component="a"
-                    href={`#words/${row.language}/${deck.id}`}
-                    leftSection={<List size={16} />}
-                  >
-                    {t("study_view_words")}
-                  </Menu.Item>
-                  {deck.id !== "mined" && (
-                    <Menu.Item
-                      leftSection={<RefreshCw size={16} />}
-                      onClick={() =>
-                        manage({
-                          language: row.language,
-                          deckId: deck.id!,
-                          name: deck.name,
-                          operation: "refresh",
-                        })
-                      }
-                    >
-                      {t("study_refresh_deck")}
-                    </Menu.Item>
-                  )}
-                  <Menu.Divider />
-                  <Menu.Item
-                    color="red"
-                    leftSection={<Eraser size={16} />}
-                    disabled={!deck.wordCount}
-                    onClick={() =>
-                      manage({
-                        language: row.language,
-                        deckId: deck.id!,
-                        name: deck.name,
-                        operation: "clear",
-                      })
-                    }
-                  >
-                    {t("study_clear_deck")}
-                  </Menu.Item>
-                  {deck.id !== "mined" && (
-                    <Menu.Item
-                      color="red"
-                      leftSection={<Trash2 size={16} />}
-                      onClick={() =>
-                        manage({
-                          language: row.language,
-                          deckId: deck.id!,
-                          name: deck.name,
-                          operation: "delete",
-                        })
-                      }
-                    >
-                      {t("study_delete_deck")}
-                    </Menu.Item>
-                  )}
-                </Menu.Dropdown>
-              </Menu>
-            )}
-          </Table.Td>
-        </Table.Tr>
-      ))}
+                      operation: "refresh",
+                    })
+                  }
+                >
+                  {t("study_refresh_deck")}
+                </Menu.Item>
+              )}
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<Eraser size={16} />}
+                disabled={!deck.wordCount}
+                onClick={() =>
+                  manage({
+                    language: row.language,
+                    deckId: deck.id!,
+                    name: deck.name,
+                    operation: "clear",
+                  })
+                }
+              >
+                {t("study_clear_deck")}
+              </Menu.Item>
+              {deck.id !== "mined" && (
+                <Menu.Item
+                  color="red"
+                  leftSection={<Trash2 size={16} />}
+                  onClick={() =>
+                    manage({
+                      language: row.language,
+                      deckId: deck.id!,
+                      name: deck.name,
+                      operation: "delete",
+                    })
+                  }
+                >
+                  {t("study_delete_deck")}
+                </Menu.Item>
+              )}
+            </Menu.Dropdown>
+          </Menu>
+        );
+        const name = (
+          <Button
+            variant="transparent"
+            disabled={busy || !deck.total}
+            miw={0}
+            onClick={(event) => {
+              event.stopPropagation();
+              void start(row.language, deck.id);
+            }}
+          >
+            {deck.name}
+          </Button>
+        );
+        if (narrow)
+          return (
+            <Paper key={deck.id || row.language} p="sm">
+              <Stack gap="xs">
+                <Group wrap="nowrap" justify="space-between">
+                  {name}
+                  {actions}
+                </Group>
+                <SimpleGrid cols={3} spacing="xs">
+                  {(
+                    [
+                      ["new", deck.fresh],
+                      ["srs_queue_learning", deck.learning],
+                      ["due", deck.due],
+                    ] as const
+                  ).map(([label, count]) => (
+                    <Stack key={label} gap={0} align="center">
+                      <Text variant="supporting">{t(label)}</Text>
+                      <Text>{number(count)}</Text>
+                    </Stack>
+                  ))}
+                </SimpleGrid>
+              </Stack>
+            </Paper>
+          );
+        return (
+          <Table.Tr
+            key={deck.id || row.language}
+            onClick={() => {
+              if (!busy && deck.total) void start(row.language, deck.id);
+            }}
+            style={{ cursor: busy || !deck.total ? "default" : "pointer" }}
+          >
+            <Table.Td pl={deck.id ? "xl" : undefined}>{name}</Table.Td>
+            <Table.Td ta="right">{number(deck.fresh)}</Table.Td>
+            <Table.Td ta="right">{number(deck.learning)}</Table.Td>
+            <Table.Td ta="right">{number(deck.due)}</Table.Td>
+            <Table.Td ta="right">{actions}</Table.Td>
+          </Table.Tr>
+        );
+      })}
     </>
   );
 }

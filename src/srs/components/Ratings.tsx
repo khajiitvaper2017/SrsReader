@@ -44,7 +44,7 @@ export function Ratings({
           onClick={() => onGrade(i + 1)}
           variant="light"
           color={["red", "orange", "green", "blue"][i]}
-          h={compact ? 40 : undefined}
+          mih={compact ? 40 : undefined}
           px={4}
           miw={0}
         >
@@ -62,6 +62,8 @@ export function Ratings({
   return compact ? (
     <>{buttons}</>
   ) : (
-    <SimpleGrid cols={onlyAgainGood ? 2 : 4}>{buttons}</SimpleGrid>
+    <SimpleGrid cols={{ base: 2, xs: onlyAgainGood ? 2 : 4 }}>
+      {buttons}
+    </SimpleGrid>
   );
 }

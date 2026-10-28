@@ -109,7 +109,7 @@ export function ReviewPage({
             ref={readingRef}
             key={`${word.id}:${word.card?.reps}`}
             flex={1}
-            mih={0}
+            mih={240}
           >
             <ScrollArea
               h="100%"

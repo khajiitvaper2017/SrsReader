@@ -100,7 +100,7 @@ export function DictionarySettings({
           <Paper p="sm">
             <Group gap="sm" align="center">
               {handle}
-              <Stack gap={0} miw={160} flex={1}>
+              <Stack gap={0} miw={0} flex={1}>
                 <strong>{dictionary.index.title}</strong>
                 <Text variant="supporting">
                   {isOnlineDictionary(dictionary.id) ? (

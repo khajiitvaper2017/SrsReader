@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   AppShell,
   Anchor,
   Badge,
@@ -6,6 +7,7 @@ import {
   Container,
   Group,
   Loader,
+  Menu,
 } from "@mantine/core";
 
 import { stopAudio } from "@/audio/playback";
@@ -19,6 +21,7 @@ import { srsClient } from "@/srs/client";
 import {
   BookMarked,
   BookOpen,
+  Menu as MenuIcon,
   Search,
   Settings as SettingsIcon,
   SlidersHorizontal,
@@ -90,64 +93,88 @@ export function App() {
   const deckId = reviewing ? page.split("/")[3] : undefined;
   const inSetup = page === "setup" || !settings.setupComplete;
   const setup = inSetup && !docs;
+  const links = (
+    inSetup
+      ? [
+          { id: "setup", label: t("setup"), icon: SlidersHorizontal },
+          { id: "docs", label: t("docs"), icon: BookOpen },
+        ]
+      : [
+          { id: "review", label: t("study_languages"), icon: BookOpen },
+          { id: "words", label: t("words"), icon: BookMarked },
+          { id: "search", label: t("search"), icon: Search },
+          { id: "settings", label: t("settings"), icon: SettingsIcon },
+          { id: "docs", label: t("docs"), icon: BookOpen },
+        ]
+  ).map((link) => ({
+    ...link,
+    active: page.split("/")[0] === link.id,
+    badge:
+      link.id === "review" && stats.due > 0 ? (
+        <Badge>{stats.due}</Badge>
+      ) : undefined,
+  }));
   return (
-    <AppShell header={{ height: { base: 100, sm: 58 } }} padding="md">
+    <AppShell header={{ height: 58 }} padding={{ base: "xs", sm: "md" }}>
       <AppShell.Header>
-        <Container size="lg" h="100%">
-          <Group h="100%" justify="space-between">
+        <Container size="lg" h="100%" px={{ base: "xs", sm: "md" }}>
+          <Group h="100%" justify="space-between" wrap="nowrap" gap="xs">
             <Anchor href="#review" underline="never" c="inherit">
               <Logo small />
             </Anchor>
             {reviewing ? (
-              <Button component="a" href="#review">
+              <Button component="a" href="#review" miw={0}>
                 {t("study_end_session")}
               </Button>
             ) : (
-              <Group component="nav" aria-label={t("pages")} align="stretch">
-                {(inSetup
-                  ? [
-                      ["setup", t("setup")],
-                      ["docs", t("docs")],
-                    ]
-                  : [
-                      ["review", t("study_languages")],
-                      ["words", t("words")],
-                      ["search", t("search")],
-                      ["settings", t("settings")],
-                      ["docs", t("docs")],
-                    ]
-                ).map(([id, label]) => (
-                  <Button
-                    component="a"
-                    key={id}
-                    href={`#${id}`}
-                    variant={page.split("/")[0] === id ? "light" : "subtle"}
-                    aria-current={
-                      page.split("/")[0] === id ? "page" : undefined
-                    }
-                    leftSection={
-                      id === "review" || id === "docs" ? (
-                        <BookOpen size={16} />
-                      ) : id === "words" ? (
-                        <BookMarked size={16} />
-                      ) : id === "search" ? (
-                        <Search size={16} />
-                      ) : id === "settings" ? (
-                        <SettingsIcon size={16} />
-                      ) : (
-                        <SlidersHorizontal size={16} />
-                      )
-                    }
-                    rightSection={
-                      id === "review" && stats.due > 0 ? (
-                        <Badge>{stats.due}</Badge>
-                      ) : undefined
-                    }
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </Group>
+              <>
+                <Group
+                  component="nav"
+                  aria-label={t("pages")}
+                  visibleFrom="md"
+                  gap="xs"
+                  wrap="nowrap"
+                >
+                  {links.map(({ id, label, icon: Icon, active, badge }) => (
+                    <Button
+                      component="a"
+                      key={id}
+                      href={`#${id}`}
+                      variant={active ? "light" : "subtle"}
+                      aria-current={active ? "page" : undefined}
+                      leftSection={<Icon size={16} />}
+                      rightSection={badge}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </Group>
+                <Menu>
+                  <Menu.Target>
+                    <ActionIcon
+                      hiddenFrom="md"
+                      size="input-md"
+                      aria-label={t("pages")}
+                    >
+                      <MenuIcon aria-hidden size={20} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown hiddenFrom="md">
+                    {links.map(({ id, label, icon: Icon, active, badge }) => (
+                      <Menu.Item
+                        component="a"
+                        key={id}
+                        href={`#${id}`}
+                        aria-current={active ? "page" : undefined}
+                        leftSection={<Icon size={16} />}
+                        rightSection={badge}
+                      >
+                        {label}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Dropdown>
+                </Menu>
+              </>
             )}
           </Group>
         </Container>

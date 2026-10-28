@@ -15,6 +15,8 @@ Select a settings section first, then a language tab below it. The address keeps
 
 The **Studied languages** list shows supported features below each language: grammar analysis with UDPipe, extra word forms, the Nechybujte online dictionary, and downloadable example sentences. Languages with more features appear first. Languages with the same number of features are in alphabetical order for your interface language. Labels show support even if a feature is disabled or its data has not been downloaded. Text-to-speech depends on voices installed on your device and does not affect the order.
 
+On narrow screens, open the menu in the top-right corner to switch pages. The study page shows each language and deck as a card with its counts and actions. Choose a settings section or a guide topic from the list above its content.
+
 ## Appearance
 
 Open **Settings → General → Appearance**. Choose **Light**, **Dark**, **OLED (black)**, or **System** to follow your device. Dark uses near-black surfaces. OLED uses black backgrounds. Both keep secondary labels close to the main text color.

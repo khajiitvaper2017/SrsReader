@@ -141,7 +141,7 @@ export function ReadingSettings({
               <Stack>
                 <Text fw={500}>{t("disabled_websites")}</Text>
                 {settings.disabledHosts.map((host) => (
-                  <Group key={host} justify="space-between" wrap="nowrap">
+                  <Group key={host} justify="space-between">
                     <Text style={{ minWidth: 0 }}>{host}</Text>
                     <Button
                       variant="subtle"

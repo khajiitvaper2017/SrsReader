@@ -36,6 +36,7 @@ import {
 } from "@mantine/core";
 
 import { t } from "@/shared/i18n/i18n";
+import classes from "./theme.module.css";
 import type { Settings } from "@/settings/model";
 
 export function createUITheme(
@@ -98,6 +99,7 @@ export function createUITheme(
           }
         : {}),
       Button: Button.extend({
+        classNames: { root: classes.touchControl },
         defaultProps: {
           size: controlSize,
           variant: "default",
@@ -110,12 +112,20 @@ export function createUITheme(
           },
           root: {
             height: "auto",
-            minHeight: popup ? 30 : "var(--button-height)",
+            minHeight: `max(${popup ? "30px" : "var(--button-height)"}, var(--srs-touch-target, 0px))`,
+            maxWidth: "100%",
             paddingBlock: popup ? 5 : "var(--mantine-spacing-xs)",
           },
         },
       }),
       ActionIcon: ActionIcon.extend({
+        classNames: { root: classes.touchControl },
+        styles: {
+          root: {
+            minWidth: "var(--srs-touch-target)",
+            minHeight: "var(--srs-touch-target)",
+          },
+        },
         defaultProps: {
           ...(popup ? { size: "sm" } : {}),
           variant: "subtle",
@@ -123,7 +133,16 @@ export function createUITheme(
           "data-srs-reader": true,
         },
       }),
-      Input: Input.extend({ defaultProps: { size: controlSize } }),
+      Input: Input.extend({
+        defaultProps: { size: controlSize },
+        classNames: { input: classes.touchControl },
+        styles: {
+          input: {
+            minHeight: "max(var(--input-height), var(--srs-touch-target, 0px))",
+            fontSize: "max(var(--input-fz), var(--srs-touch-font-size, 0px))",
+          },
+        },
+      }),
       InputWrapper: Input.Wrapper.extend({
         defaultProps: {
           size: controlSize,
@@ -149,6 +168,7 @@ export function createUITheme(
         },
       }),
       Tabs: Tabs.extend({
+        classNames: { tab: classes.touchControl },
         defaultProps: { variant: "pills" },
         styles: {
           list: { flexWrap: "wrap" },
@@ -156,7 +176,7 @@ export function createUITheme(
             fontSize: popup
               ? "var(--mantine-font-size-sm)"
               : "var(--mantine-font-size-md)",
-            ...(popup ? { minHeight: 34 } : {}),
+            minHeight: `max(${popup ? "34px" : "0px"}, var(--srs-touch-target, 0px))`,
           },
         },
       }),
@@ -245,7 +265,9 @@ export function createUITheme(
           description: { marginTop: "var(--mantine-spacing-md)" },
         },
       }),
-      Paper: Paper.extend({ defaultProps: { withBorder: true, p: "md" } }),
+      Paper: Paper.extend({
+        defaultProps: { withBorder: true, p: { base: "sm", sm: "md" } },
+      }),
       Pagination: Pagination.extend({
         defaultProps: { size: `input-${controlSize}` },
       }),
@@ -294,6 +316,15 @@ export function createUITheme(
           floatingStrategy: "fixed",
           middlewares: { flip: true, shift: { padding: 4 } },
           shadow: "sm",
+        },
+      }),
+      MenuItem: Menu.Item.extend({
+        defaultProps: {
+          classNames: { item: classes.touchControl },
+          styles: {
+            item: { minHeight: "var(--srs-touch-target)" },
+            itemLabel: { whiteSpace: "normal" },
+          },
         },
       }),
       MenuDropdown: Menu.Dropdown.extend({
