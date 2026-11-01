@@ -7,3 +7,4 @@ scripts/
 
 # Trail's local graph cache — regenerable, not committed (run `trail build`).
 /graft/
+.trail/
