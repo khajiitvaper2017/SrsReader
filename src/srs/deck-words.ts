@@ -1,29 +1,32 @@
 import type { Deck } from "@/srs/deck-model";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { ReviewWord, WordWithCards } from "@/vocabulary/model";
 import { t } from "@/shared/i18n/i18n";
 
 export const isFrequencyWord = (term: string) => /\p{L}/u.test(term);
 
-export function studyGroups(words: Vocabulary[], decks: Deck[]) {
-  const mined = words.filter((word) => word.mined !== false);
-  const assigned = new Set(mined.map((word) => word.id));
+type GroupWord = WordWithCards | ReviewWord;
+export function studyGroups<T extends GroupWord>(words: T[], decks: Deck[]) {
+  const belongs = (word: T, id: string | null) =>
+    "document" in word
+      ? word.document.card.deckId === id
+      : word.linkedCards.some((card) => card.deckId === id) ||
+        (id === null && !word.linkedCards.length && word.mined !== false);
   return {
-    mined,
+    mined: words.filter((word) => belongs(word, null)),
     decks: [...decks]
       .sort((a, b) => a.created - b.created)
-      .map((deck) => {
-        const ids = new Set(deck.wordIds);
-        const entries = words.filter(
-          (word) => ids.has(word.id) && !assigned.has(word.id),
-        );
-        for (const word of entries) assigned.add(word.id);
-        return { ...deck, words: entries };
-      }),
+      .map((deck) => ({
+        ...deck,
+        words: words.filter(
+          (word) =>
+            belongs(word, deck.id) &&
+            (!deck.dictionaryId || isFrequencyWord(word.lemma)),
+        ),
+      })),
   };
 }
-
-export function wordsInDeck(
-  groups: ReturnType<typeof studyGroups>,
+export function wordsInDeck<T extends GroupWord>(
+  groups: ReturnType<typeof studyGroups<T>>,
   deckId?: string,
 ) {
   const words =
@@ -33,8 +36,5 @@ export function wordsInDeck(
         ? [...groups.mined, ...groups.decks.flatMap((deck) => deck.words)]
         : groups.decks.find((deck) => deck.id === deckId)?.words;
   if (!words) throw new Error(t("study_deck_not_found"));
-  const frequencyIds = new Set(groups.decks.flatMap((deck) => deck.wordIds));
-  return words.filter(
-    (word) => !frequencyIds.has(word.id) || isFrequencyWord(word.lemma),
-  );
+  return [...new Map(words.map((word) => [word.id, word])).values()];
 }

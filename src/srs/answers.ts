@@ -7,11 +7,15 @@ import { reviewIntervals } from "@/srs/intervals";
 import { emptySchedule } from "@/srs/model";
 import { effectiveRetention } from "@/srs/retention";
 import { scheduleAnswers } from "@/srs/transitions";
-import type { Vocabulary } from "@/vocabulary/model";
-import { freshWord } from "@/vocabulary/service";
+import type { ReviewWord } from "@/vocabulary/model";
+
+export type SchedulingCard = Pick<
+  ReviewWord,
+  "id" | "language" | "lemma" | "reading" | "card" | "retentionOverride"
+> & { wordId?: string };
 
 export async function candidates(
-  word: Vocabulary,
+  word: SchedulingCard,
   settings: Settings,
   now: number,
   durationMs: number | null,
@@ -50,21 +54,9 @@ export async function candidates(
 }
 
 export async function preview(
-  word: Vocabulary | undefined,
+  word: SchedulingCard | undefined,
   durationMs: number | null = null,
-  id?: string,
 ) {
-  if (!word && id) {
-    const [language, lemma, reading] = JSON.parse(id) as string[];
-    word = freshWord({
-      id,
-      language: language!,
-      lemma: lemma!,
-      reading: reading!,
-      meanings: [],
-      forms: [],
-    });
-  }
   if (!word) return [];
   return (
     await candidates(word, await getSettings(), Date.now(), durationMs)

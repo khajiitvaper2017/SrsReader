@@ -1,3 +1,4 @@
+import { validateCardReferences } from "@/cards/validate";
 import {
   BlobReader,
   BlobWriter,
@@ -20,7 +21,7 @@ import {
   type FullManifest,
 } from "@/backups/full-model";
 
-const transientTables = ["importTasks"];
+const transientTables = ["importTasks", "importFiles"];
 const tables = () =>
   db.tables.filter((table) => !transientTables.includes(table.name));
 const progress =
@@ -226,6 +227,13 @@ export async function readFull(
     for (const item of meta.data.tables)
       if ((await staged.table(item.name).count()) !== item.rowCount)
         throw new Error(t("full_backup_invalid"));
+    validateCardReferences(
+      await staged.table("noteTypes").toArray(),
+      await staged.table("notes").toArray(),
+      await staged.table("cards").toArray(),
+      await staged.table("decks").toArray(),
+      await staged.table("vocabulary").toArray(),
+    );
     return {
       staged,
       models,

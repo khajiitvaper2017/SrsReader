@@ -1,6 +1,6 @@
 # Study and saved words
 
-Open **Study** to see your learning languages and frequency decks. The list shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. The back arrow above the card ends the session. Each word belongs to one group. Daily limits apply to the language.
+Open **Study** to see your learning languages and frequency decks. The list shows new, learning, and due cards within your daily limits. Select a language to review all its words. Select a deck to review only that deck. The back arrow above the card ends the session. Each card belongs to one deck. A note can have several cards with independent schedules. Daily limits apply to the language.
 
 Select **Mined words** under a language to review words you saved or rated while reading. Frequency imports do not add words to this deck. Mining a word from a frequency deck moves it to Mined words without resetting its progress. Select a language or deck name to start reviewing.
 
@@ -36,7 +36,7 @@ Confirm the action in the dialog. These actions cannot be undone. Review history
 
 ## Sentences from reading
 
-Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Examples**. With **Settings → Reading → Use UDPipe** enabled, sentences whose target word matches a part of speech in its definitions are preferred. If none match, other examples of the word are used. If a sentence contains several matches, a matching occurrence is used. For each part of speech, saved reading examples take priority over Tatoeba. Saved examples with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
+One sentence appears at a time. Select **Another example** above the card to switch sentences. Review sentences come from texts you have parsed and installed Tatoeba examples. Each sentence has more than four words. Download examples in **Settings → Dictionaries → Examples**. Saved reading examples take priority over Tatoeba. Sentences with fewer other unknown words come first. Mark words as mastered to improve this selection. Parse more pages to add reading examples. Sentences and their translations stay separate from cards.
 
 Sentence translations made during reviews are not saved.
 
@@ -46,7 +46,7 @@ Select a language or deck. Set **Card front** in **Settings → Review** to **Wo
 
 When the queue is empty, the completion card shows this session’s answers, introduced cards, recall rate, active answer time, and grade counts. Recall rate includes scheduled reviews and learning cards last seen on an earlier study day. Same-day learning repeats are excluded. Undo removes an answer from the summary. The streak covers all languages. The three-day forecast covers the selected language or deck. Select **Back to decks** to leave. Select **Study more** to add up to 10 new cards and 50 due reviews beyond the daily limits for this session. This button is disabled when no additional new or due cards are available. Saved limits and due dates stay unchanged. Session totals and extra allowances reset when you leave or reload the session.
 
-While you review, upcoming cards in the current daily queue load in the background. This includes their first example sentence, definitions, frequency ranks, audio, and enabled translations. Cards load one at a time in review order. Daily limits and the selected language or deck apply. Audio preparation uses your enabled audio sources.
+Upcoming cards prepare their saved content, templates, styles, media, example sentences, frequency ranks, and audio in the background. The current card stays visible until the next card is ready. Daily limits and the selected language or deck apply. Audio preparation uses your enabled audio sources.
 
 Enable **Settings → Audio & translation → Pronunciation → Play on reveal** for automatic word audio. Revealing the answer plays the prepared recording. If no usable recording is available, the system voice reads the word. Turn the setting off to disable automatic playback.
 
@@ -117,7 +117,7 @@ Open **Settings → Review → Display order**. These settings apply to every la
 - **Shortest intervals** and **Longest intervals** use each card's scheduled interval.
 - **Random** is the default. It shuffles all due review cards.
 
-Deck order starts with Mined words, then frequency decks by name. Random order stays stable within the study day and changes at the next day boundary. Mix preserves the order within each group and chooses between groups in proportion to their remaining cards. Due same-day learning steps always come first. Each word has one card, so there are no card-type or sibling ordering options.
+Deck order starts with Mined words, then frequency decks by name. Random order stays stable within the study day and changes at the next day boundary. Mix preserves the order within each group and chooses between groups in proportion to their remaining cards. Due same-day learning steps always come first. Cards from the same note keep independent schedules. The selected review order applies to all cards.
 
 ### Learning and review days
 
@@ -157,13 +157,13 @@ Use the **Leeches** filter in **Words** to find marked words. Word details show 
 
 **Master** excludes a word from SRS while preserving its history. **Unmaster** restores its schedule. **Suspend** pauses review until **Resume**. Neither action resets memory.
 
-Cards use current entries from your enabled dictionaries. Their order and **If needed** settings also apply to cards. Definitions stay visible when their part of speech differs from the current sentence. With sentence parsing enabled, a definition with a different part of speech shows its own matching example when one is available. Matching uses part of speech, not the exact dictionary sense. For prepositions, use **Show more** to reveal senses excluded by the sentence’s case. Use the eye button to hide a dictionary for one card. Hidden dictionaries appear below visible ones. These choices are remembered for that word in cards and popups.
+Cards display saved dictionary definitions. Use **Refresh from dictionary** to replace them with current entries from enabled dictionaries. Dictionary order and display choices apply when definitions are saved or refreshed. Personal definitions and dictionary overrides are retained. Direct edits to the generated definitions field are replaced during refresh.
 
 The frequency badge beside the word shows its rank from enabled frequency dictionaries. Select it to see the individual ranks.
 
 Use **Add custom definition** (+) to add a definition. Use the pencil beside a dictionary definition to save a custom override. Both appear in popups too. **Restore dictionary definition** removes an override. **Refresh from dictionary** refreshes saved dictionary entries and keeps your custom definitions and overrides.
 
-The sentence’s translation, speaker, and next-example buttons sit beside it.
+Use **Translate sentence** above the card to show a translation. **Show original** hides it. These controls are available after revealing the answer when **Sentence translations** is enabled in **Settings → Review**. The speaker and next-example buttons are in the same group. Review translations do not change saved note fields.
 
 Use **Maintenance → Rebuild RWKV state** to rebuild its cache from saved answers. This does not change due dates or remove history.
 
@@ -171,12 +171,16 @@ Editing a definition keeps the word in its current deck. Custom dictionary edits
 
 ## Card media and custom content
 
-Open **Edit card** with the image button above a review card or from the word details on the **Words** page. Select **Upload file** under **Background image or video** to add a JPEG, PNG, GIF, WebP, AVIF, BMP, WebM, MP4, or Ogg file. The media appears behind the card content and fades toward the bottom. Videos loop without sound. With reduced motion enabled on your device, videos start paused.
+Open **Edit card** with the image button above a review card or from the word details on the **Words** page. Select **Upload file** under **Background image or video** to add a JPEG, PNG, GIF, WebP, AVIF, BMP, WebM, MP4, or Ogg file. The default template displays the media behind the card content and fades it toward the bottom. Videos loop without sound. With reduced motion enabled on your device, videos start paused.
 
 Under **Sentence audio**, select a saved sentence and upload an MP3, M4A, Ogg, WAV, WebM, FLAC, or AAC file. The speaker button beside that sentence plays the recording instead of the system voice. Without a recording, it uses the selected local voice. Playback depends on the formats your browser supports.
 
-**Word audio** lets you upload a custom word recording. The pronunciation button and automatic word playback use this recording first. Remove it to use the configured pronunciation sources again. Each word can have one background, one word recording, and one audio file for each saved sentence. Select **Replace file** or **Remove file** to manage an attachment. Files are stored locally and included in learning and full backups. Deleting the word also deletes its media.
+**Word audio** lets you upload a custom word recording. The pronunciation button and automatic word playback use this recording first. Remove it to use the configured pronunciation sources again. Each note can have one image or video field, one word recording, and recordings for its saved sentences. Select **Replace file** or **Remove file** to manage an attachment. Files are stored locally and included in learning and full backups. Deleting the word also deletes its media.
 
 In **Custom sentence translation**, enter a translation in your current native language and select **Save**. It appears when **Show sentence translations** is enabled, even if automatic translation is off. Your text takes priority over automatic translations. Clear the field and save to remove your translation. Translations are shared by saved words that use the same sentence. You can save a separate translation for each native language.
 
-Under **Optional fields**, select **Add field**. Enter a name, such as Source or Explanation, and its content. Both values are required for each added field. Names can contain up to 200 characters, and content and translations can contain up to 30,000 characters. Add as many fields as you need. Use the trash button to remove a field. Select **Save** before closing the editor. These fields appear on the answer side and in word details. They are included in backups.
+Under **Optional fields**, select **Add field**. Enter a name, such as Source or Explanation, and its content. Each added field requires a name. Values can be empty. Names can contain up to 200 characters, and content and translations can contain up to 30,000 characters. Add as many fields as you need. Use the trash button to remove a field. Select **Save** before closing the editor. These fields appear on the answer side and in word details. They are included in backups.
+
+## Anki notes and cards
+
+Use **Import Anki package** and **Export Anki package** in **Study** to transfer `.apkg` files. All cards use note fields and HTML/CSS templates. See [Anki cards](anki.md) for field mappings, reading fields, review-history import, editing, and export.

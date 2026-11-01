@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { cardMediaSchema } from "@/media/model";
+import {
+  noteTypeSchema,
+  noteSchema,
+  cardSchema,
+  cardAssetSchema,
+  ankiReviewSchema,
+} from "@/cards/model";
 import { audioInfoSchema } from "@/audio/model";
 import {
   definitionSchema,
@@ -109,12 +115,16 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
     (word) => word.id === wordId(word.language, word.lemma, word.reading),
   ),
   reviews: reviewSchema.refine(
-    (review) => !review.before || review.before.id === review.wordId,
+    (review) => !review.before || review.before.id === review.cardId,
   ),
   decks: deckSchema,
   sentences: sentenceSchema,
   audio: audioInfoSchema.extend({ blob }),
-  cardMedia: cardMediaSchema,
+  noteTypes: noteTypeSchema,
+  notes: noteSchema,
+  cards: cardSchema,
+  cardAssets: cardAssetSchema,
+  ankiReviews: ankiReviewSchema,
   dictionaries: z.object({
     id,
     revisionId: id,

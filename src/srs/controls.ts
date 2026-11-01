@@ -1,8 +1,4 @@
-import {
-  bindingKey,
-  lookupBindingSchema,
-  matchesModifiers,
-} from "@/reader/controls";
+import { bindingKey, lookupBindingSchema } from "@/reader/controls";
 import { t } from "@/shared/i18n/i18n";
 import { z } from "zod";
 
@@ -69,10 +65,29 @@ export function matchesReviewBinding(
   binding: ReviewBinding | null,
   event: KeyboardEvent | MouseEvent,
 ) {
-  if (!binding || !matchesModifiers(binding, event)) return false;
+  // Serialized into the card frame, so this matcher must be self-contained.
+  if (
+    !binding ||
+    binding.ctrl !== event.ctrlKey ||
+    binding.alt !== event.altKey ||
+    binding.shift !== event.shiftKey ||
+    binding.meta !== event.metaKey
+  )
+    return false;
   return binding.type === "mouse"
     ? "button" in event && binding.button === event.button
     : "code" in event &&
         binding.code.replace(/^Numpad([0-9])$/, "Digit$1") ===
           event.code.replace(/^Numpad([0-9])$/, "Digit$1");
 }
+
+export const reviewInputSchema = z.object({
+  type: z.enum(["key", "mouse"]),
+  code: z.string().max(64),
+  button: z.number().int().min(0).max(4),
+  ctrlKey: z.boolean(),
+  altKey: z.boolean(),
+  shiftKey: z.boolean(),
+  metaKey: z.boolean(),
+});
+export type ReviewInput = z.infer<typeof reviewInputSchema>;

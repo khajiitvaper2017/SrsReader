@@ -1,5 +1,5 @@
 import type { SchedulingPreferences } from "@/srs/preferences";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { ReviewWord } from "@/vocabulary/model";
 
 export function queueRandom(key: string, day: number) {
   let hash = 2166136261 ^ day;
@@ -9,14 +9,14 @@ export function queueRandom(key: string, day: number) {
 }
 
 export function mergeQueues(
-  cards: Vocabulary[],
-  reviews: Vocabulary[],
+  cards: ReviewWord[],
+  reviews: ReviewWord[],
   order: SchedulingPreferences["newReviewOrder"],
   day: number,
 ) {
   if (order === "before") return [...cards, ...reviews];
   if (order === "after") return [...reviews, ...cards];
-  const mixed: Vocabulary[] = [];
+  const mixed: ReviewWord[] = [];
   let card = 0,
     review = 0;
   while (card < cards.length && review < reviews.length) {

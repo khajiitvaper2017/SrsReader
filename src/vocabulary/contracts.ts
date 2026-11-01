@@ -2,7 +2,7 @@ import { translationSchema } from "@/translation/model";
 import {
   cardFieldSchema,
   contextSchema,
-  type Vocabulary,
+  type WordWithCards,
 } from "@/vocabulary/model";
 import { z } from "zod";
 import { occurrenceSchema } from "@/languages/analysis";
@@ -81,7 +81,16 @@ export const requests = [
     value: z.boolean(),
   }),
   z.object({ action: z.literal("deleteWord"), id: z.string() }),
-  z.object({ action: z.literal("refreshWord"), id: z.string() }),
+  z.object({
+    action: z.literal("refreshWord"),
+    id: z.string(),
+    noteId: z.string().optional(),
+  }),
+  z.object({
+    action: z.literal("selectReadingCard"),
+    id: z.string(),
+    cardId: z.string(),
+  }),
   z.object({
     action: z.literal("words"),
     language: languageSchema.optional(),
@@ -113,22 +122,23 @@ export type Responses = {
   saveCardFields: void;
   saveCustomTranslation: void;
   saveTranslation: void;
-  word: Vocabulary | undefined;
+  word: WordWithCards | undefined;
   cardDefinitions: {
     word: LookupWord;
-    saved: Vocabulary;
+    saved: WordWithCards;
     grammar?: OccurrenceGrammar;
     occurrence?: Occurrence;
   };
-  mine: Vocabulary;
-  defineWord: Vocabulary;
+  mine: WordWithCards;
+  defineWord: WordWithCards;
   deleteDefinition: void;
   restoreDefinition: void;
   dictionaryVisibility: void;
-  known: Vocabulary;
+  known: WordWithCards;
   suspend: void;
   deleteWord: void;
   refreshWord: void;
-  words: { words: Vocabulary[]; total: number; page: number };
+  selectReadingCard: void;
+  words: { words: WordWithCards[]; total: number; page: number };
   retentionOverride: void;
 };

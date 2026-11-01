@@ -11,11 +11,14 @@ import type { Vocabulary } from "@/vocabulary/model";
 export async function effectiveRetention(
   word: Pick<Vocabulary, "language" | "lemma" | "reading"> & {
     retentionOverride?: number | null;
+    wordId?: string;
   },
   settings: Settings,
 ) {
   if (word.retentionOverride != null)
     return resolveRetention(word.retentionOverride, null, settings);
+  if ("wordId" in word && !word.wordId)
+    return resolveRetention(null, null, settings);
   if (!settings.dynamicRetention) return resolveRetention(null, null, settings);
   const dictionaries = await db.dictionaries.toArray();
   const sources = new Set(

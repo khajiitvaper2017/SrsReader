@@ -3,53 +3,93 @@ import { t } from "@/shared/i18n/i18n";
 import { browser, type Browser } from "wxt/browser";
 
 let firefoxHost: HTMLIFrameElement | undefined;
-const firefoxPorts = new Set<Browser.runtime.Port>();
+const hosts = new Set<Browser.runtime.Port>();
+const readyListeners = new Set<() => void>();
 
 export function connectImportHost(port: Browser.runtime.Port) {
   if (port.name !== "import-host") return;
-  // Firefox event pages stay loaded while the import document has an open port.
-  firefoxPorts.add(port);
-  port.onDisconnect.addListener(() => firefoxPorts.delete(port));
+  if (port.sender?.url !== browser.runtime.getURL("/imports.html")) return;
+  port.onMessage.addListener((message) => {
+    if (message?.type !== "ready") return;
+    hosts.add(port);
+    for (const ready of readyListeners) ready();
+  });
+  port.onDisconnect.addListener(() => hosts.delete(port));
 }
 
 export function handleImports(action: "runImport" | "closeImportHost") {
   return navigator.locks.request("srs-reader-import-host", async () => {
-    const running = (await db.importTasks.get("current"))?.status === "running";
+    const task = await db.importTasks.get("current");
+    const running = task?.status === "running";
     if (action === "closeImportHost" && running) return;
     const url = browser.runtime.getURL("/imports.html");
-    if (import.meta.env.BROWSER === "firefox") {
-      if (!running) {
-        firefoxHost?.remove();
-        firefoxHost = undefined;
-        return;
+    try {
+      if (import.meta.env.BROWSER === "firefox") {
+        if (!running) {
+          firefoxHost?.remove();
+          firefoxHost = undefined;
+          return;
+        }
+        if (!firefoxHost) {
+          const frame = document.createElement("iframe");
+          frame.hidden = true;
+          frame.src = url;
+          firefoxHost = frame;
+          await new Promise<void>((resolve, reject) => {
+            frame.onload = () => resolve();
+            frame.onerror = () => reject(new Error(t("import_host_failed")));
+            document.body.append(frame);
+          });
+        }
+      } else {
+        const contexts = await browser.runtime.getContexts({
+          contextTypes: ["OFFSCREEN_DOCUMENT"],
+          documentUrls: [url],
+        });
+        if (!running) {
+          if (contexts.length) await browser.offscreen.closeDocument();
+          return;
+        }
+        if (!contexts.length)
+          await browser.offscreen.createDocument({
+            url,
+            reasons: ["WORKERS"],
+            justification: t("import_background_reason"),
+          });
       }
-      if (!firefoxHost) {
-        const frame = document.createElement("iframe");
-        frame.hidden = true;
-        frame.src = url;
-        firefoxHost = frame;
+      if (!hosts.size) {
+        await db.importTasks.update("current", {
+          progress: { phase: t("starting_import"), done: 0, total: 0 },
+        });
         await new Promise<void>((resolve, reject) => {
-          frame.onload = () => resolve();
-          frame.onerror = () => reject(new Error(t("import_host_failed")));
-          document.body.append(frame);
+          const ready = () => {
+            clearTimeout(timer);
+            readyListeners.delete(ready);
+            resolve();
+          };
+          const timer = setTimeout(() => {
+            readyListeners.delete(ready);
+            reject(new Error(t("import_host_failed")));
+          }, 10000);
+          readyListeners.add(ready);
+          if (hosts.size) ready();
         });
       }
-    } else {
-      const contexts = await browser.runtime.getContexts({
-        contextTypes: ["OFFSCREEN_DOCUMENT"],
-        documentUrls: [url],
-      });
-      if (!running) {
-        if (contexts.length) await browser.offscreen.closeDocument();
-        return;
-      }
-      if (!contexts.length)
-        await browser.offscreen.createDocument({
-          url,
-          reasons: ["WORKERS"],
-          justification: t("import_background_reason"),
+      hosts.values().next().value!.postMessage({ type: "run" });
+    } catch (error) {
+      await db.importTasks
+        .where("id")
+        .equals("current")
+        .filter(
+          (current) =>
+            current.runId === task?.runId && current.status === "running",
+        )
+        .modify({
+          status: "error",
+          progress: undefined,
+          error: error instanceof Error ? error.message : String(error),
         });
+      throw error;
     }
-    await browser.runtime.sendMessage({ target: "import-host" });
   });
 }

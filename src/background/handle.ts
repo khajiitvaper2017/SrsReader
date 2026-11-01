@@ -41,6 +41,7 @@ export async function handle(request: Request) {
     case "session":
     case "closeLookup":
       return handleLookup(request);
+    case "selectReadingCard":
     case "word":
     case "cardDefinitions":
     case "saveCardFields":

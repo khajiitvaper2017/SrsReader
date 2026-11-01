@@ -14,7 +14,7 @@ export const replayHistory = (cursor: number) =>
   db.reviews.where("sequence").above(cursor).limit(128).toArray();
 export const replayedReview = (id: string, cursor: number) =>
   db.reviews
-    .where("wordId")
+    .where("cardId")
     .equals(id)
     .filter((review) => review.active && review.sequence <= cursor)
     .first();

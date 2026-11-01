@@ -21,6 +21,7 @@ export function TextTranslation({
   autoTranslate,
   initialTranslation,
   onTranslated,
+  onDisplayChange,
   label = t("translate"),
   collapsed = false,
   compact = false,
@@ -33,6 +34,7 @@ export function TextTranslation({
   autoTranslate: boolean;
   initialTranslation?: Translation;
   onTranslated?: (translation: Translation) => void | Promise<void>;
+  onDisplayChange?: (translation: Translation | undefined) => void;
   label?: string;
   collapsed?: boolean;
   compact?: boolean;
@@ -124,6 +126,10 @@ export function TextTranslation({
   ]);
   const showingTranslation =
     shown && translation?.language === settings.nativeLanguage;
+  const displayChanged = useEffectEvent(() =>
+    onDisplayChange?.(showingTranslation ? translation : undefined),
+  );
+  useEffect(() => displayChanged(), [showingTranslation, translation]);
   const translated =
     showingTranslation &&
     translation &&
@@ -187,6 +193,7 @@ export function SentenceTranslation({
   autoTranslate = settings.autoTranslateSentences,
   wordId,
   onTranslated,
+  onDisplayChange,
   label = t("translate_sentence"),
   collapsed = false,
   compact = false,
@@ -198,6 +205,7 @@ export function SentenceTranslation({
   autoTranslate?: boolean;
   wordId?: string;
   onTranslated?: (translation: Translation) => void;
+  onDisplayChange?: (translation: Translation | undefined) => void;
   label?: string;
   collapsed?: boolean;
   compact?: boolean;
@@ -226,6 +234,7 @@ export function SentenceTranslation({
       label={label}
       collapsed={collapsed}
       compact={compact}
+      onDisplayChange={onDisplayChange}
       onTranslated={async (translation) => {
         onTranslated?.(translation);
         if (wordId)

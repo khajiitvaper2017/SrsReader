@@ -11,6 +11,7 @@ import { effectiveRetention } from "@/srs/retention";
 import { rescheduleCard } from "@/srs/storage";
 import { rescheduledDue } from "@/srs/study-day";
 import { fsrs } from "ts-fsrs";
+import { reviewCards } from "@/vocabulary/storage";
 
 const schedulingModel = (settings: Settings) =>
   settings.algorithm === "fsrs"
@@ -66,18 +67,20 @@ export async function rescheduleExisting(
     settings.algorithm === "rwkv" && settings.rwkvMode === "instant";
   const batchSize = instant ? 10 : 100;
   const now = Date.now();
-  const words = await db.vocabulary
+  const cards = await db.cards
     .where("id")
     .above(after)
     .filter(
-      (word) =>
-        (allCards ||
-          (word.language === language && !word.known && !word.suspended)) &&
-        word.card?.state === 2 &&
-        word.card.last_review !== null,
+      (card) =>
+        (allCards || (card.language === language && !card.suspended)) &&
+        card.schedule?.state === 2 &&
+        card.schedule.last_review !== null,
     )
     .limit(batchSize)
     .toArray();
+  const words = (await reviewCards(cards)).filter(
+    (word) => allCards || !word.known,
+  );
   for (const word of words) {
     const retention = await effectiveRetention(word, settings);
     let interval: number;
@@ -111,6 +114,6 @@ export async function rescheduleExisting(
   }
   return {
     count: words.length,
-    cursor: words.length === batchSize ? words.at(-1)!.id : null,
+    cursor: cards.length === batchSize ? cards.at(-1)!.id : null,
   };
 }

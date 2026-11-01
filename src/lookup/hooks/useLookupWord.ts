@@ -19,6 +19,7 @@ import { vocabularyClient } from "@/vocabulary/client";
 import {
   wordId,
   type ReadingContext,
+  type WordWithCards,
   type Vocabulary,
 } from "@/vocabulary/model";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -59,7 +60,7 @@ export function useLookupWord({
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [editing, setEditing] = useState<DefinitionEditing>(null);
-  const [saved, setSaved] = useState<Vocabulary>();
+  const [saved, setSaved] = useState<WordWithCards>();
   const [times, setTimes] = useState<number[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -97,7 +98,8 @@ export function useLookupWord({
           forms: [],
         }
       : undefined);
-  const unparsed = !!word && !word.meanings.length;
+  const unparsed =
+    !!word && !word.meanings.length && !saved?.linkedCards.length;
   useEffect(() => {
     if (!word) return;
     const root = readingRef.current!;
@@ -228,6 +230,8 @@ export function useLookupWord({
     !busy &&
     !saved?.known &&
     !saved?.suspended &&
+    !saved?.linkedCards.find((card) => card.id === saved.cardId)?.suspended &&
+    (!saved?.linkedCards.length || !!saved.cardId) &&
     !reviewed;
   useReviewControls({
     settings,
@@ -272,6 +276,7 @@ export function useLookupWord({
         const result = await srsClient({
           action: "grade",
           id: word.id,
+          cardId: saved?.cardId,
           term,
           rating,
           version: saved?.srsVersion ?? 0,
@@ -281,7 +286,7 @@ export function useLookupWord({
           context,
           occurrence,
         });
-        setSaved(result.word);
+        setSaved(await vocabularyClient({ action: "word", id: word.id }));
         setLastReview(result.reviewId);
         setReviewed(true);
         setNotice(
@@ -342,7 +347,7 @@ export function useLookupWord({
     );
     if (saved) {
       setSelected(saved.id);
-      setSaved(saved);
+      setSaved(await vocabularyClient({ action: "word", id: saved.id }));
     }
     setEditing(null);
     setNotice("");

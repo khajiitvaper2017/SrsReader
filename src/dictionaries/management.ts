@@ -41,6 +41,7 @@ export async function importDictionary(
   expectedId?: string,
 ) {
   return navigator.locks.request("srs-reader-dictionary-write", async () => {
+    progress({ phase: t("cleanup_running"), done: 0, total: 0 });
     await cleanupUnusedRevisions();
     return importRevision(blob, language, progress, expectedId);
   });

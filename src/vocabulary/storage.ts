@@ -1,41 +1,252 @@
 import type { LookupWord, Meaning } from "@/dictionaries/model";
+import type { Card, CardDocument } from "@/cards/model";
+import {
+  deleteCards,
+  ensureReaderCard,
+  fieldText,
+  getCardDocument,
+  readingCard,
+  refreshDictionaryFields,
+  saveCustomFields,
+} from "@/cards/storage";
+import { escapeHtml } from "@/cards/defaults";
 import { definitionSenses } from "@/dictionaries/definitions";
 import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
-import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 import { emptySchedule } from "@/srs/model";
 import type { Request } from "@/vocabulary/contracts";
-import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
+import type {
+  ReadingContext,
+  ReviewWord,
+  Vocabulary,
+  WordWithCards,
+} from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { cacheContext } from "@/examples/sentences";
 import { sentenceId } from "@/examples/sentence-model";
 import { applyDefinitionOverrides, meaningKey } from "@/vocabulary/definitions";
 
-export async function mine(word: LookupWord, context?: ReadingContext) {
-  await cacheContext(word, context);
-  return db.transaction("rw", db.vocabulary, async () => {
-    const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
-    saved.mined = true;
-    if (!saved.card && !saved.known) {
-      saved.card = emptySchedule();
-      saved.srsVersion++;
-    }
-    saved.updated = Date.now();
-    saved.version++;
-    await db.vocabulary.put(saved);
-    return saved;
+export const wordWriteTables = () => [
+  db.vocabulary,
+  db.notes,
+  db.noteTypes,
+  db.cards,
+  db.cardAssets,
+  db.dictionaries,
+  db.dictionaryMedia,
+  db.sentences,
+  db.settings,
+];
+
+function extraFields(document?: CardDocument) {
+  if (!document) return [];
+  const bound = new Set(Object.values(document.noteType.bindings));
+  return document.noteType.fields.flatMap((field, index) =>
+    bound.has(index) ||
+    (document.noteType.id.startsWith("reader:") && index < 10)
+      ? []
+      : [
+          {
+            name: field.label || field.name,
+            value: fieldText(document.note.fields[index] || "", false),
+          },
+        ],
+  );
+}
+
+async function projectWords(
+  words: (Vocabulary | undefined)[],
+  includeContent = false,
+) {
+  const ids = words.flatMap((word) => (word ? [word.id] : []));
+  if (!ids.length) return words.map(() => undefined);
+  const notes = await db.notes.where("wordId").anyOf(ids).toArray();
+  const cards = notes.length
+    ? await db.cards
+        .where("noteId")
+        .anyOf(notes.map((note) => note.id))
+        .toArray()
+    : [];
+  const loadedTypes = includeContent
+    ? await db.noteTypes.bulkGet([
+        ...new Set(notes.map((note) => note.noteTypeId)),
+      ])
+    : [];
+  const types = new Map(
+    loadedTypes.flatMap((type) => (type ? [[type.id, type] as const] : [])),
+  );
+  const byWord = new Map<string, Card[]>();
+  const byNote = new Map(notes.map((note) => [note.id, note]));
+  for (const card of cards) {
+    const wordId = byNote.get(card.noteId)!.wordId!;
+    const entries = byWord.get(wordId) || [];
+    entries.push(card);
+    byWord.set(wordId, entries);
+  }
+  return words.map((word): WordWithCards | undefined => {
+    if (!word) return undefined;
+    const linkedCards = byWord.get(word.id) || [];
+    const selected =
+      linkedCards.find((card) => card.id === word.readingCardId) ||
+      (linkedCards.length === 1 ? linkedCards[0] : undefined);
+    const note = selected && byNote.get(selected.noteId);
+    const noteType = note && types.get(note.noteTypeId);
+    return {
+      ...word,
+      linkedCards,
+      cardId: selected?.id,
+      card: selected?.schedule || null,
+      srsVersion: selected?.srsVersion || 0,
+      suspended:
+        linkedCards.length > 0 && linkedCards.every((card) => card.suspended),
+      leech: linkedCards.some((card) => card.leech),
+      retentionOverride: selected?.retentionOverride ?? null,
+      customFields: includeContent
+        ? extraFields(
+            selected && note && noteType
+              ? { card: selected, note, noteType }
+              : undefined,
+          )
+        : [],
+    };
   });
 }
 
-export function definePersonalWord(
+export async function getWord(id: string) {
+  return (await projectWords([await db.vocabulary.get(id)], true))[0];
+}
+export async function getWords(ids: string[]) {
+  return projectWords(await db.vocabulary.bulkGet(ids));
+}
+export async function languageWords(language: string) {
+  return (
+    await projectWords(
+      await db.vocabulary.where("language").equals(language).toArray(),
+    )
+  ).filter((word): word is WordWithCards => !!word);
+}
+export async function allWords() {
+  return (await projectWords(await db.vocabulary.toArray())).filter(
+    (word): word is WordWithCards => !!word,
+  );
+}
+
+export async function reviewCards(cards: Card[]): Promise<ReviewWord[]> {
+  if (!cards.length) return [];
+  const notes = new Map(
+    (
+      await db.notes.bulkGet([...new Set(cards.map((card) => card.noteId))])
+    ).flatMap((note) => (note ? [[note.id, note] as const] : [])),
+  );
+  const types = new Map(
+    (
+      await db.noteTypes.bulkGet([
+        ...new Set([...notes.values()].map((note) => note.noteTypeId)),
+      ])
+    ).flatMap((type) => (type ? [[type.id, type] as const] : [])),
+  );
+  const wordIds = [
+    ...new Set(
+      [...notes.values()].flatMap((note) => (note.wordId ? [note.wordId] : [])),
+    ),
+  ];
+  const words = new Map(
+    (await db.vocabulary.bulkGet(wordIds)).flatMap((word) =>
+      word ? [[word.id, word] as const] : [],
+    ),
+  );
+  return cards.flatMap((card) => {
+    const note = notes.get(card.noteId);
+    const noteType = note && types.get(note.noteTypeId);
+    if (!note || !noteType) return [];
+    const document = { card, note, noteType };
+    const saved = note.wordId ? words.get(note.wordId) : undefined;
+    const fallback = freshWord({
+      id: card.id,
+      language: note.language,
+      lemma:
+        fieldText(note.fields[noteType.bindings.word ?? 0] || "") ||
+        noteType.name,
+      reading:
+        noteType.bindings.reading === undefined
+          ? ""
+          : fieldText(note.fields[noteType.bindings.reading] || ""),
+      meanings: [],
+      forms: [],
+    });
+    return [
+      {
+        ...(saved || fallback),
+        id: card.id,
+        wordId: note.wordId,
+        noteId: note.id,
+        document,
+        cardId: card.id,
+        card: card.schedule,
+        srsVersion: card.srsVersion,
+        suspended: card.suspended,
+        leech: card.leech,
+        retentionOverride: card.retentionOverride,
+        linkedCards: [card],
+        customFields: [],
+        created: card.created,
+        updated: card.updated,
+      },
+    ];
+  });
+}
+export async function reviewCard(id: string) {
+  const card = await db.cards.get(id);
+  return card ? (await reviewCards([card]))[0] : undefined;
+}
+export async function allReviewCards(language?: string) {
+  const cards = language
+    ? await db.cards.where("language").equals(language).toArray()
+    : await db.cards.toArray();
+  return reviewCards(cards);
+}
+
+async function updateSavedFields(id: string) {
+  const word = await getWord(id);
+  if (
+    word?.cardId &&
+    (await getCardDocument(word.cardId))?.noteType.bindings.definitions !==
+      undefined
+  )
+    await refreshDictionaryFields(id);
+}
+
+export async function mine(word: LookupWord, context?: ReadingContext) {
+  return db.transaction("rw", wordWriteTables(), async () => {
+    await cacheContext(word, context);
+    const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
+    saved.mined = true;
+    saved.updated = Date.now();
+    saved.version++;
+    await db.vocabulary.put(saved);
+    const card = await ensureReaderCard(saved, context);
+    if (!card.schedule && !saved.known)
+      await db.cards.update(card.id, {
+        schedule: emptySchedule(),
+        srsVersion: card.srsVersion + 1,
+        version: card.version + 1,
+        updated: Date.now(),
+      });
+    return (await getWord(saved.id))!;
+  });
+}
+
+export async function definePersonalWord(
   word: LookupWord,
   request: Extract<Request, { action: "defineWord" }>,
   tags?: Pick<Meaning, "tags" | "tagDescriptions">,
 ) {
-  return db.transaction("rw", [db.vocabulary, db.sentences], async () => {
-    const existing = await db.vocabulary.get(word.id);
-    const saved = existing || (await mine(word, request.context));
-    if (existing) {
+  return db.transaction("rw", wordWriteTables(), async () => {
+    let saved = await db.vocabulary.get(word.id);
+    if (!saved) {
+      await mine(word, request.context);
+      saved = (await db.vocabulary.get(word.id))!;
+    } else {
       await cacheContext(word, request.context);
       saved.version++;
       saved.updated = Date.now();
@@ -58,200 +269,242 @@ export function definePersonalWord(
         ...saved.definitionOverrides,
         [request.dictionaryKey]: definitions,
       };
-      await db.vocabulary.put(saved);
-      return saved;
-    }
-    const personal = saved.meanings.filter(
-      (meaning) => meaning.dictionaryId === "personal",
-    );
-    if (request.definitionIndex === undefined) {
-      personal.push({
-        dictionaryId: "personal",
-        title: "",
-        revision: "",
-        attribution: "",
-        sourceUrl: "",
-        tags: "",
-        ...tags,
-        definitions,
-      });
     } else {
-      const meaning = personal[request.definitionIndex];
-      if (!meaning) throw new Error(t("definition_not_found"));
-      if (tags) Object.assign(meaning, tags);
-      meaning.definitions = definitions;
+      const personal = saved.meanings.filter(
+        (meaning) => meaning.dictionaryId === "personal",
+      );
+      if (request.definitionIndex === undefined)
+        personal.push({
+          dictionaryId: "personal",
+          title: "",
+          revision: "",
+          attribution: "",
+          sourceUrl: "",
+          tags: "",
+          ...tags,
+          definitions,
+        });
+      else {
+        const meaning = personal[request.definitionIndex];
+        if (!meaning) throw new Error(t("definition_not_found"));
+        if (tags) Object.assign(meaning, tags);
+        meaning.definitions = definitions;
+      }
+      saved.meanings = [
+        ...personal,
+        ...saved.meanings.filter(
+          (meaning) => meaning.dictionaryId !== "personal",
+        ),
+      ];
     }
-    saved.meanings = [
-      ...personal,
-      ...saved.meanings.filter(
-        (meaning) => meaning.dictionaryId !== "personal",
-      ),
-    ];
     await db.vocabulary.put(saved);
-    return saved;
+    await updateSavedFields(saved.id);
+    return (await getWord(saved.id))!;
   });
 }
 
-export function replaceMeanings(id: string, meanings: Vocabulary["meanings"]) {
-  return db.vocabulary
-    .where("id")
-    .equals(id)
-    .modify((word) => {
-      word.meanings = [
-        ...word.meanings.filter(
-          (meaning) => meaning.dictionaryId === "personal",
-        ),
-        ...applyDefinitionOverrides(meanings, word).map(
-          ({ customDefinitions: _custom, ...meaning }) => meaning,
-        ),
-      ];
-      word.version++;
-      word.updated = Date.now();
-    });
+export async function replaceMeanings(
+  id: string,
+  meanings: Vocabulary["meanings"],
+  noteId?: string,
+) {
+  return db.transaction("rw", wordWriteTables(), async () => {
+    await db.vocabulary
+      .where("id")
+      .equals(id)
+      .modify((word) => {
+        word.meanings = [
+          ...word.meanings.filter(
+            (meaning) => meaning.dictionaryId === "personal",
+          ),
+          ...applyDefinitionOverrides(meanings, word).map(
+            ({ customDefinitions: _custom, ...meaning }) => meaning,
+          ),
+        ];
+        word.version++;
+        word.updated = Date.now();
+      });
+    if (noteId) await refreshDictionaryFields(id, noteId);
+    else await updateSavedFields(id);
+  });
 }
 
 export async function saveCardFields(
   request: Extract<Request, { action: "saveCardFields" }>,
 ) {
-  await db.vocabulary
-    .where("id")
-    .equals(request.id)
-    .modify((word) => {
-      word.customFields = request.fields;
-      word.version++;
-      word.updated = Date.now();
-    });
+  await saveCustomFields(request.id, request.fields);
+}
+
+async function saveSentenceTranslationField(
+  wordId: string,
+  sentence: string,
+  text: string,
+) {
+  const card = await readingCard(wordId);
+  const document = card && (await getCardDocument(card.id));
+  if (!document) return;
+  const { sentence: sentenceIndex, translation } = document.noteType.bindings;
+  if (
+    sentenceIndex === undefined ||
+    translation === undefined ||
+    fieldText(document.note.fields[sentenceIndex] || "", false) !== sentence
+  )
+    return;
+  const fields = [...document.note.fields];
+  fields[translation] = escapeHtml(text);
+  await db.notes.update(document.note.id, {
+    fields,
+    version: document.note.version + 1,
+    updated: Date.now(),
+  });
 }
 
 export async function saveCustomTranslation(
   request: Extract<Request, { action: "saveCustomTranslation" }>,
 ) {
-  await db.transaction("rw", [db.vocabulary, db.sentences], async () => {
-    const word = await db.vocabulary.get(request.id);
-    if (!word) throw new Error(t("word_not_found"));
-    await cacheContext(word, request.context);
-    const id = sentenceId(word.language, request.context.sentence);
-    const sentence = await db.sentences.get(id);
-    const translations = { ...sentence?.customTranslations };
-    if (request.text) translations[request.language] = request.text;
-    else delete translations[request.language];
-    await db.sentences.update(id, { customTranslations: translations });
-    await db.vocabulary
-      .where("id")
-      .anyOf(sentence?.wordIds || [word.id])
-      .modify((saved) => {
-        saved.version++;
-        saved.updated = Date.now();
-      });
-  });
+  await db.transaction(
+    "rw",
+    [db.vocabulary, db.sentences, db.cards, db.notes, db.noteTypes],
+    async () => {
+      const word = await db.vocabulary.get(request.id);
+      if (!word) throw new Error(t("word_not_found"));
+      await cacheContext(word, request.context);
+      const id = sentenceId(word.language, request.context.sentence);
+      const sentence = await db.sentences.get(id);
+      const translations = { ...sentence?.customTranslations };
+      if (request.text) translations[request.language] = request.text;
+      else delete translations[request.language];
+      await db.sentences.update(id, { customTranslations: translations });
+      await saveSentenceTranslationField(
+        request.id,
+        request.context.sentence,
+        request.text ||
+          (sentence?.translation?.language === request.language
+            ? sentence.translation.text
+            : ""),
+      );
+      await db.vocabulary
+        .where("id")
+        .anyOf(sentence?.wordIds || [word.id])
+        .modify((saved) => {
+          saved.version++;
+          saved.updated = Date.now();
+        });
+    },
+  );
 }
 
 export async function setMastered(word: LookupWord, value: boolean) {
-  return db.transaction("rw", db.vocabulary, async () => {
+  return db.transaction("rw", wordWriteTables(), async () => {
     const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
     saved.known = value;
-    saved.suspended = false;
-    if (!value && !saved.card) saved.card = emptySchedule();
     saved.updated = Date.now();
     saved.version++;
-    saved.srsVersion++;
     await db.vocabulary.put(saved);
-    return saved;
+    const card = await ensureReaderCard(saved);
+    await db.cards.update(card.id, {
+      suspended: false,
+      schedule: !value && !card.schedule ? emptySchedule() : card.schedule,
+      srsVersion: card.srsVersion + 1,
+      version: card.version + 1,
+      updated: Date.now(),
+    });
+    return (await getWord(saved.id))!;
   });
 }
 
 export async function saveTranslation(
   request: Extract<Request, { action: "saveTranslation" }>,
 ) {
-  const word = await db.vocabulary.get(request.id);
-  if (word)
-    await db.sentences.update(sentenceId(word.language, request.sentence), {
-      translation: request.translation,
-    });
-  return;
+  await db.transaction(
+    "rw",
+    [db.vocabulary, db.sentences, db.cards, db.notes, db.noteTypes],
+    async () => {
+      const word = await db.vocabulary.get(request.id);
+      if (!word) return;
+      const id = sentenceId(word.language, request.sentence);
+      const sentence = await db.sentences.get(id);
+      await db.sentences.update(id, { translation: request.translation });
+      if (!sentence?.customTranslations?.[request.translation.language])
+        await saveSentenceTranslationField(
+          word.id,
+          request.sentence,
+          request.translation.text,
+        );
+    },
+  );
 }
+
 export async function deleteDefinition(
   request: Extract<Request, { action: "deleteDefinition" }>,
 ) {
-  await db.vocabulary
-    .where("id")
-    .equals(request.id)
-    .modify((word) => {
-      let index = 0;
-      word.meanings = word.meanings.filter(
-        (meaning) =>
-          meaning.dictionaryId !== "personal" ||
-          index++ !== request.definitionIndex,
-      );
-      word.version++;
-      word.updated = Date.now();
-    });
-  return;
+  return db.transaction("rw", wordWriteTables(), async () => {
+    await db.vocabulary
+      .where("id")
+      .equals(request.id)
+      .modify((word) => {
+        let index = 0;
+        word.meanings = word.meanings.filter(
+          (meaning) =>
+            meaning.dictionaryId !== "personal" ||
+            index++ !== request.definitionIndex,
+        );
+        word.version++;
+        word.updated = Date.now();
+      });
+    await updateSavedFields(request.id);
+  });
 }
+
 export async function setSuspended(
   request: Extract<Request, { action: "suspend" }>,
 ) {
-  await db.vocabulary
-    .where("id")
-    .equals(request.id)
-    .modify((w) => {
-      w.suspended = request.value;
-      w.srsVersion++;
-      w.version++;
-      w.updated = Date.now();
+  const word = await getWord(request.id);
+  const card = word?.cardId;
+  if (!card) throw new Error(t("select_reading_card"));
+  const current = await db.cards.get(card);
+  if (current)
+    await db.cards.update(card, {
+      suspended: request.value,
+      srsVersion: current.srsVersion + 1,
+      version: current.version + 1,
+      updated: Date.now(),
     });
-  return;
 }
+
 export async function deleteWord(
   request: Extract<Request, { action: "deleteWord" }>,
 ) {
   return deleteWords([request.id]);
 }
-
 export async function deleteWords(ids: string[]) {
   if (!ids.length) return;
-  const removed = new Set(ids);
-  await db.transaction(
-    "rw",
-    [
-      db.vocabulary,
-      db.decks,
-      db.audio,
-      db.cardMedia,
-      db.rwkvMeta,
-      db.rwkvEntities,
-      db.rwkvCards,
-      db.srsMeta,
-    ],
-    async () => {
-      await db.vocabulary.bulkDelete(ids);
-      await db.decks.toCollection().modify((deck) => {
-        deck.wordIds = deck.wordIds.filter((id) => !removed.has(id));
-      });
-      await db.audio.bulkDelete(ids);
-      await db.cardMedia.where("wordId").anyOf(ids).delete();
-      await invalidateRwkv();
-      await db.srsMeta.update("main", { undo: undefined });
-    },
-  );
-  return;
+  const notes = await db.notes.where("wordId").anyOf(ids).toArray();
+  const cards = notes.length
+    ? await db.cards
+        .where("noteId")
+        .anyOf(notes.map((note) => note.id))
+        .primaryKeys()
+    : [];
+  await deleteCards(cards);
+  await db.transaction("rw", [db.vocabulary, db.audio, db.notes], async () => {
+    await db.vocabulary.bulkDelete(ids);
+    await db.notes.bulkDelete(notes.map((note) => note.id));
+    await db.audio.bulkDelete(ids);
+  });
 }
+
 export async function setRetentionOverride(
   request: Extract<Request, { action: "retentionOverride" }>,
 ) {
-  await db.vocabulary
-    .where("id")
-    .equals(request.id)
-    .modify((word) => {
-      word.retentionOverride = request.value;
-      word.srsVersion++;
-      word.version++;
-      word.updated = Date.now();
+  const word = await getWord(request.id);
+  if (!word?.cardId) throw new Error(t("select_reading_card"));
+  const card = await db.cards.get(word.cardId);
+  if (card)
+    await db.cards.update(card.id, {
+      retentionOverride: request.value,
+      srsVersion: card.srsVersion + 1,
+      version: card.version + 1,
+      updated: Date.now(),
     });
-  return;
 }
-
-export const getWord = (id: string) => db.vocabulary.get(id);
-export const getWords = (ids: string[]) => db.vocabulary.bulkGet(ids);
-export const languageWords = (language: string) =>
-  db.vocabulary.where("language").equals(language).toArray();

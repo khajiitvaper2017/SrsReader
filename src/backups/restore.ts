@@ -46,7 +46,11 @@ export async function restoreLearning(
         db.vocabulary,
         db.reviews,
         db.audio,
-        db.cardMedia,
+        db.noteTypes,
+        db.notes,
+        db.cards,
+        db.cardAssets,
+        db.ankiReviews,
         db.decks,
         db.sentences,
         db.dictionaries,
@@ -98,13 +102,21 @@ export async function restoreLearning(
         await db.vocabulary.clear();
         await db.reviews.clear();
         await db.audio.clear();
-        await db.cardMedia.clear();
+        await db.noteTypes.clear();
+        await db.notes.clear();
+        await db.cards.clear();
+        await db.cardAssets.clear();
+        await db.ankiReviews.clear();
         await db.decks.clear();
         await db.sentences.clear();
         await db.vocabulary.bulkAdd(data.vocabulary);
         await db.reviews.bulkAdd(data.reviews);
         await db.audio.bulkAdd(data.audio);
-        await db.cardMedia.bulkAdd(data.cardMedia);
+        await db.noteTypes.bulkAdd(data.noteTypes);
+        await db.notes.bulkAdd(data.notes);
+        await db.cards.bulkAdd(data.cards);
+        await db.cardAssets.bulkAdd(data.cardAssets);
+        await db.ankiReviews.bulkAdd(data.ankiReviews);
         await db.decks.bulkAdd(data.decks);
         await db.sentences.bulkAdd(data.sentences);
       },

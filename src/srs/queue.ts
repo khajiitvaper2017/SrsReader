@@ -2,12 +2,12 @@ import { orderNewWords } from "@/dictionaries/frequency";
 import { getSettings } from "@/settings/store";
 import { buildQueue } from "@/srs/queue-policy";
 import { dailyCounts } from "@/srs/workload";
-import { languageWords } from "@/vocabulary/storage";
+import { allReviewCards } from "@/vocabulary/storage";
 import { db } from "@/platform/database/db";
 import { studyGroups, wordsInDeck } from "@/srs/deck-words";
 import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { ReviewWord } from "@/vocabulary/model";
 import type { SchedulingPreferences } from "@/srs/preferences";
 
 export async function reviewQueue(
@@ -22,7 +22,7 @@ export async function reviewQueue(
   };
   const now = Date.now();
   const [saved, decks] = await Promise.all([
-    languageWords(settings.studyLanguage),
+    allReviewCards(settings.studyLanguage),
     db.decks.where("language").equals(settings.studyLanguage).toArray(),
   ]);
   const groups = studyGroups(saved, decks);
@@ -42,19 +42,19 @@ export async function reviewQueue(
     ),
   );
   const day = studyDay(now, settings.rolloverHour);
-  const byCreated = (a: Vocabulary, b: Vocabulary) =>
+  const byCreated = (a: ReviewWord, b: ReviewWord) =>
     a.created - b.created || a.id.localeCompare(b.id);
-  const byRandom = (a: Vocabulary, b: Vocabulary) =>
+  const byRandom = (a: ReviewWord, b: ReviewWord) =>
     queueRandom(a.id, day) - queueRandom(b.id, day) || byCreated(a, b);
-  const byDeck = (a: Vocabulary, b: Vocabulary) =>
+  const byDeck = (a: ReviewWord, b: ReviewWord) =>
     deckOrder.get(a.id)! - deckOrder.get(b.id)!;
   const newWords = words.filter((word) => word.card!.state === 0);
   const gatherOrder = {
-    deck: (a: Vocabulary, b: Vocabulary) => byDeck(a, b) || byCreated(a, b),
-    deck_random: (a: Vocabulary, b: Vocabulary) =>
+    deck: (a: ReviewWord, b: ReviewWord) => byDeck(a, b) || byCreated(a, b),
+    deck_random: (a: ReviewWord, b: ReviewWord) =>
       byDeck(a, b) || byRandom(a, b),
     oldest: byCreated,
-    newest: (a: Vocabulary, b: Vocabulary) => byCreated(b, a),
+    newest: (a: ReviewWord, b: ReviewWord) => byCreated(b, a),
     random: byRandom,
   };
   const orderedNew =
@@ -63,8 +63,11 @@ export async function reviewQueue(
         ? await orderNewWords(newWords, settings)
         : newWords.sort(gatherOrder[settings.newGatherOrder])
       : [];
+  const queue = buildQueue(words, counts, settings, now, orderedNew, deckOrder);
   return {
-    ...buildQueue(words, counts, settings, now, orderedNew, deckOrder),
+    ...queue,
+    words: queue.words.map(({ document: _document, ...word }) => word),
+    document: queue.words[0]?.document,
     today: counts.today,
     total: saved.length,
     limits: {

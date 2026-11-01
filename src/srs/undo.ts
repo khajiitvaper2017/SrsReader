@@ -7,7 +7,7 @@ export async function undoReview(id: string) {
   return db.transaction(
     "rw",
     [
-      db.vocabulary,
+      db.cards,
       db.reviews,
       db.srsMeta,
       db.rwkvMeta,
@@ -23,13 +23,12 @@ export async function undoReview(id: string) {
         .first();
       if (!review?.active || last?.id !== id)
         throw new Error(t("undo_latest_only"));
-      const current = await db.vocabulary.get(review.wordId);
+      const current = await db.cards.get(review.cardId);
       if (!current || current.srsVersion !== review.afterSrsVersion)
         throw new Error(t("this_word_changed_after_that_review_and_cannot"));
-      await db.vocabulary.put({
+      await db.cards.put({
         ...current,
-        card: review.before?.card ?? null,
-        known: review.before?.known ?? false,
+        schedule: review.before?.schedule ?? null,
         suspended: review.before?.suspended ?? false,
         leech: review.before?.leech ?? false,
         srsVersion: current.srsVersion + 1,
@@ -41,9 +40,9 @@ export async function undoReview(id: string) {
       if (meta?.undo?.reviewId === id) {
         const undo = meta.undo;
         const ids = [
-          review.wordId,
+          review.cardId,
           current.language,
-          review.wordId,
+          review.cardId,
           "main",
           "main",
         ];
@@ -52,7 +51,7 @@ export async function undoReview(id: string) {
         );
         await db.rwkvEntities.bulkPut(undo.entities);
         if (undo.card) await db.rwkvCards.put(undo.card);
-        else await db.rwkvCards.delete(review.wordId);
+        else await db.rwkvCards.delete(review.cardId);
         await db.rwkvMeta.put({ ...undo.meta, cursor: meta.sequence });
       } else await invalidateRwkv();
       if (meta) await db.srsMeta.put({ ...meta, undo: undefined });

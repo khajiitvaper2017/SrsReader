@@ -7,31 +7,34 @@ import { folded, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { emptySchedule } from "@/srs/model";
 import { buildQueue } from "@/srs/queue-policy";
 import { dailyCounts } from "@/srs/workload";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { Vocabulary, ReviewWord } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { snapshot } from "@/vocabulary/snapshot";
 import { isFrequencyWord, studyGroups, wordsInDeck } from "@/srs/deck-words";
-import { deleteWords, replaceMeanings } from "@/vocabulary/storage";
+import {
+  allReviewCards,
+  replaceMeanings,
+  wordWriteTables,
+} from "@/vocabulary/storage";
+import { deleteCards, ensureReaderCard } from "@/cards/storage";
 import Dexie from "dexie";
 
 export async function studyOverview(settings: Settings) {
   const [words, decks] = await Promise.all([
-    db.vocabulary.toArray(),
+    allReviewCards(),
     db.decks.toArray(),
   ]);
-  const languages = settings.studyLanguages;
   return Promise.all(
-    languages.map(async (language) => {
+    settings.studyLanguages.map(async (language) => {
       const preferences = { ...settings, studyLanguage: language };
       const counts = await dailyCounts(preferences);
       const groups = studyGroups(
         words.filter((word) => word.language === language),
         decks.filter((deck) => deck.language === language),
       );
-      function summary(entries: Vocabulary[]) {
+      function summary(entries: ReviewWord[]) {
         const active = entries.filter(
           (word) => word.card && !word.known && !word.suspended,
         );
@@ -47,7 +50,8 @@ export async function studyOverview(settings: Settings) {
           learning: queue.learning + queue.relearning,
           due: queue.reviews,
           total: active.length,
-          wordCount: entries.length,
+          wordCount: new Set(entries.map((word) => word.wordId || word.noteId))
+            .size,
         };
       }
       return {
@@ -57,7 +61,8 @@ export async function studyOverview(settings: Settings) {
         decks: groups.decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
-          ...summary(wordsInDeck(groups, deck.id)),
+          dictionaryId: deck.dictionaryId,
+          ...summary(deck.words),
         })),
       };
     }),
@@ -70,36 +75,20 @@ export async function manageStudyDeck(
   operation: "refresh" | "clear" | "delete",
 ) {
   if (operation === "refresh") return refreshFrequencyDeck(language, deckId);
-  await db.transaction(
-    "rw",
-    [
-      db.vocabulary,
-      db.decks,
-      db.audio,
-      db.rwkvMeta,
-      db.rwkvEntities,
-      db.rwkvCards,
-      db.srsMeta,
-    ],
-    async () => {
-      const [words, decks] = await Promise.all([
-        db.vocabulary.where("language").equals(language).toArray(),
-        db.decks.where("language").equals(language).toArray(),
-      ]);
-      const groups = studyGroups(words, decks);
-      const mined = deckId === "mined";
-      const deck = groups.decks.find((deck) => deck.id === deckId);
-      if ((mined && operation === "delete") || (!mined && !deck))
-        throw new Error(t("study_deck_not_found"));
-      await deleteWords(
-        (mined ? groups.mined : deck!.words).map((word) => word.id),
-      );
-      if (!mined) {
-        if (operation === "delete") await db.decks.delete(deckId);
-        else await db.decks.update(deckId, { wordIds: [] });
-      }
-    },
-  );
+  const mined = deckId === "mined";
+  const deck = mined ? undefined : await db.decks.get(deckId);
+  if (
+    (mined && operation === "delete") ||
+    (!mined && (!deck || deck.language !== language))
+  )
+    throw new Error(t("study_deck_not_found"));
+  const cards = await db.cards
+    .where("language")
+    .equals(language)
+    .filter((card) => card.deckId === (mined ? null : deckId))
+    .primaryKeys();
+  await deleteCards(cards);
+  if (!mined && operation === "delete") await db.decks.delete(deckId);
 }
 
 async function frequencyDeckWords(dictionaryId: string, limit: number) {
@@ -164,14 +153,6 @@ async function frequencyDeckWords(dictionaryId: string, limit: number) {
   return { dictionary, words: [...words.values()] };
 }
 
-function frequencyCard(word: LookupWord) {
-  const saved = freshWord(word);
-  saved.mined = false;
-  saved.card = emptySchedule();
-  saved.srsVersion++;
-  return saved;
-}
-
 export async function createFrequencyDeck(
   dictionaryId: string,
   limit: number,
@@ -180,8 +161,11 @@ export async function createFrequencyDeck(
   const { dictionary, words } = await frequencyDeckWords(dictionaryId, limit);
   const vocabulary: Vocabulary[] = [];
   for (const word of words) {
-    if (!(await db.vocabulary.get(word.id)))
-      vocabulary.push(frequencyCard(await snapshot(word)));
+    if (!(await db.vocabulary.get(word.id))) {
+      const saved = freshWord(await snapshot(word));
+      saved.mined = false;
+      vocabulary.push(saved);
+    }
   }
   if (!vocabulary.length) throw new Error(t("frequency_deck_no_new_words"));
   const deck = {
@@ -190,11 +174,14 @@ export async function createFrequencyDeck(
     name,
     dictionaryId,
     limit,
-    wordIds: vocabulary.map((word) => word.id),
     created: Date.now(),
   };
-  await db.transaction("rw", [db.vocabulary, db.decks], async () => {
-    await db.vocabulary.bulkPut(vocabulary);
+  await db.transaction("rw", [...wordWriteTables(), db.decks], async () => {
+    for (const word of vocabulary) {
+      await db.vocabulary.put(word);
+      const card = await ensureReaderCard(word);
+      await db.cards.update(card.id, { deckId: deck.id });
+    }
     await db.decks.add(deck);
   });
   return deck;
@@ -202,41 +189,67 @@ export async function createFrequencyDeck(
 
 async function refreshFrequencyDeck(language: string, deckId: string) {
   const deck = await db.decks.get(deckId);
-  if (!deck || deck.language !== language)
+  if (
+    !deck ||
+    deck.language !== language ||
+    !deck.dictionaryId ||
+    deck.limit === undefined
+  )
     throw new Error(t("study_deck_not_found"));
   clearLookupCache();
   const { words } = await frequencyDeckWords(deck.dictionaryId, deck.limit);
-  const [saved, decks] = await Promise.all([
+  const [saved, cards] = await Promise.all([
     db.vocabulary.where("language").equals(language).toArray(),
-    db.decks.where("language").equals(language).toArray(),
+    allReviewCards(language),
   ]);
   const byId = new Map(saved.map((word) => [word.id, word]));
   const assigned = new Set(
-    decks
-      .filter((other) => other.id !== deckId)
-      .flatMap((other) => other.wordIds),
+    cards
+      .filter((card) => card.document.card.deckId !== deckId)
+      .flatMap((card) => (card.wordId ? [card.wordId] : [])),
   );
-  const selected = words.filter((word) => {
-    const existing = byId.get(word.id);
-    return !assigned.has(word.id) && (!existing || existing.mined === false);
-  });
+  const selected = words.filter(
+    (word) =>
+      !assigned.has(word.id) &&
+      (!byId.has(word.id) || byId.get(word.id)!.mined === false),
+  );
+  const selectedIds = new Set(selected.map((word) => word.id));
   const snapshots = await Promise.all(selected.map(snapshot));
-  await db.transaction("rw", [db.vocabulary, db.decks], async () => {
-    for (const word of snapshots) {
-      if (byId.has(word.id))
-        await replaceMeanings(
-          word.id,
-          word.meanings.filter(
-            (meaning) => meaning.dictionaryId !== "personal",
-          ),
+  await db.transaction(
+    "rw",
+    [
+      ...wordWriteTables(),
+      db.decks,
+      db.audio,
+      db.srsMeta,
+      db.rwkvCards,
+      db.rwkvEntities,
+      db.rwkvMeta,
+    ],
+    async () => {
+      for (const word of snapshots) {
+        if (byId.has(word.id))
+          await replaceMeanings(
+            word.id,
+            word.meanings.filter(
+              (meaning) => meaning.dictionaryId !== "personal",
+            ),
+          );
+        else await db.vocabulary.put({ ...freshWord(word), mined: false });
+        const card = await ensureReaderCard(
+          (await db.vocabulary.get(word.id))!,
         );
-      else await db.vocabulary.add(frequencyCard(word));
-    }
-    await db.vocabulary
-      .where("id")
-      .anyOf(deck.wordIds)
-      .filter((word) => !isFrequencyWord(word.lemma))
-      .modify({ mined: false });
-    await db.decks.update(deckId, { wordIds: selected.map((word) => word.id) });
-  });
+        await db.cards.update(card.id, { deckId });
+      }
+      await deleteCards(
+        cards
+          .filter(
+            (card) =>
+              card.document.card.deckId === deckId &&
+              (!card.wordId || !selectedIds.has(card.wordId)),
+          )
+          .map((card) => card.id),
+      );
+    },
+  );
 }

@@ -2,7 +2,8 @@ import { meaningSchema } from "@/dictionaries/model";
 import { normalize } from "@/languages/text";
 import { languageSchema } from "@/languages/model";
 import { t } from "@/shared/i18n/i18n";
-import { scheduleSchema } from "@/srs/model";
+import type { Schedule } from "@/srs/model";
+import type { Card, CardDocument } from "@/cards/model";
 import { translationSchema } from "@/translation/model";
 import type { WordState } from "@/vocabulary/state";
 import { z } from "zod";
@@ -37,11 +38,10 @@ export type ReadingContext = z.infer<typeof contextSchema>;
 
 export const cardFieldSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  value: z.string().trim().min(1).max(30000),
+  value: z.string().max(30000),
 });
 
 export const vocabularySchema = z.object({
-  customFields: z.array(cardFieldSchema).optional(),
   id: z.string(),
   language: z.string(),
   lemma: z.string().min(1),
@@ -52,11 +52,7 @@ export const vocabularySchema = z.object({
   expandedDictionaries: z.array(z.string()).optional(),
   mined: z.boolean().default(true),
   known: z.boolean(),
-  suspended: z.boolean(),
-  card: scheduleSchema.nullable(),
-  srsVersion: z.number().int().nonnegative().default(0),
-  leech: z.boolean().default(false),
-  retentionOverride: z.number().min(0.7).max(0.99).nullable().default(null),
+  readingCardId: z.string().optional(),
   version: z.number().int().nonnegative(),
   created: z.number().finite(),
   updated: z.number().finite(),
@@ -64,14 +60,51 @@ export const vocabularySchema = z.object({
 
 export type Vocabulary = z.infer<typeof vocabularySchema>;
 
+export type WordWithCards = Vocabulary & {
+  linkedCards: Card[];
+  cardId?: string;
+  card: Schedule | null;
+  srsVersion: number;
+  suspended: boolean;
+  leech: boolean;
+  retentionOverride: number | null;
+  customFields: z.infer<typeof cardFieldSchema>[];
+};
+
+export type ReviewWord = Omit<WordWithCards, "readingCardId"> & {
+  wordId?: string;
+  noteId: string;
+  document: CardDocument;
+};
+
+export type ReviewWordSummary = Omit<ReviewWord, "document">;
+
 export function stateOf(
-  word: Vocabulary | undefined,
+  word: (Vocabulary & { linkedCards?: Card[] }) | undefined,
   matureIntervalDays: number,
 ): WordState {
   if (!word) return "unknown";
   if (word.known) return "known";
-  if (word.suspended) return "suspended";
-  if (!word.card || word.card.state === 0) return "new";
-  if (word.card.due <= Date.now()) return "due";
-  return word.card.scheduled_days >= matureIntervalDays ? "review" : "learning";
+  const cards = word.linkedCards || [];
+  if (!cards.length) return "new";
+  const active = cards.filter((card) => !card.suspended);
+  if (!active.length) return "suspended";
+  if (
+    active.some(
+      (card) =>
+        card.schedule &&
+        card.schedule.state !== 0 &&
+        card.schedule.due <= Date.now(),
+    )
+  )
+    return "due";
+  if (active.some((card) => !card.schedule || card.schedule.state === 0))
+    return "new";
+  return active.some(
+    (card) =>
+      card.schedule!.state !== 2 ||
+      card.schedule!.scheduled_days < matureIntervalDays,
+  )
+    ? "learning"
+    : "review";
 }

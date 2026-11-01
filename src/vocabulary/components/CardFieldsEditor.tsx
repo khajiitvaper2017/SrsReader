@@ -13,9 +13,9 @@ import { useState } from "react";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { vocabularyClient } from "@/vocabulary/client";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { WordWithCards } from "@/vocabulary/model";
 
-export function CardFieldsEditor({ word }: { word: Vocabulary }) {
+export function CardFieldsEditor({ word }: { word: WordWithCards }) {
   const [fields, setFields] = useState(word.customFields || []);
   const [saved, setSaved] = useState(JSON.stringify(fields));
   const [busy, setBusy] = useState(false);

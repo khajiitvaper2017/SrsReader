@@ -1,9 +1,9 @@
 import type { Settings } from "@/settings/model";
 import { DAY, dayStart, studyDay } from "@/srs/study-day";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { ReviewWord } from "@/vocabulary/model";
 
 export function calendarStatistics(
-  words: Vocabulary[],
+  words: ReviewWord[],
   history: { day: number; count: number }[],
   year: number,
   settings: Settings,

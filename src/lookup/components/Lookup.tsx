@@ -1,3 +1,4 @@
+import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
 import type { ReactNode } from "react";
 import type { Occurrence } from "@/languages/analysis";
 import {
@@ -308,6 +309,14 @@ function LookupEntry({
             </Group>
           </Group>
 
+          {saved && (
+            <ReadingCardSelect
+              word={saved}
+              disabled={busy}
+              onChanged={reload}
+              onError={setError}
+            />
+          )}
           {saved && (
             <Badge w="fit-content">
               {t(wordStateLabels[stateOf(saved, settings.matureIntervalDays)])}

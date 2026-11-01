@@ -1,7 +1,9 @@
+import { ensureReaderCard, readingCard } from "@/cards/storage";
 import { cacheAudio } from "@/audio/cache";
 import { notify } from "@/background/events";
 import { resolved } from "@/dictionaries/resolve";
 import { srsWrite } from "@/platform/locks";
+import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
@@ -22,7 +24,8 @@ import { clearUndo } from "@/srs/storage";
 import { undoReview } from "@/srs/undo";
 import { dailyCounts } from "@/srs/workload";
 import { snapshot } from "@/vocabulary/snapshot";
-import { getWord, languageWords } from "@/vocabulary/storage";
+import { getWord, languageWords, mine, reviewCard } from "@/vocabulary/storage";
+import { freshWord } from "@/vocabulary/service";
 import type { Grade } from "ts-fsrs";
 import {
   createFrequencyDeck,
@@ -69,28 +72,49 @@ async function execute(request: Request, settings: Settings) {
       return deck;
     }
     case "sentenceExamples": {
-      const word = await getWord(request.id);
-      return word ? sentenceExamples(word, settings) : [];
+      const word = await db.vocabulary.get(request.id);
+      return word ? sentenceExamples(word) : [];
     }
     case "grade": {
-      const word = {
-        forms: [],
-        ...((await getWord(request.id)) ??
-          (await snapshot(
-            await resolved(request.term, request.id, request.occurrence),
-          ))),
-      };
+      let cardId =
+        request.cardId ||
+        (request.source === "review"
+          ? request.id
+          : (await readingCard(request.id))?.id);
+      let created = false;
+      if (request.source === "reading" && !cardId) {
+        let saved = await getWord(request.id);
+        if (saved?.linkedCards.length)
+          throw new Error(t("select_reading_card"));
+        if (!saved) {
+          if (!request.term) throw new Error(t("word_not_found"));
+          saved = await mine(
+            await snapshot(
+              await resolved(request.term, request.id, request.occurrence),
+            ),
+            request.context,
+          );
+          created = true;
+        }
+        cardId = (await ensureReaderCard(saved, request.context)).id;
+      }
+      const word = cardId ? await reviewCard(cardId) : undefined;
+      if (!word || (request.source === "reading" && word.wordId !== request.id))
+        throw new Error(t("card_not_found"));
       const result = await grade(
         word,
         request.rating as Grade,
         request.source,
-        request.version,
+        created ? word.srsVersion : request.version,
         request.context,
         request.durationMs,
         request.time,
       );
-      cacheAudio(word);
-      await notify(word.id, request.source === "review" ? "srs" : "vocabulary");
+      if (word.wordId) cacheAudio({ ...word, id: word.wordId, forms: [] });
+      await notify(
+        word.wordId,
+        request.source === "review" ? "srs" : "vocabulary",
+      );
       return result;
     }
     case "undo":
@@ -98,8 +122,35 @@ async function execute(request: Request, settings: Settings) {
       return;
     case "queue":
       return reviewQueue(request.language, request.deckId, request.limits);
-    case "preview":
-      return preview(await getWord(request.id), request.durationMs, request.id);
+    case "preview": {
+      const selected =
+        request.cardId || (await readingCard(request.id))?.id || request.id;
+      const card = await reviewCard(selected);
+      if (card) return preview(card, request.durationMs);
+      const word = await getWord(request.id);
+      if (word?.linkedCards.length) throw new Error(t("select_reading_card"));
+      if (word) return preview(word, request.durationMs);
+      const [language, lemma, reading] = JSON.parse(request.id) as [
+        string,
+        string,
+        string,
+      ];
+      return preview(
+        {
+          ...freshWord({
+            id: request.id,
+            language,
+            lemma,
+            reading,
+            meanings: [],
+            forms: [],
+          }),
+          card: null,
+          retentionOverride: null,
+        },
+        request.durationMs,
+      );
+    }
     case "reviewStats":
       return reviewStatistics(settings, request.year);
     case "stats": {

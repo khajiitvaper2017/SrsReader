@@ -1,5 +1,5 @@
 import type { Settings } from "@/settings/model";
-import { db } from "@/platform/database/db";
+import { allReviewCards } from "@/vocabulary/storage";
 import { statisticsHistory } from "@/srs/storage";
 import { dayStart, studyDay } from "@/srs/study-day";
 import { calendarStatistics } from "@/srs/statistics-calendar";
@@ -14,7 +14,7 @@ export async function reviewStatistics(settings: Settings, year?: number) {
   ).getFullYear();
   const selectedYear = year ?? currentYear;
   const [words, { today: summary, activity }] = await Promise.all([
-    db.vocabulary.toArray(),
+    allReviewCards(),
     statisticsHistory(now, settings.rolloverHour),
   ]);
   return {

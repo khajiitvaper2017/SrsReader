@@ -1,5 +1,4 @@
-import { db } from "@/platform/database/db";
-import { cardMediaId } from "@/media/model";
+import { getCardMedia } from "@/media/storage";
 import { audioClient } from "@/audio/client";
 import type { AudioInfo } from "@/audio/model";
 import { localVoices, playBlob, speak, stopAudio } from "@/audio/playback";
@@ -12,12 +11,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 export function usePronunciation({
   word,
   sentence,
+  noteId,
   settings,
   onError,
   prepareRecording,
 }: {
   word?: Pick<LookupWord, "id" | "lemma" | "language">;
   sentence?: string;
+  noteId?: string;
   settings: Settings;
   onError: (message: string) => void;
   /** Reuse recordings prepared by the review session. */
@@ -53,7 +54,7 @@ export function usePronunciation({
       clearTimeout(hold.current);
       playback.current++;
     };
-  }, [word?.id, sentence]);
+  }, [word?.id, sentence, noteId]);
   useEffect(() => {
     if (!open || !word) return;
     let alive = true;
@@ -110,8 +111,11 @@ export function usePronunciation({
         return;
       }
       if (!source) {
-        const recording = await db.cardMedia.get(
-          cardMediaId(word.id, sentence ? "audio" : "wordAudio", sentence),
+        const recording = await getCardMedia(
+          word.id,
+          sentence ? "audio" : "wordAudio",
+          sentence,
+          noteId,
         );
         if (attempt !== playback.current) return;
         if (recording) {

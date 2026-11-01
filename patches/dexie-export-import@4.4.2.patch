@@ -1,0 +1,26 @@
+diff --git a/dist/dexie-export-import.js b/dist/dexie-export-import.js
+index 3160b92a6ce91033db3fc59693af6b1a8e27aa1d..081bab007effbae76e55f83da86fa6705e3c84e0 100644
+--- a/dist/dexie-export-import.js
++++ b/dist/dexie-export-import.js
+@@ -2446,7 +2446,7 @@
+   		  clarinet.CParser           = CParser;
+   		  clarinet.CStream           = CStream;
+   		  clarinet.createStream      = createStream;
+-  		  clarinet.MAX_BUFFER_LENGTH = 10 * 1024 * 1024;
++  		  clarinet.MAX_BUFFER_LENGTH = Number.MAX_SAFE_INTEGER;
+   		  clarinet.DEBUG             = (env.CDEBUG==='debug');
+   		  clarinet.INFO              = (env.CDEBUG==='debug' || env.CDEBUG==='info');
+   		  clarinet.EVENTS            =
+diff --git a/dist/dexie-export-import.mjs b/dist/dexie-export-import.mjs
+index 81b3669d6a6e78a5962b532d831f9ab693e854fe..2c03e9b696c43a2ea20ccf754a93307b1d6663a5 100644
+--- a/dist/dexie-export-import.mjs
++++ b/dist/dexie-export-import.mjs
+@@ -2442,7 +2442,7 @@ function requireClarinet () {
+ 		  clarinet.CParser           = CParser;
+ 		  clarinet.CStream           = CStream;
+ 		  clarinet.createStream      = createStream;
+-		  clarinet.MAX_BUFFER_LENGTH = 10 * 1024 * 1024;
++		  clarinet.MAX_BUFFER_LENGTH = Number.MAX_SAFE_INTEGER;
+ 		  clarinet.DEBUG             = (env.CDEBUG==='debug');
+ 		  clarinet.INFO              = (env.CDEBUG==='debug' || env.CDEBUG==='info');
+ 		  clarinet.EVENTS            =

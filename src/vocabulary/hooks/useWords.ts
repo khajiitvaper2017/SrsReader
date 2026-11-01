@@ -8,7 +8,7 @@ import { useDebouncedValue } from "@mantine/hooks";
 import type { Request } from "@/vocabulary/contracts";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { SentenceExample } from "@/examples/model";
-import { type Vocabulary } from "@/vocabulary/model";
+import { type WordWithCards } from "@/vocabulary/model";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useWords({
@@ -21,7 +21,7 @@ export function useWords({
   deckId?: string;
 }) {
   const [contexts, setContexts] = useState<SentenceExample[]>([]);
-  const [words, setWords] = useState<Vocabulary[]>([]);
+  const [words, setWords] = useState<WordWithCards[]>([]);
   const [decks, setDecks] = useState<Deck[]>([]);
   const overview = settings.studyLanguages.map((language) => ({
     language,
@@ -97,10 +97,10 @@ export function useWords({
     "collection",
   ]);
   const pages = Math.max(1, Math.ceil(total / 50));
-  const [savedWord, setWord] = useState<Vocabulary>();
+  const [savedWord, setWord] = useState<WordWithCards>();
   const word =
-    words.find((entry) => entry.id === selected) ||
-    (savedWord?.id === selected ? savedWord : undefined);
+    (savedWord?.id === selected ? savedWord : undefined) ||
+    words.find((entry) => entry.id === selected);
   useEffect(() => {
     let alive = true;
     if (!selected) {
@@ -197,6 +197,7 @@ export function useWords({
       });
   }
   return {
+    load,
     query,
     setQuery,
     filter,

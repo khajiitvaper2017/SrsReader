@@ -279,17 +279,16 @@ export async function lookupMany(
   const savedEntries = await db.vocabulary
     .where("lemma")
     .anyOf(lemmas)
-    .filter(
-      (word) =>
-        word.language === language &&
-        (!!word.definitionOverrides ||
-          word.meanings.some(
-            (meaning) =>
-              meaning.dictionaryId === "personal" ||
-              isOnlineDictionary(meaning.dictionaryId),
-          )),
-    )
+    .filter((word) => word.language === language)
     .toArray();
+  const linkedWords = new Set(
+    savedEntries.length
+      ? await db.notes
+          .where("wordId")
+          .anyOf(savedEntries.map((word) => word.id))
+          .uniqueKeys()
+      : [],
+  );
   const savedQueryFinished = performance.now();
   const byId = new Map(savedEntries.map((word) => [word.id, word]));
   const byLemma = new Map<string, typeof savedEntries>();
@@ -325,7 +324,8 @@ export async function lookupMany(
           isOnlineDictionary(meaning.dictionaryId) ||
           !!word.definitionOverrides?.[meaningKey(meaning)],
       );
-      if (meanings.length) words.unshift({ ...word, meanings, forms: [] });
+      if (meanings.length || linkedWords.has(word.id))
+        words.unshift({ ...word, meanings, forms: [] });
     }
     results.set(term, {
       words,
@@ -353,7 +353,9 @@ export async function lookupMany(
         settings,
         ordered,
       );
-      return meanings.length ? [{ ...word, meanings }] : [];
+      return meanings.length || linkedWords.has(word.id)
+        ? [{ ...word, meanings }]
+        : [];
     });
   console.info("[SrsReader] Dictionary lookup finished", {
     terms: terms.length,

@@ -5,14 +5,19 @@ import {
   Group,
   Image,
   Modal,
+  Loader,
   Select,
   Stack,
   Text,
   Title,
 } from "@mantine/core";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { liveQuery } from "dexie";
+import type { CardDocument } from "@/cards/model";
+import { fieldText, getCardDocument, readingCard } from "@/cards/storage";
+import { NoteFieldsEditor } from "@/cards/components/NoteFieldsEditor";
 import { Images } from "lucide-react";
-import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
+import type { ReadingContext, WordWithCards } from "@/vocabulary/model";
 import { CardFieldsEditor } from "@/vocabulary/components/CardFieldsEditor";
 import { CustomTranslationEditor } from "@/translation/components/CustomTranslationEditor";
 import { t } from "@/shared/i18n/i18n";
@@ -33,7 +38,7 @@ export function CardEditor({
   currentSentence,
   iconOnly = false,
 }: {
-  word: Vocabulary;
+  word: WordWithCards;
   contexts: ReadingContext[];
   nativeLanguage: string;
   currentSentence?: string;
@@ -44,13 +49,51 @@ export function CardEditor({
   const [sentence, setSentence] = useState(
     currentSentence || contexts[0]?.sentence || "",
   );
+  const [loaded, setLoaded] = useState<{
+    wordId: string;
+    document?: CardDocument;
+  }>();
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!opened) return;
+    const subscription = liveQuery(async () => {
+      const card = await readingCard(word.id);
+      return {
+        wordId: word.id,
+        document: card ? await getCardDocument(card.id) : undefined,
+      };
+    }).subscribe({
+      next: setLoaded,
+      error: (error: Error) => setError(error.message),
+    });
+    return () => subscription.unsubscribe();
+  }, [opened, word.id]);
+  const document = loaded?.wordId === word.id ? loaded.document : undefined;
+  const reader = document?.noteType.id.startsWith("reader:");
+  const sentenceIndex = document?.noteType.bindings.sentence;
+  const primarySentence =
+    sentenceIndex === undefined
+      ? ""
+      : fieldText(document!.note.fields[sentenceIndex] || "");
+  const selectedSentence = reader
+    ? sentence || primarySentence
+    : primarySentence;
   const selectedContext = contexts.find(
-    (context) => context.sentence === sentence,
+    (context) => context.sentence === selectedSentence,
   );
+  const sentences = [
+    ...new Set(
+      [...contexts.map((context) => context.sentence), primarySentence].filter(
+        Boolean,
+      ),
+    ),
+  ];
   const wordId = word.id;
   const open = () => {
     stopAudio();
     setSentence(currentSentence || contexts[0]?.sentence || "");
+    setLoaded(undefined);
+    setError("");
     setOpened(true);
   };
   return (
@@ -80,43 +123,91 @@ export function CardEditor({
       >
         {opened && (
           <Stack>
-            <MediaField wordId={wordId} kind="background" sentence="" />
-            <MediaField wordId={wordId} kind="wordAudio" sentence="" />
-            {contexts.length > 1 && (
-              <Select
-                label={t("card_media_sentence")}
-                value={sentence}
-                onChange={(value) => setSentence(value!)}
-                data={[
-                  ...new Set(contexts.map((context) => context.sentence)),
-                ].map((value) => ({
-                  value,
-                  label: value,
-                }))}
-              />
+            <ErrorBox error={error} />
+            {!loaded && !error && <Loader aria-label={t("looking_up")} />}
+            {loaded && !document && !error && (
+              <Text variant="supporting">
+                {t(
+                  word.linkedCards.length
+                    ? "select_reading_card"
+                    : "card_not_found",
+                )}
+              </Text>
             )}
-            {sentence ? (
+            {document && (
               <>
-                <Text variant="supporting">{sentence}</Text>
-                {selectedContext && (
+                {document.noteType.bindings.image !== undefined && (
+                  <MediaField
+                    wordId={wordId}
+                    noteId={document.note.id}
+                    kind="background"
+                    sentence=""
+                  />
+                )}
+                {document.noteType.bindings.wordAudio !== undefined && (
+                  <MediaField
+                    wordId={wordId}
+                    noteId={document.note.id}
+                    kind="wordAudio"
+                    sentence=""
+                  />
+                )}
+                {reader && sentences.length > 1 && (
+                  <Select
+                    label={t("card_media_sentence")}
+                    value={selectedSentence || null}
+                    allowDeselect={false}
+                    onChange={(value) => setSentence(value ?? "")}
+                    data={sentences}
+                  />
+                )}
+                {selectedSentence && (
+                  <Text variant="supporting">{selectedSentence}</Text>
+                )}
+                {reader && selectedContext && (
                   <CustomTranslationEditor
-                    key={`${sentence}:${nativeLanguage}`}
+                    key={`${selectedSentence}:${nativeLanguage}`}
                     wordId={wordId}
                     context={selectedContext}
                     language={nativeLanguage}
                   />
                 )}
-                <MediaField
-                  key={sentence}
-                  wordId={wordId}
-                  kind="audio"
-                  sentence={sentence}
-                />
+                {document.noteType.bindings.sentenceAudio !== undefined &&
+                  (selectedSentence || !reader) && (
+                    <MediaField
+                      key={`${document.note.id}:${selectedSentence}`}
+                      wordId={wordId}
+                      noteId={document.note.id}
+                      kind="audio"
+                      sentence={selectedSentence}
+                    />
+                  )}
+                {reader && !selectedSentence && (
+                  <Text variant="supporting">
+                    {t("card_media_no_sentence")}
+                  </Text>
+                )}
+                {reader ? (
+                  <CardFieldsEditor
+                    key={`${document.note.id}:${document.noteType.id}`}
+                    word={{
+                      ...word,
+                      customFields: document.noteType.fields
+                        .slice(10)
+                        .map((field, index) => ({
+                          name: field.label || field.name,
+                          value: fieldText(
+                            document.note.fields[index + 10] || "",
+                            false,
+                          ),
+                        })),
+                    }}
+                  />
+                ) : (
+                  <NoteFieldsEditor noteId={document.note.id} />
+                )}
               </>
-            ) : (
-              <Text variant="supporting">{t("card_media_no_sentence")}</Text>
             )}
-            <CardFieldsEditor word={word} />
           </Stack>
         )}
       </Modal>
@@ -124,16 +215,18 @@ export function CardEditor({
   );
 }
 
-function MediaField({
+export function MediaField({
   wordId,
   kind,
   sentence,
+  noteId,
 }: {
   wordId: string;
+  noteId?: string;
   kind: CardMedia["kind"];
   sentence: string;
 }) {
-  const loaded = useCardMedia(wordId, kind, sentence);
+  const loaded = useCardMedia(wordId, kind, sentence, noteId);
   const resetFile = useRef<() => void>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -142,7 +235,7 @@ function MediaField({
     setError("");
     stopAudio();
     try {
-      await saveCardMedia(wordId, kind, sentence, file);
+      await saveCardMedia(wordId, kind, sentence, file, noteId);
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -185,7 +278,7 @@ function MediaField({
                   ? "card_media_word_audio"
                   : "card_media_audio",
               )}
-              onPlay={stopAudio}
+              onPlay={() => stopAudio()}
               onError={() => setError(t("card_media_unavailable"))}
             />
           ) : loaded.media.mime.startsWith("video/") ? (

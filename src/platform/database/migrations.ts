@@ -2,9 +2,19 @@ import { entryMatch, type Entry } from "@/dictionaries/model";
 import { settingsSchema } from "@/settings/model";
 import { reviewSchema } from "@/srs/history";
 import { vocabularySchema } from "@/vocabulary/model";
-import Dexie from "dexie";
+import Dexie, { type Transaction } from "dexie";
 import { mergeSentence, sentenceFromContext } from "@/examples/sentence-model";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
+import {
+  readerNote,
+  readerLayoutCss,
+  escapeHtml,
+  type CustomField,
+} from "@/cards/defaults";
+import { prepareDictionarySnapshot } from "@/cards/snapshot";
+import { assetId, type Card } from "@/cards/model";
+import { scheduleSchema, type Schedule } from "@/srs/model";
+import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
 export function installMigrations(database: Dexie) {
   database.version(1).stores({
@@ -39,6 +49,7 @@ export function installMigrations(database: Dexie) {
         .table("vocabulary")
         .toCollection()
         .modify((word) => {
+          word.srsVersion = word.version;
           Object.assign(
             word,
             vocabularySchema.parse({ ...word, srsVersion: word.version }),
@@ -53,6 +64,11 @@ export function installMigrations(database: Dexie) {
             review,
             reviewSchema.parse({
               ...review,
+              cardId: review.wordId,
+              language: JSON.parse(review.wordId)[0],
+              before: review.before
+                ? { ...review.before, schedule: review.before.card }
+                : null,
               sequence: ++sequence,
               afterSrsVersion: review.afterVersion,
             }),
@@ -168,4 +184,186 @@ export function installMigrations(database: Dexie) {
     entryMatches: "id, [revisionId+folded]",
   });
   database.version(15).stores({ cardMedia: "id, wordId" });
+  database
+    .version(16)
+    .stores({
+      noteTypes: "id, sourceId",
+      notes: "id, noteTypeId, wordId, mediaNamespace, sourceId, language",
+      cards: "id, noteId, deckId, language, sourceId",
+      cardAssets: "id, namespace, [namespace+name]",
+      ankiReviews: "id, cardId, sourceId",
+      vocabulary: "id, language, lemma, updated, readingCardId",
+      reviews: "id, cardId, wordId, language, time, [cardId+time], &sequence",
+    })
+    .upgrade((tx) => migrateCards(tx, true));
+  database.version(17).stores({ cardMedia: null });
+  database
+    .version(18)
+    .stores({ importFiles: "id" })
+    .upgrade(async (tx) => {
+      const task = await tx.table("importTasks").get("current");
+      if (task?.blob) {
+        await tx.table("importFiles").put({ id: "current", blob: task.blob });
+        delete task.blob;
+        await tx.table("importTasks").put(task);
+      }
+    });
+  database
+    .version(19)
+    .stores({})
+    .upgrade((tx) => migrateCards(tx, false));
+  database
+    .version(20)
+    .stores({})
+    .upgrade(async (tx) => {
+      await tx
+        .table("noteTypes")
+        .where("id")
+        .startsWith("reader:")
+        .modify((type) => {
+          for (const template of type.templates)
+            template.back = template.back.replaceAll(
+              "{{#Examples}}<section>{{Examples}}</section>{{/Examples}}",
+              "",
+            );
+        });
+    });
+  database
+    .version(21)
+    .stores({})
+    .upgrade(async (tx) => {
+      await tx
+        .table("noteTypes")
+        .where("id")
+        .startsWith("reader:")
+        .modify((type) => {
+          if (!type.css.includes(readerLayoutCss)) type.css += readerLayoutCss;
+        });
+    });
+}
+
+async function migrateCards(tx: Transaction, hasLegacyMedia: boolean) {
+  const decks = await tx.table("decks").toArray();
+  const nativeLanguage = settingsSchema.parse(
+    (await tx.table("settings").get("main"))?.value ?? {},
+  ).nativeLanguages[0];
+  for (const raw of await tx.table("vocabulary").toArray()) {
+    if (!Object.hasOwn(raw, "card")) continue;
+    const old = raw as Vocabulary & {
+      card: Schedule | null;
+      customFields?: CustomField[];
+      suspended: boolean;
+      leech: boolean;
+      retentionOverride: number | null;
+      srsVersion: number;
+    };
+    const prepared = readerNote(
+      old,
+      undefined,
+      old.customFields,
+      nativeLanguage,
+    );
+    const snapshot = await prepareDictionarySnapshot(
+      { ...old, meanings: applyDefinitionOverrides(old.meanings, old) },
+      {
+        namespace: old.id,
+        allowMissingMedia: true,
+      },
+    );
+    prepared.note.fields[2] = snapshot.html;
+    const contexts = await tx
+      .table("sentences")
+      .where("wordIds")
+      .equals(old.id)
+      .toArray();
+    const sentence = contexts[0];
+    if (sentence) {
+      prepared.note.fields[3] = escapeHtml(sentence.sentence);
+      prepared.note.fields[5] = escapeHtml(
+        (nativeLanguage
+          ? sentence.customTranslations?.[nativeLanguage]
+          : undefined) ??
+          sentence.translation?.text ??
+          "",
+      );
+      prepared.note.fields[9] = contexts
+        .slice(1)
+        .map((entry) => `<p>${escapeHtml(entry.sentence)}</p>`)
+        .join("");
+    }
+    for (const media of hasLegacyMedia
+      ? await tx.table("cardMedia").where("wordId").equals(old.id).toArray()
+      : []) {
+      const name = `saved-${media.kind}-${encodeURIComponent(media.sentence)}-${media.name}`;
+      await tx.table("cardAssets").put({
+        id: assetId(old.id, name),
+        namespace: old.id,
+        name,
+        mime: media.mime,
+        blob: media.blob,
+      });
+      if (media.kind === "background")
+        prepared.note.fields[8] = media.mime.startsWith("video/")
+          ? `<video autoplay loop muted playsinline src="${escapeHtml(name)}"></video>`
+          : `<img src="${escapeHtml(name)}">`;
+      else if (media.kind === "wordAudio")
+        prepared.note.fields[6] = `[sound:${name}]`;
+      else if (media.sentence === sentence?.sentence)
+        prepared.note.fields[7] = `[sound:${name}]`;
+      else
+        prepared.note.fields[9] += `<p>${escapeHtml(media.sentence)} [sound:${name}]</p>`;
+    }
+    const card: Card = {
+      id: old.id,
+      noteId: prepared.note.id,
+      templateOrdinal: 0,
+      deckId: old.mined
+        ? null
+        : (decks.find((deck) => deck.wordIds?.includes(old.id))?.id ?? null),
+      language: old.language,
+      schedule: old.card ? scheduleSchema.parse(old.card) : null,
+      suspended: old.suspended,
+      leech: old.leech ?? false,
+      retentionOverride: old.retentionOverride ?? null,
+      srsVersion: old.srsVersion ?? 0,
+      version: old.version,
+      created: old.created,
+      updated: old.updated,
+    };
+    await tx.table("noteTypes").put(prepared.noteType);
+    await tx.table("notes").put(prepared.note);
+    await tx.table("cards").put(card);
+    if (snapshot.assets.length)
+      await tx.table("cardAssets").bulkPut(snapshot.assets);
+    const {
+      card: _schedule,
+      customFields: _fields,
+      suspended: _suspended,
+      leech: _leech,
+      retentionOverride: _retention,
+      srsVersion: _srsVersion,
+      ...lexeme
+    } = old;
+    await tx.table("vocabulary").put({ ...lexeme, readingCardId: card.id });
+  }
+  await tx
+    .table("decks")
+    .toCollection()
+    .modify((deck) => {
+      delete deck.wordIds;
+    });
+  await tx
+    .table("reviews")
+    .toCollection()
+    .modify((review) => {
+      review.cardId ??= review.wordId;
+      review.language ??=
+        review.before?.language ?? JSON.parse(review.wordId)[0];
+      if (review.before) {
+        if (!("schedule" in review.before))
+          review.before.schedule = review.before.card;
+        delete review.before.card;
+        delete review.before.known;
+      }
+    });
 }

@@ -7,11 +7,14 @@ import { liveQuery } from "dexie";
 export async function startImport(input: ImportInput) {
   const runId = crypto.randomUUID();
   const value = importInputSchema.parse(input);
-  await db.transaction("rw", db.importTasks, async () => {
+  await db.transaction("rw", [db.importTasks, db.importFiles], async () => {
     if ((await db.importTasks.get("current"))?.status === "running")
       throw new Error(t("import_already_running"));
+    const { blob, ...metadata } = value;
+    if (blob) await db.importFiles.put({ id: "current", blob });
+    else await db.importFiles.delete("current");
     await db.importTasks.put({
-      ...value,
+      ...metadata,
       id: "current",
       runId,
       status: "running",
@@ -23,8 +26,8 @@ export async function startImport(input: ImportInput) {
     await db.importTasks.update("current", {
       status: "error",
       error: (error as Error).message,
-      blob: undefined,
     });
+    await db.importFiles.delete("current");
     throw error;
   }
   await new Promise<void>((resolve, reject) => {
@@ -44,8 +47,10 @@ export async function startImport(input: ImportInput) {
 }
 
 export async function dismissImport() {
-  await db.transaction("rw", db.importTasks, async () => {
-    if ((await db.importTasks.get("current"))?.status !== "running")
+  await db.transaction("rw", [db.importTasks, db.importFiles], async () => {
+    if ((await db.importTasks.get("current"))?.status !== "running") {
       await db.importTasks.delete("current");
+      await db.importFiles.delete("current");
+    }
   });
 }

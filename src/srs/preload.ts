@@ -1,18 +1,17 @@
 import type { AudioInfo } from "@/audio/model";
 import { prepareBlob } from "@/audio/playback";
 import { preparePronunciation } from "@/audio/prepare";
-import { mapDefinitionSenses } from "@/dictionaries/definitions";
-import { displayedMeanings } from "@/dictionaries/display";
 import { wordFrequencies } from "@/dictionaries/frequency";
-import { filterPrepositionSenses } from "@/dictionaries/grammar";
-import { listDictionaries } from "@/dictionaries/storage";
 import type { Settings } from "@/settings/model";
 import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
-import { canAutoTranslate, translateSentence } from "@/translation/translate";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { Responses as VocabularyResponses } from "@/vocabulary/contracts";
-import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
+import type { ReadingContext, ReviewWordSummary } from "@/vocabulary/model";
+import { getCardDocument } from "@/cards/storage";
+import { cardAssetKey, loadCardAssets } from "@/cards/sandbox/assets";
+import { renderCard } from "@/cards/template";
+import { db } from "@/platform/database/db";
 
 function cached<T>(
   cache: Map<string, Promise<T>>,
@@ -41,9 +40,41 @@ export function createReviewPreload(settings: Settings) {
   const audio = new Map<string, ReturnType<typeof preparePronunciation>>();
   const frequencies = new Map<string, ReturnType<typeof wordFrequencies>>();
   const prepared = new Map<string, Promise<void>>();
-  let dictionaries: ReturnType<typeof listDictionaries> | undefined;
-  let queue: Vocabulary[] = [];
+  const visuals = new Map<string, Promise<void>>();
+  const assets = new Map<string, ReturnType<typeof loadCardAssets>>();
+  let queue: ReviewWordSummary[] = [];
   let running: Promise<void> | undefined;
+
+  function loadAssets(namespace: string, html: string, css: string) {
+    const result = cached(assets, cardAssetKey(namespace, html, css), () =>
+      loadCardAssets(namespace, html, css),
+    );
+    while (assets.size > 6) assets.delete(assets.keys().next().value!);
+    return result;
+  }
+  function prepareVisual(id: string) {
+    return cached(visuals, id, async () => {
+      const document = await getCardDocument(id);
+      if (!document) return;
+      const deck = document.card.deckId
+        ? await db.decks.get(document.card.deckId)
+        : undefined;
+      const options = {
+        deckName: deck?.name,
+        front: settings.front,
+        showPartOfSpeech: settings.showPartOfSpeech,
+      };
+      await Promise.all(
+        [false, true].map((revealed) =>
+          loadAssets(
+            document.note.mediaNamespace,
+            renderCard(document, revealed, options),
+            document.noteType.css,
+          ),
+        ),
+      );
+    });
+  }
 
   function loadSentences(id: string) {
     return cached(sentences, id, () =>
@@ -78,6 +109,8 @@ export function createReviewPreload(settings: Settings) {
     );
   }
   function invalidate(id?: string) {
+    visuals.clear();
+    assets.clear();
     if (id) {
       sentences.delete(id);
       definitions.delete(id);
@@ -87,12 +120,15 @@ export function createReviewPreload(settings: Settings) {
       definitions.clear();
       frequencies.clear();
       prepared.clear();
-      dictionaries = undefined;
     }
   }
-  function retain(words: Vocabulary[]) {
-    const ids = new Set(words.map((word) => word.id));
-    for (const cache of [sentences, definitions, audio, prepared])
+  function retain(words: ReviewWordSummary[]) {
+    const ids = new Set(
+      words.flatMap((word) =>
+        word.wordId ? [word.id, word.wordId] : [word.id],
+      ),
+    );
+    for (const cache of [sentences, definitions, audio, prepared, visuals])
       for (const id of cache.keys()) if (!ids.has(id)) cache.delete(id);
     const frequencyKeys = new Set(
       words.map((word) =>
@@ -102,92 +138,17 @@ export function createReviewPreload(settings: Settings) {
     for (const key of frequencies.keys())
       if (!frequencyKeys.has(key)) frequencies.delete(key);
   }
-  async function prepareText(word: Vocabulary, context?: ReadingContext) {
-    const result = await loadDefinitions(word.id, context);
-    if (
-      !settings.autoTranslateDefinitions &&
-      !(settings.autoTranslateSentences && settings.showSentenceTranslation)
-    )
-      return;
-    if (!(await canAutoTranslate(word.language, settings.nativeLanguage)))
-      return;
-    if (
-      context &&
-      settings.autoTranslateSentences &&
-      settings.showSentenceTranslation &&
-      !context.customTranslations?.[settings.nativeLanguage] &&
-      context.translation?.language !== settings.nativeLanguage
-    ) {
-      const translation = {
-        text: await translateSentence(
-          context.sentence,
-          word.language,
-          settings.nativeLanguage,
-          () => {},
-        ),
-        language: settings.nativeLanguage,
-      };
-      context.translation = translation;
-    }
-    const texts = new Set<string>();
-    if (
-      settings.autoTranslateDefinitions &&
-      !settings.nativeLanguages.includes(word.language)
-    ) {
-      const rows = (await (dictionaries ??= listDictionaries(settings))).filter(
-        (row) => row !== undefined,
-      );
-      const monolingual = new Set(
-        rows
-          .filter(
-            (row) =>
-              row.language === word.language && row.target === word.language,
-          )
-          .map((row) => row.id),
-      );
-      for (const meaning of displayedMeanings(
-        result.word.meanings,
-        settings,
-        rows,
-      )) {
-        if (
-          meaning.customDefinitions ||
-          result.saved.hiddenDictionaries?.includes(meaning.dictionaryId) ||
-          !(
-            monolingual.has(meaning.dictionaryId) ||
-            meaning.dictionaryId === "nechybujte"
-          )
-        )
-          continue;
-        const expanded = result.saved.expandedDictionaries?.includes(
-          meaning.dictionaryId,
-        );
-        const definitions = (
-          expanded ? meaning : filterPrepositionSenses(meaning, result.grammar)
-        ).definitions;
-        mapDefinitionSenses(definitions, (text) => {
-          texts.add(text);
-          return text;
-        });
-      }
-    }
-    for (const text of texts)
-      await translateSentence(
-        text,
-        word.language,
-        settings.nativeLanguage,
-        () => {},
-      );
-  }
-  function prepare(word: Vocabulary) {
+  function prepare(word: ReviewWordSummary) {
     return cached(prepared, word.id, async () => {
-      const recording = loadAudio(word.id).then(async (record) => {
+      if (!word.wordId || word.language !== settings.studyLanguage) return;
+      const recording = loadAudio(word.wordId).then(async (record) => {
         if (record) await prepareBlob(record.blob);
       });
-      const content = loadSentences(word.id).then((contexts) =>
-        prepareText(word, contexts[0]),
-      );
-      await Promise.allSettled([recording, content, loadFrequencies(word)]);
+      await Promise.allSettled([
+        recording,
+        loadSentences(word.wordId),
+        loadFrequencies(word),
+      ]);
     });
   }
   function run() {
@@ -203,17 +164,20 @@ export function createReviewPreload(settings: Settings) {
       run();
     });
   }
-  function start(words: Vocabulary[]) {
+  function start(words: ReviewWordSummary[]) {
     const upcoming = words.slice(0, 3);
     retain(upcoming);
     queue = upcoming;
     if (document.hidden) return;
+    // Visual preparation must not wait for a previous card's audio download.
+    for (const word of upcoming) void prepareVisual(word.id).catch(() => {});
     run();
   }
   function stop() {
     queue = [];
   }
   return {
+    loadAssets,
     loadSentences,
     loadDefinitions,
     loadAudio,

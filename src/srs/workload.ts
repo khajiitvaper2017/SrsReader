@@ -15,12 +15,13 @@ export async function dailyCounts(
     today: history.length,
     introduced: new Set(
       history
-        .filter((review) => !review.before?.card?.reps)
-        .map((review) => review.wordId),
+        .filter((review) => !review.before?.schedule?.reps)
+        .map((review) => review.cardId),
     ).size,
     reviews: history.filter(
       (review) =>
-        review.before?.card?.state === 2 || review.before?.card?.interday,
+        review.before?.schedule?.state === 2 ||
+        review.before?.schedule?.interday,
     ).length,
   };
 }

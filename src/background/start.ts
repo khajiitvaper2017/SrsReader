@@ -6,7 +6,7 @@ import { udpipePermission } from "@/languages/udpipe-permission";
 import { getSettings, saveSettings } from "@/settings/store";
 import { notify } from "@/background/events";
 import { srsWrite } from "@/platform/locks";
-import { connectImportHost } from "@/imports/commands";
+import { connectImportHost, handleImports } from "@/imports/commands";
 
 export function startBackground() {
   browser.runtime.onConnect.addListener(connectImportHost);
@@ -62,4 +62,5 @@ export function startBackground() {
         height: 760,
       });
   });
+  void handleImports("runImport").catch(console.error);
 }

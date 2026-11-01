@@ -1,5 +1,6 @@
 import ImportWorker from "@/dictionaries/import.worker?worker";
 import LanguageDataWorker from "@/languages/language-data.worker?worker";
+import AnkiImportWorker from "@/anki/import.worker?worker";
 import { importInputSchema, type ImportTask } from "@/imports/model";
 import { db } from "@/platform/database/db";
 import { rpc } from "@/platform/messaging/send";
@@ -10,10 +11,23 @@ import { browser } from "wxt/browser";
 let running = false;
 
 async function execute(task: ImportTask) {
-  const input = importInputSchema.parse(task);
-  await setInterfaceLanguage(input.locale);
+  await setInterfaceLanguage(task.locale);
+  const archive = (await db.importFiles.get("current"))?.blob;
+  if (!archive && !task.url) throw new Error(t("import_source_missing"));
+  const input = importInputSchema.parse({
+    ...task,
+    blob: archive,
+  });
   const report = (progress: ImportProgress) => {
-    void db.importTasks.update("current", { progress }).catch(console.error);
+    void db.importTasks
+      .where("id")
+      .equals("current")
+      .filter(
+        (current) =>
+          current.runId === task.runId && current.status === "running",
+      )
+      .modify({ progress })
+      .catch(console.error);
   };
   let blob = input.blob;
   if (input.type === "dictionary" && input.url) {
@@ -26,18 +40,22 @@ async function execute(task: ImportTask) {
       );
     blob = await readDownload(response, phase, report);
     // Keep the downloaded archive if the browser stops during import.
-    await db.importTasks.update("current", { blob, url: undefined });
+    await db.importFiles.put({ id: "current", blob });
+    await db.importTasks.update("current", { url: undefined });
   }
   report({ phase: t("importing"), done: 0, total: 0 });
   await new Promise<void>((resolve, reject) => {
     const worker =
       input.type === "dictionary"
         ? new ImportWorker()
-        : new LanguageDataWorker();
+        : input.type === "anki"
+          ? new AnkiImportWorker()
+          : new LanguageDataWorker();
     worker.onmessage = (event) => {
       if (event.data.progress) report(event.data.progress);
       if (
         event.data.error ||
+        event.data.result ||
         event.data.dictionary ||
         event.data.count !== undefined
       ) {
@@ -52,9 +70,11 @@ async function execute(task: ImportTask) {
         new Error(
           event.message ||
             t(
-              input.type === "dictionary"
-                ? "dictionary_import_failed"
-                : "language_data_import_failed",
+              input.type === "anki"
+                ? "anki_invalid_package"
+                : input.type === "dictionary"
+                  ? "dictionary_import_failed"
+                  : "language_data_import_failed",
             ),
         ),
       );
@@ -72,46 +92,71 @@ async function run() {
       if (task?.status !== "running") break;
       try {
         await execute(task);
-        await rpc({ action: "invalidate" });
-        await db.importTasks.update("current", {
-          status: "complete",
-          blob: undefined,
-          progress: undefined,
-          notice: t(
-            task.type === "dictionary"
-              ? "dictionary_imported"
-              : task.type === "examples"
-                ? "example_sentences_saved"
-                : "word_forms_saved",
-          ),
-        });
+        await db.transaction(
+          "rw",
+          [db.importTasks, db.importFiles],
+          async () => {
+            await db.importFiles.delete("current");
+            await db.importTasks.update("current", {
+              status: "complete",
+              progress: undefined,
+              notice: t(
+                task.type === "anki"
+                  ? "anki_imported"
+                  : task.type === "dictionary"
+                    ? "dictionary_imported"
+                    : task.type === "examples"
+                      ? "example_sentences_saved"
+                      : "word_forms_saved",
+              ),
+            });
+          },
+        );
+        await rpc({ action: "invalidate" }).catch(console.error);
       } catch (error) {
         console.error("[SrsReader] Import failed", error);
-        await db.importTasks.update("current", {
-          status: "error",
-          blob: undefined,
-          progress: undefined,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        await db.transaction(
+          "rw",
+          [db.importTasks, db.importFiles],
+          async () => {
+            await db.importFiles.delete("current");
+            await db.importTasks.update("current", {
+              status: "error",
+              progress: undefined,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          },
+        );
       }
     }
   } finally {
     running = false;
-    await rpc({ action: "closeImportHost" });
+    if ((await db.importTasks.get("current"))?.status === "running") {
+      void run().catch(console.error);
+    } else await rpc({ action: "closeImportHost" });
   }
 }
 
 export function startImportHost() {
-  if (import.meta.env.BROWSER === "firefox") {
-    const connection = browser.runtime.connect({ name: "import-host" });
-    window.addEventListener("pagehide", () => connection.disconnect(), {
-      once: true,
+  let connection: ReturnType<typeof browser.runtime.connect>;
+  let closing = false;
+  const connect = () => {
+    connection = browser.runtime.connect({ name: "import-host" });
+    connection.onMessage.addListener((message) => {
+      if (message?.type === "run") void run().catch(console.error);
     });
-  }
-  browser.runtime.onMessage.addListener((message, sender) => {
-    if (message?.target !== "import-host" || sender.id !== browser.runtime.id)
-      return;
-    void run().catch(console.error);
-    return Promise.resolve();
-  });
+    connection.onDisconnect.addListener(() => {
+      if (!closing) connect();
+    });
+    connection.postMessage({ type: "ready" });
+  };
+  window.addEventListener(
+    "pagehide",
+    () => {
+      closing = true;
+      connection.disconnect();
+    },
+    { once: true },
+  );
+  connect();
 }

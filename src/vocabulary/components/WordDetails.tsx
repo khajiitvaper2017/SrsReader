@@ -1,3 +1,4 @@
+import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
 import {
   ActionIcon,
   Button,
@@ -77,6 +78,11 @@ export function WordDetails({
             <AudioButton word={word} settings={settings} onError={setError} />
           </Group>
         </Group>
+        <ReadingCardSelect
+          word={word}
+          onChanged={controller.load}
+          onError={setError}
+        />
         <CardFields fields={word.customFields} />
         <CardDefinitions
           key={word.id}

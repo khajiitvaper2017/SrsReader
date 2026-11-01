@@ -1,16 +1,17 @@
-import type { LookupWord } from "@/dictionaries/model";
+import type { Card } from "@/cards/model";
 import { db } from "@/platform/database/db";
 import { t } from "@/shared/i18n/i18n";
 import { dayStart, studyDay } from "@/srs/study-day";
 import type { candidates } from "@/srs/answers";
 import type { SchedulingPreferences } from "@/srs/preferences";
-import type { Vocabulary } from "@/vocabulary/model";
+import type { Schedule } from "@/srs/model";
+import type { ReviewWord } from "@/vocabulary/model";
 import type { Grade } from "ts-fsrs";
 
 export type ReviewCommit = {
-  word: LookupWord;
-  saved: Vocabulary;
-  before: Vocabulary | undefined;
+  word: ReviewWord;
+  saved: Card;
+  before: Card;
   expectedVersion: number;
   id: string;
   rating: Grade;
@@ -36,7 +37,7 @@ export async function commitReview({
   await db.transaction(
     "rw",
     [
-      db.vocabulary,
+      db.cards,
       db.reviews,
       db.srsMeta,
       db.rwkvMeta,
@@ -44,42 +45,32 @@ export async function commitReview({
       db.rwkvCards,
     ],
     async () => {
-      const current = await db.vocabulary.get(word.id);
-      if ((current?.srsVersion ?? 0) !== expectedVersion)
+      const current = await db.cards.get(word.id);
+      if (!current || current.srsVersion !== expectedVersion)
         throw new Error(t("this_word_changed_in_another_tab_reopen_it"));
-      // Metadata writes can finish while the model calculates an answer.
-      if (current) {
-        saved.meanings = current.meanings;
-        saved.definitionOverrides = current.definitionOverrides;
-        saved.hiddenDictionaries = current.hiddenDictionaries;
-        saved.expandedDictionaries = current.expandedDictionaries;
-        saved.mined = current.mined !== false || saved.mined;
-        saved.version = current.version + 1;
-      }
       const meta = await db.srsMeta.get("main");
       const sequence = (meta?.sequence ?? 0) + 1;
-      await db.vocabulary.put(saved);
+      await db.cards.put(saved);
       await db.reviews.put({
         id,
-        wordId: word.id,
+        cardId: word.id,
+        wordId: word.wordId,
+        language: word.language,
         time: now,
         rating,
         source,
-        before: before
-          ? {
-              id: before.id,
-              language: before.language,
-              version: before.version,
-              srsVersion: before.srsVersion,
-              card: before.card,
-              known: before.known,
-              suspended: before.suspended,
-              leech: before.leech,
-            }
-          : null,
+        before: {
+          id: before.id,
+          language: before.language,
+          version: before.version,
+          srsVersion: before.srsVersion,
+          schedule: before.schedule,
+          suspended: before.suspended,
+          leech: before.leech,
+        },
         afterVersion: saved.version,
         afterSrsVersion: saved.srsVersion,
-        after: saved.card,
+        after: saved.schedule,
         log:
           settings.algorithm === "rwkv" ? { rwkvMode: settings.rwkvMode } : {},
         scheduler:
@@ -111,16 +102,14 @@ export const historyForDay = (language: string, start: number, now: number) =>
   db.reviews
     .where("time")
     .between(start, now, true, true)
-    .filter(
-      (review) => review.active && JSON.parse(review.wordId)[0] === language,
-    )
+    .filter((review) => review.active && review.language === language)
     .toArray();
-export function rescheduleCard(id: string, card: Vocabulary["card"]) {
-  return db.vocabulary
+export function rescheduleCard(id: string, card: Schedule | null) {
+  return db.cards
     .where("id")
     .equals(id)
     .modify((current) => {
-      current.card = card;
+      current.schedule = card;
       current.version++;
       current.srsVersion++;
       current.updated = Date.now();

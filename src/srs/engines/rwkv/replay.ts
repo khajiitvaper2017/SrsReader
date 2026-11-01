@@ -37,11 +37,11 @@ export async function replayBatch(settings: Settings) {
   const started = performance.now();
   for (const review of history) {
     if (review.active) {
-      const language = (JSON.parse(review.wordId) as string[])[0]!;
-      const old = cards.get(review.wordId) ?? (await loadCard(review.wordId));
+      const language = review.language;
+      const old = cards.get(review.cardId) ?? (await loadCard(review.cardId));
       const row = buildFeatures(
         {
-          wordId: review.wordId,
+          wordId: review.cardId,
           language,
           time: review.time,
           day:
@@ -70,8 +70,8 @@ export async function replayBatch(settings: Settings) {
           state: pack(result.states.get(key)!, stream === 0 || stream === 2),
         });
       }
-      cards.set(review.wordId, {
-        id: review.wordId,
+      cards.set(review.cardId, {
+        id: review.cardId,
         features: row.card,
         curve: { w: result.heads.w, s: result.heads.s, d: result.heads.d },
       });

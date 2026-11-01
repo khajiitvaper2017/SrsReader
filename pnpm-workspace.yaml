@@ -1,2 +1,4 @@
 allowBuilds:
   fsevents: true
+patchedDependencies:
+  dexie-export-import@4.4.2: patches/dexie-export-import@4.4.2.patch

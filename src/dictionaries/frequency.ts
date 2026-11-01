@@ -136,9 +136,15 @@ export async function wordFrequencies(
   return matchingFrequencies(word, await frequencyData([word], settings));
 }
 
-export async function orderNewWords(words: Vocabulary[], settings: Settings) {
+export async function orderNewWords<T extends Vocabulary>(
+  words: T[],
+  settings: Settings,
+) {
   if (!words.length) return words;
-  const data = await frequencyData(words, settings);
+  const data = await frequencyData(
+    words.filter((word) => !("wordId" in word) || !!word.wordId),
+    settings,
+  );
   const { dictionaries } = data;
   const ranks = new Map<string, number>();
   const maxFrequency = dictionaries.length
@@ -146,9 +152,12 @@ export async function orderNewWords(words: Vocabulary[], settings: Settings) {
     : words.length;
   await Promise.all(
     words.map(async (word) => {
-      const rank = harmonicRank(
-        matchingFrequencies(word, data).map((row) => row.rank),
-      );
+      const rank =
+        "wordId" in word && !word.wordId
+          ? Infinity
+          : harmonicRank(
+              matchingFrequencies(word, data).map((row) => row.rank),
+            );
       if (Number.isFinite(rank)) ranks.set(word.id, rank);
       else if (settings.missingFrequency === "random") {
         // A hash keeps each random rank stable across queue reloads and exports.

@@ -1,3 +1,4 @@
+import { getCardDocument } from "@/cards/storage";
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import { stopAudio } from "@/audio/playback";
 import type { Settings } from "@/settings/model";
@@ -42,8 +43,10 @@ export function useReviewSession({
   const [example, setExample] = useState(0);
   const readingRef = useRef<HTMLDivElement>(null);
   const word = queue?.words[0];
+  const activeCardId = useRef<string | undefined>(undefined);
+  activeCardId.current = word?.id;
   useEffect(() => {
-    if (!word) return;
+    if (!word || !readingRef.current) return;
     const ctx = new ContentScriptContext("review-reader");
     startReader(ctx, {
       root: readingRef.current!,
@@ -55,7 +58,8 @@ export function useReviewSession({
   }, [word?.id, word?.card?.reps, settings]);
   const preload = useReviewPreload(settings, queue);
   const { play: playAudio } = usePronunciation({
-    word,
+    noteId: word?.noteId,
+    word: word?.wordId ? { ...word, id: word.wordId } : undefined,
     settings,
     onError: setError,
     prepareRecording: preload.loadAudio,
@@ -67,7 +71,7 @@ export function useReviewSession({
   }>({ id: "", contexts: [], loading: false });
   const contexts = sentences.id === word?.id ? sentences.contexts : [];
   const sentenceLoading =
-    !!word && (sentences.id !== word.id || sentences.loading);
+    !!word?.wordId && (sentences.id !== word.id || sentences.loading);
   const context = contexts[example];
   const [sentenceRevision, refreshSentences] = useState(0);
   const sentencesChanged = useCallback(
@@ -77,10 +81,10 @@ export function useReviewSession({
   useChanges(sentencesChanged, ["vocabulary"]);
   useEffect(() => {
     let alive = true;
-    setSentences({ id: word?.id || "", contexts: [], loading: !!word });
-    if (word)
+    setSentences({ id: word?.id || "", contexts: [], loading: !!word?.wordId });
+    if (word?.wordId)
       void preload
-        .loadSentences(word.id)
+        .loadSentences(word.wordId)
         .then((value) => {
           if (alive) {
             setSentences({ id: word.id, contexts: value, loading: false });
@@ -114,25 +118,31 @@ export function useReviewSession({
         ? queueRevision.current
         : ++queueRevision.current;
       void fetchQueue()
-        .then((value) => {
+        .then(async (value) => {
+          const pinned = preserveCurrent
+            ? value.words.find((entry) => entry.id === activeCardId.current)
+            : undefined;
+          const document =
+            pinned && pinned.id !== value.words[0]?.id
+              ? await getCardDocument(pinned.id)
+              : value.document;
           if (revision !== queueRevision.current) return;
-          setQueue((current) => {
-            const word = current?.words[0];
-            return preserveCurrent && word
+          if (!pinned && value.words[0]?.id !== activeCardId.current) {
+            setRevealed(false);
+            setExample(0);
+          }
+          setQueue((current) =>
+            pinned && document && current?.words[0]?.id === pinned.id
               ? {
                   ...value,
+                  document,
                   words: [
-                    {
-                      ...word,
-                      customFields:
-                        value.words.find((next) => next.id === word.id)
-                          ?.customFields ?? word.customFields,
-                    },
-                    ...value.words.filter((next) => next.id !== word.id),
+                    pinned,
+                    ...value.words.filter((next) => next.id !== pinned.id),
                   ],
                 }
-              : value;
-          });
+              : value,
+          );
         })
         .catch((error) => {
           if (revision === queueRevision.current) setError(error.message);
@@ -165,7 +175,12 @@ export function useReviewSession({
     if (!word) return;
     let alive = true;
     setTimes([]);
-    void srsClient({ action: "preview", id: word.id, durationMs: duration() })
+    void srsClient({
+      action: "preview",
+      id: word.id,
+      cardId: word.id,
+      durationMs: duration(),
+    })
       .then((value) => {
         if (alive) setTimes(value);
       })
@@ -197,7 +212,7 @@ export function useReviewSession({
       const result = await srsClient({
         action: "grade",
         id: word.id,
-        term: word.lemma,
+        cardId: word.id,
         rating,
         version: word.srsVersion,
         source: "review",
@@ -221,20 +236,19 @@ export function useReviewSession({
       ]);
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
-      setQueue(
-        (current) =>
-          current && {
-            ...current,
-            words: current.words.filter((entry) => entry.id !== word.id),
-          },
-      );
-      setRevealed(false);
       await fetchQueue()
         .then((value) => {
-          if (revision === queueRevision.current) setQueue(value);
+          if (revision === queueRevision.current) {
+            setRevealed(false);
+            setExample(0);
+            setQueue(value);
+          }
         })
         .catch((error) => {
-          if (revision === queueRevision.current) setError(error.message);
+          if (revision === queueRevision.current) {
+            setQueue(undefined);
+            setError(error.message);
+          }
         });
     } catch (error) {
       setError((error as Error).message);
@@ -245,7 +259,7 @@ export function useReviewSession({
   }
   function reveal() {
     setRevealed(true);
-    if (settings.autoplay && word) void playAudio();
+    if (settings.autoplay && word?.wordId) void playAudio();
   }
   const timer = useTimedReview({
     settings: settings.timedReview,
@@ -285,7 +299,11 @@ export function useReviewSession({
       setLast("");
       sessionStorage.removeItem("last-review");
       const value = await fetchQueue();
-      if (revision === queueRevision.current) setQueue(value);
+      if (revision === queueRevision.current) {
+        setRevealed(false);
+        setExample(0);
+        setQueue(value);
+      }
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -309,7 +327,11 @@ export function useReviewSession({
     };
     try {
       const value = await fetchQueue();
-      if (revision === queueRevision.current) setQueue(value);
+      if (revision === queueRevision.current) {
+        setRevealed(false);
+        setExample(0);
+        setQueue(value);
+      }
     } catch (error) {
       limits.current = before;
       setError((error as Error).message);

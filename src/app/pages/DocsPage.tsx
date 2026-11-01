@@ -19,6 +19,7 @@ const topics = [
   { id: "dictionaries", label: "docs_dictionaries" },
   { id: "reading", label: "docs_reading" },
   { id: "review", label: "docs_review" },
+  { id: "anki", label: "docs_anki" },
   { id: "data", label: "docs_data" },
 ];
 export default function DocsPage({ topic }: { topic: string }) {

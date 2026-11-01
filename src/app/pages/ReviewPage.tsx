@@ -1,3 +1,16 @@
+import { useCallback, useMemo, useRef, useState } from "react";
+import { browser } from "wxt/browser";
+import { lookupClient } from "@/lookup/client";
+import { escapeHtml } from "@/cards/defaults";
+import { useCardMedia } from "@/media/hooks/useCardMedia";
+import { CardViewer } from "@/cards/components/CardViewer";
+import { fieldText } from "@/cards/template";
+import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
+import type { ReadingContext } from "@/vocabulary/model";
+import { CardTools } from "@/cards/components/CardTools";
+import { setCardSuspended } from "@/cards/storage";
+import { ChevronRight, RefreshCw } from "lucide-react";
+import { refreshNote } from "@/cards/storage";
 import {
   Badge,
   ActionIcon,
@@ -5,21 +18,15 @@ import {
   Button,
   Group,
   Menu,
+  Modal,
   Paper,
   Progress,
   ScrollArea,
   Stack,
   Text,
-  Title,
 } from "@mantine/core";
-import { CardBackground } from "@/media/components/CardBackground";
-import { CardEditor } from "@/vocabulary/components/CardEditor";
-import { CardFields } from "@/vocabulary/components/CardFields";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
-import { dictionaryPartsOfSpeech } from "@/dictionaries/grammar";
-import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
-import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 import type { Settings } from "@/settings/model";
 import { number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
@@ -29,7 +36,6 @@ import { useReviewSession } from "@/srs/hooks/useReviewSession";
 import { SessionProgress } from "@/srs/components/SessionProgress";
 import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
-import { Sentence } from "@/vocabulary/components/Sentence";
 import {
   ArrowLeft,
   Check,
@@ -72,11 +78,104 @@ export function ReviewPage({
     reveal,
     undo,
   } = useReviewSession({ settings, deckId });
-  const front = settings.front;
-  const partsOfSpeech =
-    word && settings.showPartOfSpeech
-      ? dictionaryPartsOfSpeech(word.meanings)
-      : [];
+  const [lookupSession, setLookupSession] = useState("");
+  const viewport = useRef<HTMLDivElement>(null);
+  const displayedCard = useRef("");
+  const cardReady = useCallback((id: string) => {
+    if (displayedCard.current !== id && viewport.current)
+      viewport.current.scrollTop = 0;
+    displayedCard.current = id;
+  }, []);
+  const openLookup = useCallback(
+    (term: string) => {
+      if (!word) return;
+      void lookupClient({
+        action: "createSession",
+        term,
+        context: {
+          language: word.language,
+          sentence: term,
+          surface: term,
+          start: 0,
+          end: term.length,
+          url: location.href,
+          title: document.title,
+          mined: Date.now(),
+        },
+      })
+        .then(setLookupSession)
+        .catch((error: Error) => setError(error.message));
+    },
+    [word?.language],
+  );
+  const sentenceAudio = useCardMedia(
+    word?.wordId || "",
+    "audio",
+    context?.sentence || "",
+    queue?.document?.note.id,
+  );
+  const translationContext = useMemo((): ReadingContext | undefined => {
+    const document = queue?.document;
+    if (!document?.noteType.id.startsWith("reader:")) return;
+    if (context) return context;
+    const { sentence, translation } = document.noteType.bindings;
+    if (sentence === undefined) return;
+    const text = fieldText(document.note.fields[sentence] || "");
+    if (!text) return;
+    return {
+      sentence: text,
+      surface: text,
+      start: 0,
+      end: text.length,
+      url: "",
+      title: "",
+      mined: document.note.created,
+      translation:
+        translation === undefined
+          ? undefined
+          : {
+              text: fieldText(document.note.fields[translation] || ""),
+              language: settings.nativeLanguage,
+            },
+    };
+  }, [queue?.document, context, settings.nativeLanguage]);
+  const translationKey = JSON.stringify([
+    word?.noteId,
+    translationContext?.sentence,
+    settings.nativeLanguage,
+  ]);
+  const [displayTranslation, setDisplayTranslation] = useState<{
+    key: string;
+    value?: ReadingContext["translation"];
+  }>();
+  const initialTranslation =
+    translationContext?.customTranslations?.[settings.nativeLanguage] ??
+    (translationContext?.translation?.language === settings.nativeLanguage
+      ? translationContext.translation.text
+      : "");
+  const translationText = !settings.showSentenceTranslation
+    ? ""
+    : displayTranslation?.key === translationKey
+      ? displayTranslation.value?.text || ""
+      : settings.autoTranslateSentences ||
+          translationContext?.customTranslations?.[settings.nativeLanguage]
+        ? initialTranslation
+        : "";
+  const viewerDocument = useMemo(() => {
+    if (!word || !queue!.document!.noteType.id.startsWith("reader:"))
+      return queue?.document;
+    const fields = [...queue!.document!.note.fields];
+    const bindings = queue!.document!.noteType.bindings;
+    if (context && bindings.sentence !== undefined)
+      fields[bindings.sentence] = escapeHtml(context.sentence);
+    if (bindings.translation !== undefined)
+      fields[bindings.translation] = escapeHtml(translationText);
+    if (context && bindings.sentenceAudio !== undefined)
+      fields[bindings.sentenceAudio] = sentenceAudio?.media
+        ? `[sound:${sentenceAudio.media.name}]`
+        : "";
+    return { ...queue!.document!, note: { ...queue!.document!.note, fields } };
+  }, [queue?.document, context, translationText, sentenceAudio?.media]);
   const back = (
     <ActionIcon
       component="a"
@@ -141,13 +240,11 @@ export function ReviewPage({
                 )}
               </ActionIcon>
             )}
-            <CardEditor
-              iconOnly
-              key={word.id}
-              word={word}
-              contexts={contexts}
-              nativeLanguage={settings.nativeLanguage}
-              currentSentence={context?.sentence}
+            <CardTools
+              document={queue!.document!}
+              settings={settings}
+              context={context}
+              onChanged={load}
             />
             <Menu>
               <Menu.Target>
@@ -162,11 +259,11 @@ export function ReviewPage({
               <Menu.Dropdown>
                 <Menu.Item
                   leftSection={<Check aria-hidden="true" size={16} />}
-                  disabled={busy}
+                  disabled={busy || !word.wordId}
                   onClick={() =>
                     void vocabularyClient({
                       action: "known",
-                      id: word.id,
+                      id: word.wordId!,
                       term: word.lemma,
                       value: true,
                     })
@@ -180,11 +277,7 @@ export function ReviewPage({
                   leftSection={<Pause aria-hidden="true" size={16} />}
                   disabled={busy}
                   onClick={() =>
-                    void vocabularyClient({
-                      action: "suspend",
-                      id: word.id,
-                      value: true,
-                    })
+                    void setCardSuspended(word.id, true)
                       .then(load)
                       .catch((error) => setError(error.message))
                   }
@@ -241,32 +334,52 @@ export function ReviewPage({
           )}
         </Stack>
       )}
+      <Modal
+        closeButtonProps={{ "aria-label": t("close") }}
+        opened={!!lookupSession}
+        onClose={() => setLookupSession("")}
+        title={t("dictionary_lookup")}
+        size="lg"
+      >
+        <Box
+          component="iframe"
+          src={
+            lookupSession
+              ? `${browser.runtime.getURL("/lookup.html")}?session=${encodeURIComponent(lookupSession)}`
+              : undefined
+          }
+          title={t("dictionary_lookup")}
+          w="100%"
+          h="70dvh"
+          style={{ border: 0 }}
+        />
+      </Modal>
       <ErrorBox error={error} />
       {word ? (
         <>
           <Paper
+            data-review-card
             ref={readingRef}
-            key={`${word.id}:${word.card?.reps}`}
+            p={0}
             flex={1}
             mih={0}
             pos="relative"
-            style={{ isolation: "isolate" }}
           >
-            <CardBackground wordId={word.id} onError={setError} />
             <ScrollArea
-              pos="relative"
+              viewportRef={viewport}
               h="100%"
               type="auto"
               scrollbars="y"
-              offsetScrollbars="present"
+              offsetScrollbars="y"
               overscrollBehavior="contain"
               viewportProps={{ tabIndex: 0 }}
-              styles={{ content: { display: "flex", minHeight: "100%" } }}
+              styles={{ content: { minHeight: "100%" } }}
             >
-              <Stack flex={1} miw={0} gap="xs">
+              <Stack gap="xs" p="md">
                 <Box
-                  data-srs-reader
+                  data-review-card-header
                   display="grid"
+                  data-srs-reader
                   style={{
                     gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
                     alignItems: "center",
@@ -283,116 +396,93 @@ export function ReviewPage({
                     )}
                   </Badge>
                   <Group
-                    gap="xs"
+                    gap={4}
                     justify="flex-end"
                     miw={0}
-                    style={{
-                      gridColumn: 3,
-                      visibility: revealed ? "visible" : "hidden",
-                    }}
-                    aria-hidden={!revealed}
-                    inert={!revealed}
+                    style={{ gridColumn: 3 }}
                   >
-                    <FrequencyBadge
-                      word={{ ...word, forms: [] }}
-                      loadFrequencies={preload.loadFrequencies}
-                    />
-                    <AudioButton
-                      word={word}
-                      settings={settings}
-                      onError={setError}
-                      prepareRecording={preload.loadAudio}
-                    />
+                    {revealed &&
+                      translationContext &&
+                      settings.showSentenceTranslation && (
+                        <SentenceTranslation
+                          key={translationKey}
+                          compact
+                          context={translationContext}
+                          language={word.language}
+                          settings={settings}
+                          autoTranslate={settings.autoTranslateSentences}
+                          onDisplayChange={(value) =>
+                            setDisplayTranslation({
+                              key: translationKey,
+                              value,
+                            })
+                          }
+                        >
+                          {(button, _translation, failure) => (
+                            <>
+                              {button}
+                              {failure}
+                            </>
+                          )}
+                        </SentenceTranslation>
+                      )}
+                    {word.wordId && (
+                      <>
+                        <FrequencyBadge
+                          word={{ ...word, id: word.wordId, forms: [] }}
+                          loadFrequencies={preload.loadFrequencies}
+                        />
+                        <AudioButton
+                          noteId={word.noteId}
+                          word={{ ...word, id: word.wordId }}
+                          settings={settings}
+                          onError={setError}
+                          prepareRecording={preload.loadAudio}
+                        />
+                      </>
+                    )}
+                    {contexts.length > 1 && (
+                      <ActionIcon
+                        onClick={() =>
+                          setExample((example + 1) % contexts.length)
+                        }
+                        title={t("another_example")}
+                        aria-label={t("another_example")}
+                      >
+                        <ChevronRight aria-hidden size={16} />
+                      </ActionIcon>
+                    )}
+                    {queue!.document!.note.wordId &&
+                      queue!.document!.noteType.bindings.definitions !==
+                        undefined && (
+                        <ActionIcon
+                          title={t("refresh_from_dictionary")}
+                          aria-label={t("refresh_from_dictionary")}
+                          onClick={() =>
+                            void refreshNote(word.noteId)
+                              .then(load)
+                              .catch((error: Error) => setError(error.message))
+                          }
+                        >
+                          <RefreshCw aria-hidden size={16} />
+                        </ActionIcon>
+                      )}
                   </Group>
                 </Box>
-                <Stack align="center" ta="center" py="xs" gap="xs">
-                  {front === "sentence" && context ? (
-                    <Sentence context={context} language={word.language} />
-                  ) : (
-                    <Title
-                      lang={word.language}
-                      order={1}
-                      data-srs-reader-no-color
-                    >
-                      {word.lemma}
-                    </Title>
-                  )}
-                  {word.reading && (
-                    <Text variant="supporting" data-srs-reader>
-                      {word.reading}
-                    </Text>
-                  )}
-                  {partsOfSpeech.length > 0 && (
-                    <Text variant="supporting" data-srs-reader>
-                      {partsOfSpeech.join(" / ")}
-                    </Text>
-                  )}
-                  {front === "sentence" && !context && (
-                    <Text variant="supporting">
-                      {t(
-                        sentenceLoading
-                          ? "study_sentence_loading"
-                          : "study_no_cached_sentence",
-                      )}
-                    </Text>
-                  )}
-                </Stack>
-                <Box display="grid" flex={1}>
-                  <Stack
-                    gap="xs"
-                    display={revealed ? undefined : "none"}
-                    style={{ gridArea: "1 / 1" }}
-                    aria-hidden={!revealed}
-                    inert={!revealed}
-                  >
-                    {front === "sentence" && (
-                      <Title
-                        order={2}
-                        lang={word.language}
-                        ta="center"
-                        data-srs-reader-no-color
-                      >
-                        {word.lemma}
-                      </Title>
-                    )}
-                    {context && (
-                      <ContextSentence
-                        variant="review"
-                        saveTranslation={false}
-                        key={`${word.id}:${example}`}
-                        word={word}
-                        context={context}
-                        settings={settings}
-                        onError={setError}
-                        position={
-                          contexts.length > 1
-                            ? t("example_position", {
-                                current: example + 1,
-                                total: contexts.length,
-                              })
-                            : undefined
-                        }
-                        onNext={
-                          contexts.length > 1
-                            ? () => setExample((example + 1) % contexts.length)
-                            : undefined
-                        }
-                      />
-                    )}
-                    <CardFields fields={word.customFields} />
-                    <CardDefinitions
-                      saveTranslation={false}
-                      key={word.id}
-                      id={word.id}
-                      context={context}
-                      contextLoading={sentenceLoading}
-                      examples={contexts}
-                      loadDefinitions={preload.loadDefinitions}
-                      settings={settings}
-                      onError={setError}
-                    />
-                  </Stack>
-                </Box>
+                <CardViewer
+                  document={viewerDocument!}
+                  loadAssets={preload.loadAssets}
+                  onReady={cardReady}
+                  loading={
+                    !!viewerDocument?.noteType.id.startsWith("reader:") &&
+                    ((settings.front === "sentence" && sentenceLoading) ||
+                      (revealed && !!context && !sentenceAudio))
+                  }
+                  revealed={revealed}
+                  settings={settings}
+                  onError={setError}
+                  onLookup={openLookup}
+                />
               </Stack>
             </ScrollArea>
           </Paper>

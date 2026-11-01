@@ -9,6 +9,7 @@ import { meaningTags, type LookupWord } from "@/dictionaries/model";
 import { folded, normalize } from "@/languages/text";
 import type { Occurrence, SurfaceAnalysis } from "@/languages/analysis";
 import { db } from "@/platform/database/db";
+import { getWords } from "@/vocabulary/storage";
 import { stateOf } from "@/vocabulary/model";
 import { getSettings } from "@/settings/store";
 import type { WordState } from "@/vocabulary/state";
@@ -178,9 +179,7 @@ export async function scanTexts(
     ...new Set([...matches.values()].flatMap((m) => m.words.map((w) => w.id))),
   ];
   const vocabulary = new Map(
-    (await db.vocabulary.bulkGet(ids))
-      .filter((v) => v !== undefined)
-      .map((v) => [v.id, v]),
+    (await getWords(ids)).filter((v) => v !== undefined).map((v) => [v.id, v]),
   );
   const vocabularyFinished = performance.now();
   function present(candidates: (typeof blocks)[number]) {
@@ -262,9 +261,7 @@ export async function scanTexts(
           studyLanguage: language,
         });
         matches.set(normalize(term), result);
-        for (const word of await db.vocabulary.bulkGet(
-          result.words.map((word) => word.id),
-        ))
+        for (const word of await getWords(result.words.map((word) => word.id)))
           if (word) vocabulary.set(word.id, word);
         for (const index of indices) {
           const spans = present(blocks[index]!).spans;

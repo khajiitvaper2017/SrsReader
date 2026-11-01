@@ -7,12 +7,6 @@ import {
 import { db } from "@/platform/database/db";
 import type { ScanSpan } from "@/reader/scan";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
-import { meaningsMatchPartOfSpeech } from "@/dictionaries/grammar";
-import { resolved } from "@/dictionaries/resolve";
-import { analyzeTexts, occurrenceAnalysis } from "@/languages/udpipe";
-import { udpipeModel } from "@/languages/codes";
-import { udpipePermission } from "@/languages/udpipe-permission";
-import type { Settings } from "@/settings/model";
 import { wordExamples } from "@/examples/query";
 import type { SentenceExample } from "@/examples/model";
 
@@ -96,7 +90,6 @@ export async function cacheScannedTexts(
 
 export async function sentenceExamples(
   word: Vocabulary,
-  settings: Settings,
 ): Promise<SentenceExample[]> {
   const [records, vocabulary, corpus] = await Promise.all([
     db.sentences.where("wordIds").equals(word.id).toArray(),
@@ -145,84 +138,21 @@ export async function sentenceExamples(
           b.record.mined - a.record.mined,
       ),
   );
-  if (!pools.some((candidates) => candidates.length)) return [];
-  const parse =
-    settings.udpipe &&
-    !!udpipeModel(word.language) &&
-    (await udpipePermission());
-  const source = parse ? await resolved(word.lemma, word.id) : word;
-  const meanings = source.meanings.filter(
-    (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
-  );
-  const examples: SentenceExample[] = [];
-  const fallbackExamples: SentenceExample[] = [];
-  for (const candidates of pools) {
-    const first = examples.length;
-    for (
-      let offset = 0;
-      offset < candidates.length && examples.length - first < 20;
-      offset += 20
-    ) {
-      const batch = candidates.slice(offset, offset + 20);
-      const analyses = parse
-        ? await analyzeTexts(
-            batch.map(({ record }) => record.sentence),
-            word.language,
-            settings.udpipeModels[word.language],
-          ).catch((error) => {
-            console.warn("SrsReader: contextual analysis unavailable", error);
-            return [];
-          })
-        : [];
-      const matched = await Promise.all(
-        batch.map(async ({ record, targets }, index) => {
-          let fallback: SentenceExample | undefined;
-          for (const target of targets) {
-            const surface = record.sentence.slice(target.start, target.end);
-            const occurrence = analyses[index]?.surfaces.find(
-              (analysis) =>
-                analysis.start === target.start && analysis.end === target.end,
-            )?.occurrence;
-            const analysis = await occurrenceAnalysis(occurrence, surface);
-            const context: SentenceExample = {
-              sentence: record.sentence,
-              surface,
-              start: target.start,
-              end: target.end,
-              url: record.url,
-              title: record.title,
-              mined: record.mined,
-              translation: record.translation,
-              customTranslations: record.customTranslations,
-              grammar: analysis?.grammar,
-            };
-            if (
-              record.selectedWordIds?.includes(word.id) ||
-              meaningsMatchPartOfSpeech(meanings, analysis?.grammar)
-            )
-              return { context, matching: true };
-            fallback ??= context;
-          }
-          return fallback ? { context: fallback, matching: false } : undefined;
-        }),
-      );
-      for (const example of matched)
-        if (example)
-          (example.matching ? examples : fallbackExamples).push(
-            example.context,
-          );
-    }
-  }
-  if (!examples.length) return fallbackExamples.slice(0, 20);
-  const matching = meanings.flatMap((meaning) => {
-    const example = examples.find(
-      (example) =>
-        example.grammar &&
-        meaningsMatchPartOfSpeech([meaning], example.grammar),
-    );
-    return example ? [example] : [];
-  });
-  return [
-    ...new Set([...examples.slice(0, 1), ...matching, ...examples]),
-  ].slice(0, 20);
+  return pools
+    .flat()
+    .slice(0, 20)
+    .map(({ record, targets }) => {
+      const target = targets[0]!;
+      return {
+        sentence: record.sentence,
+        surface: record.sentence.slice(target.start, target.end),
+        start: target.start,
+        end: target.end,
+        url: record.url,
+        title: record.title,
+        mined: record.mined,
+        translation: record.translation,
+        customTranslations: record.customTranslations,
+      };
+    });
 }

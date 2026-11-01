@@ -63,6 +63,12 @@ export default defineConfig({
           ),
           relativeDest: `bergamot/${file}`,
         });
+      files.push({
+        absoluteSrc: resolve(
+          "node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3.wasm",
+        ),
+        relativeDest: "anki/sqlite3.wasm",
+      });
     },
   },
   manifest: ({ browser }) => ({
@@ -78,7 +84,10 @@ export default defineConfig({
     content_security_policy: {
       extension_pages:
         "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
+      sandbox:
+        "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox; default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'unsafe-inline' blob: https:; img-src blob: data:; media-src blob: data:; font-src blob: data: https:; connect-src blob:; child-src 'self' blob:; form-action 'none'",
     },
+    sandbox: { pages: ["card-viewer.html"] },
     host_permissions: ["http://*/*", "https://*/*"],
     action: { default_title: "SrsReader" },
     icons: { 16: "icons/16.png", 48: "icons/48.png", 128: "icons/128.png" },
@@ -91,7 +100,7 @@ export default defineConfig({
           browser_specific_settings: {
             gecko: {
               id: "srs-reader@local.extension",
-              strict_min_version: "147.0",
+              strict_min_version: "154.0",
               data_collection_permissions: {
                 required: ["none"],
                 optional: ["websiteContent"],

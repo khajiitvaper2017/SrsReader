@@ -162,6 +162,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  dexie-export-import@4.4.2: c97c953a82f94358ec905d3b921a4e9c251e152c74e3ca89091a565ceeae07b1
+
 importers:
 
   .:
@@ -175,6 +178,9 @@ importers:
       '@mantine/hooks':
         specifier: 9.7.3
         version: 9.7.3(react@19.3.1)
+      '@sqlite.org/sqlite-wasm':
+        specifier: 3.54.1-build1
+        version: 3.54.1-build1
       '@zip.js/zip.js':
         specifier: ^2.24.0
         version: 2.24.0
@@ -186,7 +192,10 @@ importers:
         version: 4.4.7
       dexie-export-import:
         specifier: ^4.4.2
-        version: 4.4.2(dexie@4.4.7)
+        version: 4.4.2(patch_hash=c97c953a82f94358ec905d3b921a4e9c251e152c74e3ca89091a565ceeae07b1)(dexie@4.4.7)
+      fzstd:
+        specifier: ^0.1.1
+        version: 0.1.1
       i18next:
         specifier: ^26.5.8
         version: 26.5.8(@typescript/typescript6@6.0.2)
@@ -521,6 +530,10 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+
+  '@sqlite.org/sqlite-wasm@3.54.1-build1':
+    resolution: {integrity: sha512-foW427VBLJ3G87bsnvQTZCc9zYe0Fq1wH0pz1I6BlKLKXcArIAyTkHtq0iT2llmhcMQt9T/p6l5PpQQh+6O8uQ==}
+    engines: {node: '>=22'}
 
   '@topcli/prompts@4.0.0':
     resolution: {integrity: sha512-kkKYPb4k/6kRdnESt77B5vJrrYnYHIYczwv0P1c+tfN/IWEx3KZeKEHoUq7sImIyBEXWdA2uakIroD9pmRJziQ==}
@@ -1123,6 +1136,9 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  fzstd@0.1.1:
+    resolution: {integrity: sha512-dkuVSOKKwh3eas5VkJy1AW1vFpet8TA/fGmVA5krThl8YcOVE/8ZIoEA1+U1vEn5ckxxhLirSdY837azmbaNHA==}
 
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
@@ -2218,6 +2234,8 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
+  '@sqlite.org/sqlite-wasm@3.54.1-build1': {}
+
   '@topcli/prompts@4.0.0': {}
 
   '@types/debug@4.1.13':
@@ -2598,7 +2616,7 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  dexie-export-import@4.4.2(dexie@4.4.7):
+  dexie-export-import@4.4.2(patch_hash=c97c953a82f94358ec905d3b921a4e9c251e152c74e3ca89091a565ceeae07b1)(dexie@4.4.7):
     dependencies:
       dexie: 4.4.7
 
@@ -2767,6 +2785,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  fzstd@0.1.1: {}
 
   get-caller-file@2.0.5: {}
 

@@ -1,3 +1,4 @@
+import { selectReadingCard } from "@/cards/storage";
 import { cacheAudio } from "@/audio/cache";
 import { notify } from "@/background/events";
 import { clearLookupCache } from "@/dictionaries/lookup";
@@ -35,7 +36,9 @@ import {
 } from "@/vocabulary/storage";
 
 export function handleVocabulary(request: Request, settings: Settings) {
-  return request.action === "saveCardFields" ||
+  return request.action === "selectReadingCard" ||
+    request.action === "refreshWord" ||
+    request.action === "saveCardFields" ||
     request.action === "saveCustomTranslation" ||
     request.action === "mine" ||
     request.action === "defineWord" ||
@@ -51,6 +54,10 @@ export function handleVocabulary(request: Request, settings: Settings) {
 }
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
+    case "selectReadingCard":
+      await selectReadingCard(request.id, request.cardId);
+      await notify(request.id);
+      return;
     case "saveCardFields":
       await saveCardFields(request);
       await notify(request.id);
@@ -232,7 +239,7 @@ async function execute(request: Request, settings: Settings) {
           (meaning) => meaning.dictionaryId !== "personal",
         ),
       });
-      await replaceMeanings(saved.id, updated.meanings);
+      await replaceMeanings(saved.id, updated.meanings, request.noteId);
       await notify(saved.id);
       return;
     }

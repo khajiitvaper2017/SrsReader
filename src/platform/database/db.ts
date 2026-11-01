@@ -25,13 +25,24 @@ import type {
 } from "@/srs/engines/rwkv/records";
 import type { Review, SrsMeta } from "@/srs/history";
 import type { Vocabulary } from "@/vocabulary/model";
-import type { CardMedia } from "@/media/model";
+import type {
+  NoteType,
+  Note,
+  Card,
+  CardAsset,
+  AnkiReview,
+} from "@/cards/model";
 import type { ImportTask } from "@/imports/model";
 import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
-  cardMedia!: Table<CardMedia, string>;
+  noteTypes!: Table<NoteType, string>;
+  notes!: Table<Note, string>;
+  cards!: Table<Card, string>;
+  cardAssets!: Table<CardAsset, string>;
+  ankiReviews!: Table<AnkiReview, string>;
   importTasks!: Table<ImportTask, string>;
+  importFiles!: Table<{ id: string; blob: Blob }, string>;
   immersionWords!: Table<ImmersionWord, string>;
   immersionPassages!: Table<ImmersionPassage, string>;
   sentences!: Table<CachedSentence, string>;

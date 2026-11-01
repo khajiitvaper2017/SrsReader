@@ -76,7 +76,7 @@ export function App() {
   }, [loadStats]);
   useEffect(() => {
     const hash = () => {
-      setHash(location.hash.slice(1) || "review");
+      React.startTransition(() => setHash(location.hash.slice(1) || "review"));
       stopAudio();
     };
     addEventListener("hashchange", hash);

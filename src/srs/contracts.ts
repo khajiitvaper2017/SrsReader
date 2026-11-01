@@ -1,4 +1,4 @@
-import type { Vocabulary } from "@/vocabulary/model";
+import type { ReviewWord } from "@/vocabulary/model";
 import type { reviewQueue } from "@/srs/queue";
 import type { ReviewStatistics } from "@/srs/statistics";
 import type { Settings } from "@/settings/model";
@@ -13,6 +13,8 @@ export const requests = [
   z.object({
     action: z.literal("grade"),
     ...selection,
+    term: selection.term.optional(),
+    cardId: z.string().optional(),
     id: z.string(),
     rating: z.number().int().min(1).max(4),
     durationMs: z.number().finite().nonnegative().nullable().optional(),
@@ -48,6 +50,7 @@ export const requests = [
   }),
   z.object({
     action: z.literal("preview"),
+    cardId: z.string().optional(),
     id: z.string(),
     durationMs: z.number().finite().nonnegative().nullable().optional(),
   }),
@@ -78,7 +81,7 @@ export type Responses = {
   createFrequencyDeck: Deck;
   manageDeck: void;
   sentenceExamples: SentenceExample[];
-  grade: { word: Vocabulary; reviewId: string };
+  grade: { word: ReviewWord; reviewId: string };
   undo: void;
   queue: Awaited<ReturnType<typeof reviewQueue>>;
   preview: number[];

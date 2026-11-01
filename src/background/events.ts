@@ -1,6 +1,6 @@
 import { clearWordLists } from "@/vocabulary/list";
 import { clearLookupCache } from "@/dictionaries/lookup";
-import { db } from "@/platform/database/db";
+import { getWord } from "@/vocabulary/storage";
 import type {
   ChangeMessage,
   ChangeScope,
@@ -22,7 +22,7 @@ export async function notify(
 ) {
   clearWordLists();
   if (!wordId) clearLookupCache();
-  const word = wordId ? await db.vocabulary.get(wordId) : undefined;
+  const word = wordId ? await getWord(wordId) : undefined;
   const message: ChangeMessage = {
     scope,
     event: "changed",

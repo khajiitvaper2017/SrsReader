@@ -46,7 +46,7 @@ export function playReviewAlert() {
   tone.stop(now + 0.15);
 }
 
-export function stopAudio() {
+export function stopAudio(includeCard = true) {
   playbackVersion++;
   if (currentSource) {
     currentSource.onended = null;
@@ -57,6 +57,8 @@ export function stopAudio() {
   currentSource = undefined;
   currentGain = undefined;
   if ("speechSynthesis" in globalThis) speechSynthesis.cancel();
+  if (includeCard && typeof window !== "undefined")
+    window.dispatchEvent(new Event("srs-reader-stop-audio"));
 }
 
 export async function speak(text: string, language: string, voiceName: string) {

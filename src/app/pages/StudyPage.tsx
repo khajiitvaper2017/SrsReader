@@ -1,3 +1,4 @@
+import { AnkiTransfer } from "@/anki/components/AnkiTransfer";
 import {
   ActionIcon,
   Button,
@@ -205,6 +206,7 @@ export function StudyPage({
           </Menu.Dropdown>
         </Menu>
       </Group>
+      <AnkiTransfer settings={settings} onComplete={load} />
       <TaskAlerts
         busy={busy}
         error={modal || confirmation ? "" : error}
@@ -421,7 +423,7 @@ function StudyRows({
               >
                 {t("study_view_words")}
               </Menu.Item>
-              {deck.id !== "mined" && (
+              {"dictionaryId" in deck && deck.dictionaryId && (
                 <Menu.Item
                   leftSection={<RefreshCw size={16} />}
                   onClick={() =>

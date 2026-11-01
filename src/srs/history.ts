@@ -4,23 +4,24 @@ import type {
   RwkvMeta,
 } from "@/srs/engines/rwkv/records";
 import { scheduleSchema } from "@/srs/model";
-import { vocabularySchema } from "@/vocabulary/model";
+import { cardSchema } from "@/cards/model";
 import { z } from "zod";
 
 export const reviewSchema = z.object({
   id: z.string(),
-  wordId: z.string(),
+  cardId: z.string(),
+  wordId: z.string().optional(),
+  language: z.string(),
   time: z.number().finite(),
   rating: z.number().int().min(1).max(4),
   source: z.enum(["reading", "review"]),
-  before: vocabularySchema
+  before: cardSchema
     .pick({
       id: true,
       language: true,
       version: true,
       srsVersion: true,
-      card: true,
-      known: true,
+      schedule: true,
       suspended: true,
       leech: true,
     })

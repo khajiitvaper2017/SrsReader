@@ -8,12 +8,14 @@ import { Volume2 } from "lucide-react";
 export function AudioButton({
   word,
   sentence,
+  noteId,
   settings,
   onError,
   prepareRecording,
 }: {
   word: Pick<LookupWord, "id" | "lemma" | "language">;
   sentence?: string;
+  noteId?: string;
   settings: Settings;
   onError: (message: string) => void;
   /** Reuse the review session's prepared recording. */
@@ -32,7 +34,14 @@ export function AudioButton({
     held,
     play,
     label,
-  } = usePronunciation({ word, sentence, settings, onError, prepareRecording });
+  } = usePronunciation({
+    word,
+    sentence,
+    noteId,
+    settings,
+    onError,
+    prepareRecording,
+  });
   return (
     <Text data-srs-reader="" component="span" inherit>
       <Menu opened={open} onChange={setOpen} closeOnItemClick={false}>
