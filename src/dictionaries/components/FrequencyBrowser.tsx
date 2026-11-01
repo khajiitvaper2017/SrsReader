@@ -3,6 +3,8 @@ import {
   Accordion,
   ActionIcon,
   Group,
+  Paper,
+  ScrollArea,
   Select,
   SimpleGrid,
   Stack,
@@ -92,79 +94,92 @@ export function FrequencyBrowser({
       <Accordion.Item value="settings">
         <Accordion.Control>{t("frequency_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select
-              label={t("type")}
-              aria-label={t("corpus_type")}
-              value={type}
-              onChange={(value) => setType(value!)}
-              data={[
-                { value: "", label: t("all_types") },
-                ...types.map((type) => ({
-                  value: type,
-                  label: t(typeLabels[type]!),
-                })),
-              ]}
-            />
-            <Select
-              label={t("sort_by")}
-              aria-label={t("sort_frequency_dictionaries")}
-              value={sort}
-              onChange={(value) => setSort(value!)}
-              data={[
-                { value: "language", label: t("language") },
-                { value: "type", label: t("type") },
-                { value: "size", label: t("download_size") },
-              ]}
-            />
-            <TextInput
-              type="search"
-              aria-label={t("search_frequency_dictionaries")}
-              placeholder={t("search_corpora_or_regions")}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </SimpleGrid>
-          <Stack
-            aria-label={t("available_frequency_dictionaries")}
-            mah={280}
-            style={{ overflowY: "auto" }}
-          >
-            {entries.map((entry) => (
-              <Group key={entry.file} align="center">
-                <Stack>
-                  <strong>
-                    {languageLabel(entry.code)} · {entry.source}
-                  </strong>
-                  <Text variant="supporting">
-                    {entry.region && `${entry.region} · `}
-                    {downloadSize(entry.size)}
-                  </Text>
-                </Stack>
-                <ActionIcon
-                  disabled={busy}
-                  onClick={() => void install(entry)}
-                  title={t("import_2", {
-                    language: languageName(entry.code),
-                    region: entry.region,
-                    source: entry.source,
-                  }).replace(/\s+/g, " ")}
-                  aria-label={t("import_2", {
-                    language: languageName(entry.code),
-                    region: entry.region,
-                    source: entry.source,
-                  }).replace(/\s+/g, " ")}
-                  variant="default"
-                >
-                  {installing === entry.file ? (
-                    <Loader size={14} aria-hidden="true" />
-                  ) : (
-                    <Download aria-hidden="true" size={16} />
-                  )}
-                </ActionIcon>
-              </Group>
-            ))}
-            {!entries.length && <Text>{t("no_matching_dictionaries")}</Text>}
+          <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <Select
+                label={t("type")}
+                aria-label={t("corpus_type")}
+                value={type}
+                onChange={(value) => setType(value!)}
+                data={[
+                  { value: "", label: t("all_types") },
+                  ...types.map((type) => ({
+                    value: type,
+                    label: t(typeLabels[type]!),
+                  })),
+                ]}
+              />
+              <Select
+                label={t("sort_by")}
+                aria-label={t("sort_frequency_dictionaries")}
+                value={sort}
+                onChange={(value) => setSort(value!)}
+                data={[
+                  { value: "language", label: t("language") },
+                  { value: "type", label: t("type") },
+                  { value: "size", label: t("download_size") },
+                ]}
+              />
+              <TextInput
+                type="search"
+                label={t("search_frequency_dictionaries")}
+                aria-label={t("search_frequency_dictionaries")}
+                placeholder={t("search_corpora_or_regions")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </SimpleGrid>
+            <ScrollArea.Autosize
+              mah={280}
+              scrollbars="y"
+              offsetScrollbars
+              type="auto"
+            >
+              <Stack
+                gap="xs"
+                aria-label={t("available_frequency_dictionaries")}
+              >
+                {entries.map((entry) => (
+                  <Paper key={entry.file} withBorder p="sm">
+                    <Group align="center" wrap="nowrap">
+                      <Stack gap={0} miw={0} flex={1}>
+                        <strong>
+                          {languageLabel(entry.code)} · {entry.source}
+                        </strong>
+                        <Text variant="supporting">
+                          {entry.region && `${entry.region} · `}
+                          {downloadSize(entry.size)}
+                        </Text>
+                      </Stack>
+                      <ActionIcon
+                        disabled={busy}
+                        onClick={() => void install(entry)}
+                        title={t("import_2", {
+                          language: languageName(entry.code),
+                          region: entry.region,
+                          source: entry.source,
+                        }).replace(/\s+/g, " ")}
+                        aria-label={t("import_2", {
+                          language: languageName(entry.code),
+                          region: entry.region,
+                          source: entry.source,
+                        }).replace(/\s+/g, " ")}
+                        variant="default"
+                      >
+                        {installing === entry.file ? (
+                          <Loader size={14} aria-hidden="true" />
+                        ) : (
+                          <Download aria-hidden="true" size={16} />
+                        )}
+                      </ActionIcon>
+                    </Group>
+                  </Paper>
+                ))}
+                {!entries.length && (
+                  <Text>{t("no_matching_dictionaries")}</Text>
+                )}
+              </Stack>
+            </ScrollArea.Autosize>
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
