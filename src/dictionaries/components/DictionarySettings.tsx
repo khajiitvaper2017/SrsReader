@@ -24,6 +24,10 @@ import {
   wiktionaryDownloadUrl,
   wiktionaryName,
 } from "@/dictionaries/components/WiktionaryBrowser";
+import {
+  WikipediaBrowser,
+  wikipediaDownloadUrl,
+} from "@/dictionaries/components/WikipediaBrowser";
 import { useDictionarySettings } from "@/dictionaries/hooks/useDictionarySettings";
 import type { Dictionary } from "@/dictionaries/model";
 import { languageLabel, languageName } from "@/languages/codes";
@@ -323,6 +327,18 @@ export function DictionarySettings({
                       wiktionaryDownloadUrl(entry),
                       entry.source,
                       wiktionaryName(entry),
+                    )
+                  }
+                />
+                <WikipediaBrowser
+                  key={settings.studyLanguage}
+                  language={settings.studyLanguage}
+                  busy={busy}
+                  onImport={(entry) =>
+                    downloadDictionary(
+                      wikipediaDownloadUrl(entry.file),
+                      entry.code,
+                      `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
                     )
                   }
                 />

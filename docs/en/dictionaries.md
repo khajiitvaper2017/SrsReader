@@ -19,6 +19,7 @@ Open **Settings → Dictionaries**:
 The default **Definition language** filter includes dictionaries in all your native languages and the selected dictionary language. For example, selecting German includes German → German alongside dictionaries with definitions in your native languages. This filter is selected by default when matching downloads exist. Choose a specific language to show only its dictionaries, or **All languages** to show every definition language.
 
 - **Vocabulary → Wiktionary dictionaries:** choose a definition language, then **Import**. **Definitions** contains full entries; **Translations** contains shorter glosses. Choose the same language on both sides for monolingual definitions.
+- **Vocabulary → Wikipedia dictionaries:** download article summaries for the selected language. Entries use that language and link to the full Wikipedia article. These are encyclopedia summaries from December 2022, not bilingual translations. If no download is available, choose another dictionary language. You can also import a Wikipedia for Yomitan ZIP with **Choose ZIP**.
 - **Frequency:** choose a corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
 - **Choose ZIP** or drag a file into the import area to install a Yomitan format-3 dictionary. Select a language tab first if the ZIP lacks language information.
 
