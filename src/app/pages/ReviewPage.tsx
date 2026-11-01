@@ -17,6 +17,7 @@ import {
   Box,
   Button,
   Group,
+  HoverCard,
   Menu,
   Modal,
   Paper,
@@ -289,50 +290,61 @@ export function ReviewPage({
           </Group>
         </SessionProgress>
       )}
-      {word && timer.enabled && timer.phase && (
-        <Stack gap="xs" data-srs-reader>
-          <Group justify="center" gap="xs">
-            <Text variant="supporting">
-              {t(
-                timer.phase === "fail"
-                  ? "timed_review_again_in"
-                  : timer.phase === "question"
-                    ? "timed_review_question"
-                    : "timed_review_answer",
-              )}
-            </Text>
-            <Text
-              role="timer"
-              aria-live="off"
-              fw={600}
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
-              {number(Math.floor(timer.seconds / 60))}:
-              {number(timer.seconds % 60, {
-                minimumIntegerDigits: 2,
-              })}
-            </Text>
-            {timer.paused && (
-              <Text variant="supporting">{t("timed_review_paused")}</Text>
-            )}
-            {timer.expired && (
-              <Text role="status">{t("timed_review_expired")}</Text>
-            )}
-          </Group>
-          {settings.timedReview.showBar && (
+      {word && timer.enabled && settings.timedReview.showBar && (
+        <HoverCard
+          events={{ hover: true, focus: true, touch: false }}
+          disabled={!timer.phase}
+          role="tooltip"
+          withArrow
+        >
+          <HoverCard.Target>
             <Progress
+              data-srs-reader
+              tabIndex={timer.phase ? 0 : undefined}
               aria-label={t("timed_review_countdown")}
               value={
-                timer.duration ? (timer.seconds / timer.duration) * 100 : 0
+                timer.phase && timer.duration
+                  ? (timer.seconds / timer.duration) * 100
+                  : 0
               }
               size="xs"
               color={
                 timer.phase === "fail" || timer.expired ? "red" : undefined
               }
-              transitionDuration={timer.paused ? 0 : 1000}
+              transitionDuration={!timer.phase || timer.paused ? 0 : 1000}
             />
-          )}
-        </Stack>
+          </HoverCard.Target>
+          <HoverCard.Dropdown>
+            <Stack gap={0} align="center">
+              <Text variant="supporting">
+                {t(
+                  timer.phase === "fail"
+                    ? "timed_review_again_in"
+                    : timer.phase === "question"
+                      ? "timed_review_question"
+                      : "timed_review_answer",
+                )}
+              </Text>
+              <Text
+                role="timer"
+                aria-live="off"
+                fw={600}
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                {number(Math.floor(timer.seconds / 60))}:
+                {number(timer.seconds % 60, {
+                  minimumIntegerDigits: 2,
+                })}
+              </Text>
+              {timer.paused && (
+                <Text variant="supporting">{t("timed_review_paused")}</Text>
+              )}
+              {timer.expired && (
+                <Text role="status">{t("timed_review_expired")}</Text>
+              )}
+            </Stack>
+          </HoverCard.Dropdown>
+        </HoverCard>
       )}
       <Modal
         closeButtonProps={{ "aria-label": t("close") }}
