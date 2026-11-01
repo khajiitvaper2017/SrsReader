@@ -286,6 +286,7 @@
   "mouse_button": "Mouse button",
   "mouse_forward": "Mouse Forward",
   "native_languages": "Native languages",
+  "native_languages_and_language": "Native languages and {{language}}",
   "native_languages_help": "The first language is used for translation and automatic interface selection. Drag to reorder.",
   "nechybujte_online": "Nechybujte (online)",
   "nechybujte_online_help": "Only looked-up and automatically loaded words go to Nechybujte. Place below local dictionaries and use “If needed” to limit requests.",

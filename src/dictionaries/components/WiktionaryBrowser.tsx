@@ -58,11 +58,12 @@ export function WiktionaryBrowser({
   busy: boolean;
   onImport: (entry: WiktionaryDownload) => Promise<void>;
 }) {
+  const defaultLanguages = [language, ...nativeLanguages];
   const [target, setTarget] = useState(
     downloads.some(
       (entry) =>
         (!language || languageCode(entry.source) === language) &&
-        nativeLanguages.includes(languageCode(entry.target)),
+        defaultLanguages.includes(languageCode(entry.target)),
     )
       ? "native"
       : "",
@@ -84,7 +85,7 @@ export function WiktionaryBrowser({
     (entry) =>
       !target ||
       (target === "native"
-        ? nativeLanguages.includes(languageCode(entry.target))
+        ? defaultLanguages.includes(languageCode(entry.target))
         : languageCode(entry.target) === target),
   );
   const query = search.trim().toLocaleLowerCase();
@@ -128,7 +129,12 @@ export function WiktionaryBrowser({
               }}
               data={[
                 { value: "", label: t("all_languages") },
-                { value: "native", label: t("native_languages") },
+                {
+                  value: "native",
+                  label: t("native_languages_and_language", {
+                    language: languageName(language),
+                  }),
+                },
                 ...targets
                   .sort(compareLanguages)
                   .map((code) => ({ value: code, label: languageLabel(code) })),

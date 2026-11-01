@@ -292,6 +292,7 @@
   "mouse_button": "Кнопка миші",
   "mouse_forward": "Кнопка миші «Вперед»",
   "native_languages": "Рідні мови",
+  "native_languages_and_language": "Рідні мови та {{language}}",
   "native_languages_help": "Перша мова — для перекладу й автоматичного вибору мови інтерфейсу. Перетягніть для зміни порядку.",
   "nechybujte_online": "Nechybujte (онлайн)",
   "nechybujte_online_help": "До Nechybujte надходять лише слова для пошуку й автозавантаження. Ставте нижче локальних словників і вибирайте «За потреби», щоб обмежити запити.",

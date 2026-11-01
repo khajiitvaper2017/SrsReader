@@ -16,7 +16,7 @@ Install a dictionary or change its display option under **Settings → Dictionar
 
 Open **Settings → Dictionaries**:
 
-**Definition language → Native languages** includes dictionaries in all your native languages. This filter is selected by default when matching downloads exist. Choose a specific language to show only its dictionaries, or **All languages** to show every definition language.
+The default **Definition language** filter includes dictionaries in all your native languages and the selected dictionary language. For example, selecting German includes German → German alongside dictionaries with definitions in your native languages. This filter is selected by default when matching downloads exist. Choose a specific language to show only its dictionaries, or **All languages** to show every definition language.
 
 - **Vocabulary → Wiktionary dictionaries:** choose a definition language, then **Import**. **Definitions** contains full entries; **Translations** contains shorter glosses. Choose the same language on both sides for monolingual definitions.
 - **Frequency:** choose a corpus, then **Import**. These supply word ranks, so you still need a definition dictionary.
