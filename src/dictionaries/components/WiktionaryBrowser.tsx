@@ -3,6 +3,8 @@ import {
   Accordion,
   ActionIcon,
   Group,
+  Paper,
+  ScrollArea,
   Select,
   SimpleGrid,
   Stack,
@@ -118,97 +120,114 @@ export function WiktionaryBrowser({
       <Accordion.Item value="catalogue">
         <Accordion.Control>{t("wiktionary_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <Select
-              label={t("definition_language")}
-              aria-label={t("definition_language")}
-              value={target}
-              onChange={(value) => {
-                setTarget(value!);
-                setType("");
-              }}
-              data={[
-                { value: "", label: t("all_languages") },
-                {
-                  value: "native",
-                  label: t("native_languages_and_language", {
-                    language: languageName(language),
-                  }),
-                },
-                ...targets
-                  .sort(compareLanguages)
-                  .map((code) => ({ value: code, label: languageLabel(code) })),
-              ]}
-            />
-            <Select
-              label={t("type")}
-              aria-label={t("dictionary_type")}
-              value={type}
-              onChange={(value) => setType(value!)}
-              data={[
-                { value: "", label: t("all_types") },
-                ...types
-                  .filter((type) =>
-                    matching.some((entry) => entry.type === type),
-                  )
-                  .map((type) => ({ value: type, label: t(typeLabels[type]) })),
-              ]}
-            />
-            <Select
-              label={t("sort_by")}
-              aria-label={t("sort_dictionaries")}
-              value={sort}
-              onChange={(value) => setSort(value!)}
-              data={[
-                { value: "language", label: t("language") },
-                { value: "size", label: t("download_size") },
-              ]}
-            />
-            <TextInput
-              type="search"
-              aria-label={t("search_dictionaries")}
-              placeholder={t("search_languages")}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </SimpleGrid>
-          <Stack
-            aria-label={t("available_wiktionary_dictionaries")}
-            mah={280}
-            style={{ overflowY: "auto" }}
-          >
-            {entries.map((entry) => (
-              <Group key={wiktionaryName(entry)} align="center">
-                <Stack>
-                  <strong>
-                    {languageLabel(languageCode(entry.source))} →{" "}
-                    {languageLabel(languageCode(entry.target))}
-                  </strong>
-                  <Text variant="supporting">
-                    {t(typeLabels[entry.type])} · {downloadSize(entry.size)} ·{" "}
-                    {wiktionaryName(entry)}
-                  </Text>
-                </Stack>
-                <ActionIcon
-                  disabled={busy}
-                  onClick={() => void install(entry)}
-                  title={t("import_dictionary_named", {
-                    title: wiktionaryName(entry),
-                  })}
-                  aria-label={t("import_dictionary_named", {
-                    title: wiktionaryName(entry),
-                  })}
-                  variant="default"
-                >
-                  {installing === wiktionaryName(entry) ? (
-                    <Loader size={14} aria-hidden="true" />
-                  ) : (
-                    <Download aria-hidden="true" size={16} />
-                  )}
-                </ActionIcon>
-              </Group>
-            ))}
-            {!entries.length && <Text>{t("no_matching_dictionaries")}</Text>}
+          <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <Select
+                label={t("definition_language")}
+                aria-label={t("definition_language")}
+                value={target}
+                onChange={(value) => {
+                  setTarget(value!);
+                  setType("");
+                }}
+                data={[
+                  { value: "", label: t("all_languages") },
+                  {
+                    value: "native",
+                    label: t("native_languages_and_language", {
+                      language: languageName(language),
+                    }),
+                  },
+                  ...targets.sort(compareLanguages).map((code) => ({
+                    value: code,
+                    label: languageLabel(code),
+                  })),
+                ]}
+              />
+              <Select
+                label={t("type")}
+                aria-label={t("dictionary_type")}
+                value={type}
+                onChange={(value) => setType(value!)}
+                data={[
+                  { value: "", label: t("all_types") },
+                  ...types
+                    .filter((type) =>
+                      matching.some((entry) => entry.type === type),
+                    )
+                    .map((type) => ({
+                      value: type,
+                      label: t(typeLabels[type]),
+                    })),
+                ]}
+              />
+              <Select
+                label={t("sort_by")}
+                aria-label={t("sort_dictionaries")}
+                value={sort}
+                onChange={(value) => setSort(value!)}
+                data={[
+                  { value: "language", label: t("language") },
+                  { value: "size", label: t("download_size") },
+                ]}
+              />
+              <TextInput
+                type="search"
+                label={t("search_dictionaries")}
+                aria-label={t("search_dictionaries")}
+                placeholder={t("search_languages")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </SimpleGrid>
+            <ScrollArea.Autosize
+              mah={280}
+              scrollbars="y"
+              offsetScrollbars
+              type="auto"
+            >
+              <Stack
+                gap="xs"
+                aria-label={t("available_wiktionary_dictionaries")}
+              >
+                {entries.map((entry) => (
+                  <Paper key={wiktionaryName(entry)} withBorder p="sm">
+                    <Group align="center" wrap="nowrap">
+                      <Stack gap={0} miw={0} flex={1}>
+                        <strong>
+                          {languageLabel(languageCode(entry.source))} →{" "}
+                          {languageLabel(languageCode(entry.target))}
+                        </strong>
+                        <Text variant="supporting">
+                          {t(typeLabels[entry.type])} ·{" "}
+                          {downloadSize(entry.size)} · {wiktionaryName(entry)}
+                        </Text>
+                      </Stack>
+                      <ActionIcon
+                        disabled={busy}
+                        onClick={() => void install(entry)}
+                        title={t("import_dictionary_named", {
+                          title: wiktionaryName(entry),
+                        })}
+                        aria-label={t("import_dictionary_named", {
+                          title: wiktionaryName(entry),
+                        })}
+                        variant="default"
+                      >
+                        {installing === wiktionaryName(entry) ? (
+                          <Loader size={14} aria-hidden="true" />
+                        ) : (
+                          <Download aria-hidden="true" size={16} />
+                        )}
+                      </ActionIcon>
+                    </Group>
+                  </Paper>
+                ))}
+                {!entries.length && (
+                  <Text>{t("no_matching_dictionaries")}</Text>
+                )}
+              </Stack>
+            </ScrollArea.Autosize>
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
