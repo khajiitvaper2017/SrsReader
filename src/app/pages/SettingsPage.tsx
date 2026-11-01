@@ -18,16 +18,10 @@ import { BackupSettings } from "@/backups/components/BackupSettings";
 import { dictionariesClient } from "@/dictionaries/client";
 import { DictionarySettings } from "@/dictionaries/components/DictionarySettings";
 import type { Dictionary } from "@/dictionaries/model";
-import { examplesClient } from "@/examples/client";
-import {
-  languageIso3,
-  languageLabel,
-  morphologyLanguage,
-} from "@/languages/codes";
+import { languageLabel } from "@/languages/codes";
 import { LanguageDataSettings } from "@/languages/components/LanguageDataSettings";
 import { LanguageSettings } from "@/languages/components/LanguageSettings";
 import { useLanguageData } from "@/languages/hooks/useLanguageData";
-import { installedMorphology } from "@/languages/storage";
 import { LookupSettings } from "@/reader/components/LookupSettings";
 import { ReadingSettings } from "@/reader/components/ReadingSettings";
 import { settingsClient } from "@/settings/client";
@@ -92,7 +86,7 @@ export function SettingsPage({
     () => ({ ...preferences, studyLanguage: selectedLanguage }),
     [preferences, selectedLanguage],
   );
-  const { setError, busy, setBusy, setProgress } = tasks;
+  const { setError, busy, setBusy } = tasks;
   const languageData = useLanguageData(settings.studyLanguage, tasks);
   const load = useCallback(() => {
     void dictionariesClient({ action: "dictionaries" })
@@ -123,19 +117,6 @@ export function SettingsPage({
     setBusy(true);
     setError("");
     try {
-      for (const language of settings.studyLanguages) {
-        if (
-          morphologyLanguage(language) &&
-          !(await installedMorphology(language))
-        )
-          await languageData.install("morphology", undefined, language);
-        if (
-          languageIso3(language) &&
-          !(await examplesClient({ action: "exampleCorpus", language }))
-            .installed
-        )
-          await languageData.install("examples", undefined, language);
-      }
       setSettings(
         await settingsClient({
           action: "setSettings",
@@ -147,7 +128,6 @@ export function SettingsPage({
       setError((error as Error).message);
     } finally {
       setBusy(false);
-      setProgress(undefined);
     }
   }
   const sections = [

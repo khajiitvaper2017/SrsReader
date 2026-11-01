@@ -5,7 +5,9 @@
 3. Enable **Use UDPipe** if you want online grammar analysis.
 4. Under **Dictionaries**, select a language tab and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
 5. Choose a lookup control, such as **Middle mouse** or **Shift + hover**. None is selected by default.
-6. Choose **Finish setup**. Available word forms and example sentences download for each studied language.
+6. Choose **Finish setup** to save your settings and open **Review**.
+
+Extra word forms and example sentences are optional. Open **Settings → Dictionaries**, select a language, and use the download buttons under **Word forms** or **Example sentences**.
 
 UDPipe is off by default. Enabling it sends eligible text to LINDAT for grammar analysis. If multiple models are available, choose the corpus closest to your reading. Provider credits, model licenses, and service terms are beside these controls. The [reading guide](reading.md) explains the parser options.
 
