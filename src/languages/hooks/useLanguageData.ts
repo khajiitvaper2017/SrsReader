@@ -7,26 +7,32 @@ import { useEffect, useState } from "react";
 
 export function useLanguageData(language: string, tasks: SettingsTask) {
   const { busy, setError, setProgressTarget, setProgress, setNotice } = tasks;
-  const [morphology, setMorphology] = useState({ count: 0 });
-  const [exampleCorpus, setExampleCorpus] = useState({
-    count: 0,
-    installed: false,
-  });
+  const [morphology, setMorphology] = useState<{
+    language: string;
+    count: number;
+  }>();
+  const [exampleCorpus, setExampleCorpus] = useState<{
+    language: string;
+    count: number;
+    installed: boolean;
+  }>();
   useEffect(() => {
     let alive = true;
-    if (!language) {
-      setMorphology({ count: 0 });
-      setExampleCorpus({ count: 0, installed: false });
-      return;
-    }
-    void installedMorphology(language).then((value) => {
-      if (alive) setMorphology({ count: value?.count ?? 0 });
-    });
+    if (!language) return;
+    void installedMorphology(language)
+      .then((value) => {
+        if (alive) setMorphology({ language, count: value?.count ?? 0 });
+      })
+      .catch((error) => {
+        if (alive) setError(error.message);
+      });
     void examplesClient({ action: "exampleCorpus", language })
       .then((value) => {
-        if (alive) setExampleCorpus(value);
+        if (alive) setExampleCorpus({ language, ...value });
       })
-      .catch((error) => setError(error.message));
+      .catch((error) => {
+        if (alive) setError(error.message);
+      });
     return () => {
       alive = false;
     };
@@ -51,6 +57,11 @@ export function useLanguageData(language: string, tasks: SettingsTask) {
         : t("word_forms_saved"),
     );
   }
-  return { morphology, exampleCorpus, install: installLanguageData };
+  return {
+    morphology: morphology?.language === language ? morphology : undefined,
+    exampleCorpus:
+      exampleCorpus?.language === language ? exampleCorpus : undefined,
+    install: installLanguageData,
+  };
 }
 export type LanguageData = ReturnType<typeof useLanguageData>;

@@ -3,7 +3,6 @@ import {
   ActionIcon,
   Button,
   Group,
-  Loader,
   Menu,
   Modal,
   NumberInput,
@@ -214,30 +213,31 @@ export function StudyPage({
         onDismissError={() => setError("")}
         onDismissNotice={() => setNotice("")}
       />
-      <Paper>
-        {!languages && !error && <Loader />}
-        {narrow ? (
-          <Stack>{rows}</Stack>
-        ) : (
-          <Table.ScrollContainer minWidth={480}>
-            <Table verticalSpacing="sm" highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t("study_language_deck")}</Table.Th>
-                  <Table.Th ta="right">{t("new")}</Table.Th>
-                  <Table.Th ta="right">{t("srs_queue_learning")}</Table.Th>
-                  <Table.Th ta="right">{t("due")}</Table.Th>
-                  <Table.Th aria-label={t("study_deck_actions")} />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-        <Text variant="supporting" mt="md">
-          {t("study_overview_help")}
-        </Text>
-      </Paper>
+      {languages && (
+        <Paper>
+          {narrow ? (
+            <Stack>{rows}</Stack>
+          ) : (
+            <Table.ScrollContainer minWidth={480}>
+              <Table verticalSpacing="sm" highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{t("study_language_deck")}</Table.Th>
+                    <Table.Th ta="right">{t("new")}</Table.Th>
+                    <Table.Th ta="right">{t("srs_queue_learning")}</Table.Th>
+                    <Table.Th ta="right">{t("due")}</Table.Th>
+                    <Table.Th aria-label={t("study_deck_actions")} />
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>{rows}</Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+          <Text variant="supporting" mt="md">
+            {t("study_overview_help")}
+          </Text>
+        </Paper>
+      )}
       <ReviewStatistics />
       <Modal
         opened={modal !== null}

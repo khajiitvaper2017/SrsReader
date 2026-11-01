@@ -6,7 +6,6 @@ import {
   Button,
   Container,
   Group,
-  Loader,
   Menu,
 } from "@mantine/core";
 
@@ -184,9 +183,9 @@ export function App() {
       )}
       <AppShell.Main>
         <Container size={reviewing ? "sm" : "lg"} px={0}>
-          <React.Suspense fallback={<Loader aria-label={t("working")} />}>
+          <React.Suspense fallback={null}>
             {docs ? (
-              <React.Suspense fallback={<Loader aria-label={t("working")} />}>
+              <React.Suspense fallback={null}>
                 <DocsPage topic={page.split("/")[1] || "getting-started"} />
               </React.Suspense>
             ) : setup ? (

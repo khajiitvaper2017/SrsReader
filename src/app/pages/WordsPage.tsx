@@ -1,7 +1,6 @@
 import {
   Grid,
   Group,
-  Loader,
   Paper,
   Select,
   SimpleGrid,
@@ -30,7 +29,7 @@ export function WordsPage({
 }) {
   const controller = useWords({ settings, language, deckId });
   const { query, setQuery, filter, setFilter, error, word, total } = controller;
-  const { overview, loading } = controller;
+  const { overview, decksReady, loading } = controller;
   const row = overview.find((row) => row.language === language);
   const deckName = !deckId
     ? t("words_all_decks")
@@ -42,9 +41,11 @@ export function WordsPage({
     <Stack>
       <Group justify="space-between">
         <Title order={1}>{t("words")}</Title>
-        <Text variant="supporting">
-          {t("words_result_count", { count: total })}
-        </Text>
+        {(total > 0 || !loading) && (
+          <Text variant="supporting">
+            {t("words_result_count", { count: total })}
+          </Text>
+        )}
       </Group>
       <ErrorBox error={error} />
       <Paper>
@@ -103,15 +104,16 @@ export function WordsPage({
               ]}
             />
           </SimpleGrid>
-          <Text variant="supporting">
-            {t("words_scope", {
-              language: languageName(language),
-              deck: deckName,
-            })}
-          </Text>
+          {decksReady && (
+            <Text variant="supporting">
+              {t("words_scope", {
+                language: languageName(language),
+                deck: deckName,
+              })}
+            </Text>
+          )}
         </Stack>
       </Paper>
-      {loading && <Loader />}
       {!loading && !error && !total ? (
         <Paper>
           <Empty title={t("no_words_found")}>

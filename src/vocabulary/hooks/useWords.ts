@@ -22,10 +22,10 @@ export function useWords({
 }) {
   const [contexts, setContexts] = useState<SentenceExample[]>([]);
   const [words, setWords] = useState<WordWithCards[]>([]);
-  const [decks, setDecks] = useState<Deck[]>([]);
+  const [decks, setDecks] = useState<Deck[]>();
   const overview = settings.studyLanguages.map((language) => ({
     language,
-    decks: decks.filter((deck) => deck.language === language),
+    decks: decks?.filter((deck) => deck.language === language) ?? [],
   }));
   const [loading, setLoading] = useState(true);
   const pending = useRef(0);
@@ -210,6 +210,7 @@ export function useWords({
     word,
     total,
     overview,
+    decksReady: decks !== undefined,
     loading,
     pageWords: words,
     page,

@@ -15,28 +15,43 @@ import {
   SlidersHorizontal,
   Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { browser } from "wxt/browser";
+
+async function loadPopupData() {
+  const [stats, dictionaries, [tab]] = await Promise.all([
+    srsClient({ action: "stats" }),
+    dictionariesClient({ action: "dictionaries" }),
+    browser.tabs.query({ active: true, currentWindow: true }),
+  ]);
+  return {
+    stats,
+    dictionaryCount: dictionaries.filter((d) => d.enabled && d.count > 0)
+      .length,
+    host: tab?.url?.startsWith("http") ? new URL(tab.url).hostname : "",
+  };
+}
+
+const initial = await loadPopupData()
+  .then((data) => ({ data, error: "" }))
+  .catch((error: Error) => ({
+    data: {
+      stats: { total: 0, due: 0, known: 0, today: 0 },
+      dictionaryCount: 0,
+      host: "",
+    },
+    error: error.message,
+  }));
+
 export function Popup() {
   const [settings, setSettings] = useSettings();
-  const [host, setHost] = useState("");
-  const [stats, setStats] = useState({ total: 0, due: 0, known: 0, today: 0 });
-  const [error, setError] = useState("");
-  const [dictionaryCount, setDictionaryCount] = useState(0);
+  const [{ host, stats, dictionaryCount }, setData] = useState(initial.data);
+  const [error, setError] = useState(initial.error);
   const load = useCallback(() => {
-    void Promise.all([
-      srsClient({ action: "stats" }),
-      dictionariesClient({ action: "dictionaries" }),
-    ])
-      .then(([stats, dictionaries]) => {
-        setStats(stats);
-        setDictionaryCount(
-          dictionaries.filter((d) => d.enabled && d.count > 0).length,
-        );
-      })
+    void loadPopupData()
+      .then(setData)
       .catch((error) => setError(error.message));
   }, []);
-  useEffect(load, [load]);
   useChanges(load, [
     "vocabulary",
     "srs",
@@ -44,13 +59,6 @@ export function Popup() {
     "dictionaries",
     "collection",
   ]);
-  useEffect(() => {
-    void browser.tabs
-      .query({ active: true, currentWindow: true })
-      .then(([tab]) => {
-        if (tab?.url?.startsWith("http")) setHost(new URL(tab.url).hostname);
-      });
-  }, []);
   function open(page: string) {
     void browser.tabs.create({
       url: browser.runtime.getURL("/app.html") + `#${page}`,

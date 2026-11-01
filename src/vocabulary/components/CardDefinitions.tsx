@@ -1,4 +1,4 @@
-import { ActionIcon, Group, Loader, Stack } from "@mantine/core";
+import { ActionIcon, Box, Group, Stack } from "@mantine/core";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
@@ -75,10 +75,7 @@ export function CardDefinitions({
     ["vocabulary", "settings", "dictionaries"],
   );
   const visibility = useDictionaryVisibility(id, loaded?.result.saved, onError);
-  if (!loaded)
-    return (
-      <Loader size="sm" aria-label={t("looking_up")} data-review-timer-pause />
-    );
+  if (!loaded) return <Box aria-busy data-review-timer-pause />;
   const { result, context: definitionContext } = loaded;
   return (
     <Stack gap="xs">

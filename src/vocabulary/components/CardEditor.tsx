@@ -5,7 +5,6 @@ import {
   Group,
   Image,
   Modal,
-  Loader,
   Select,
   Stack,
   Text,
@@ -124,7 +123,6 @@ export function CardEditor({
         {opened && (
           <Stack>
             <ErrorBox error={error} />
-            {!loaded && !error && <Loader aria-label={t("looking_up")} />}
             {loaded && !document && !error && (
               <Text variant="supporting">
                 {t(

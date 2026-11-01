@@ -4,7 +4,6 @@ import {
   Button,
   Group,
   Flex,
-  Loader,
   Paper,
   Select,
   SimpleGrid,
@@ -117,7 +116,6 @@ export function SearchPage({ settings }: { settings: Settings }) {
           )}
         </Stack>
       </Paper>
-      {!ready && <Loader />}
       <Stack aria-live="polite" aria-busy={busy}>
         {result && (
           <Text variant="supporting">

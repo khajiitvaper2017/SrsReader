@@ -73,7 +73,8 @@ export function SettingsPage({
   language?: string;
   dictionaryTab?: string;
 }) {
-  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const [loadedDictionaries, setDictionaries] = useState<Dictionary[]>();
+  const dictionaries = loadedDictionaries ?? [];
   const languages = [
     ...new Set([
       ...preferences.studyLanguages,
@@ -221,7 +222,7 @@ export function SettingsPage({
       </Tabs>
     );
   }
-  const dictionarySettings = (
+  const dictionarySettings = loadedDictionaries && (
     <DictionarySettings
       settings={settings}
       dictionaries={dictionaries}
@@ -312,11 +313,13 @@ export function SettingsPage({
       <Tabs.Panel value="reading">
         {withLanguageTabs(
           <Stack>
-            <ReadingSettings
-              settings={settings}
-              onChange={update}
-              dictionaries={dictionaries}
-            />
+            {loadedDictionaries && (
+              <ReadingSettings
+                settings={settings}
+                onChange={update}
+                dictionaries={dictionaries}
+              />
+            )}
             <WordColors settings={settings} onChange={update} />
           </Stack>,
         )}
@@ -326,12 +329,14 @@ export function SettingsPage({
       </Tabs.Panel>
       <Tabs.Panel value="review">
         {withLanguageTabs(
-          <ReviewSettings
-            settings={settings}
-            onChange={update}
-            dictionaries={dictionaries}
-            onError={setError}
-          />,
+          loadedDictionaries && (
+            <ReviewSettings
+              settings={settings}
+              onChange={update}
+              dictionaries={dictionaries}
+              onError={setError}
+            />
+          ),
         )}
       </Tabs.Panel>
       <Tabs.Panel value="controls">

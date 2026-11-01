@@ -1,4 +1,4 @@
-import { Box, Center, Loader, Stack, Text } from "@mantine/core";
+import { Box, Stack, Text } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
 import type { CardDocument } from "@/cards/model";
@@ -299,11 +299,6 @@ export function CardViewer({
         </Text>
       )}
       <Box pos="relative" mih={height} aria-busy={displayedCard !== card.id}>
-        {!displayedCard && !error && (
-          <Center pos="absolute" inset={0}>
-            <Loader aria-label={t("working")} />
-          </Center>
-        )}
         <Box
           component="iframe"
           ref={frame}

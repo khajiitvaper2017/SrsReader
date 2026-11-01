@@ -152,17 +152,16 @@ export function DefinitionEditor({
       )}
       <Group role="group" aria-label={t("definition_tags")}>
         <Text variant="supporting">{t("definition_tags")}</Text>
-        {!tags ? (
-          <Loader size="xs" aria-label={t("loading_definition_tags")} />
-        ) : tags.tags ? (
-          tags.tags.split(/\s+/u).map((tag) => (
-            <Badge key={tag} title={tags.tagDescriptions?.[tag]}>
-              {tag}
-            </Badge>
-          ))
-        ) : (
-          <Text variant="supporting">{t("no_definition_tags")}</Text>
-        )}
+        {tags &&
+          (tags.tags ? (
+            tags.tags.split(/\s+/u).map((tag) => (
+              <Badge key={tag} title={tags.tagDescriptions?.[tag]}>
+                {tag}
+              </Badge>
+            ))
+          ) : (
+            <Text variant="supporting">{t("no_definition_tags")}</Text>
+          ))}
       </Group>
       <Textarea
         rows={3}

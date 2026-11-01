@@ -1,5 +1,5 @@
 import { Affix, Notification, Stack, getDefaultZIndex } from "@mantine/core";
-import { useTimeout } from "@mantine/hooks";
+import { useDebouncedValue, useTimeout } from "@mantine/hooks";
 import { useEffect } from "react";
 import type { ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
@@ -22,13 +22,15 @@ export function TaskAlerts({
   onDismissNotice: () => void;
 }) {
   const { start, clear } = useTimeout(onDismissNotice, 5000);
+  const [delayedBusy] = useDebouncedValue(busy, 300);
+  const showProgress = busy && (!!progress || delayedBusy);
 
   useEffect(() => {
     if (!busy && notice) start();
     return clear;
   }, [busy, notice, start, clear]);
 
-  if (!busy && !error && !notice) return null;
+  if (!showProgress && !error && (!notice || busy)) return null;
   return (
     <Affix
       position={{
@@ -41,7 +43,7 @@ export function TaskAlerts({
       data-srs-reader=""
     >
       <Stack gap="xs">
-        {busy && (
+        {showProgress && (
           <Notification loading withCloseButton={false} role="status">
             {progress ? <TaskProgress progress={progress} /> : t("working")}
           </Notification>
