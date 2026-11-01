@@ -100,18 +100,6 @@ export function WordExamples({
             </Group>
           </Group>
           {failure}
-          {!settings.hideDictionarySources && (
-            <Group data-srs-reader="" align="center" justify="space-between">
-              <Anchor
-                href={example.context.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="CC BY 2.0 FR"
-              >
-                Tatoeba · {example.author}
-              </Anchor>
-            </Group>
-          )}
         </Stack>
       )}
     </SentenceTranslation>

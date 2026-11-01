@@ -97,23 +97,24 @@ export function ContextSentence({
             </Group>
           </Group>
           {failure}
-          {!settings.hideDictionarySources && (
-            <Group gap="xs" data-srs-reader>
-              {context.url.startsWith("http") ? (
-                <Anchor
-                  href={context.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {context.title || new URL(context.url).hostname}
-                </Anchor>
-              ) : (
-                <Text variant="supporting">
-                  {context.title || t("study_cached_sentence")}
-                </Text>
-              )}
-            </Group>
-          )}
+          {!settings.hideDictionarySources &&
+            !context.url.startsWith("https://tatoeba.org/") && (
+              <Group gap="xs" data-srs-reader>
+                {context.url.startsWith("http") ? (
+                  <Anchor
+                    href={context.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {context.title || new URL(context.url).hostname}
+                  </Anchor>
+                ) : (
+                  <Text variant="supporting">
+                    {context.title || t("study_cached_sentence")}
+                  </Text>
+                )}
+              </Group>
+            )}
         </Stack>
       )}
     </SentenceTranslation>

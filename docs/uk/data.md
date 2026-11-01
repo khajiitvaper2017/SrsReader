@@ -36,7 +36,7 @@
 
 ## Джерела
 
-Словники походять із [Вікісловника/Kaikki через wty](https://yomidevs.github.io/wiktionary-to-yomitan/download/); словоформи — із [Simplemma](https://github.com/adbar/simplemma); приклади — із [Tatoeba](https://tatoeba.org/en/downloads), за ліцензією [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/). Локальний переклад використовує Translator API браузера або [Bergamot](https://github.com/browsermt/bergamot-translator).
+Подяки авторам і посилання на ліцензії наведено біля налаштувань аналізатора в розділі **Налаштування → Читання** та в кожному розділі завантаження даних у **Налаштування → Словники**. Локальний переклад використовує Translator API браузера або [Bergamot](https://github.com/browsermt/bergamot-translator).
 
 Поширюючи експорти, зберігайте відомості про авторів словників і записів вимови. Ліцензії джерел залишаються чинними.
 

@@ -404,6 +404,7 @@
   "system": "System",
   "system_tts": "System TTS",
   "tatoeba_examples_for_your_study_language_are_stored": "Examples for the selected language stay on this device. Finish setup downloads examples for all studied languages where available. Import accepts detailed TSV exports, including .bz2 files.",
+  "example_corpus_acknowledgement": "Example sentences are from <tatoeba>Tatoeba contributors</tatoeba>, under the <license>Creative Commons Attribution 2.0 France (CC BY 2.0 FR)</license> license.",
   "text": "Text",
   "text_hover": "Text hover",
   "the_downloaded_dictionary_does_not_match_the_installed": "The downloaded dictionary does not match the installed dictionary.",
@@ -1130,5 +1131,10 @@
   "anki_incompatible_note_types": "These note types have a different field or template structure: {{names}}. Import stopped before changing saved cards.",
   "anki_unsupported_features": "{{name}} uses features that are unavailable in this app: {{features}}. The source is preserved for export.",
   "card_asset_unavailable": "Card resource is unavailable: {{name}}.",
-  "play_video": "Play video"
+  "play_video": "Play video",
+  "parser_acknowledgement": "Parser: <udpipe>UDPipe by ÚFAL, Charles University</udpipe>, hosted by <lindat>LINDAT/CLARIAH-CZ</lindat>. Model license: <license>CC BY-NC-SA 4.0</license>. <models>Training-data acknowledgements</models>. <terms>Service terms</terms>.",
+  "wiktionary_acknowledgement": "Content by <wiktionary>Wiktionary contributors</wiktionary>, extracted by <kaikki>Kaikki/Wiktextract</kaikki> and converted by <converter>wiktionary-to-yomitan (wty)</converter>. Content licenses: <license>CC BY-SA / GFDL</license>.",
+  "wikipedia_acknowledgement": "Summaries by <wikipedia>Wikipedia contributors</wikipedia>, extracted by <dbpedia>DBpedia</dbpedia> and converted by <converter>Wikipedia for Yomitan (MarvNC)</converter>. Content licenses: <license>CC BY-SA 3.0 / GFDL</license>.",
+  "frequency_acknowledgement": "Frequency data from <corpus>Leipzig Corpora Collection, Leipzig University</corpus>, converted by <converter>leipzig-to-yomitan (StefanVukovic99)</converter>. <license>Corpus licenses and download information</license>.",
+  "word_forms_acknowledgement": "Word-form data supplied by <project>Simplemma contributors</project>. <license>Data sources and licenses</license>."
 }

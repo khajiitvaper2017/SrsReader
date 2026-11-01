@@ -21,6 +21,7 @@ import {
 import { downloadSize, i18n, t } from "@/shared/i18n/i18n";
 import { Download } from "lucide-react";
 import { useState } from "react";
+import { SourceAttribution } from "@/shared/ui/SourceAttribution";
 export type FrequencyDownload = (typeof catalog)[number];
 export const frequencyDownloadUrl = (file: string) =>
   `https://github.com/StefanVukovic99/leipzig-to-yomitan/releases/download/v2024-08-31-18-57-16-00-00/${encodeURIComponent(file)}`;
@@ -95,6 +96,15 @@ export function FrequencyBrowser({
         <Accordion.Control>{t("frequency_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="sm">
+            <SourceAttribution
+              i18nKey="frequency_acknowledgement"
+              links={{
+                corpus: "https://wortschatz.uni-leipzig.de/",
+                converter:
+                  "https://github.com/StefanVukovic99/leipzig-to-yomitan",
+                license: "https://wortschatz.uni-leipzig.de/en/download/",
+              }}
+            />
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
               <Select
                 label={t("type")}

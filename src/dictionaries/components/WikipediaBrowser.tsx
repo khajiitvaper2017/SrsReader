@@ -12,6 +12,7 @@ import { languageLabel, languageName } from "@/languages/codes";
 import { downloadSize, t } from "@/shared/i18n/i18n";
 import { Download } from "lucide-react";
 import { useState } from "react";
+import { SourceAttribution } from "@/shared/ui/SourceAttribution";
 
 export type WikipediaDownload = (typeof catalog)[number];
 export const wikipediaDownloadUrl = (file: string) =>
@@ -43,6 +44,15 @@ export function WikipediaBrowser({
         <Accordion.Panel>
           <Stack gap="sm">
             <Text variant="supporting">{t("wikipedia_dictionaries_help")}</Text>
+            <SourceAttribution
+              i18nKey="wikipedia_acknowledgement"
+              links={{
+                wikipedia: "https://www.wikipedia.org/",
+                dbpedia: "https://www.dbpedia.org/",
+                converter: "https://github.com/MarvNC/wikipedia-yomitan",
+                license: "https://www.dbpedia.org/about/",
+              }}
+            />
             {entry ? (
               <Paper withBorder p="sm">
                 <Group align="center" wrap="nowrap">

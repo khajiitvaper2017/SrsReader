@@ -16,6 +16,7 @@ import { languageCode, languageLabel, languageName } from "@/languages/codes";
 import { downloadSize, i18n, t } from "@/shared/i18n/i18n";
 import { Download } from "lucide-react";
 import { useState } from "react";
+import { SourceAttribution } from "@/shared/ui/SourceAttribution";
 export type WiktionaryDownload = {
   source: string;
   target: string;
@@ -121,6 +122,15 @@ export function WiktionaryBrowser({
         <Accordion.Control>{t("wiktionary_dictionaries")}</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="sm">
+            <SourceAttribution
+              i18nKey="wiktionary_acknowledgement"
+              links={{
+                wiktionary: "https://www.wiktionary.org/",
+                kaikki: "https://kaikki.org/",
+                converter: "https://yomidevs.github.io/wiktionary-to-yomitan/",
+                license: "https://en.wiktionary.org/wiki/Wiktionary:Copyrights",
+              }}
+            />
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
               <Select
                 label={t("definition_language")}

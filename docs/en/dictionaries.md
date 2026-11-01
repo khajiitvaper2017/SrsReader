@@ -2,6 +2,8 @@
 
 Open **Settings → Dictionaries** and choose a language. The selector includes studied languages and languages with installed dictionaries. **Vocabulary** contains definitions, word forms, and example sentences. **Frequency** contains word rankings. Download catalogs use the selected language.
 
+Each download section includes source and converter credits with links to the content licenses.
+
 A ZIP that contains definitions and rankings appears in both tabs. Vocabulary uses **Show**, **If needed**, and **Hide**. Frequency uses **Enabled** and **Disabled**. Each part has its own order. Removing the ZIP removes both parts. Other languages keep their own settings.
 
 ## Search

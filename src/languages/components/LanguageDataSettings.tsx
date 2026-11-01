@@ -17,6 +17,7 @@ import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { Download, Upload } from "lucide-react";
+import { SourceAttribution } from "@/shared/ui/SourceAttribution";
 export function LanguageDataSettings({
   settings,
   data,
@@ -59,6 +60,13 @@ export function LanguageDataSettings({
               ? t("extra_word_forms_from_simplemma_help_find_dictionary")
               : t("dictionary_word_forms_are_used_no_extra_simplemma")}
           </Text>
+          <SourceAttribution
+            i18nKey="word_forms_acknowledgement"
+            links={{
+              project: "https://github.com/adbar/simplemma",
+              license: "https://github.com/adbar/simplemma/tree/main/licenses",
+            }}
+          />
         </Stack>
       </Paper>
       <Paper id="example-sentences">
@@ -116,6 +124,13 @@ export function LanguageDataSettings({
           <Text variant="supporting">
             {t("tatoeba_examples_for_your_study_language_are_stored")}{" "}
           </Text>
+          <SourceAttribution
+            i18nKey="example_corpus_acknowledgement"
+            links={{
+              tatoeba: "https://tatoeba.org/",
+              license: "https://creativecommons.org/licenses/by/2.0/fr/",
+            }}
+          />
         </Stack>
       </Paper>
     </>

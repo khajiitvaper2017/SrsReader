@@ -36,6 +36,6 @@ Local parsing, reviews, and translation run on your device. Optional UDPipe anal
 
 ## Sources
 
-Dictionaries come from [Wiktionary/Kaikki via wty](https://yomidevs.github.io/wiktionary-to-yomitan/download/); word forms from [Simplemma](https://github.com/adbar/simplemma); examples from [Tatoeba](https://tatoeba.org/en/downloads), under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/). Local translation uses the browser’s Translator API or [Bergamot](https://github.com/browsermt/bergamot-translator).
+Source credits and license links are beside the parser controls in **Settings → Reading** and in each data-download section under **Settings → Dictionaries**. Local translation uses the browser’s Translator API or [Bergamot](https://github.com/browsermt/bergamot-translator).
 
 Keep dictionary attribution and recording credits when sharing exports. Each source’s license still applies.

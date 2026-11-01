@@ -18,6 +18,7 @@ import { udpipePermission } from "@/languages/udpipe-permission";
 import { udpipeModel, udpipeModels } from "@/languages/codes";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { useState } from "react";
+import { SourceAttribution } from "@/shared/ui/SourceAttribution";
 
 export function ReadingSettings({
   settings,
@@ -134,6 +135,17 @@ export function ReadingSettings({
             onChange={(event) =>
               void update({ ignoreProperNames: event.currentTarget.checked })
             }
+          />
+          <SourceAttribution
+            i18nKey="parser_acknowledgement"
+            links={{
+              udpipe: "https://ufal.mff.cuni.cz/udpipe/2",
+              lindat: "https://lindat.mff.cuni.cz/services/udpipe/",
+              models: "https://ufal.mff.cuni.cz/udpipe/2/models",
+              license: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+              terms:
+                "https://lindat.mff.cuni.cz/services/udpipe/api-reference.php",
+            }}
           />
           {!!settings.disabledHosts.length && (
             <>

@@ -410,6 +410,7 @@
   "system": "Системна",
   "system_tts": "Системне озвучення",
   "tatoeba_examples_for_your_study_language_are_stored": "Приклади вибраною мовою зберігаються на цьому пристрої. Під час завершення налаштування завантажуються доступні приклади для всіх мов, які ви вивчаєте. Можна імпортувати розширений TSV-експорт, зокрема у форматі .bz2.",
+  "example_corpus_acknowledgement": "Речення-приклади створили <tatoeba>учасники Tatoeba</tatoeba>. Вони доступні за ліцензією <license>Creative Commons «Із зазначенням авторства 2.0 Франція» (CC BY 2.0 FR)</license>.",
   "text": "Текст",
   "text_hover": "Наведення на текст",
   "the_downloaded_dictionary_does_not_match_the_installed": "Завантажений словник не відповідає встановленому.",
@@ -1177,5 +1178,10 @@
   "anki_incompatible_note_types": "Ці типи нотаток мають іншу структуру полів або шаблонів: {{names}}. Імпорт зупинено без зміни збережених карток.",
   "anki_unsupported_features": "{{name}} використовує недоступні в цьому застосунку функції: {{features}}. Вихідний вміст буде збережено для експорту.",
   "card_asset_unavailable": "Ресурс картки недоступний: {{name}}.",
-  "play_video": "Відтворити відео"
+  "play_video": "Відтворити відео",
+  "parser_acknowledgement": "Аналізатор: <udpipe>UDPipe від ÚFAL Карлового університету</udpipe>, розміщений на <lindat>LINDAT/CLARIAH-CZ</lindat>. Ліцензія моделей: <license>CC BY-NC-SA 4.0</license>. <models>Подяки авторам навчальних даних</models>. <terms>Умови сервісу</terms>.",
+  "wiktionary_acknowledgement": "Статті створили <wiktionary>учасники Вікісловника</wiktionary>, дані видобуто за допомогою <kaikki>Kaikki/Wiktextract</kaikki> й перетворено проєктом <converter>wiktionary-to-yomitan (wty)</converter>. Ліцензії вмісту: <license>CC BY-SA / GFDL</license>.",
+  "wikipedia_acknowledgement": "Короткі описи створили <wikipedia>учасники Вікіпедії</wikipedia>, дані видобуто проєктом <dbpedia>DBpedia</dbpedia> й перетворено проєктом <converter>Wikipedia for Yomitan (MarvNC)</converter>. Ліцензії вмісту: <license>CC BY-SA 3.0 / GFDL</license>.",
+  "frequency_acknowledgement": "Частотні дані походять із <corpus>Leipzig Corpora Collection Лейпцизького університету</corpus>; їх перетворено проєктом <converter>leipzig-to-yomitan (StefanVukovic99)</converter>. <license>Ліцензії корпусів і відомості про завантаження</license>.",
+  "word_forms_acknowledgement": "Дані словоформ надали <project>учасники Simplemma</project>. <license>Джерела даних і ліцензії</license>."
 }
