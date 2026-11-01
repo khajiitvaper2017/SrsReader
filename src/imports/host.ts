@@ -13,7 +13,12 @@ let running = false;
 async function execute(task: ImportTask) {
   await setInterfaceLanguage(task.locale);
   const archive = (await db.importFiles.get("current"))?.blob;
-  if (!archive && !task.url) throw new Error(t("import_source_missing"));
+  if (
+    (task.type === "dictionary" || task.type === "anki") &&
+    !archive &&
+    !task.url
+  )
+    throw new Error(t("import_source_missing"));
   const input = importInputSchema.parse({
     ...task,
     blob: archive,
