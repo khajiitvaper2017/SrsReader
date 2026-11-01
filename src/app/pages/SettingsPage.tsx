@@ -87,7 +87,7 @@ export function SettingsPage({
   ];
   const selectedLanguage = languages.includes(language)
     ? language
-    : preferences.studyLanguage;
+    : languages[0] || "";
   const settings = useMemo(
     () => ({ ...preferences, studyLanguage: selectedLanguage }),
     [preferences, selectedLanguage],
@@ -197,6 +197,7 @@ export function SettingsPage({
     location.hash = `${setup ? "setup" : `settings/${section}`}?${params}`;
   }
   function withLanguageTabs(content: ReactNode) {
+    if (!selectedLanguage) return null;
     return (
       <Tabs
         value={selectedLanguage}
@@ -239,32 +240,34 @@ export function SettingsPage({
     </DictionarySettings>
   );
   const content = setup ? (
-    withLanguageTabs(
-      <>
-        <LanguageSettings settings={settings} onChange={update} setup />
-        {dictionarySettings}
-        <LookupSettings settings={settings} onChange={update} />
-        <Group justify="flex-end">
-          <Button
-            variant="filled"
-            loading={busy}
-            leftSection={<Check size={16} />}
-            disabled={
-              !settings.lookupBindings.length ||
-              !dictionaries.some(
-                (dictionary) =>
-                  dictionary.enabled &&
-                  settings.studyLanguages.includes(dictionary.language) &&
-                  dictionary.count > 0,
-              )
-            }
-            onClick={() => void finishSetup()}
-          >
-            {t("finish_setup")}
-          </Button>
-        </Group>
-      </>,
-    )
+    <>
+      <LanguageSettings settings={settings} onChange={update} setup />
+      {withLanguageTabs(
+        <>
+          {dictionarySettings}
+          <LookupSettings settings={settings} onChange={update} />
+          <Group justify="flex-end">
+            <Button
+              variant="filled"
+              loading={busy}
+              leftSection={<Check size={16} />}
+              disabled={
+                !settings.lookupBindings.length ||
+                !dictionaries.some(
+                  (dictionary) =>
+                    dictionary.enabled &&
+                    settings.studyLanguages.includes(dictionary.language) &&
+                    dictionary.count > 0,
+                )
+              }
+              onClick={() => void finishSetup()}
+            >
+              {t("finish_setup")}
+            </Button>
+          </Group>
+        </>,
+      )}
+    </>
   ) : (
     <Tabs
       value={selected}
