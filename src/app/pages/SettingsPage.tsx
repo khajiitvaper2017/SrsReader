@@ -243,7 +243,14 @@ export function SettingsPage({
     <>
       <LanguageSettings settings={settings} onChange={update} setup />
       {withLanguageTabs(
-        <>
+        <Stack>
+          {loadedDictionaries && (
+            <ReadingSettings
+              settings={settings}
+              onChange={update}
+              dictionaries={dictionaries}
+            />
+          )}
           {dictionarySettings}
           <LookupSettings settings={settings} onChange={update} />
           <Group justify="flex-end">
@@ -265,7 +272,7 @@ export function SettingsPage({
               {t("finish_setup")}
             </Button>
           </Group>
-        </>,
+        </Stack>,
       )}
     </>
   ) : (

@@ -1,9 +1,13 @@
 # Getting started
 
 1. Add one or more **Studied languages** and **Native languages**. The browser suggests the first native language. This language is used for translations.
-2. Under **Dictionaries**, select a language tab and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
-3. Choose a lookup control, such as **Middle mouse** or **Shift + hover**. None is selected by default.
-4. Choose **Finish setup**. Available word forms and example sentences download for each studied language.
+2. Choose **Automatic** or **When opened** under **Websites → Load words**.
+3. Enable **Use UDPipe** if you want online grammar analysis.
+4. Under **Dictionaries**, select a language tab and import its dictionary. The [dictionary guide](dictionaries.md) explains the available downloads.
+5. Choose a lookup control, such as **Middle mouse** or **Shift + hover**. None is selected by default.
+6. Choose **Finish setup**. Available word forms and example sentences download for each studied language.
+
+UDPipe is off by default. Enabling it sends eligible text to LINDAT for grammar analysis. If multiple models are available, choose the corpus closest to your reading. Provider credits, model licenses, and service terms are beside these controls. The [reading guide](reading.md) explains the parser options.
 
 Open a website, use your lookup control on a word, and choose **Mine word**. Open **Review** to study saved words.
 

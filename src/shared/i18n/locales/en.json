@@ -565,7 +565,7 @@
   "settings_audio_translation": "Audio & translation",
   "settings_backups": "Data",
   "settings_sections": "Section",
-  "settings_setup_intro": "Choose languages, add dictionaries and set lookup controls.",
+  "settings_setup_intro": "Choose languages, configure parsing, add dictionaries, and set lookup controls.",
   "settings_setup_help": "Need help?",
   "settings_no_languages": "No matching languages",
   "settings_page_reading": "Websites",
