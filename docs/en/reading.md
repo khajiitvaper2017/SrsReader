@@ -90,7 +90,7 @@ LINDAT may use submitted text to improve its systems. Its models have noncommerc
 
 Popups prioritize downloaded Tatoeba examples containing the form you looked up, then fall back to other forms of the same word. For a reflexive verb construction such as **jsem se dověděl**, examples containing all its words come first, even when the words are separated or in a different order. Other forms of **dovědět se** follow. **Another example** cycles through the results. These are separate from the sentence you mine.
 
-Dictionary and Tatoeba source links are hidden by default. To show them, turn off **Settings → Reading → Hide source links**.
+Dictionary and Tatoeba source links are hidden by default in lookup popups and review cards. To show them, turn off **Settings → Reading → Hide source links**.
 
 - **Translate sentence:** translate a displayed example.
 - **Translate sentence:** translate your reading sentence. Mining keeps that translation with the original.

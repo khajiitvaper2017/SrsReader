@@ -193,7 +193,7 @@ export function ReadingSettings({
           />
           <Switch
             label={t("hide_dictionary_source_links")}
-            description={t("in_lookup_popups")}
+            description={t("in_lookups_and_cards")}
             checked={settings.hideDictionarySources}
             onChange={(event) =>
               void update({

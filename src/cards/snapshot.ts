@@ -18,7 +18,7 @@ export const escapeHtml = (value: string) =>
   );
 
 const tags = new Set(
-  "div span p ol ul li details summary table thead tbody tfoot tr td th br ruby rt rp strong em b i small sup sub".split(
+  "a div span p ol ul li details summary table thead tbody tfoot tr td th br ruby rt rp strong em b i small sup sub".split(
     " ",
   ),
 );
@@ -70,14 +70,14 @@ function structuredHtml(
     return `<img src="${escapeHtml(name)}" alt="${escapeHtml(alt)}"${typeof node.width === "number" ? ` width="${node.width}"` : ""}${typeof node.height === "number" ? ` height="${node.height}"` : ""}>`;
   }
   const content = structuredHtml(node.content, dictionaryId, images);
-  if (node.tag === "a") {
-    const href = safeUrl(node.href);
-    return href
-      ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${content}</a>`
-      : content;
-  }
+  const href = node.tag === "a" ? safeUrl(node.href) : undefined;
+  if (node.tag === "a" && !href) return content;
   if (typeof node.tag !== "string" || !tags.has(node.tag)) return content;
   const attrs: string[] = [];
+  if (href)
+    attrs.push(
+      `href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"`,
+    );
   for (const key of ["lang", "title"])
     if (typeof node[key] === "string")
       attrs.push(`${key}="${escapeHtml(node[key])}"`);
@@ -119,7 +119,7 @@ function serializeMeanings(
     .map((meaning) => {
       const definitions = meaning.customDefinitions ?? meaning.definitions;
       const attribution = meaning.attribution
-        ? `<footer class="srs-attribution">${escapeHtml(meaning.attribution)}</footer>`
+        ? `<footer class="srs-attribution"${safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl) ? ' data-sc-content="backlink"' : ""}>${escapeHtml(meaning.attribution)}</footer>`
         : "";
       return `<section class="srs-meaning" data-dictionary="${escapeHtml(meaning.dictionaryId)}"><div class="srs-dictionary-title">${escapeHtml(meaning.title)}</div>${meaning.tags ? `<div class="srs-tags">${escapeHtml(meaning.tags)}</div>` : ""}<div class="srs-glossary">${definitions.map((definition) => `<div>${structuredHtml(definition, meaning.dictionaryId, images)}</div>`).join("")}</div>${attribution}</section>`;
     })

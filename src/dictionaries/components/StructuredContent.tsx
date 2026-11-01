@@ -11,6 +11,7 @@ const relatedWordLabels: Record<string, string> = {
 };
 
 const allowedTags = new Set([
+  "a",
   "div",
   "span",
   "p",
@@ -142,20 +143,17 @@ export function Structured({
   const content = (
     <Structured value={node.content} dictionaryId={dictionaryId} />
   );
-  if (node.tag === "a") {
-    const href = safeUrl(node.href);
-    return href ? (
-      <a href={href} target="_blank" rel="noopener noreferrer">
-        {content}
-      </a>
-    ) : (
-      content
-    );
-  }
+  const href = node.tag === "a" ? safeUrl(node.href) : undefined;
+  if (node.tag === "a" && !href) return content;
   if (typeof node.tag !== "string" || !allowedTags.has(node.tag))
     return content;
   const Tag = node.tag as "div";
   const props: Record<string, unknown> = {};
+  if (href) {
+    props.href = href;
+    props.target = "_blank";
+    props.rel = "noopener noreferrer";
+  }
   if (typeof node.lang === "string") props.lang = node.lang;
   if (typeof node.title === "string") props.title = node.title;
   if (node.tag === "details") props.open = node.open === true;

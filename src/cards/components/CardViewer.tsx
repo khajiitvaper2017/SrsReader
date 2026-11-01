@@ -12,6 +12,7 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { stopAudio } from "@/audio/playback";
 import { readCardStorage, writeCardStorage } from "@/cards/sandbox/storage";
 import { reviewInputSchema } from "@/srs/controls";
+import dictionaryCss from "@/shared/styles/dictionary.css?inline";
 
 function themeVariables() {
   const style = getComputedStyle(document.documentElement);
@@ -21,12 +22,16 @@ function themeVariables() {
     "color-body",
     "color-dimmed",
     "color-default-border",
+    "color-anchor",
+    "color-violet-text",
+    "color-violet-light",
     "primary-color-filled",
     "spacing-xs",
     "spacing-sm",
     "spacing-md",
     "radius-default",
     "font-size-md",
+    "font-size-xs",
   ];
   return `:root{${names.map((name) => `--mantine-${name}:${style.getPropertyValue(`--mantine-${name}`)}`).join(";")}}`;
 }
@@ -114,7 +119,7 @@ export function CardViewer({
               dark,
               language: note.language,
               scan,
-              theme: themeVariables(),
+              theme: themeVariables() + dictionaryCss,
               hideSources: settings.hideDictionarySources,
               showPartOfSpeech: settings.showPartOfSpeech,
               autoplay: revealed && settings.autoplay,

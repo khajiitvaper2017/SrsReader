@@ -48,6 +48,8 @@ When the queue is empty, the completion card shows this session’s answers, int
 
 Upcoming cards prepare their saved content, templates, styles, media, example sentences, frequency ranks, and audio in the background. The current card stays visible until the next card is ready. Daily limits and the selected language or deck apply. Audio preparation uses your enabled audio sources.
 
+Dictionary entries on cards use dictionary styles and the app's text, list, table, and section formatting. **Settings → Reading → Hide source links** hides source links in review cards and lookup popups. It is on by default. Turn it off to show the links. Dictionary names remain visible.
+
 Enable **Settings → Audio & translation → Pronunciation → Play on reveal** for automatic word audio. Revealing the answer plays the prepared recording. If no usable recording is available, the system voice reads the word. Turn the setting off to disable automatic playback.
 
 **Undo last review** undoes the latest answer across all tabs. It restores the schedule and lapse count. Later edits to definitions and cached translations stay in place. Undone answers remain in the backup history but do not count as reviews.
