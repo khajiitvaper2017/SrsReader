@@ -10,6 +10,7 @@ export const audioInfoSchema = z.object({
   license: z.string(),
   licenseUrl: z.string(),
   name: z.string(),
+  dialectPreference: z.array(z.string()).optional(),
 });
 
 export type AudioInfo = z.infer<typeof audioInfoSchema>;

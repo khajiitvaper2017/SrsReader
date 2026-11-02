@@ -31,35 +31,35 @@ async function execute(request: Request, settings: Settings) {
         string,
         string,
       ];
-      return findPronunciations(
-        language,
-        lemma,
-        reading,
-        settings.audioSources,
-      );
+      return findPronunciations(language, lemma, reading, settings);
     }
     case "audio": {
       if (request.source) {
         if (request.source.id !== request.id)
           throw new Error(t("invalid_audio_source"));
-        const record = await cacheAudioSource(request.source);
+        const record = await cacheAudioSource(
+          request.source,
+          settings.audioDialects[request.source.language] ?? [
+            request.source.language,
+          ],
+        );
         if (!record) throw new Error(t("audio_source_unavailable"));
         const { blob, ...info } = record;
         return info;
       }
-      const saved = await getAudio(request.id);
-      if (saved) {
+      if (!request.download) {
+        const saved = await getAudio(request.id);
+        if (!saved) return null;
         const { blob, ...info } = saved;
         return info;
       }
-      if (!request.download) return null;
       const word = await getWord(request.id);
       const identity = JSON.parse(request.id) as [string, string, string];
       const record = await cachePronunciation(
         word?.language || identity[0],
         word?.lemma || identity[1],
         word?.reading || identity[2],
-        settings.audioSources,
+        settings,
       );
       if (!record) return null;
       const { blob, ...info } = record;

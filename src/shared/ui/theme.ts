@@ -29,6 +29,7 @@ import {
   Stack,
   Tabs,
   Switch,
+  TagsInput,
   Text,
   Textarea,
   TextInput,
@@ -216,6 +217,19 @@ export function createUITheme(
         },
       }),
       MultiSelect: MultiSelect.extend({
+        defaultProps: {
+          size: controlSize,
+          maxDropdownHeight: 200,
+          comboboxProps: {
+            withinPortal: true,
+            floatingStrategy: "fixed",
+            middlewares: { flip: true, shift: { padding: 4 } },
+          },
+          "data-srs-reader": true,
+        },
+        classNames: { inputField: classes.pillSearch },
+      }),
+      TagsInput: TagsInput.extend({
         defaultProps: {
           size: controlSize,
           maxDropdownHeight: 200,

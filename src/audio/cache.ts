@@ -5,12 +5,7 @@ import { getSettings } from "@/settings/store";
 export function cacheAudio(word: LookupWord) {
   void getSettings()
     .then((settings) =>
-      cachePronunciation(
-        word.language,
-        word.lemma,
-        word.reading,
-        settings.audioSources,
-      ),
+      cachePronunciation(word.language, word.lemma, word.reading, settings),
     )
     .catch(console.warn);
 }

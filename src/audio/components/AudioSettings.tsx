@@ -4,10 +4,15 @@ import {
   Select,
   Stack,
   Switch,
+  TagsInput,
   Text,
   Title,
 } from "@mantine/core";
 import { localVoices } from "@/audio/playback";
+import {
+  audioDialectSchema,
+  audioDialectSuggestions,
+} from "@/audio/preferences";
 import { languageName } from "@/languages/codes";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -22,9 +27,11 @@ export function AudioSettings({
 }) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [saving, setSaving] = useState(false);
+  const [dialectError, setDialectError] = useState(false);
   useEffect(() => {
     void localVoices().then(setVoices);
   }, []);
+  useEffect(() => setDialectError(false), [settings.studyLanguage]);
   const languageVoices = voices.filter(
     (voice) => voice.lang.split("-")[0] === settings.studyLanguage,
   );
@@ -33,10 +40,10 @@ export function AudioSettings({
     languagePod101: "LanguagePod101",
     forvo: "Forvo",
   };
-  async function saveSources(sources: Settings["audioSources"]) {
+  async function save(patch: Partial<Settings>) {
     setSaving(true);
     try {
-      await update({ audioSources: sources });
+      await update(patch);
     } finally {
       setSaving(false);
     }
@@ -47,12 +54,56 @@ export function AudioSettings({
     const targetIndex = sources.findIndex((source) => source.type === target);
     const [source] = sources.splice(index, 1);
     sources.splice(targetIndex, 0, source!);
-    void saveSources(sources);
+    void save({ audioSources: sources });
   }
   return (
     <Paper>
       <Stack>
         <Title order={2}>{t("pronunciation")}</Title>
+        <TagsInput
+          label={t("preferred_dialects")}
+          description={t("preferred_dialects_help", {
+            language: settings.studyLanguage,
+          })}
+          error={
+            dialectError &&
+            t("invalid_dialect_code", { language: settings.studyLanguage })
+          }
+          data={[
+            settings.studyLanguage,
+            ...(audioDialectSuggestions[settings.studyLanguage] ?? []).map(
+              (suffix) => `${settings.studyLanguage}-${suffix}`,
+            ),
+          ]}
+          value={
+            settings.audioDialects[settings.studyLanguage] ?? [
+              settings.studyLanguage,
+            ]
+          }
+          withPillsReorder
+          disabled={saving}
+          onChange={(values) => {
+            const dialects = audioDialectSchema.array().safeParse(values);
+            if (
+              !dialects.success ||
+              dialects.data.some(
+                (value) =>
+                  value !== settings.studyLanguage &&
+                  !value.startsWith(`${settings.studyLanguage}-`),
+              )
+            ) {
+              setDialectError(true);
+              return;
+            }
+            setDialectError(false);
+            void save({
+              audioDialects: {
+                ...settings.audioDialects,
+                [settings.studyLanguage]: dialects.data,
+              },
+            });
+          }}
+        />
         <Select
           searchable
           label={t("local_voice")}
@@ -94,11 +145,11 @@ export function AudioSettings({
                   disabled={saving}
                   onChange={(event) => {
                     const enabled = event.target.checked;
-                    void saveSources(
-                      settings.audioSources.map((item) =>
+                    void save({
+                      audioSources: settings.audioSources.map((item) =>
                         item.type === source.type ? { ...item, enabled } : item,
                       ),
-                    );
+                    });
                   }}
                 />
               </Group>

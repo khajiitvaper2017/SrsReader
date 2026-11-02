@@ -1,6 +1,23 @@
 import { z } from "zod";
 
+export const audioDialectSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z]{2,3}(?:-[\p{L}\p{M}\p{N}]+(?:[ -][\p{L}\p{M}\p{N}]+)*)?$/u);
+
+// Wikimedia filename prefixes are open-ended; these are verified examples.
+export const audioDialectSuggestions: Record<string, string[]> = {
+  de: ["at"],
+  en: ["us", "uk", "gb", "au", "ca", "nz", "ie", "za", "sa"],
+  es: ["ar", "mx", "us", "chile"],
+  fr: ["fr", "ca", "be", "be-bw", "paris"],
+  lv: ["riga"],
+  pt: ["br"],
+};
+
 export const audioPreferencesSchema = z.object({
+  audioDialects: z.record(z.string(), z.array(audioDialectSchema)).default({}),
   audioSources: z
     .array(
       z.object({

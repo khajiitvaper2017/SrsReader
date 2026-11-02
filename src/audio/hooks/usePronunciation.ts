@@ -45,7 +45,13 @@ export function usePronunciation({
       }
       return (pending ??= preparePronunciation(word.id));
     };
-  }, [word?.id, sentence, settings.audioSources, prepareRecording]);
+  }, [
+    word?.id,
+    sentence,
+    settings.audioSources,
+    settings.audioDialects,
+    prepareRecording,
+  ]);
   useEffect(() => {
     setOpen(false);
     setSources([]);
@@ -91,7 +97,14 @@ export function usePronunciation({
     return () => {
       alive = false;
     };
-  }, [open, word?.id, word?.language, sentence, settings.audioSources]);
+  }, [
+    open,
+    word?.id,
+    word?.language,
+    sentence,
+    settings.audioSources,
+    settings.audioDialects,
+  ]);
   function playVoice(voice: string) {
     if (!word) return;
     void speak(sentence || word.lemma, word.language, voice).catch((error) =>

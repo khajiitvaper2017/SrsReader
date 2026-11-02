@@ -1,5 +1,8 @@
 import type { AudioInfo } from "@/audio/model";
-import type { AudioPreferences } from "@/audio/preferences";
+import {
+  audioDialectSuggestions,
+  type AudioPreferences,
+} from "@/audio/preferences";
 import {
   audioSourceUrl,
   forvoSources,
@@ -44,12 +47,50 @@ async function* commonsSources(
   language: string,
   lemma: string,
   reading: string,
+  dialects: string[],
 ) {
   const id = wordId(language, lemma, reading);
   const iso3 = languageIso3(language);
   const escaped = lemma.replace(/[\\/.*+?^${}()|[\]]/g, "\\$&");
+  const prefixes = [
+    ...new Set([
+      language,
+      ...(audioDialectSuggestions[language] ?? []).map(
+        (suffix) => `${language}-${suffix}`,
+      ),
+      ...dialects,
+    ]),
+  ].flatMap((prefix) =>
+    iso3 && iso3 !== language
+      ? [prefix, prefix.replace(/^[^-]+/, iso3)]
+      : [prefix],
+  );
+  const prefixPattern = [
+    ...prefixes.map((prefix) => prefix.replace(/[\\/.*+?^${}()|[\]]/g, "\\$&")),
+    ...[...new Set([language, ...(iso3 ? [iso3] : [])])].map(
+      (prefix) => `${prefix}(-[a-zA-Z]{2})?`,
+    ),
+  ].join("|");
+  const formats = "(ogg|oga|wav|mp3|flac|opus|webm)";
+  // Unrestricted prefixes can mistake part of a compound word for a dialect.
+  const recordingPattern = new RegExp(
+    `^File:(${prefixPattern})-+${escaped}[0-9]*\\.${formats}$`,
+    "iu",
+  );
+  function priority(title: string) {
+    const prefix = title.match(recordingPattern)?.[1]?.toLowerCase();
+    const dialect = prefix?.replace(/^[^-]+/, language);
+    const index = dialect
+      ? dialects.findIndex(
+          (preferred) =>
+            dialect === preferred ||
+            (preferred !== language && dialect.startsWith(`${preferred}-`)),
+        )
+      : -1;
+    return index < 0 ? dialects.length : index;
+  }
   const searches = [
-    `intitle:/^${language}(-[a-zA-Z]{2})?-${escaped}[0-9]*\\.ogg$/i`,
+    `intitle:/^(${prefixPattern})-+${escaped}[0-9]*\\.${formats}$/i`,
     ...(iso3
       ? [
           `intitle:/-${escaped}\\.wav$/i incategory:"Lingua_Libre_pronunciation-${iso3}"`,
@@ -67,10 +108,7 @@ async function* commonsSources(
       .map((r: { title: string }) => r.title)
       .filter(
         (title: string) =>
-          new RegExp(
-            `^File:${language}(-[a-zA-Z]{2})?-${escaped}[0-9]*\\.ogg$`,
-            "iu",
-          ).test(title) ||
+          recordingPattern.test(title) ||
           new RegExp(
             `^File:LL-Q\\d+\\s+\\(${iso3}\\)-.+-${escaped}\\.wav$`,
             "iu",
@@ -82,7 +120,7 @@ async function* commonsSources(
       prop: "imageinfo",
       iiprop: "url|user|extmetadata",
     });
-    for (const page of Object.values(files?.pages || {}) as {
+    const pages = Object.values(files?.pages || {}) as {
       title: string;
       imageinfo?: {
         url: string;
@@ -90,7 +128,9 @@ async function* commonsSources(
         user: string;
         extmetadata?: Record<string, { value: string }>;
       }[];
-    }[]) {
+    }[];
+    pages.sort((a, b) => priority(a.title) - priority(b.title));
+    for (const page of pages) {
       const file = page.imageinfo?.[0];
       if (!file) continue;
       const url = httpsUrl(file.url);
@@ -118,7 +158,7 @@ async function* pronunciationSources(
   language: string,
   lemma: string,
   reading: string,
-  sources: AudioPreferences["audioSources"],
+  preferences: AudioPreferences,
 ) {
   let found = false;
   let failure: unknown;
@@ -127,13 +167,14 @@ async function* pronunciationSources(
     languagePod101: languagePodSources,
     forvo: forvoSources,
   };
-  for (const source of sources) {
+  for (const source of preferences.audioSources) {
     if (!source.enabled) continue;
     try {
       for await (const info of providers[source.type](
         language,
         lemma,
         reading,
+        preferences.audioDialects[language] ?? [language],
       )) {
         found = true;
         yield info;
@@ -149,23 +190,30 @@ export async function findPronunciations(
   language: string,
   lemma: string,
   reading: string,
-  providers: AudioPreferences["audioSources"],
+  preferences: AudioPreferences,
 ) {
   const sources = new Map<string, AudioInfo>();
   for await (const source of pronunciationSources(
     language,
     lemma,
     reading,
-    providers,
+    preferences,
   ))
     sources.set(source.url, source);
   return [...sources.values()];
 }
 
-export async function cacheAudioSource(info: AudioInfo) {
+export async function cacheAudioSource(
+  info: AudioInfo,
+  dialectPreference: string[],
+) {
   const url = audioSourceUrl(info.url);
   const saved = await getAudio(info.id);
-  if (saved?.url === url) return saved;
+  if (saved?.url === url) {
+    const record = { ...saved, dialectPreference };
+    await saveAudio(record);
+    return record;
+  }
   const response = await fetch(url, {
     credentials: "omit",
     signal: AbortSignal.timeout(20000),
@@ -174,7 +222,7 @@ export async function cacheAudioSource(info: AudioInfo) {
   const blob = await response.blob();
   if (!blob.type.startsWith("audio/") && blob.type !== "application/ogg")
     return null;
-  const record = { ...info, blob };
+  const record = { ...info, blob, dialectPreference };
   await saveAudio(record);
   return record;
 }
@@ -183,18 +231,27 @@ export async function cachePronunciation(
   language: string,
   lemma: string,
   reading: string,
-  providers: AudioPreferences["audioSources"],
+  preferences: AudioPreferences,
 ) {
   const saved = await getAudio(wordId(language, lemma, reading));
-  if (saved) return saved;
-  for await (const source of pronunciationSources(
-    language,
-    lemma,
-    reading,
-    providers,
-  )) {
-    const record = await cacheAudioSource(source);
-    if (record) return record;
+  const dialects = preferences.audioDialects[language] ?? [language];
+  if (
+    saved &&
+    JSON.stringify(saved.dialectPreference) === JSON.stringify(dialects)
+  )
+    return saved;
+  try {
+    for await (const source of pronunciationSources(
+      language,
+      lemma,
+      reading,
+      preferences,
+    )) {
+      const record = await cacheAudioSource(source, dialects);
+      if (record) return record;
+    }
+  } catch (error) {
+    if (!saved) throw error;
   }
-  return null;
+  return saved ?? null;
 }
