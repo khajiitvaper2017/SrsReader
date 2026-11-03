@@ -78,7 +78,7 @@ Hover over the popup heading or focus it with the keyboard to see grammar below 
 
 Cards and popups share dictionary visibility choices for each saved word. Use the eye button to hide or show a dictionary for that word. Choices do not affect other cards.
 
-Definitions for the selected word stay visible when their grammatical tags differ from the sentence. Conflicting tags are red; hover over a tag for an explanation. To reveal hidden word candidates, open the word selector and use that dictionary’s **Show more** item.
+When sentence grammar is available, the popup hides dictionary entries whose grammatical tags conflict with it. Use the **Show more** arrow beside a dictionary to reveal those entries. Conflicting tags appear in red. Hover over a tag to see why it conflicts. To reveal hidden word candidates, open the word selector and use that dictionary’s **Show more** item.
 
 For prepositions, the parsed case also filters individual senses with leading case labels, such as **(na + akuzativ)** or **(na + lokál)**. A sense stays visible if its label includes the parsed case. Senses without a recognized case label stay visible. Use the dictionary’s **Show more** arrow to see all senses.
 

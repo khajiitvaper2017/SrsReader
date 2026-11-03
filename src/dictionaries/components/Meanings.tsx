@@ -53,6 +53,9 @@ export function Meanings({
     monolingual,
     definitionLanguages,
   } = useMeanings({ meanings, language, settings });
+  const conflictsByMeaning = new Map(
+    displayed.map((meaning) => [meaning, grammarConflicts(meaning, grammar)]),
+  );
   const dictionaries = [
     ...new Set(displayed.map((meaning) => meaning.dictionaryId)),
   ]
@@ -69,10 +72,13 @@ export function Meanings({
         ]),
       );
       const title = entries[0]!.title;
-      const conflictsExist = entries.some(
-        (meaning) => filtered.get(meaning) !== meaning,
+      const matching = entries.filter(
+        (meaning) => !Object.keys(conflictsByMeaning.get(meaning)!).length,
       );
-      const visible = hidden ? [] : entries;
+      const conflictsExist =
+        matching.length !== entries.length ||
+        entries.some((meaning) => filtered.get(meaning) !== meaning);
+      const visible = hidden ? [] : expanded ? entries : matching;
       return {
         dictionaryId,
         entries,
@@ -129,7 +135,7 @@ export function Meanings({
             </ActionIcon>
           );
           const renderTags = (meaning: Meaning) => {
-            const conflicts = grammarConflicts(meaning, grammar);
+            const conflicts = conflictsByMeaning.get(meaning)!;
             const tagTitle = (tag: string) =>
               [
                 meaning.tagDescriptions?.[tag] ||
@@ -258,7 +264,7 @@ export function Meanings({
                   translation?: ReactNode,
                   failure?: ReactNode,
                 ) => (
-                  <Stack key={`${meaning.dictionaryId}:${i}`} gap="xs">
+                  <Stack key={index} gap="xs">
                     <Group wrap="nowrap" align="flex-start" data-srs-reader>
                       <Group style={{ flex: 1, minWidth: 0 }}>
                         <Text variant="supporting" component="span">
@@ -325,7 +331,7 @@ export function Meanings({
                   <TextTranslation
                     compact
                     autoTranslate={settings.autoTranslateDefinitions}
-                    key={`${meaning.dictionaryId}:${i}:${settings.nativeLanguage}:${JSON.stringify(senses)}`}
+                    key={`${index}:${settings.nativeLanguage}:${JSON.stringify(senses)}`}
                     text={senses}
                     renderTranslation={(parts) => {
                       let senseIndex = 0;
