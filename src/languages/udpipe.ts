@@ -1,5 +1,6 @@
 import {
   analysisTerms,
+  normalizeTokenQuotes,
   occurrenceGrammar,
   type AnalysisRecord,
   type AnalysisSentence,
@@ -356,17 +357,22 @@ export async function occurrenceAnalysis(
   if (!occurrence) return;
   const record = await db.analyses.get(occurrence.key);
   if (record?.text.slice(occurrence.start, occurrence.end) !== surface) return;
-  const sentence = record.analysis?.sentences.find((sentence) =>
+  const original = record.analysis?.sentences.find((sentence) =>
     sentence.tokens.some(
       (token) =>
-        token.start === occurrence.start && token.end === occurrence.end,
+        token.start !== undefined &&
+        token.end !== undefined &&
+        token.start <= occurrence.start &&
+        token.end >= occurrence.end,
     ),
   );
-  if (!sentence) return;
+  if (!original) return;
+  const sentence = normalizeTokenQuotes(original);
   const token = sentence.tokens.find(
     (token) => token.start === occurrence.start && token.end === occurrence.end,
-  )!;
-  const analysis = analysisTerms([sentence], record.text, record.key).find(
+  );
+  if (!token) return;
+  const analysis = analysisTerms([original], record.text, record.key).find(
     (item) => item.start === occurrence.start && item.end === occurrence.end,
   );
   if (!analysis) return;

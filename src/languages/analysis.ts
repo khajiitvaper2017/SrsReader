@@ -176,12 +176,38 @@ export function occurrenceGrammar(
   return grammar;
 }
 
+export function normalizeTokenQuotes(
+  sentence: AnalysisSentence,
+): AnalysisSentence {
+  return {
+    ...sentence,
+    tokens: sentence.tokens.map((token) => {
+      const quotes = /^["“”„‟«»]+|["“”„‟«»]+$/gu;
+      const form = token.form.replace(quotes, "");
+      const lemma = token.lemma.replace(quotes, "");
+      if (!form || (form === token.form && lemma === token.lemma)) return token;
+      const start =
+        token.start === undefined
+          ? undefined
+          : token.start + token.form.indexOf(form);
+      return {
+        ...token,
+        form,
+        lemma,
+        start,
+        end: start === undefined ? undefined : start + form.length,
+      };
+    }),
+  };
+}
+
 export function analysisTerms(
   sentences: AnalysisSentence[],
   text: string,
   key: string,
 ): SurfaceAnalysis[] {
-  return sentences.flatMap(({ tokens }) => {
+  return sentences.flatMap((sentence) => {
+    const { tokens } = normalizeTokenQuotes(sentence);
     const multiwords = tokens.filter((token) => token.id.includes("-"));
     const groups = constructionGroups(tokens);
     return tokens.flatMap((token) => {
