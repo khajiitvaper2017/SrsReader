@@ -481,7 +481,6 @@ function LookupEntry({
                 disabled={busy}
                 onClick={() => void act()}
                 variant="light"
-                mih={40}
                 px={4}
                 miw={0}
               >
@@ -493,7 +492,6 @@ function LookupEntry({
               disabled={busy}
               onClick={() => void toggleMastery()}
               variant="light"
-              mih={40}
               px={4}
               miw={0}
             >
@@ -509,7 +507,6 @@ function LookupEntry({
                   }).then(reload)
                 }
                 variant="light"
-                mih={40}
                 px={4}
                 miw={0}
               >
@@ -523,7 +520,6 @@ function LookupEntry({
                 disabled={busy}
                 onClick={() => void undo()}
                 variant="light"
-                mih={40}
                 px={4}
                 miw={0}
               >
@@ -533,6 +529,7 @@ function LookupEntry({
           </Group>
           {!saved?.known && !reviewed && !saved?.suspended && (
             <Ratings
+              compact
               times={times}
               disabled={busy}
               onlyAgainGood={settings.onlyAgainGood}

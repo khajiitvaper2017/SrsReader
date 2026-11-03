@@ -1,4 +1,4 @@
-import { Button, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Button, SimpleGrid, Stack, Text, Tooltip } from "@mantine/core";
 import { number, t } from "@/shared/i18n/i18n";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { dayStart, studyDay } from "@/srs/study-day";
@@ -25,19 +25,25 @@ export function Ratings({
   disabled,
   onGrade,
   onlyAgainGood,
+  compact = false,
 }: {
   times: number[];
   disabled: boolean;
   onGrade: (rating: number) => void;
   onlyAgainGood: boolean;
+  compact?: boolean;
 }) {
   const [{ rolloverHour }] = useSettings();
   const buttons = [t("again"), t("hard"), t("good"), t("easy")].map(
-    (label, i) =>
-      onlyAgainGood && i !== 0 && i !== 2 ? null : (
+    (label, i) => {
+      if (onlyAgainGood && i !== 0 && i !== 2) return null;
+      const interval = times[i]
+        ? intervalLabel(times[i]!, rolloverHour)
+        : undefined;
+      const button = (
         <Button
           key={label}
-          title={times[i] ? intervalLabel(times[i]!, rolloverHour) : undefined}
+          title={compact ? undefined : interval}
           disabled={disabled}
           onClick={() => onGrade(i + 1)}
           variant="light"
@@ -47,16 +53,33 @@ export function Ratings({
           px={4}
           miw={0}
         >
-          <Stack gap={0} align="center">
-            <Text span inherit>
-              {label}
-            </Text>
-            <Text variant="supporting" span>
-              {times[i] ? intervalLabel(times[i]!, rolloverHour) : "—"}
-            </Text>
-          </Stack>
+          {compact ? (
+            label
+          ) : (
+            <Stack gap={0} align="center">
+              <Text span inherit>
+                {label}
+              </Text>
+              <Text variant="supporting" span>
+                {interval ?? "—"}
+              </Text>
+            </Stack>
+          )}
         </Button>
-      ),
+      );
+      return compact && interval ? (
+        <Tooltip
+          key={label}
+          label={interval}
+          events={{ hover: true, focus: true, touch: false }}
+          interactive
+        >
+          {button}
+        </Tooltip>
+      ) : (
+        button
+      );
+    },
   );
   return (
     <SimpleGrid cols={onlyAgainGood ? 2 : 4} spacing={4}>
