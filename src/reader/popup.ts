@@ -90,6 +90,12 @@ export function createPopup(
       term,
       context,
       occurrence,
+      refineContext:
+        options.scope !== "extensionPages" &&
+        !occurrence &&
+        !!context.language &&
+        getSettings().udpipe &&
+        getSettings().wordLoading[context.language] !== "onLookup",
     });
     if (
       popupRange !== range ||

@@ -7,6 +7,7 @@ import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings
 import { folded } from "@/languages/text";
 import { lookupClient } from "@/lookup/client";
 import type { LookupPage } from "@/lookup/model";
+import { readerClient } from "@/reader/client";
 import { startReader } from "@/reader/controller";
 import { settingsClient } from "@/settings/client";
 import { useSettings } from "@/settings/hooks/useSettings";
@@ -56,7 +57,13 @@ export function useLookupWord({
   const readingRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [result, setResult] = useState<LookupResult>();
-  const { term, context, occurrence } = page;
+  const [refined, setRefined] = useState<{
+    page: LookupPage;
+    term: string;
+    context: ReadingContext;
+    occurrence: Occurrence;
+  }>();
+  const { term, context, occurrence } = refined?.page === page ? refined : page;
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [editing, setEditing] = useState<DefinitionEditing>(null);
@@ -155,20 +162,71 @@ export function useLookupWord({
       const request = {
         action: "lookup" as const,
         language: settings.studyLanguage,
-        term,
-        occurrence,
+        term: page.term,
+        occurrence: page.occurrence,
       };
       const local = await dictionariesClient({ ...request, localOnly: true });
       if (!alive) return;
       if (local.words.length || !local.onlinePending) show(local);
-      if (local.onlinePending) show(await dictionariesClient(request));
+      let contextualShown = false;
+      const context = page.context;
+      if (page.refineContext && !page.occurrence && context) {
+        void (async () => {
+          const [parsed] = await readerClient({
+            action: "scan",
+            source: "popup",
+            lookup: true,
+            session: crypto.randomUUID(),
+            language: request.language,
+            texts: [context.sentence],
+          });
+          if (!alive) return;
+          const span = parsed?.spans.find(
+            (span) =>
+              span.occurrence &&
+              span.start <= context.start &&
+              span.end >= context.end,
+          );
+          if (!span?.occurrence) return;
+          const contextual = await dictionariesClient({
+            ...request,
+            term: span.term,
+            occurrence: span.occurrence,
+          });
+          if (!alive || !contextual.words.length) return;
+          contextualShown = true;
+          setRefined({
+            page,
+            term: span.term,
+            context: {
+              ...context,
+              surface: span.term,
+              start: span.start,
+              end: span.end,
+            },
+            occurrence: span.occurrence,
+          });
+          show(contextual);
+        })().catch((error) =>
+          console.warn("SrsReader: sentence lookup failed", error),
+        );
+      }
+      if (local.onlinePending) {
+        try {
+          const online = await dictionariesClient(request);
+          if (!contextualShown) show(online);
+        } catch (error) {
+          if (alive && !contextualShown && !local.words.length)
+            setError((error as Error).message);
+        }
+      }
     })().catch((error) => {
       if (alive) setError(error.message);
     });
     return () => {
       alive = false;
     };
-  }, [term, occurrence, settings.studyLanguage]);
+  }, [page, settings.studyLanguage]);
   const refreshDefinitions = useCallback(() => {
     void dictionariesClient({
       action: "lookup",

@@ -5,6 +5,7 @@ export type LookupPage = {
   term: string;
   context?: ReadingContext;
   occurrence?: Occurrence;
+  refineContext?: boolean;
   selected?: string;
   scroll?: number;
   openDetails?: number[];

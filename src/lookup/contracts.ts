@@ -1,10 +1,13 @@
 import { selection } from "@/vocabulary/contracts";
-import type { ReadingContext } from "@/vocabulary/model";
-import type { Occurrence } from "@/languages/analysis";
+import type { LookupPage } from "@/lookup/model";
 import { z } from "zod";
 
 export const requests = [
-  z.object({ action: z.literal("createSession"), ...selection }),
+  z.object({
+    action: z.literal("createSession"),
+    ...selection,
+    refineContext: z.boolean().optional(),
+  }),
   z.object({ action: z.literal("session"), id: z.string() }),
   z.object({ action: z.literal("closeLookup") }),
 ] as const;
@@ -13,5 +16,5 @@ export type Request = z.infer<typeof requestSchema>;
 export type Responses = {
   createSession: string;
   closeLookup: void;
-  session: { term: string; context?: ReadingContext; occurrence?: Occurrence };
+  session: LookupPage;
 };

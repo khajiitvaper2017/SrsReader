@@ -1,12 +1,8 @@
 import type { Request } from "@/lookup/contracts";
 import { t } from "@/shared/i18n/i18n";
-import type { ReadingContext } from "@/vocabulary/model";
-import type { Occurrence } from "@/languages/analysis";
+import type { LookupPage } from "@/lookup/model";
 
-const sessions = new Map<
-  string,
-  { term: string; context?: ReadingContext; occurrence?: Occurrence }
->();
+const sessions = new Map<string, LookupPage>();
 
 export const handleLookup = execute;
 async function execute(request: Request) {
@@ -18,6 +14,7 @@ async function execute(request: Request) {
         term: request.term,
         context: request.context,
         occurrence: request.occurrence,
+        refineContext: request.refineContext,
       });
       return id;
     }
