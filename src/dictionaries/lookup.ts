@@ -66,18 +66,30 @@ async function fetchTerms(
     groups.set(entry.folded, group);
   }
   return new Map(
-    terms.map((term) => [
-      normalize(term),
-      groups.get(folded(term, language)) || [],
-    ]),
+    terms.map((term) => {
+      const key = normalize(term);
+      const rows = groups.get(folded(key, language)) || [];
+      if (language === "de") {
+        const exact = rows.filter((entry) => entry.key === key);
+        if (exact.length) return [key, exact];
+      }
+      return [key, rows];
+    }),
   );
 }
+
+export type DictionaryLookupTiming = {
+  entryQueryMs: number;
+  entryQueries: number;
+  savedWordQueryMs: number;
+};
 
 async function dictionaryLookup(
   terms: string[],
   language: string,
   localAnalysis: boolean,
   withDefinitions: boolean,
+  timing?: DictionaryLookupTiming,
 ): Promise<Map<string, LookupResult>> {
   const dictionaries = await activeDictionaries(language);
   const results = new Map<string, LookupResult>();
@@ -232,14 +244,17 @@ async function dictionaryLookup(
           dictionaryPriority.get(b.dictionaryId)!,
       );
     const value = {
-      words: [...resolved.values()].sort(
-        (a, b) =>
+      words: [...resolved.values()].sort((a, b) => {
+        const exact = Number(b.lemma === term) - Number(a.lemma === term);
+        if (language === "de") return exact;
+        return (
           Number(a.lemma !== folded(a.lemma, language)) -
             Number(b.lemma !== folded(b.lemma, language)) ||
           Number(b.lemma === folded(term, language)) -
             Number(a.lemma === folded(term, language)) ||
-          Number(b.lemma === term) - Number(a.lemma === term),
-      ),
+          exact
+        );
+      }),
       unresolved: [...unresolved],
     };
     results.set(term, value);
