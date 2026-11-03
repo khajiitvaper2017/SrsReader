@@ -1,5 +1,4 @@
 import { isOnlineDictionary } from "@/dictionaries/online";
-import { ImmersionWeight } from "@/dictionaries/components/ImmersionWeight";
 import type { ReactNode } from "react";
 import {
   ActionIcon,
@@ -60,7 +59,6 @@ export function DictionarySettings({
 }) {
   const {
     busy,
-    updateImmersionWeight,
     progressTarget,
     updates,
     fileInput,
@@ -82,7 +80,7 @@ export function DictionarySettings({
       (dictionary) =>
         dictionary.language === settings.studyLanguage &&
         (role === "frequency"
-          ? dictionary.frequencyCount > 0 || !!dictionary.immersion
+          ? dictionary.frequencyCount > 0
           : dictionary.count > 0 || isOnlineDictionary(dictionary.id)),
     )
     .sort((a, b) =>
@@ -109,8 +107,6 @@ export function DictionarySettings({
                 <Text variant="supporting">
                   {isOnlineDictionary(dictionary.id) ? (
                     t(`${dictionary.id}_online_help`)
-                  ) : dictionary.immersion ? (
-                    t("immersion_collection_help")
                   ) : (
                     <>
                       {dictionary.count > 0
@@ -163,27 +159,22 @@ export function DictionarySettings({
                     <ActionIcon
                       title={t("export_zip")}
                       aria-label={t("export_zip")}
-                      disabled={
-                        busy ||
-                        (!!dictionary.immersion && !dictionary.frequencyCount)
-                      }
+                      disabled={busy}
                       onClick={() => exportDictionary(dictionary)}
                       variant="subtle"
                     >
                       <Download aria-hidden="true" size={16} />
                     </ActionIcon>
-                    {!dictionary.immersion && (
-                      <ActionIcon
-                        title={t("remove")}
-                        aria-label={t("remove")}
-                        disabled={busy}
-                        onClick={() => removeDictionary(dictionary)}
-                        variant="subtle"
-                        color="red"
-                      >
-                        <Trash2 aria-hidden="true" size={16} />
-                      </ActionIcon>
-                    )}
+                    <ActionIcon
+                      title={t("remove")}
+                      aria-label={t("remove")}
+                      disabled={busy}
+                      onClick={() => removeDictionary(dictionary)}
+                      variant="subtle"
+                      color="red"
+                    >
+                      <Trash2 aria-hidden="true" size={16} />
+                    </ActionIcon>
                   </>
                 )}
                 <Select
@@ -223,15 +214,6 @@ export function DictionarySettings({
                 />
               </Group>
             </Group>
-            {dictionary.immersion && (
-              <ImmersionWeight
-                dictionary={dictionary}
-                disabled={busy}
-                onSave={(weight) =>
-                  updateImmersionWeight(dictionary.language, weight)
-                }
-              />
-            )}
           </Paper>
         )}
       </SortableList>
@@ -295,8 +277,7 @@ export function DictionarySettings({
             <Badge>
               {t("dictionaries_installed", {
                 count: visible.filter(
-                  (dictionary) =>
-                    !isOnlineDictionary(dictionary.id) && !dictionary.immersion,
+                  (dictionary) => !isOnlineDictionary(dictionary.id),
                 ).length,
               })}
             </Badge>

@@ -4,7 +4,6 @@ import type { WordState } from "@/vocabulary/state";
 import type { ScanResult } from "@/reader/contracts";
 
 export type ChangeScope =
-  | "frequency"
   | "collection"
   | "vocabulary"
   | "settings"

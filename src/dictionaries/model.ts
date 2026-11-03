@@ -22,7 +22,6 @@ export const indexSchema = z.object({
 export type DictionaryIndex = z.infer<typeof indexSchema>;
 
 export type Dictionary = {
-  immersion?: { secondaryWeight: number };
   id: string;
   revisionId: string;
   index: DictionaryIndex;

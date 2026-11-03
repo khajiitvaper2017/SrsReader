@@ -49,20 +49,6 @@ Lower ranks mean more common words. The popup’s **Freq.** badge combines enabl
 
 New cards start with the most frequent words. Under **Settings → Review → Words without frequency**, choose **Introduce last** or **Assign random frequency**. Existing review schedules are unaffected.
 
-## Immersion Frequency
-
-Open **Settings → Dictionaries**, choose a language, then open **Frequency**. The built-in **Immersion Frequency** row is always available. Select **Enabled** to build rankings from website text parsed while you read. It is enabled by default. Each language has its own setting. Popup definitions and review text do not add hits. It does not create review cards automatically.
-
-The first candidate for each word receives a primary hit. Other candidates receive secondary hits. Inflected forms and duplicate candidates share their base word's count. A word without a dictionary entry still counts when the parser identifies its base word. Punctuation and unidentified words do not count.
-
-The score is **primary hits + multiplier × secondary hits**. **Secondary-hit multiplier** defaults to **0.3**. Enter **0–1** with up to two decimal places, then leave the field or press Enter to save. Changing it recalculates scores from saved counts. Higher scores receive lower frequency ranks. Equal scores share a rank. Click a word's frequency badge to see its primary hits, secondary hits, score, and rank.
-
-Each exact text block counts only once per language, including across websites, tabs, reloads, and browser restarts. Repeated words within a new block each add a hit. Parser changes do not recount old blocks or revise their contributions.
-
-Select **Enabled** to collect hits and combine its ranks with other enabled frequency dictionaries. Disable the other frequency dictionaries to use it alone. Select **Disabled** to stop counting and exclude its ranks. Saved counts, ranks, and counted-block history stay available. Select **Enabled** again to resume counting.
-
-**Export ZIP** saves the current ranks as a standard frequency dictionary. Importing that ZIP creates a fixed snapshot. Use **Settings → Data → Words & progress → Export ZIP** to preserve the live dictionary, both hit counts, its multiplier, and counted-block history. Enabled states, vocabulary display options, and ordering are included in the settings export.
-
 ## Missing words
 
 Under **Settings → Dictionaries → Word forms**, download additional forms when available. Forms resolve to dictionary headwords and share their cards. Choose the intended entry when a popup offers several candidates.

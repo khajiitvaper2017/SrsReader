@@ -661,7 +661,6 @@ export function createScanner(
             const missing = [...texts.keys()];
             const { results, timing } = await readerClient({
               action: "scan",
-              source: website ? "website" : "popup",
               lookup: false,
               session,
               language,
@@ -986,10 +985,6 @@ export function createScanner(
       results: [result],
     } = await readerClient({
       action: "scan",
-      source:
-        options.onLookup || options.scope === "extensionPages"
-          ? "popup"
-          : "website",
       lookup: true,
       session: id,
       language: context.language,

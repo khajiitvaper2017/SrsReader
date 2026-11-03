@@ -12,10 +12,6 @@ import {
   indexSchema,
   meaningSchema,
 } from "@/dictionaries/model";
-import {
-  immersionWordSchema,
-  immersionPassageSchema,
-} from "@/dictionaries/immersion-model";
 import { sentenceSchema } from "@/examples/sentence-model";
 import { settingsSchema } from "@/settings/model";
 import { deckSchema } from "@/srs/deck-model";
@@ -138,7 +134,6 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
     maxFrequency: number,
     imported: number,
     styles: z.string(),
-    immersion: z.object({ secondaryWeight: number.min(0).max(1) }).optional(),
   }),
   entries: entry.extend({ sequence: number }),
   entryMatches: entry.extend({ defined: z.boolean() }),
@@ -169,8 +164,6 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
   morphology: corpus.extend({ data: blob }),
   nechybujte: z.object({ term: z.string(), result: lookup }),
   spanishdict: z.object({ term: z.string(), result: lookup }),
-  immersionWords: immersionWordSchema,
-  immersionPassages: immersionPassageSchema,
   analyses: z.object({
     key: z.string(),
     text: z.string(),

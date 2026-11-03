@@ -1,8 +1,4 @@
 import {
-  immersionArchiveSchema,
-  immersionScore,
-} from "@/dictionaries/immersion-model";
-import {
   noteTypeSchema,
   noteSchema,
   cardSchema,
@@ -13,6 +9,10 @@ import {
 import { validateCardReferences } from "@/cards/validate";
 import { audioInfoSchema } from "@/audio/model";
 import { db } from "@/platform/database/db";
+import {
+  detachRetiredDictionary,
+  removeRetiredDictionaryPreferences,
+} from "@/platform/database/migrations";
 import { settingsSchema } from "@/settings/model";
 import { getSettings } from "@/settings/store";
 import { saveBlob } from "@/shared/download";
@@ -60,19 +60,20 @@ export async function exportSettings() {
 }
 
 export async function readSettings(file: File) {
-  return z
+  const { settings } = z
     .object({
       format: z.literal("srs-reader-settings"),
       version: z.literal(1),
       settings: settingsSchema,
     })
-    .parse(JSON.parse(await file.text())).settings;
+    .parse(JSON.parse(await file.text()));
+  removeRetiredDictionaryPreferences(settings);
+  return settings;
 }
 
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
   version: z.literal(5),
-  immersion: z.array(immersionArchiveSchema),
   vocabulary: z.array(vocabularySchema),
   noteTypes: z.array(noteTypeSchema),
   notes: z.array(noteSchema),
@@ -103,27 +104,8 @@ export async function exportLearning() {
       db.cardAssets,
       db.decks,
       db.sentences,
-      db.dictionaries,
-      db.immersionWords,
-      db.immersionPassages,
     ],
     async () => ({
-      immersion: await Promise.all(
-        (await db.dictionaries.toArray())
-          .filter((dictionary) => dictionary.immersion)
-          .map(async (dictionary) => ({
-            language: dictionary.language,
-            secondaryWeight: dictionary.immersion!.secondaryWeight,
-            words: await db.immersionWords
-              .where("dictionaryId")
-              .equals(dictionary.id)
-              .toArray(),
-            passages: await db.immersionPassages
-              .where("dictionaryId")
-              .equals(dictionary.id)
-              .toArray(),
-          })),
-      ),
       vocabulary: await db.vocabulary.toArray(),
       noteTypes: await db.noteTypes.toArray(),
       notes: await db.notes.toArray(),
@@ -192,6 +174,7 @@ export async function readLearning(file: File) {
       )
     )
       throw new Error(t("invalid_word_identities_in_learning_archive"));
+    for (const deck of data.decks) detachRetiredDictionary(deck);
     validateCardReferences(
       data.noteTypes,
       data.notes,
@@ -211,14 +194,6 @@ export async function readLearning(file: File) {
       )
     )
       throw new Error(t("invalid_review_references_in_learning_archive"));
-    if (
-      new Set(data.immersion.map((source) => source.language)).size !==
-      data.immersion.length
-    )
-      throw new Error(t("invalid_immersion_archive"));
-    for (const source of data.immersion)
-      for (const word of source.words)
-        word.score = immersionScore(word, source.secondaryWeight);
     if (
       data.sentences.some(
         (sentence) =>

@@ -1,5 +1,6 @@
 import { entryMatch, type Entry } from "@/dictionaries/model";
-import { settingsSchema } from "@/settings/model";
+import { settingsSchema, type Settings } from "@/settings/model";
+import type { Deck } from "@/srs/deck-model";
 import { reviewSchema } from "@/srs/history";
 import { vocabularySchema } from "@/vocabulary/model";
 import Dexie, { type Transaction } from "dexie";
@@ -15,6 +16,33 @@ import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { assetId, type Card } from "@/cards/model";
 import { scheduleSchema, type Schedule } from "@/srs/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
+
+const retiredDictionaryPrefix = '["immersion",';
+
+export function removeRetiredDictionaryPreferences(
+  settings: Partial<
+    Pick<
+      Settings,
+      "dictionaryPreferences" | "frequencyPreferences" | "rankSources"
+    >
+  >,
+) {
+  for (const preferences of [
+    settings.dictionaryPreferences,
+    settings.frequencyPreferences,
+    settings.rankSources,
+  ]) {
+    if (!preferences) continue;
+    for (const id of Object.keys(preferences))
+      if (id.startsWith(retiredDictionaryPrefix)) delete preferences[id];
+  }
+}
+
+export function detachRetiredDictionary(deck: Deck) {
+  if (!deck.dictionaryId?.startsWith(retiredDictionaryPrefix)) return false;
+  delete deck.dictionaryId;
+  delete deck.limit;
+}
 
 export function installMigrations(database: Dexie) {
   database.version(1).stores({
@@ -239,6 +267,22 @@ export function installMigrations(database: Dexie) {
         .modify((type) => {
           if (!type.css.includes(readerLayoutCss)) type.css += readerLayoutCss;
         });
+    });
+  database
+    .version(22)
+    .stores({ immersionWords: null, immersionPassages: null })
+    .upgrade(async (tx) => {
+      await tx
+        .table("dictionaries")
+        .where("id")
+        .startsWith(retiredDictionaryPrefix)
+        .delete();
+      await tx.table("decks").toCollection().modify(detachRetiredDictionary);
+      const settings = await tx.table("settings").get("main");
+      if (settings) {
+        removeRetiredDictionaryPreferences(settings.value);
+        await tx.table("settings").put(settings);
+      }
     });
 }
 

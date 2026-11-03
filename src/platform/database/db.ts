@@ -1,7 +1,3 @@
-import type {
-  ImmersionWord,
-  ImmersionPassage,
-} from "@/dictionaries/immersion-model";
 import type { AudioRecord } from "@/audio/model";
 import type {
   Dictionary,
@@ -43,8 +39,6 @@ class ReaderDatabase extends Dexie {
   ankiReviews!: Table<AnkiReview, string>;
   importTasks!: Table<ImportTask, string>;
   importFiles!: Table<{ id: string; blob: Blob }, string>;
-  immersionWords!: Table<ImmersionWord, string>;
-  immersionPassages!: Table<ImmersionPassage, string>;
   sentences!: Table<CachedSentence, string>;
   decks!: Table<Deck, string>;
   analyses!: Table<AnalysisRecord, string>;

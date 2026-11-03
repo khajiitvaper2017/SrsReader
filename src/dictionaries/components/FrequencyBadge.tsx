@@ -18,7 +18,7 @@ export function FrequencyBadge({
   const [revision, setRevision] = useState(0);
   useChanges(
     useCallback(() => setRevision((value) => value + 1), []),
-    ["dictionaries", "frequency", "settings"],
+    ["dictionaries", "settings"],
   );
   useEffect(() => {
     let alive = true;
@@ -64,18 +64,7 @@ export function FrequencyBadge({
           {rows.map((row) => (
             <Group key={row.title} justify="space-between">
               <span title={row.title}>{row.title}</span>
-              <Stack gap={0}>
-                <strong>{number(row.rank)}</strong>
-                {row.primaryHits !== undefined && (
-                  <Text variant="supporting">
-                    {t("immersion_hit_details", {
-                      primary: number(row.primaryHits),
-                      secondary: number(row.secondaryHits!),
-                      score: number(row.score!),
-                    })}
-                  </Text>
-                )}
-              </Stack>
+              <strong>{number(row.rank)}</strong>
             </Group>
           ))}
           {rows.length > 1 && (

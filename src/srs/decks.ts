@@ -1,4 +1,3 @@
-import { immersionRanks } from "@/dictionaries/immersion";
 import { listFrequencyDictionaries } from "@/dictionaries/storage";
 import type { LookupWord } from "@/dictionaries/model";
 import { clearLookupCache, lookupMany } from "@/dictionaries/lookup";
@@ -98,27 +97,18 @@ async function frequencyDeckWords(dictionaryId: string, limit: number) {
   if (!dictionary?.enabled || !dictionary.frequencyCount)
     throw new Error(t("frequency_deck_dictionary_missing"));
   const entries = new Map<string, { key: string; reading: string | null }>();
-  if (dictionary.immersion) {
-    for (const word of await immersionRanks(dictionary.id)) {
-      if (!isFrequencyWord(word.lemma)) continue;
-      const key = JSON.stringify([word.lemma, null]);
-      entries.set(key, { key: word.lemma, reading: null });
-      if (entries.size >= limit) break;
-    }
-  } else {
-    await db.frequencies
-      .where("[revisionId+rank]")
-      .between(
-        [dictionary.revisionId, Dexie.minKey],
-        [dictionary.revisionId, Dexie.maxKey],
-      )
-      .until(() => entries.size >= limit)
-      .each((row) => {
-        if (!isFrequencyWord(row.key)) return;
-        const key = JSON.stringify([row.key, row.reading]);
-        if (!entries.has(key)) entries.set(key, row);
-      });
-  }
+  await db.frequencies
+    .where("[revisionId+rank]")
+    .between(
+      [dictionary.revisionId, Dexie.minKey],
+      [dictionary.revisionId, Dexie.maxKey],
+    )
+    .until(() => entries.size >= limit)
+    .each((row) => {
+      if (!isFrequencyWord(row.key)) return;
+      const key = JSON.stringify([row.key, row.reading]);
+      if (!entries.has(key)) entries.set(key, row);
+    });
   const selected = [...entries.values()];
   const words = new Map<string, LookupWord>();
   for (let offset = 0; offset < selected.length; offset += 100) {

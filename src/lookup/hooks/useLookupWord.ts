@@ -176,7 +176,6 @@ export function useLookupWord({
             results: [parsed],
           } = await readerClient({
             action: "scan",
-            source: "popup",
             lookup: true,
             session: crypto.randomUUID(),
             language: request.language,

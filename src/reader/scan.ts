@@ -1,5 +1,4 @@
 import type { ScanWarning } from "@/platform/messaging/events";
-import { analyzeWords } from "@/languages/morphology";
 import {
   lookupMany,
   lookupPhrases,
@@ -48,7 +47,6 @@ export async function scanTexts(
   language: string,
   settings: Settings,
   analyses: SurfaceAnalysis[][],
-  collectImmersion: boolean,
   explicitLookup: boolean,
   warn: ScanWarning,
   timing: DictionaryScanTiming,
@@ -194,22 +192,6 @@ export async function scanTexts(
   );
   const wordStateStarted = performance.now();
   timing.termLookupMs = wordStateStarted - lookupStarted;
-  const unmatched = collectImmersion
-    ? [
-        ...new Set(
-          blocks.flatMap((candidates) =>
-            candidates
-              .filter(
-                (candidate) =>
-                  !candidate.analysis &&
-                  !matches.get(normalize(candidate.term))?.words.length,
-              )
-              .map((candidate) => candidate.term),
-          ),
-        ),
-      ]
-    : [];
-  const localLemmas = await analyzeWords(unmatched, language);
   const ids = [
     ...new Set([...matches.values()].flatMap((m) => m.words.map((w) => w.id))),
   ];
@@ -220,7 +202,6 @@ export async function scanTexts(
   timing.wordStateMs = buildStarted - wordStateStarted;
   function present(candidates: (typeof blocks)[number]) {
     const spans: ScanSpan[] = [];
-    const lemmas: string[][] = [];
     let end = -1;
     for (const candidate of candidates.sort(
       (a, b) => a.start - b.start || b.end - a.end,
@@ -235,13 +216,6 @@ export async function scanTexts(
         ordered,
         candidate.analysis?.terms.slice(0, -1),
       );
-      if (collectImmersion) {
-        const found = words.map((word) => word.lemma);
-        const base =
-          candidate.analysis?.lemma || localLemmas.get(candidate.term);
-        if (found.length) lemmas.push(found);
-        else if (base && /\p{L}/u.test(base)) lemmas.push([base]);
-      }
       if (!words.length && !candidate.analysis) continue;
       const state = words.length
         ? stateOf(vocabulary.get(words[0]!.id), settings.matureIntervalDays)
@@ -263,7 +237,7 @@ export async function scanTexts(
       });
       end = candidate.end;
     }
-    return { spans, lemmas };
+    return spans;
   }
   const results = blocks.map(present);
   timing.buildSpansMs = performance.now() - buildStarted;
@@ -276,7 +250,7 @@ export async function scanTexts(
         isOnlineDictionary(dictionary.id),
     )
   ) {
-    const emitted = results.map((result) => JSON.stringify(result.spans));
+    const emitted = results.map((spans) => JSON.stringify(spans));
     const terms = new Map<string, Set<number>>();
     for (const [index, candidates] of blocks.entries())
       for (const candidate of candidates) {
@@ -301,7 +275,7 @@ export async function scanTexts(
         for (const word of await getWords(result.words.map((word) => word.id)))
           if (word) vocabulary.set(word.id, word);
         for (const index of indices) {
-          const spans = present(blocks[index]!).spans;
+          const spans = present(blocks[index]!);
           const value = JSON.stringify(spans);
           if (emitted[index] === value) continue;
           emitted[index] = value;

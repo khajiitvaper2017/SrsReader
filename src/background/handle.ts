@@ -23,7 +23,6 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "setSettings":
       return handleSettings(request, settings);
     case "cleanupDictionaries":
-    case "setImmersionWeight":
     case "dictionaries":
     case "searchDictionaries":
     case "setDictionary":

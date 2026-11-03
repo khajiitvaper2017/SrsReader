@@ -1,4 +1,3 @@
-import { exportImmersionDictionary } from "@/dictionaries/immersion";
 import { dictionariesClient } from "@/dictionaries/client";
 import { startImport } from "@/imports/client";
 import { checkUpdate } from "@/dictionaries/management";
@@ -123,13 +122,6 @@ export function useDictionarySettings({
   }
   function exportDictionary(dictionary: Dictionary) {
     return void task(async () => {
-      if (dictionary.immersion) {
-        saveBlob(
-          await exportImmersionDictionary(dictionary),
-          `${dictionary.index.title}.zip`,
-        );
-        return;
-      }
       const archive = await dictionaryArchive(dictionary.revisionId);
       if (!archive) throw new Error(t("dictionary_archive_unavailable"));
       saveBlob(archive.blob, `${dictionary.index.title}.zip`);
@@ -151,18 +143,8 @@ export function useDictionarySettings({
         load();
       });
   }
-  function updateImmersionWeight(language: string, weight: number) {
-    return void task(async () => {
-      await dictionariesClient({
-        action: "setImmersionWeight",
-        language,
-        weight,
-      });
-      load();
-    });
-  }
+
   return {
-    updateImmersionWeight,
     busy,
     progressTarget,
     updates,

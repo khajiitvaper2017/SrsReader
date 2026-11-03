@@ -1,7 +1,5 @@
 import { isOnlineDictionary, onlineDictionaries } from "@/dictionaries/online";
 import { dictionaryDisplay } from "@/dictionaries/display";
-import { immersionDictionary } from "@/dictionaries/immersion";
-import { immersionId } from "@/dictionaries/immersion-model";
 import type { Request } from "@/dictionaries/contracts";
 import { removeRevision } from "@/dictionaries/revisions";
 import { db } from "@/platform/database/db";
@@ -103,24 +101,6 @@ export async function deleteDictionary(
   await navigator.locks.request("srs-reader-dictionary-write", async () => {
     const dictionary = await db.dictionaries.get(request.id);
     if (!dictionary) return;
-    if (dictionary.immersion) {
-      await db.transaction(
-        "rw",
-        [db.dictionaries, db.immersionWords, db.immersionPassages],
-        async () => {
-          await db.immersionWords
-            .where("dictionaryId")
-            .equals(dictionary.id)
-            .delete();
-          await db.immersionPassages
-            .where("dictionaryId")
-            .equals(dictionary.id)
-            .delete();
-          await db.dictionaries.delete(dictionary.id);
-        },
-      );
-      return;
-    }
     await db.dictionaries.delete(request.id);
     await removeRevision(dictionary.revisionId);
   });
@@ -131,21 +111,6 @@ export const loadDictionaries = (ids: string[]) => db.dictionaries.bulkGet(ids);
 export async function listDictionaries(settings?: Settings) {
   settings ??= await getSettings();
   const dictionaries = await db.dictionaries.orderBy("order").toArray();
-  const languages = new Set([
-    ...settings.studyLanguages,
-    ...dictionaries.map((dictionary) => dictionary.language),
-  ]);
-  for (const language of languages) {
-    if (
-      !dictionaries.some(
-        (dictionary) => dictionary.id === immersionId(language),
-      )
-    )
-      dictionaries.push({
-        ...immersionDictionary(language),
-        order: (dictionaries.at(-1)?.order ?? -1) + 1,
-      });
-  }
   const online: Dictionary[] = onlineDictionaries.map(
     ({ id, language, target }, index) => ({
       id,
@@ -164,17 +129,7 @@ export async function listDictionaries(settings?: Settings) {
       styles: "",
     }),
   );
-  return [
-    ...dictionaries.map((dictionary) =>
-      dictionary.immersion
-        ? {
-            ...dictionary,
-            index: { ...dictionary.index, title: t("immersion_frequency") },
-          }
-        : dictionary,
-    ),
-    ...online,
-  ].sort((a, b) => a.order - b.order);
+  return [...dictionaries, ...online].sort((a, b) => a.order - b.order);
 }
 export const dictionaryTags = (revisions: string[]) =>
   db.tags.where("revisionId").anyOf(revisions).toArray();
@@ -191,9 +146,7 @@ export async function listFrequencyDictionaries(settings?: Settings) {
   settings ??= await getSettings();
   const preferences = settings.frequencyPreferences;
   return (await listDictionaries(settings))
-    .filter(
-      (dictionary) => dictionary.frequencyCount > 0 || dictionary.immersion,
-    )
+    .filter((dictionary) => dictionary.frequencyCount > 0)
     .map((dictionary) => ({
       ...dictionary,
       enabled: preferences[dictionary.id]?.enabled !== false,

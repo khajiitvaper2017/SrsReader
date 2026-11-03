@@ -1,6 +1,4 @@
 import { logScanWarning, type ScanWarning } from "@/platform/messaging/events";
-import { immersionId } from "@/dictionaries/immersion-model";
-import { recordImmersion } from "@/dictionaries/immersion";
 import { broadcast } from "@/background/events";
 import { analyzeTexts } from "@/languages/udpipe";
 import { udpipePermission } from "@/languages/udpipe-permission";
@@ -49,10 +47,6 @@ async function execute(
         : [];
       const udpipeMs = udpipeAllowed ? performance.now() - analysisStarted : 0;
       const dictionaryStarted = performance.now();
-      const immersion =
-        request.source === "website" &&
-        settings.frequencyPreferences[immersionId(request.language)]
-          ?.enabled !== false;
       const dictionary = {
         dictionaryListMs: 0,
         segmentMs: 0,
@@ -67,12 +61,11 @@ async function execute(
         wordStateMs: 0,
         buildSpansMs: 0,
       };
-      const parsed = await scanTexts(
+      const spans = await scanTexts(
         request.texts,
         request.language,
         settings,
         analyses.map((analysis) => analysis.surfaces),
-        immersion,
         request.lookup,
         warn,
         dictionary,
@@ -95,21 +88,6 @@ async function execute(
         },
       );
       const storageStarted = performance.now();
-      const spans = parsed.map((result) => result.spans);
-      if (immersion) {
-        try {
-          if (
-            await recordImmersion(
-              request.language,
-              request.texts,
-              parsed.map((result) => result.lemmas),
-            )
-          )
-            await broadcast({ event: "changed", scope: "frequency" });
-        } catch (error) {
-          warn("Immersion counts could not be saved", { error: String(error) });
-        }
-      }
       const results = spans.map((spans, index) => ({
         language: request.language,
         spans,
