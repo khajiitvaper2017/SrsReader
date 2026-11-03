@@ -1,3 +1,4 @@
+import { logScanWarning, type ScanWarning } from "@/platform/messaging/events";
 import {
   analysisTerms,
   normalizeTokenQuotes,
@@ -66,12 +67,20 @@ export async function cacheKey(text: string, language: string, model: string) {
     .join("");
 }
 
+export type UDPipeTiming = {
+  httpWorkMs: number;
+  requests: number;
+  cacheHits: number;
+  sharedChunks: number;
+};
+
 async function processBatch(
   records: AnalysisRecord[],
   language: string,
   model: string,
+  timing: UDPipeTiming | undefined,
+  warn: ScanWarning,
 ) {
-  const started = performance.now();
   const batch = records[0]!.key.slice(0, 8);
   const text = records.map((record) => record.text).join("\n\n");
   let sentences: AnalysisSentence[] | undefined;
@@ -85,25 +94,12 @@ async function processBatch(
       udpipeModel(language, settings.udpipeModels[language]) !== model ||
       !(await udpipePermission())
     ) {
-      console.info("[SrsReader] UDPipe request cancelled", {
-        batch,
-        attempt,
-        enabled: settings.udpipe,
-        studyLanguage: settings.studyLanguage,
-      });
       break;
     }
     const requestStarted = performance.now();
     attempt++;
-    console.info("[SrsReader] UDPipe request started", {
-      batch,
-      attempt,
-      delayMs: delay,
-      blocks: records.length,
-      characters: text.length,
-      model,
-      timeoutMs,
-    });
+    if (timing) timing.requests++;
+    let responseReceived = false;
     try {
       attempted = true;
       const body = new FormData();
@@ -133,27 +129,18 @@ async function processBatch(
       );
       if (!response.ok) throw new Error(`UDPipe: ${response.status}`);
       const result = await response.json();
-      const requestMs = Math.round(performance.now() - requestStarted);
+      responseReceived = true;
+      if (timing) timing.httpWorkMs += performance.now() - requestStarted;
       if (result.model !== model || typeof result.result !== "string")
         throw new Error("Invalid UDPipe response");
       sentences = parseConllu(result.result, text);
       if (!sentences.some((sentence) => sentence.tokens.length))
         throw new Error("Empty UDPipe response");
-      console.info("[SrsReader] UDPipe response accepted", {
-        batch,
-        attempt,
-        status: response.status,
-        requestMs,
-        parseMs: Math.round(performance.now() - requestStarted) - requestMs,
-        sentences: sentences.length,
-        tokens: sentences.reduce(
-          (count, sentence) => count + sentence.tokens.length,
-          0,
-        ),
-      });
       break;
     } catch (error) {
-      console.warn("[SrsReader] UDPipe attempt failed", {
+      if (timing && !responseReceived)
+        timing.httpWorkMs += performance.now() - requestStarted;
+      warn("UDPipe attempt failed", {
         batch,
         attempt,
         elapsedMs: Math.round(performance.now() - requestStarted),
@@ -209,21 +196,12 @@ async function processBatch(
   }
   const fallback = records.filter((record) => record.retryAt);
   if (fallback.length)
-    console.warn("[SrsReader] UDPipe local fallback cached", {
+    warn("UDPipe local fallback cached", {
       batch,
       blocks: fallback.length,
       retryAt: new Date(fallback[0]!.retryAt!).toISOString(),
     });
-  const storageStarted = performance.now();
   await db.analyses.bulkPut(records);
-  console.info("[SrsReader] UDPipe batch finished", {
-    batch,
-    attempts: attempt,
-    analyzedBlocks: records.filter((record) => record.analysis).length,
-    fallbackBlocks: fallback.length,
-    storageMs: Math.round(performance.now() - storageStarted),
-    totalMs: Math.round(performance.now() - started),
-  });
   return records;
 }
 
@@ -231,10 +209,11 @@ export async function analyzeTexts(
   texts: string[],
   language: string,
   selectedModel?: string,
+  timing?: UDPipeTiming,
+  warn: ScanWarning = logScanWarning,
 ) {
   const model = udpipeModel(language, selectedModel);
   if (!model) return [];
-  const started = performance.now();
   const chunks = texts.map((text) => analysisChunks(text, language));
   const unique = [
     ...new Set(chunks.flatMap((parts) => parts.map((part) => part.text))),
@@ -251,23 +230,20 @@ export async function analyzeTexts(
   const missing: AnalysisRecord[] = [];
   const complete = new Map<string, (record: AnalysisRecord) => void>();
   const reject = new Map<string, (error: unknown) => void>();
-  let cacheHits = 0;
-  let cachedFallbacks = 0;
-  let sharedChunks = 0;
   for (const [index, record] of records.entries()) {
     const hit = stored[index];
     if (hit?.analysis || (hit?.retryAt && hit.retryAt > Date.now())) {
       if (hit.analysis) {
-        cacheHits++;
+        if (timing) timing.cacheHits++;
         hit.analysis.surfaces = analysisTerms(
           hit.analysis.sentences,
           hit.text,
           hit.key,
         );
-      } else cachedFallbacks++;
+      }
       results.set(record.text, Promise.resolve(hit));
     } else if (inFlight.has(record.key)) {
-      sharedChunks++;
+      if (timing) timing.sharedChunks++;
       results.set(record.text, inFlight.get(record.key)!);
     } else {
       const pending = new Promise<AnalysisRecord>((resolve, fail) => {
@@ -290,18 +266,8 @@ export async function analyzeTexts(
     batches[batches.length - 1]!.push(record);
     size += length + 2;
   }
-  console.info("[SrsReader] UDPipe cache checked", {
-    blocks: texts.length,
-    uniqueChunks: records.length,
-    cacheHits,
-    cachedFallbacks,
-    sharedChunks,
-    missingChunks: missing.length,
-    batches: batches.length,
-    elapsedMs: Math.round(performance.now() - started),
-  });
   for (const batch of batches) {
-    void processBatch(batch, language, model)
+    void processBatch(batch, language, model, timing, warn)
       .then(
         (values) => {
           for (const value of values) complete.get(value.key)!(value);
@@ -319,14 +285,6 @@ export async function analyzeTexts(
       [...results].map(async ([text, result]) => [text, await result] as const),
     ),
   );
-  console.info("[SrsReader] UDPipe analysis finished", {
-    blocks: texts.length,
-    analyzedChunks: [...resolved.values()].filter((record) => record.analysis)
-      .length,
-    fallbackChunks: [...resolved.values()].filter((record) => record.retryAt)
-      .length,
-    totalMs: Math.round(performance.now() - started),
-  });
   return chunks.map((parts) => {
     const surfaces: TextAnalysis["surfaces"] = [];
     let retryAt: number | undefined;

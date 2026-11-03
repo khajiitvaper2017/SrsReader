@@ -1,4 +1,4 @@
-import type { ScanSpan } from "@/reader/scan";
+import type { DictionaryScanTiming, ScanSpan } from "@/reader/scan";
 import { languageSchema } from "@/languages/model";
 import { z } from "zod";
 
@@ -19,4 +19,17 @@ export type ScanResult = {
   spans: ScanSpan[];
   retryAt?: number;
 };
-export type Responses = { scan: ScanResult[] };
+export type ScanTiming = DictionaryScanTiming & {
+  workerMs: number;
+  udpipeMs: number;
+  udpipeHttpWorkMs: number;
+  udpipeRequests: number;
+  udpipeCacheHits: number;
+  udpipeSharedChunks: number;
+  udpipeFallbackBlocks: number;
+  dictionaryMs: number;
+  storageMs: number;
+};
+export type Responses = {
+  scan: { results: ScanResult[]; timing?: ScanTiming };
+};

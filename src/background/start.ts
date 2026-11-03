@@ -1,3 +1,4 @@
+import { logScanWarning, type ScanWarning } from "@/platform/messaging/events";
 import { requestSchema } from "@/background/contracts";
 import { handle } from "@/background/handle";
 import { t } from "@/shared/i18n/i18n";
@@ -43,7 +44,28 @@ export function startBackground() {
     if (parsed.data.action === "closeLookup" && sender.tab?.id)
       void browser.tabs.sendMessage(sender.tab.id, { event: "closeLookup" });
 
-    return handle(parsed.data).then(
+    let warn: ScanWarning | undefined;
+    const tabId = sender.tab?.id;
+    if (parsed.data.action === "scan" && tabId !== undefined) {
+      const target =
+        !fromExtensionPage && sender.documentId
+          ? { documentId: sender.documentId }
+          : { frameId: fromExtensionPage ? 0 : sender.frameId };
+      warn = (message, details) => {
+        void browser.tabs
+          .sendMessage(
+            tabId,
+            {
+              event: "scanWarning",
+              message,
+              details,
+            },
+            target,
+          )
+          .catch(() => logScanWarning(message, details));
+      };
+    }
+    return handle(parsed.data, warn).then(
       (value) => ({ value }),
       (error) => ({
         error: error instanceof Error ? error.message : String(error),

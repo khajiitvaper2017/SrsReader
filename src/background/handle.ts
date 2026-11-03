@@ -1,3 +1,4 @@
+import type { ScanWarning } from "@/platform/messaging/events";
 import { handleAudio } from "@/audio/commands";
 import type { Request } from "@/background/contracts";
 import { notify } from "@/background/events";
@@ -12,7 +13,7 @@ import { handleSrs } from "@/srs/commands";
 import { handleVocabulary } from "@/vocabulary/commands";
 import { handleImports } from "@/imports/commands";
 
-export async function handle(request: Request) {
+export async function handle(request: Request, warn?: ScanWarning) {
   const settings = await getSettings();
   switch (request.action) {
     case "runImport":
@@ -31,7 +32,7 @@ export async function handle(request: Request) {
     case "lookup":
       return handleDictionaries(request, settings);
     case "scan":
-      return handleReader(request, settings);
+      return handleReader(request, settings, warn);
     case "detectLanguage":
       return handleLanguages(request);
     case "examples":

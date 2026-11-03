@@ -10,16 +10,10 @@ export async function analyzeWords(terms: string[], language: string) {
   const record = await db.morphology.get(language);
   if (!record) return results;
   if (cached?.language !== language || cached.updated !== record.updated) {
-    const started = performance.now();
     const rows = (await new Response(
       record.data.stream().pipeThrough(new DecompressionStream("gzip")),
     ).json()) as [string, string][];
     cached = { language, updated: record.updated, table: new Map(rows) };
-    console.info("[SrsReader] Local morphology loaded", {
-      language,
-      entries: cached.table.size,
-      elapsedMs: Math.round(performance.now() - started),
-    });
   }
   for (const term of terms) {
     const lemma =

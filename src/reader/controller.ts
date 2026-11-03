@@ -1,4 +1,4 @@
-import type { RuntimeEvent } from "@/platform/messaging/events";
+import { logScanWarning, type RuntimeEvent } from "@/platform/messaging/events";
 import { excludedSelector } from "@/reader/blocks";
 import { createHighlights } from "@/reader/highlights";
 import { installReaderInput } from "@/reader/input";
@@ -49,13 +49,11 @@ export function startReader(
       : () => {};
   ctx.onInvalidated(removeInputPrevention);
   async function configure(preservePopup = false, refreshDictionaries = false) {
-    const started = performance.now();
     const previous = settings;
     settings =
       !preservePopup && options.settings
         ? options.settings
         : await settingsClient({ action: "settings" });
-    const settingsMs = Math.round(performance.now() - started);
     await setInterfaceLanguage(
       settings.interfaceLanguage,
       settings.nativeLanguage,
@@ -95,18 +93,14 @@ export function startReader(
     active =
       settings.setupComplete &&
       (scope !== "webpages" || isWebsiteEnabled(settings, location.hostname));
-    console.info("[SrsReader] Reader configured", {
-      context: scope,
-      active,
-      studyLanguages: settings.studyLanguages,
-      udpipeEnabled: settings.udpipe,
-      settingsMs,
-      totalMs: Math.round(performance.now() - started),
-    });
     if (!active || !preservePopup) popup.close();
     scanner.reset();
   }
   const onMessage = (message: RuntimeEvent) => {
+    if (message.event === "scanWarning") {
+      logScanWarning(message.message, message.details);
+      return;
+    }
     if (message.event === "scanResult") {
       scanner.applyScanResult(message.session, message.text, message.result);
       return;

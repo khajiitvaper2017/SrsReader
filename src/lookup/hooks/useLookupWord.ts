@@ -172,7 +172,9 @@ export function useLookupWord({
       const context = page.context;
       if (page.refineContext && !page.occurrence && context) {
         void (async () => {
-          const [parsed] = await readerClient({
+          const {
+            results: [parsed],
+          } = await readerClient({
             action: "scan",
             source: "popup",
             lookup: true,

@@ -1,3 +1,4 @@
+import { logScanWarning, type ScanWarning } from "@/platform/messaging/events";
 import { immersionId } from "@/dictionaries/immersion-model";
 import { recordImmersion } from "@/dictionaries/immersion";
 import { broadcast } from "@/background/events";
@@ -10,56 +11,62 @@ import type { Settings } from "@/settings/model";
 import { cacheScannedTexts } from "@/examples/sentences";
 
 export const handleReader = execute;
-async function execute(request: Request, settings: Settings) {
+async function execute(
+  request: Request,
+  settings: Settings,
+  warn: ScanWarning = logScanWarning,
+) {
   switch (request.action) {
     case "scan": {
       if (!settings.studyLanguages.includes(request.language))
-        return request.texts.map(() => ({
-          language: request.language,
-          spans: [],
-        }));
+        return {
+          results: request.texts.map(() => ({
+            language: request.language,
+            spans: [],
+          })),
+        };
       const started = performance.now();
       const udpipeAllowed =
         settings.udpipe &&
         !!udpipeModel(request.language) &&
         (await udpipePermission());
-      console.info("[SrsReader] Background scan started", {
-        blocks: request.texts.length,
-        characters: request.texts.reduce(
-          (count, text) => count + text.length,
-          0,
-        ),
-        studyLanguage: request.language,
-        udpipeEnabled: settings.udpipe,
-        udpipeAllowed,
-      });
+      const udp = { httpWorkMs: 0, requests: 0, cacheHits: 0, sharedChunks: 0 };
+      const analysisStarted = performance.now();
       const analyses = udpipeAllowed
         ? await analyzeTexts(
             request.texts,
             request.language,
             settings.udpipeModels[request.language],
+            udp,
+            warn,
           ).catch((error) => {
-            console.warn("SrsReader: contextual analysis unavailable", error);
+            warn("Contextual analysis unavailable", { error: String(error) });
             return request.texts.map(() => ({
               surfaces: [],
               retryAt: Date.now() + 10 * 60 * 1000,
             }));
           })
         : [];
-      const analysisMs = Math.round(performance.now() - started);
-      console.info("[SrsReader] Analysis finished", {
-        elapsedMs: analysisMs,
-        blocksWithUDPipeAnnotations: analyses.filter(
-          (analysis) => analysis.surfaces.length,
-        ).length,
-        localFallbackBlocks: analyses.filter((analysis) => analysis.retryAt)
-          .length,
-      });
+      const udpipeMs = udpipeAllowed ? performance.now() - analysisStarted : 0;
       const dictionaryStarted = performance.now();
       const immersion =
         request.source === "website" &&
         settings.frequencyPreferences[immersionId(request.language)]
           ?.enabled !== false;
+      const dictionary = {
+        dictionaryListMs: 0,
+        segmentMs: 0,
+        phraseQueryMs: 0,
+        phraseRows: 0,
+        phraseDatabaseRows: 0,
+        phraseMatchMs: 0,
+        termLookupMs: 0,
+        entryQueryMs: 0,
+        entryQueries: 0,
+        savedWordQueryMs: 0,
+        wordStateMs: 0,
+        buildSpansMs: 0,
+      };
       const parsed = await scanTexts(
         request.texts,
         request.language,
@@ -67,6 +74,8 @@ async function execute(request: Request, settings: Settings) {
         analyses.map((analysis) => analysis.surfaces),
         immersion,
         request.lookup,
+        warn,
+        dictionary,
         async (index, spans) => {
           await broadcast({
             event: "scanResult",
@@ -85,6 +94,7 @@ async function execute(request: Request, settings: Settings) {
           );
         },
       );
+      const storageStarted = performance.now();
       const spans = parsed.map((result) => result.spans);
       if (immersion) {
         try {
@@ -97,7 +107,7 @@ async function execute(request: Request, settings: Settings) {
           )
             await broadcast({ event: "changed", scope: "frequency" });
         } catch (error) {
-          console.warn("SrsReader: immersion counts could not be saved", error);
+          warn("Immersion counts could not be saved", { error: String(error) });
         }
       }
       const results = spans.map((spans, index) => ({
@@ -106,17 +116,22 @@ async function execute(request: Request, settings: Settings) {
         retryAt: analyses[index]?.retryAt,
       }));
       await cacheScannedTexts(request.texts, spans, request.language);
-      console.info("[SrsReader] Background scan finished", {
-        blocks: results.length,
-        words: results.reduce(
-          (count, result) => count + result.spans.length,
-          0,
-        ),
-        analysisMs,
-        dictionaryMs: Math.round(performance.now() - dictionaryStarted),
-        totalMs: Math.round(performance.now() - started),
-      });
-      return results;
+      return {
+        results,
+        timing: {
+          workerMs: performance.now() - started,
+          udpipeMs,
+          udpipeHttpWorkMs: udp.httpWorkMs,
+          udpipeRequests: udp.requests,
+          udpipeCacheHits: udp.cacheHits,
+          udpipeSharedChunks: udp.sharedChunks,
+          udpipeFallbackBlocks: analyses.filter((analysis) => analysis.retryAt)
+            .length,
+          dictionaryMs: storageStarted - dictionaryStarted,
+          ...dictionary,
+          storageMs: performance.now() - storageStarted,
+        },
+      };
     }
   }
 }

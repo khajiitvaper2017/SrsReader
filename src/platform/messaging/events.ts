@@ -34,9 +34,18 @@ export type ParsedOccurrenceMessage = {
   occurrence: Occurrence;
   candidates: ScanSpan["candidates"];
 };
+export type ScanWarning = (
+  message: string,
+  details: Record<string, unknown>,
+) => void;
+
+export const logScanWarning: ScanWarning = (message, details) =>
+  console.warn(`[SrsReader] ${message}`, details);
+
 export type RuntimeEvent =
   | ChangeMessage
   | ParsedMessage
   | ParsedOccurrenceMessage
   | FrameMessage
+  | { event: "scanWarning"; message: string; details: Record<string, unknown> }
   | { event: "scanResult"; session: string; text: string; result: ScanResult };

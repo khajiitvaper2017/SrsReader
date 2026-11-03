@@ -4,6 +4,7 @@ import type {
   EntryMatch,
   LookupResult,
   LookupWord,
+  Phrase,
 } from "@/dictionaries/model";
 import { nechybujteCacheKey } from "@/dictionaries/nechybujte";
 import { isOnlineDictionary, mergeOnline } from "@/dictionaries/online";
@@ -24,13 +25,59 @@ import { applyDefinitionOverrides, meaningKey } from "@/vocabulary/definitions";
 type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
 const cache = new Map<string, LookupResult>();
+let phraseCache = { size: 0, rowsByKey: new Map<string, Phrase[]>() };
+const phraseCacheLimit = 50_000;
+
 export function clearLookupCache() {
   cache.clear();
+  phraseCache = { size: 0, rowsByKey: new Map() };
 }
 export async function activeDictionaries(language: string) {
   return (await db.dictionaries.orderBy("order").toArray()).filter(
     (d) => d.enabled && d.language === language && d.count > 0,
   );
+}
+
+export async function lookupPhrases(revisions: string[], firstWords: string[]) {
+  const current = phraseCache;
+  const keys = revisions
+    .flatMap((revision) => firstWords.map((word) => [revision, word]))
+    .sort((a, b) => indexedDB.cmp(a, b));
+  const rows: Phrase[][] = [];
+  const misses = keys.flatMap((key, index) => {
+    const id = JSON.stringify(key);
+    const cached = current.rowsByKey.get(id);
+    if (!cached) return [{ id, key, index }];
+    current.rowsByKey.delete(id);
+    current.rowsByKey.set(id, cached);
+    rows[index] = cached;
+    return [];
+  });
+  let databaseRows = 0;
+  if (misses.length) {
+    const loaded = await db.transaction("r", db.phrases, () =>
+      Promise.all(
+        misses.map(({ key }) =>
+          db.phrases.where("[revisionId+first]").equals(key).toArray(),
+        ),
+      ),
+    );
+    for (const [index, { id, index: position }] of misses.entries()) {
+      const phrases = loaded[index]!;
+      rows[position] = phrases;
+      databaseRows += phrases.length;
+      const size = phrases.length + 1;
+      if (size > phraseCacheLimit || current.rowsByKey.has(id)) continue;
+      while (current.size + size > phraseCacheLimit) {
+        const [oldest, evicted] = current.rowsByKey.entries().next().value!;
+        current.rowsByKey.delete(oldest);
+        current.size -= evicted.length + 1;
+      }
+      current.rowsByKey.set(id, phrases);
+      current.size += size;
+    }
+  }
+  return { phrases: rows.flat(), databaseRows };
 }
 
 async function fetchTerms(
@@ -39,26 +86,26 @@ async function fetchTerms(
   language: string,
   withDefinitions: boolean,
 ) {
-  const started = performance.now();
   const keys = [...new Set(terms.map((t) => folded(t, language)))];
   const table = withDefinitions ? db.entries : db.entryMatches;
-  const rows = await table
-    .where("[revisionId+folded]")
-    .anyOf(dictionaries.flatMap((d) => keys.map((k) => [d.revisionId, k])))
-    .toArray();
+  const indexKeys = dictionaries
+    .flatMap((dictionary) => keys.map((key) => [dictionary.revisionId, key]))
+    .sort((a, b) => indexedDB.cmp(a, b));
+  const rows = (
+    await db.transaction("r", table, () =>
+      Promise.all(
+        indexKeys.map((key) =>
+          table.where("[revisionId+folded]").equals(key).toArray(),
+        ),
+      ),
+    )
+  ).flat();
   const entries: LookupEntry[] = rows.map((entry) => ({
     ...entry,
     defined: withDefinitions
       ? entry.definitions.some((definition) => !Array.isArray(definition))
       : (entry as EntryMatch).defined,
   }));
-  console.info("[SrsReader] Dictionary entries read", {
-    terms: keys.length,
-    dictionaries: dictionaries.length,
-    entries: entries.length,
-    withDefinitions,
-    elapsedMs: Math.round(performance.now() - started),
-  });
   const groups = new Map<string, LookupEntry[]>();
   for (const entry of entries) {
     const group = groups.get(entry.folded) || [];
@@ -104,12 +151,21 @@ async function dictionaryLookup(
     return true;
   });
   if (!missing.length || !dictionaries.length) return results;
-  const graph = await fetchTerms(
-    missing,
-    dictionaries,
-    language,
-    withDefinitions,
-  );
+  async function readEntries(terms: string[]) {
+    const started = performance.now();
+    const entries = await fetchTerms(
+      terms,
+      dictionaries,
+      language,
+      withDefinitions,
+    );
+    if (timing) {
+      timing.entryQueryMs += performance.now() - started;
+      timing.entryQueries++;
+    }
+    return entries;
+  }
+  const graph = await readEntries(missing);
   const fallbacks = new Map<string, ParsingCandidate[]>();
   let frontier = missing;
   while (frontier.length) {
@@ -142,12 +198,7 @@ async function dictionaryLookup(
     }
     frontier = [...refs];
     if (frontier.length)
-      for (const [key, value] of await fetchTerms(
-        frontier,
-        dictionaries,
-        language,
-        withDefinitions,
-      ))
+      for (const [key, value] of await readEntries(frontier))
         graph.set(key, value);
   }
   const dictionaryByRevision = new Map(
@@ -272,8 +323,8 @@ export async function lookupMany(
   language: string,
   localAnalysis = true,
   withDefinitions = true,
+  timing?: DictionaryLookupTiming,
 ): Promise<Map<string, LookupResult>> {
-  const started = performance.now();
   const settings = await getSettings();
   const ordered = await listDictionaries(settings);
   const results = await dictionaryLookup(
@@ -281,8 +332,8 @@ export async function lookupMany(
     language,
     localAnalysis,
     withDefinitions,
+    timing,
   );
-  const dictionaryFinished = performance.now();
   const lemmas = [
     ...new Set([
       ...terms.flatMap((term) => [normalize(term), folded(term, language)]),
@@ -291,6 +342,7 @@ export async function lookupMany(
       ),
     ]),
   ];
+  const savedQueryStarted = performance.now();
   const savedEntries = await db.vocabulary
     .where("lemma")
     .anyOf(lemmas)
@@ -304,7 +356,7 @@ export async function lookupMany(
           .uniqueKeys()
       : [],
   );
-  const savedQueryFinished = performance.now();
+  if (timing) timing.savedWordQueryMs += performance.now() - savedQueryStarted;
   const byId = new Map(savedEntries.map((word) => [word.id, word]));
   const byLemma = new Map<string, typeof savedEntries>();
   for (const word of savedEntries) {
@@ -347,7 +399,6 @@ export async function lookupMany(
       unresolved: words.length ? [] : result.unresolved,
     });
   }
-  const savedMergeFinished = performance.now();
   if (language === "cs" || language === "es") {
     const keys = terms.map(
       language === "cs" ? nechybujteCacheKey : spanishDictCacheKey,
@@ -372,16 +423,5 @@ export async function lookupMany(
         ? [{ ...word, meanings }]
         : [];
     });
-  console.info("[SrsReader] Dictionary lookup finished", {
-    terms: terms.length,
-    localAnalysis,
-    withDefinitions,
-    savedEntries: savedEntries.length,
-    dictionaryMs: Math.round(dictionaryFinished - started),
-    savedQueryMs: Math.round(savedQueryFinished - dictionaryFinished),
-    savedMergeMs: Math.round(savedMergeFinished - savedQueryFinished),
-    cachedDefinitionsMs: Math.round(performance.now() - savedMergeFinished),
-    totalMs: Math.round(performance.now() - started),
-  });
   return results;
 }

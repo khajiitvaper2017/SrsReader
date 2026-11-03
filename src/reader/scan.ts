@@ -1,5 +1,10 @@
+import type { ScanWarning } from "@/platform/messaging/events";
 import { analyzeWords } from "@/languages/morphology";
-import { lookupMany } from "@/dictionaries/lookup";
+import {
+  lookupMany,
+  lookupPhrases,
+  type DictionaryLookupTiming,
+} from "@/dictionaries/lookup";
 import { lookup } from "@/dictionaries/resolve";
 import { isOnlineDictionary } from "@/dictionaries/online";
 import { listDictionaries } from "@/dictionaries/storage";
@@ -8,7 +13,6 @@ import type { Settings } from "@/settings/model";
 import { meaningTags, type LookupWord } from "@/dictionaries/model";
 import { folded, normalize } from "@/languages/text";
 import type { Occurrence, SurfaceAnalysis } from "@/languages/analysis";
-import { db } from "@/platform/database/db";
 import { getWords } from "@/vocabulary/storage";
 import { stateOf } from "@/vocabulary/model";
 import { getSettings } from "@/settings/store";
@@ -27,6 +31,18 @@ export type ScanSpan = {
 };
 const escapeRegex = (text: string) =>
   text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export type DictionaryScanTiming = DictionaryLookupTiming & {
+  dictionaryListMs: number;
+  segmentMs: number;
+  phraseQueryMs: number;
+  phraseRows: number;
+  phraseDatabaseRows: number;
+  phraseMatchMs: number;
+  termLookupMs: number;
+  wordStateMs: number;
+  buildSpansMs: number;
+};
+
 export async function scanTexts(
   texts: string[],
   language: string,
@@ -34,10 +50,14 @@ export async function scanTexts(
   analyses: SurfaceAnalysis[][],
   collectImmersion: boolean,
   explicitLookup: boolean,
+  warn: ScanWarning,
+  timing: DictionaryScanTiming,
   onProgress: (index: number, spans: ScanSpan[]) => Promise<void>,
 ) {
   const started = performance.now();
   const ordered = await listDictionaries(settings);
+  const segmentStarted = performance.now();
+  timing.dictionaryListMs = segmentStarted - started;
   const dictionaries = ordered.filter(
     (dictionary) =>
       dictionary.enabled &&
@@ -55,14 +75,22 @@ export async function scanTexts(
       ),
     ),
   ];
-  const phrases = await db.phrases
-    .where("[revisionId+first]")
-    .anyOf(dictionaries.flatMap((d) => firsts.map((f) => [d.revisionId, f])))
-    .toArray();
-  const phrasesFinished = performance.now();
+  const phrasesStarted = performance.now();
+  timing.segmentMs = phrasesStarted - segmentStarted;
+  const { phrases, databaseRows } = await lookupPhrases(
+    dictionaries.map((dictionary) => dictionary.revisionId),
+    firsts,
+  );
+  const matchStarted = performance.now();
+  timing.phraseQueryMs = matchStarted - phrasesStarted;
+  timing.phraseRows = phrases.length;
+  timing.phraseDatabaseRows = databaseRows;
   const byFirst = new Map<
     string,
-    Map<string, { phrase: string; pattern?: RegExp; order: number }[]>
+    Map<
+      string,
+      { phrase: string; literal: string; pattern?: RegExp; order: number }[]
+    >
   >();
   const seen = new Set<string>();
   for (const phrase of phrases) {
@@ -74,6 +102,7 @@ export async function scanTexts(
     const list = prefixes.get(prefix) || [];
     list.push({
       phrase: phrase.text,
+      literal: phrase.text.replace(/\s+/gu, " "),
       order: seen.size,
     });
     prefixes.set(prefix, list);
@@ -121,7 +150,10 @@ export async function scanTexts(
         ...(prefixes.get("") || []),
         ...(prefix ? prefixes.get(prefix) || [] : []),
       ].sort((a, b) => a.order - b.order);
+      if (!phrases.length) continue;
+      const compact = remaining.replace(/\s+/gu, " ");
       for (const candidate of phrases) {
+        if (!compact.startsWith(candidate.literal)) continue;
         const { phrase } = candidate;
         candidate.pattern ??= new RegExp(
           `^${escapeRegex(phrase).replace(/\s+/g, "\\s+")}(?=$|[^\\p{L}\\p{M}\\p{N}])`,
@@ -141,7 +173,8 @@ export async function scanTexts(
     }
     return candidates;
   });
-  const preparationFinished = performance.now();
+  const lookupStarted = performance.now();
+  timing.phraseMatchMs = lookupStarted - matchStarted;
   const matches = await lookupMany(
     [
       ...new Set(
@@ -157,8 +190,10 @@ export async function scanTexts(
       candidates.some((candidate) => !candidate.analysis),
     ),
     false,
+    timing,
   );
-  const lookupFinished = performance.now();
+  const wordStateStarted = performance.now();
+  timing.termLookupMs = wordStateStarted - lookupStarted;
   const unmatched = collectImmersion
     ? [
         ...new Set(
@@ -181,7 +216,8 @@ export async function scanTexts(
   const vocabulary = new Map(
     (await getWords(ids)).filter((v) => v !== undefined).map((v) => [v.id, v]),
   );
-  const vocabularyFinished = performance.now();
+  const buildStarted = performance.now();
+  timing.wordStateMs = buildStarted - wordStateStarted;
   function present(candidates: (typeof blocks)[number]) {
     const spans: ScanSpan[] = [];
     const lemmas: string[][] = [];
@@ -230,7 +266,7 @@ export async function scanTexts(
     return { spans, lemmas };
   }
   const results = blocks.map(present);
-  const emitted = results.map((result) => JSON.stringify(result.spans));
+  timing.buildSpansMs = performance.now() - buildStarted;
   if (
     (explicitLookup || settings.wordLoading[language] !== "onLookup") &&
     ordered.some(
@@ -240,6 +276,7 @@ export async function scanTexts(
         isOnlineDictionary(dictionary.id),
     )
   ) {
+    const emitted = results.map((result) => JSON.stringify(result.spans));
     const terms = new Map<string, Set<number>>();
     for (const [index, candidates] of blocks.entries())
       for (const candidate of candidates) {
@@ -272,19 +309,8 @@ export async function scanTexts(
         }
       }
     })().catch((error) =>
-      console.warn("SrsReader: online word loading failed", error),
+      warn("Online word loading failed", { error: String(error) }),
     );
   }
-  console.info("[SrsReader] Dictionary scan finished", {
-    blocks: texts.length,
-    phrases: phrases.length,
-    terms: matches.size,
-    phraseQueryMs: Math.round(phrasesFinished - started),
-    preparationMs: Math.round(preparationFinished - phrasesFinished),
-    lookupMs: Math.round(lookupFinished - preparationFinished),
-    vocabularyMs: Math.round(vocabularyFinished - lookupFinished),
-    presentationMs: Math.round(performance.now() - vocabularyFinished),
-    totalMs: Math.round(performance.now() - started),
-  });
   return results;
 }
