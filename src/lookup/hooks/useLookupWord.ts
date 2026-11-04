@@ -1,10 +1,14 @@
-import type { Occurrence } from "@/languages/analysis";
+import type { Occurrence, OccurrenceGrammar } from "@/languages/analysis";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { useDictionaryVisibility } from "@/vocabulary/hooks/useDictionaryVisibility";
 import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings";
-import { folded } from "@/languages/text";
+import {
+  folded,
+  hasGermanSuspensionHyphen,
+  joinedGermanCompound,
+} from "@/languages/text";
 import { lookupClient } from "@/lookup/client";
 import type { LookupPage } from "@/lookup/model";
 import { readerClient } from "@/reader/client";
@@ -18,6 +22,7 @@ import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { vocabularyClient } from "@/vocabulary/client";
 import {
+  personalWordLemma,
   wordId,
   type ReadingContext,
   type WordWithCards,
@@ -33,12 +38,11 @@ export function useLookupWord({
 }: {
   page: LookupPage;
   onLookup: (
-    term: string,
-    context: ReadingContext,
-    selected: string,
-    scroll: number,
-    openDetails: number[],
-    occurrence?: Occurrence,
+    next: LookupPage,
+    previous: Pick<
+      LookupPage,
+      "selected" | "scroll" | "openDetails" | "definitionDraft"
+    >,
   ) => void;
   onBack?: () => void;
 }) {
@@ -56,7 +60,29 @@ export function useLookupWord({
   );
   const readingRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const definitionDraft = useRef(page.definitionDraft);
   const [result, setResult] = useState<LookupResult>();
+  const [compoundAnalysis, setCompoundAnalysis] = useState<OccurrenceGrammar>();
+  const compoundOccurrence =
+    page.compound?.occurrence ?? page.compoundSource?.occurrence;
+  const compoundSurface =
+    page.compound?.context.surface ?? page.compoundSource?.surface;
+  useEffect(() => {
+    let active = true;
+    if (compoundOccurrence && compoundSurface)
+      void lookupClient({
+        action: "compoundGrammar",
+        occurrence: compoundOccurrence,
+        surface: compoundSurface,
+      })
+        .then((grammar) => {
+          if (active) setCompoundAnalysis(grammar);
+        })
+        .catch(console.warn);
+    return () => {
+      active = false;
+    };
+  }, [compoundOccurrence, compoundSurface]);
   const [refined, setRefined] = useState<{
     page: LookupPage;
     term: string;
@@ -89,16 +115,13 @@ export function useLookupWord({
         candidate.id === selected ||
         wordMatchesGrammar(candidate, result.grammar, expandedDictionaries),
     ) || [];
+  const fallbackLemma = personalWordLemma(term, settings.studyLanguage);
   const word: LookupWord | undefined =
     result?.words.find((w) => w.id === selected) ||
     (noResults && settings.studyLanguage
       ? {
-          id: wordId(
-            settings.studyLanguage,
-            folded(term.trim(), settings.studyLanguage),
-            "",
-          ),
-          lemma: folded(term.trim(), settings.studyLanguage),
+          id: wordId(settings.studyLanguage, fallbackLemma, ""),
+          lemma: fallbackLemma,
           reading: "",
           language: settings.studyLanguage,
           meanings: [],
@@ -107,6 +130,52 @@ export function useLookupWord({
       : undefined);
   const unparsed =
     !!word && !word.meanings.length && !saved?.linkedCards.length;
+  const sourceCompound = context?.surface;
+  const markedTerm = sourceCompound ?? term;
+  const joined =
+    settings.studyLanguage === "de"
+      ? joinedGermanCompound(page.context?.surface ?? page.term)
+      : undefined;
+  const matchedMarkedCompound =
+    !!joined && !!word && folded(word.lemma, "de") === folded(joined, "de");
+  const compoundTerm =
+    (matchedMarkedCompound && markedTerm) ||
+    (page.showCompoundParts &&
+      sourceCompound &&
+      !hasGermanSuspensionHyphen(sourceCompound) &&
+      sourceCompound) ||
+    word?.lemma ||
+    term;
+  const showCompoundParts =
+    unparsed || page.showCompoundParts || matchedMarkedCompound;
+  const [compoundParts, setCompoundParts] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    setCompoundParts([]);
+    if (showCompoundParts && settings.studyLanguage === "de") {
+      void dictionariesClient({
+        action: "germanCompoundParts",
+        term: compoundTerm,
+      })
+        .then((parts) => {
+          if (alive) setCompoundParts(parts);
+        })
+        .catch(console.warn);
+    }
+    return () => {
+      alive = false;
+    };
+  }, [compoundTerm, showCompoundParts, settings.studyLanguage]);
+  function openLookup(next: LookupPage) {
+    onLookup(next, {
+      selected,
+      scroll: contentRef.current?.scrollTop ?? 0,
+      openDetails: [
+        ...(readingRef.current?.querySelectorAll("details") ?? []),
+      ].flatMap((details, index) => (details.open ? [index] : [])),
+      definitionDraft: definitionDraft.current,
+    });
+  }
   useEffect(() => {
     if (!word) return;
     const root = readingRef.current!;
@@ -125,17 +194,7 @@ export function useLookupWord({
         url: word.meanings[0]?.sourceUrl || location.href,
         title: word.meanings[0]?.title || document.title,
       },
-      onLookup: (term, context, occurrence) =>
-        onLookup(
-          term,
-          context,
-          selected,
-          content.scrollTop,
-          [...root.querySelectorAll("details")].flatMap((details, index) =>
-            details.open ? [index] : [],
-          ),
-          occurrence,
-        ),
+      onLookup: openLookup,
     });
     return () => ctx.abort();
   }, [word?.id]);
@@ -170,7 +229,15 @@ export function useLookupWord({
       if (local.words.length || !local.onlinePending) show(local);
       let contextualShown = false;
       const context = page.context;
-      if (page.refineContext && !page.occurrence && context) {
+      if (
+        page.refineContext &&
+        !page.occurrence &&
+        context &&
+        (!joined ||
+          !local.words.some(
+            (word) => folded(word.lemma, "de") === folded(joined, "de"),
+          ))
+      ) {
         void (async () => {
           const {
             results: [parsed],
@@ -227,7 +294,7 @@ export function useLookupWord({
     return () => {
       alive = false;
     };
-  }, [page, settings.studyLanguage]);
+  }, [page, settings.studyLanguage, joined]);
   const refreshDefinitions = useCallback(() => {
     void dictionariesClient({
       action: "lookup",
@@ -434,7 +501,6 @@ export function useLookupWord({
     result,
     term,
     context,
-    selected,
     setSelected,
     candidateOpen,
     setCandidateOpen,
@@ -456,6 +522,14 @@ export function useLookupWord({
     reviewed,
     setLastReview,
     unparsed,
+    compoundParts,
+    compoundAnalysis,
+    compoundSource:
+      compoundOccurrence && compoundSurface
+        ? { occurrence: compoundOccurrence, surface: compoundSurface }
+        : undefined,
+    definitionDraft,
+    openLookup,
     word,
     reload,
     ignoreTag,

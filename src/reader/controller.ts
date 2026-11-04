@@ -67,6 +67,7 @@ export function startReader(
       "enabledHosts",
       "disabledHosts",
       "wordLoading",
+      "splitGermanCompounds",
       "scanPopups",
       "udpipe",
       "udpipeModels",

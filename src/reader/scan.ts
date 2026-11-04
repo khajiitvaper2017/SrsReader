@@ -1,5 +1,6 @@
 import type { ScanWarning } from "@/platform/messaging/events";
 import {
+  lookupGermanCompounds,
   lookupMany,
   lookupPhrases,
   type DictionaryLookupTiming,
@@ -10,12 +11,38 @@ import { listDictionaries } from "@/dictionaries/storage";
 import { displayedWords } from "@/dictionaries/display";
 import type { Settings } from "@/settings/model";
 import { meaningTags, type LookupWord } from "@/dictionaries/model";
-import { folded, normalize } from "@/languages/text";
+import {
+  folded,
+  germanHyphenatedCompounds,
+  germanInitialAbbreviations,
+  spacedGermanAbbreviation,
+  germanSuspendedLists,
+  hasGermanSuspensionHyphen,
+  joinedGermanCompound,
+  normalize,
+  swissGermanSpelling,
+} from "@/languages/text";
 import type { Occurrence, SurfaceAnalysis } from "@/languages/analysis";
 import { getWords } from "@/vocabulary/storage";
 import { stateOf } from "@/vocabulary/model";
 import { getSettings } from "@/settings/store";
 import type { WordState } from "@/vocabulary/state";
+
+type CompoundPart = {
+  before: number;
+  after: number;
+  occurrence?: Occurrence;
+  headword?: string;
+};
+
+type Candidate = {
+  start: number;
+  end: number;
+  term: string;
+  analysis?: SurfaceAnalysis;
+  compoundPart?: CompoundPart;
+  joined?: string;
+};
 
 export type ScanSpan = {
   start: number;
@@ -27,6 +54,7 @@ export type ScanSpan = {
   occurrence?: Occurrence;
   related?: SurfaceAnalysis["related"];
   properName?: boolean;
+  compoundPart?: CompoundPart;
 };
 const escapeRegex = (text: string) =>
   text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -62,7 +90,15 @@ export async function scanTexts(
       dictionary.language === language &&
       dictionary.count > 0,
   );
+  const splitGerman =
+    language === "de" &&
+    settings.splitGermanCompounds &&
+    dictionaries.length > 0;
+  const suspendedLists = texts.map((text) =>
+    splitGerman && /[-‐‑]/u.test(text) ? [...germanSuspendedLists(text)] : [],
+  );
   const segmenter = new Intl.Segmenter(language, { granularity: "word" });
+  const graphemes = new Intl.Segmenter(language, { granularity: "grapheme" });
   const segments = texts.map((text) =>
     [...segmenter.segment(text)].filter((s) => s.isWordLike),
   );
@@ -106,14 +142,10 @@ export async function scanTexts(
     prefixes.set(prefix, list);
     byFirst.set(phrase.first, prefixes);
   }
+  const dottedTerms = new Map<Candidate, string>();
   const blocks = texts.map((text, index) => {
     const analysis = analyses[index] || [];
-    const candidates: {
-      start: number;
-      end: number;
-      term: string;
-      analysis?: SurfaceAnalysis;
-    }[] = analysis.map((surface) => ({
+    const candidates: Candidate[] = analysis.map((surface) => ({
       start: surface.start,
       end: surface.end,
       term: text.slice(surface.start, surface.end),
@@ -141,7 +173,9 @@ export async function scanTexts(
         });
       const prefixes = byFirst.get(folded(segment.segment, language));
       if (!prefixes) continue;
-      const remaining = folded(text.slice(segment.index), language);
+      const written = text.slice(segment.index);
+      const normalized = normalize(written);
+      const remaining = normalized.toLocaleLowerCase(language);
       const prefix =
         /^\S+\s+\S/u.exec(remaining)?.[0].replace(/\s+/u, " ") || "";
       const phrases = [
@@ -153,21 +187,71 @@ export async function scanTexts(
       for (const candidate of phrases) {
         if (!compact.startsWith(candidate.literal)) continue;
         const { phrase } = candidate;
+        if (
+          language === "de" &&
+          germanInitialAbbreviations(phrase).next().value?.[0] === phrase
+        )
+          continue;
         candidate.pattern ??= new RegExp(
           `^${escapeRegex(phrase).replace(/\s+/g, "\\s+")}(?=$|[^\\p{L}\\p{M}\\p{N}])`,
           "u",
         );
         const match = candidate.pattern.exec(remaining);
-        if (match && analyzed) {
+        if (!match || match[0].includes("\u2029")) continue;
+        let length = match[0].length;
+        if (normalized !== written || remaining.length !== written.length) {
+          let matched = 0;
+          length = 0;
+          for (const { segment: part } of graphemes.segment(written)) {
+            const size = folded(part, language).length;
+            if (matched + size > match[0].length) break;
+            matched += size;
+            length += part.length;
+          }
+        }
+        const end = segment.index + length;
+        if (
+          analyzed &&
+          (end <= analyzed.end ||
+            analyzed.related?.some((range) => range.end === end))
+        ) {
           analyzed.terms.push(phrase);
           (analyzed.occurrence.phrases ??= []).push(phrase);
-        } else if (match)
-          candidates.push({
-            start: segment.index,
-            end: segment.index + match[0].length,
-            term: phrase,
-          });
+        } else candidates.push({ start: segment.index, end, term: phrase });
       }
+    }
+    if (language === "de") {
+      for (const { 0: written, index: start } of germanInitialAbbreviations(
+        text,
+      )) {
+        const end = start + written.length;
+        const spaced = spacedGermanAbbreviation(written);
+        for (const term of new Set([
+          written,
+          spaced,
+          spaced.replaceAll(" ", ""),
+        ]))
+          candidates.push({ start, end, term });
+      }
+      if (dictionaries.length)
+        for (const { 0: term, index: start } of germanHyphenatedCompounds(
+          text,
+        )) {
+          if (!splitGerman && hasGermanSuspensionHyphen(term)) continue;
+          const end = start + term.length;
+          const exact = candidates.find(
+            (candidate) => candidate.start === start && candidate.end === end,
+          );
+          const joined = joinedGermanCompound(term);
+          if (exact) exact.joined = joined;
+          else candidates.push({ start, end, term, joined });
+        }
+      for (const candidate of candidates)
+        if (
+          text[candidate.end] === "." &&
+          /^[\p{L}\p{M}]+$/u.test(candidate.term)
+        )
+          dottedTerms.set(candidate, candidate.term + ".");
     }
     return candidates;
   });
@@ -175,13 +259,14 @@ export async function scanTexts(
   timing.phraseMatchMs = lookupStarted - matchStarted;
   const matches = await lookupMany(
     [
-      ...new Set(
-        blocks.flatMap((candidates) =>
+      ...new Set([
+        ...dottedTerms.values(),
+        ...blocks.flatMap((candidates) =>
           candidates.flatMap(
             (candidate) => candidate.analysis?.terms || [candidate.term],
           ),
         ),
-      ),
+      ]),
     ],
     language,
     blocks.some((candidates) =>
@@ -190,6 +275,204 @@ export async function scanTexts(
     false,
     timing,
   );
+  for (const [candidate, dotted] of dottedTerms) {
+    if (
+      !matches
+        .get(normalize(dotted))
+        ?.words.some(
+          (word) =>
+            word.meanings.length &&
+            (folded(word.lemma, language) === folded(dotted, language) ||
+              word.forms.some((form) =>
+                /^(?:abbreviation|abkürzung)$/iu.test(form),
+              )),
+        )
+    )
+      continue;
+    candidate.term = dotted;
+    candidate.end++;
+    if (candidate.analysis) candidate.analysis.terms = [dotted];
+  }
+  if (language === "de")
+    for (const [index, candidates] of blocks.entries()) {
+      const joined = candidates.filter((candidate) => {
+        const term = candidate.joined;
+        if (
+          !term ||
+          !matches
+            .get(normalize(candidate.term))
+            ?.words.some(
+              (word) =>
+                word.meanings.length &&
+                folded(word.lemma, "de") === folded(term, "de"),
+            )
+        )
+          return false;
+        // Parser fragments cannot outrank the attested whole word.
+        candidate.analysis = undefined;
+        return true;
+      });
+      if (joined.length)
+        blocks[index] = candidates.filter(
+          (candidate) =>
+            !joined.some(
+              (whole) =>
+                candidate !== whole &&
+                candidate.start >= whole.start &&
+                candidate.end <= whole.end,
+            ),
+        );
+    }
+  if (splitGerman) {
+    const splitTerms = new Map<Candidate, string>();
+    for (const candidates of blocks) {
+      for (const candidate of candidates) {
+        const suspended = hasGermanSuspensionHyphen(candidate.term);
+        if (candidate.analysis?.properName && !suspended) continue;
+        const term = normalize(
+          suspended
+            ? candidate.term
+            : candidate.analysis?.terms[0] || candidate.term,
+        );
+        if (
+          [candidate.term, ...(candidate.analysis?.terms ?? [])].some((word) =>
+            matches
+              .get(normalize(word))
+              ?.words.some((entry) => entry.meanings.length),
+          )
+        )
+          continue;
+        splitTerms.set(candidate, term);
+      }
+    }
+    const splits = await lookupGermanCompounds(
+      [
+        ...new Set([
+          ...splitTerms.values(),
+          ...suspendedLists.flatMap((lists) => lists.map((list) => list[2]!)),
+        ]),
+      ],
+      timing,
+    );
+    const partTerms = new Set<string>();
+    const foldGerman = (text: string) =>
+      swissGermanSpelling(folded(text, language));
+    for (const [index, candidates] of blocks.entries()) {
+      const sharedEnds = new Map<number, string>();
+      for (const list of suspendedLists[index]!) {
+        const tail = splits.get(list[2]!)?.at(-1);
+        if (!tail) continue;
+        for (const stem of germanHyphenatedCompounds(list[1]!))
+          sharedEnds.set(list.index + stem.index, tail.term);
+      }
+      const markedSplits: Candidate[] = [];
+      const replacements = new Map<Candidate, Candidate[]>();
+      for (const candidate of candidates) {
+        const term = splitTerms.get(candidate);
+        const parts = term && splits.get(term);
+        if (!parts) continue;
+        const last = parts.at(-1)!;
+        const surface = candidate.term;
+        let ranges = parts.map(({ start, end }) => ({ start, end }));
+        if (term !== surface) {
+          // Match both spellings before translating lemma offsets to the page.
+          const prefix = foldGerman(term.slice(0, last.start));
+          const tail = foldGerman(term.slice(last.start));
+          const written = foldGerman(surface);
+          const surfaceTail = written.slice(prefix.length);
+          if (
+            !written.startsWith(prefix) ||
+            !surfaceTail ||
+            (!surfaceTail.startsWith(tail) && !tail.startsWith(surfaceTail))
+          )
+            continue;
+          const offsets = new Map([[0, 0]]);
+          let offset = 0;
+          for (const { segment, index } of graphemes.segment(surface)) {
+            offset += foldGerman(segment).length;
+            offsets.set(offset, index + segment.length);
+            if (offset >= prefix.length) break;
+          }
+          const mapOffset = (offset: number) =>
+            offsets.get(foldGerman(term.slice(0, offset)).length) ?? -1;
+          ranges = ranges.map(({ start, end }, index) => ({
+            start: mapOffset(start),
+            end: index === ranges.length - 1 ? surface.length : mapOffset(end),
+          }));
+          if (ranges.some(({ start, end }) => start < 0 || end < 0)) continue;
+        }
+        let headword: string | undefined;
+        if (germanHyphenatedCompounds(surface).next().value?.[0] === surface) {
+          markedSplits.push(candidate);
+          const sharedEnd = hasGermanSuspensionHyphen(surface)
+            ? sharedEnds.get(candidate.start)
+            : undefined;
+          const joined = (
+            sharedEnd ? term + sharedEnd : term.slice(0, last.start) + last.term
+          )
+            .replace(/[-‐‑[\]]/gu, "")
+            .toLocaleLowerCase("de");
+          headword = parts.some((part) => /^\p{Ll}/u.test(part.term))
+            ? surface.replace(/[-‐‑]/gu, " ")
+            : joined[0]!.toLocaleUpperCase("de") + joined.slice(1);
+        }
+        let sourceOccurrence = candidate.analysis?.occurrence;
+        if (!sourceOccurrence) {
+          const sourceToken = analyses[index]?.find(
+            (token) =>
+              token.start >= candidate.start && token.end <= candidate.end,
+          );
+          if (sourceToken) {
+            const offset = sourceToken.start - sourceToken.occurrence.start;
+            if (candidate.start >= offset)
+              sourceOccurrence = {
+                key: sourceToken.occurrence.key,
+                start: candidate.start - offset,
+                end: candidate.end - offset,
+              };
+          }
+        }
+        replacements.set(
+          candidate,
+          parts.map((part, index) => {
+            partTerms.add(part.term);
+            const start = candidate.start + ranges[index]!.start;
+            const end = candidate.start + ranges[index]!.end;
+            return {
+              term: part.term,
+              start,
+              end,
+              compoundPart: {
+                before: start - candidate.start,
+                after: candidate.end - end,
+                occurrence: sourceOccurrence,
+                headword,
+              },
+            };
+          }),
+        );
+      }
+      blocks[index] = candidates.flatMap((candidate) =>
+        markedSplits.some(
+          (whole) =>
+            candidate !== whole &&
+            candidate.start >= whole.start &&
+            candidate.end <= whole.end,
+        )
+          ? []
+          : (replacements.get(candidate) ?? [candidate]),
+      );
+    }
+    if (partTerms.size)
+      for (const [term, result] of await lookupMany(
+        [...partTerms],
+        language,
+        false,
+        false,
+        timing,
+      ))
+        matches.set(term, result);
+  }
   const wordStateStarted = performance.now();
   timing.termLookupMs = wordStateStarted - lookupStarted;
   const ids = [
@@ -227,6 +510,7 @@ export async function scanTexts(
         occurrence: candidate.analysis?.occurrence,
         related: candidate.analysis?.related,
         properName: candidate.analysis?.properName,
+        compoundPart: candidate.compoundPart,
         ids: words.map((w) => w.id),
         candidates: words.map((word) => ({
           id: word.id,

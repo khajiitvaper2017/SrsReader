@@ -1,5 +1,5 @@
 import { meaningSchema } from "@/dictionaries/model";
-import { normalize } from "@/languages/text";
+import { folded, normalize } from "@/languages/text";
 import { languageSchema } from "@/languages/model";
 import { t } from "@/shared/i18n/i18n";
 import type { Schedule } from "@/srs/model";
@@ -10,6 +10,12 @@ import { z } from "zod";
 
 export const wordId = (language: string, lemma: string, reading: string) =>
   JSON.stringify([language, normalize(lemma), normalize(reading)]);
+
+export function personalWordLemma(term: string, language: string) {
+  return language === "de"
+    ? normalize(term.trim())
+    : folded(term.trim(), language);
+}
 
 export const contextSchema = z
   .object({

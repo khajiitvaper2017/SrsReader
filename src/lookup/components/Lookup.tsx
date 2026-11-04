@@ -1,8 +1,8 @@
 import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
 import type { ReactNode } from "react";
-import type { Occurrence } from "@/languages/analysis";
 import {
   ActionIcon,
+  Anchor,
   Button,
   Group,
   Badge,
@@ -31,7 +31,7 @@ import { SentenceTranslation } from "@/translation/components/SentenceTranslatio
 import { vocabularyClient } from "@/vocabulary/client";
 import { EditableMeanings } from "@/vocabulary/components/EditableMeanings";
 import { DefinitionEditor } from "@/vocabulary/components/DefinitionEditor";
-import { stateOf, type ReadingContext } from "@/vocabulary/model";
+import { stateOf, wordId, type ReadingContext } from "@/vocabulary/model";
 import { wordStateLabels } from "@/vocabulary/state";
 import {
   ArrowLeft,
@@ -59,11 +59,11 @@ export function Lookup() {
           ),
         )
       }
-      onLookup={(term, context, selected, scroll, openDetails, occurrence) =>
+      onLookup={(next, previous) =>
         setPages((pages) => [
           ...pages.slice(0, -1),
-          { ...pages[pages.length - 1]!, selected, scroll, openDetails },
-          { term, context, occurrence },
+          { ...pages[pages.length - 1]!, ...previous },
+          next,
         ])
       }
       onBack={
@@ -82,12 +82,11 @@ function LookupEntry({
 }: {
   page: LookupPage;
   onLookup: (
-    term: string,
-    context: ReadingContext,
-    selected: string,
-    scroll: number,
-    openDetails: number[],
-    occurrence?: Occurrence,
+    next: LookupPage,
+    previous: Pick<
+      LookupPage,
+      "selected" | "scroll" | "openDetails" | "definitionDraft"
+    >,
   ) => void;
   onBack?: () => void;
   onContext: (context: ReadingContext) => void;
@@ -120,6 +119,11 @@ function LookupEntry({
     reviewed,
     setLastReview,
     unparsed,
+    compoundParts,
+    compoundAnalysis,
+    compoundSource,
+    definitionDraft,
+    openLookup,
     word,
     reload,
     ignoreTag,
@@ -128,6 +132,7 @@ function LookupEntry({
     toggleMastery,
     definitionSaved,
   } = useLookupWord({ page, onLookup, onBack });
+  const compound = page.compound;
   const surface = result?.grammar?.group?.form || term;
   const hiddenCandidateDictionaries = new Map(
     result?.words
@@ -159,9 +164,11 @@ function LookupEntry({
                 <HoverCard
                   disabled={
                     !result?.grammar &&
+                    !compoundAnalysis &&
                     folded(surface, word.language) ===
                       folded(word.lemma, word.language)
                   }
+                  openDelay={650}
                   events={{ hover: true, focus: true, touch: true }}
                   position="bottom-start"
                   width={360}
@@ -202,11 +209,25 @@ function LookupEntry({
                       <Text lang={word.language} fw={500}>
                         {surface}
                       </Text>
-                      {result?.grammar && <Grammar grammar={result.grammar} />}
+                      {result?.grammar ? (
+                        <Grammar grammar={result.grammar} />
+                      ) : (
+                        compoundAnalysis && (
+                          <Stack gap="xs">
+                            <Text variant="supporting">
+                              {t("compound_source_grammar", {
+                                word: compoundSource?.surface,
+                              })}
+                            </Text>
+                            <Grammar grammar={compoundAnalysis} />
+                          </Stack>
+                        )
+                      )}
                     </Stack>
                   </HoverCard.Dropdown>
                 </HoverCard>
-                {(candidates.length > 1 ||
+                {(compound ||
+                  candidates.length > 1 ||
                   hiddenCandidateDictionaries.size > 0) && (
                   <Menu
                     opened={candidateOpen}
@@ -259,6 +280,29 @@ function LookupEntry({
                             .join(" · ")}
                         </Menu.Item>
                       ))}
+                      {compound && (
+                        <Menu.Item
+                          onClick={() =>
+                            openLookup({
+                              ...compound,
+                              occurrence:
+                                compound.term === compound.context.surface
+                                  ? compound.occurrence
+                                  : undefined,
+                              compoundSource,
+                              showCompoundParts: true,
+                            })
+                          }
+                          style={{
+                            whiteSpace: "normal",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {t("choose_whole_compound", {
+                            word: compound.term,
+                          })}
+                        </Menu.Item>
+                      )}
                       {[...hiddenCandidateDictionaries].map(([id, title]) => (
                         <Menu.Item
                           key={`more:${id}`}
@@ -423,6 +467,35 @@ function LookupEntry({
                 </Text>
               )}
               <Stack ref={readingRef}>
+                {compoundParts.length > 0 && (
+                  <Group gap="xs" data-srs-reader>
+                    <Text variant="supporting">{t("compound_parts")}</Text>
+                    {compoundParts.map((part, index) => (
+                      <Anchor
+                        key={index}
+                        component="button"
+                        type="button"
+                        onClick={() =>
+                          openLookup({
+                            term: part,
+                            compoundSource:
+                              compoundSource ??
+                              (page.occurrence
+                                ? {
+                                    occurrence: page.occurrence,
+                                    surface: page.term,
+                                  }
+                                : undefined),
+                            selected: wordId("de", part, ""),
+                            showCompoundParts: true,
+                          })
+                        }
+                      >
+                        {part}
+                      </Anchor>
+                    ))}
+                  </Group>
+                )}
                 {unparsed ? (
                   <DefinitionEditor
                     key={word.id}
@@ -432,6 +505,10 @@ function LookupEntry({
                     occurrence={page.occurrence}
                     grammar={result?.grammar}
                     settings={settings}
+                    draft={page.definitionDraft}
+                    onDraftChange={(draft) => {
+                      definitionDraft.current = draft;
+                    }}
                     onSaved={definitionSaved}
                     onError={setError}
                   />

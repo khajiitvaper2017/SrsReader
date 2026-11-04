@@ -1,6 +1,7 @@
 import type { ScanSpan } from "@/reader/scan";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { Occurrence } from "@/languages/analysis";
+import type { LookupPage } from "@/lookup/model";
 import {
   detectLanguages,
   languageSample,
@@ -8,7 +9,13 @@ import {
   knownLanguage,
 } from "@/languages/detection";
 import type { ScanResult } from "@/reader/contracts";
-import { folded } from "@/languages/text";
+import {
+  folded,
+  germanHyphenatedCompounds,
+  germanInitialAbbreviations,
+  hasGermanSuspensionHyphen,
+  spacedGermanAbbreviation,
+} from "@/languages/text";
 import { blockSelector, createBlockReader, makeRange } from "@/reader/blocks";
 import { readerClient } from "@/reader/client";
 import type { ReaderHighlights } from "@/reader/highlights";
@@ -20,6 +27,37 @@ import type {
 } from "@/reader/types";
 import type { ReadingContext } from "@/vocabulary/model";
 import type { WordState } from "@/vocabulary/state";
+
+function originalCompound(
+  context: ReadingContext,
+  part: ScanSpan["compoundPart"],
+) {
+  if (!part) return;
+  const start = context.start - part.before;
+  const end = context.end + part.after;
+  return {
+    context: {
+      ...context,
+      start,
+      end,
+      surface: context.sentence.slice(start, end),
+    },
+    occurrence: part.occurrence,
+    term: part.headword ?? context.sentence.slice(start, end),
+  };
+}
+
+type LookupTarget = {
+  term: string;
+  range: Range;
+  context: ReadingContext;
+  pointerIndex?: number;
+  requirePhrase?: boolean;
+  refineContext?: boolean;
+  compound?: LookupPage["compound"];
+  occurrence?: Occurrence;
+  focusRanges?: Range[];
+};
 
 export function createScanner(
   root: HTMLElement,
@@ -48,6 +86,7 @@ export function createScanner(
   let scanning = false;
   let generation = 0;
   let session = crypto.randomUUID();
+  // Live highlights can contain just one lookup. Cache only scan results.
   const parsed = new Map<string, ScanResult>();
   let scanTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -162,8 +201,9 @@ export function createScanner(
     candidates: ScanSpan["candidates"],
     language: string,
   ) {
-    const escaped = term
-      .trim()
+    const lookupTerm = term.trim();
+    const spaces = lookupTerm.match(/\s+/gu) ?? [];
+    const escaped = lookupTerm
       .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       .replace(/\s+/gu, "\\s+");
     const pattern = new RegExp(
@@ -173,15 +213,6 @@ export function createScanner(
     for (const block of blocks.values())
       if (block.language === language)
         for (const match of block.text.matchAll(pattern)) {
-          if (
-            block.spans.some(
-              (span) =>
-                span.occurrence &&
-                span.start < match.index + match[0].length &&
-                span.end > match.index,
-            )
-          )
-            continue;
           const start = match.index;
           const end = start + match[0].length;
           if (
@@ -189,8 +220,19 @@ export function createScanner(
               (span) =>
                 span.start < end &&
                 span.end > start &&
-                (span.start !== start || span.end !== end),
+                (span.occurrence || span.start !== start || span.end !== end),
             )
+          )
+            continue;
+          const index = block.spans.findIndex((span) => span.start >= start);
+          const next = block.spans[index];
+          const previous = next?.start === start ? next : undefined;
+          let gap = 0;
+          // Keep the page's capitalization and the dictionary's spacing.
+          const matchedTerm = match[0].replace(/\s+/gu, () => spaces[gap++]!);
+          if (
+            previous?.term === matchedTerm &&
+            JSON.stringify(previous.candidates) === JSON.stringify(candidates)
           )
             continue;
           const range = makeRange(block.parts, start, end);
@@ -206,28 +248,21 @@ export function createScanner(
             }
             return true;
           });
-          block.spans = block.spans.filter(
-            (span) => span.start !== start || span.end !== end,
-          );
           const span = {
+            ...previous,
             start,
             end,
-            term: match[0],
+            term: matchedTerm,
             ids: candidates.map((candidate) => candidate.id),
             candidates,
             state: candidates[0]!.state,
             range,
           };
           updateSpanState(span);
-          block.spans.push(span);
+          if (index < 0) block.spans.push(span);
+          else block.spans.splice(index, previous ? 1 : 0, span);
           block.ranges.push(range);
           highlights.get(span.state)!.add(range);
-          const key = JSON.stringify([language, block.text]);
-          parsed.set(key, {
-            ...parsed.get(key),
-            language,
-            spans: block.spans.map(({ range: _range, ...span }) => span),
-          });
         }
   }
   function applyParsedOccurrence(
@@ -259,12 +294,6 @@ export function createScanner(
     if (previous) {
       const { text, parts } = readBlock(element);
       if (text === previous.text) {
-        const result = parsed.get(
-          JSON.stringify([previous.language, text]),
-        ) || {
-          language: previous.language,
-          spans: previous.spans,
-        };
         if (
           rebuildRanges ||
           parts.length !== previous.parts.length ||
@@ -277,7 +306,7 @@ export function createScanner(
             );
           })
         )
-          render(element, text, parts, result, generation);
+          render(element, text, parts, previous, generation);
         return false;
       }
       let prefix = 0;
@@ -297,10 +326,12 @@ export function createScanner(
         suffix++;
       const shift = text.length - previous.text.length;
       const spans = previous.spans.flatMap((span) => {
+        const start = span.start - (span.compoundPart?.before ?? 0);
+        const end = span.end + (span.compoundPart?.after ?? 0);
         const offset =
-          span.end <= prefix
+          end <= prefix
             ? 0
-            : span.start >= previous.text.length - suffix
+            : start >= previous.text.length - suffix
               ? shift
               : undefined;
         return offset === undefined
@@ -312,6 +343,10 @@ export function createScanner(
                 end: span.end + offset,
                 occurrence: undefined,
                 related: undefined,
+                compoundPart: span.compoundPart && {
+                  ...span.compoundPart,
+                  occurrence: undefined,
+                },
               },
             ];
       });
@@ -444,13 +479,24 @@ export function createScanner(
       if (!retained.has(range))
         for (const highlight of highlights.values()) highlight.delete(range);
   }
-  function applyScanResult(id: string, text: string, result: ScanResult) {
+  function applyScanResult(
+    id: string,
+    text: string,
+    result: ScanResult,
+    target?: Element,
+  ) {
     if (id !== session || !isActive()) return;
-    const key = JSON.stringify([result.language, text]);
-    if (JSON.stringify(parsed.get(key)) === JSON.stringify(result)) return;
+    const key = scanKey(result.language, text);
+    if (!target && JSON.stringify(parsed.get(key)) === JSON.stringify(result))
+      return;
     parsed.set(key, result);
-    for (const [element, block] of blocks) {
-      if (block.language !== result.language || !block.text.includes(text))
+    const targets = target ? [[target, blocks.get(target)] as const] : blocks;
+    for (const [element, block] of targets) {
+      if (
+        !block ||
+        block.language !== result.language ||
+        !block.text.includes(text)
+      )
         continue;
       const current = readBlock(element);
       if (!element.isConnected || current.text !== block.text) continue;
@@ -485,9 +531,13 @@ export function createScanner(
           })),
         );
       spans.sort((a, b) => a.start - b.start);
-      const merged = { ...result, spans };
-      parsed.set(JSON.stringify([block.language, block.text]), merged);
-      render(element, block.text, current.parts, merged, generation);
+      render(
+        element,
+        block.text,
+        current.parts,
+        { language: block.language, spans },
+        generation,
+      );
     }
   }
   function scanKey(language: string, text: string) {
@@ -751,52 +801,135 @@ export function createScanner(
       mined: Date.now(),
     };
   }
-  function wordAtPointer(pointer: Pointer | undefined) {
-    if (
-      !isActive() ||
-      !pointer ||
-      (pointer.target as Element)?.closest(excluded)
-    )
-      return;
+  function wordAtPointer(
+    pointer: Pointer | undefined,
+  ): LookupTarget | undefined {
+    if (!isActive() || !pointer || !(pointer.target instanceof Element)) return;
+    const target = pointer.target;
+    if (!root.contains(target) || target.closest(excluded)) return;
     const caret = document.caretPositionFromPoint(
       pointer.clientX,
       pointer.clientY,
     );
-    if (
-      !caret ||
-      caret.offsetNode.nodeType !== Node.TEXT_NODE ||
-      !root.contains(caret.offsetNode) ||
-      caret.offsetNode.parentElement?.closest(excluded)
-    )
-      return;
-    const element = caret.offsetNode.parentElement?.closest(blockSelector);
+    const node = caret?.offsetNode;
+    const textNode = node?.nodeType === Node.TEXT_NODE ? node : undefined;
+    if (textNode?.parentElement?.closest(excluded)) return;
+    const element = (textNode?.parentElement || target).closest(blockSelector);
     const block =
       element &&
-      lookupBlock(root.contains(element) ? element : root, caret.offsetNode);
+      lookupBlock(root.contains(element) ? element : root, textNode ?? target);
     if (!block) return;
-    const part = block.parts.find((part) => part.node === caret.offsetNode);
-    if (!part) return;
-    const offset = part.start + caret.offset;
+    const part = block.parts.find((part) => part.node === textNode);
+    const containsPointer = (range: Range | undefined) =>
+      range &&
+      [...range.getClientRects()].some(
+        (rect) =>
+          // Mouse coordinates can be rounded down while text rectangles are fractional.
+          pointer.clientX >= Math.floor(rect.left) &&
+          pointer.clientX <= rect.right &&
+          pointer.clientY >= Math.floor(rect.top) &&
+          pointer.clientY <= rect.bottom,
+      );
+    let offset = part && caret ? part.start + caret.offset : undefined;
+    // A caret can snap past the character the pointer is still over.
+    if (
+      offset !== undefined &&
+      offset > 0 &&
+      containsPointer(makeRange(block.parts, offset - 1, offset))
+    )
+      offset--;
     let span:
-      | Pick<ScanSpan, "start" | "end" | "term" | "occurrence" | "related">
-      | undefined = block.spans.find(
-      (span) => offset >= span.start && offset < span.end,
+      | Pick<
+          ScanSpan,
+          "start" | "end" | "term" | "occurrence" | "related" | "compoundPart"
+        >
+      | undefined;
+    let hitRange: Range | undefined;
+    if (offset !== undefined) {
+      const position = offset;
+      span = block.spans.find(
+        (span) => position >= span.start && position < span.end,
+      );
+      if (span) {
+        const range = makeRange(block.parts, span.start, span.end);
+        if (containsPointer(range)) hitRange = range;
+        else span = undefined;
+      }
+    }
+    // The caret can land outside a phrase or marked compound at its edge.
+    span ??= block.spans.find(
+      (span) =>
+        (/\s/u.test(span.term) ||
+          (block.language === "de" && /[-‐‑]/u.test(span.term))) &&
+        containsPointer(makeRange(block.parts, span.start, span.end)),
     );
+    if (!span && block.language === "de") {
+      for (const { 0: written, index: start } of germanInitialAbbreviations(
+        block.text,
+      )) {
+        const end = start + written.length;
+        if (containsPointer(makeRange(block.parts, start, end))) {
+          span = { start, end, term: spacedGermanAbbreviation(written) };
+          break;
+        }
+      }
+    }
+    if (!span && block.language === "de" && /[-‐‑]/u.test(block.text)) {
+      for (const { 0: term, index: start } of germanHyphenatedCompounds(
+        block.text,
+      )) {
+        if (
+          hasGermanSuspensionHyphen(term) &&
+          !getSettings().splitGermanCompounds
+        )
+          continue;
+        const end = start + term.length;
+        if (containsPointer(makeRange(block.parts, start, end))) {
+          span = { start, end, term };
+          break;
+        }
+      }
+    }
+    let requirePhrase = false;
     if (!span) {
-      const segment = new Intl.Segmenter(block.language, {
+      const segments = new Intl.Segmenter(block.language, {
         granularity: "word",
-      })
-        .segment(block.text)
-        .containing(offset);
-      if (segment?.isWordLike)
+      }).segment(block.text);
+      const segment =
+        offset === undefined ? undefined : segments.containing(offset);
+      if (
+        segment?.isWordLike &&
+        containsPointer(
+          makeRange(
+            block.parts,
+            segment.index,
+            segment.index + segment.segment.length,
+          ),
+        )
+      )
         span = {
           start: segment.index,
           end: segment.index + segment.segment.length,
           term: segment.segment,
         };
+      if (!span && getSettings().wordLoading[block.language] === "onLookup") {
+        for (const gap of block.text.matchAll(/[^\S\r\n]+/gu)) {
+          const start = gap.index;
+          const end = start + gap[0].length;
+          if (!containsPointer(makeRange(block.parts, start, end))) continue;
+          if (
+            segments.containing(start - 1)?.isWordLike &&
+            segments.containing(end)?.isWordLike
+          ) {
+            span = { start, end, term: "" };
+            requirePhrase = true;
+          }
+          break;
+        }
+      }
     }
     if (!span) return;
-    if (block.language === "cs" && !span.occurrence) {
+    if (block.language === "cs" && !span.occurrence && !requirePhrase) {
       const segments = [
         ...new Intl.Segmenter(block.language, {
           granularity: "word",
@@ -826,24 +959,19 @@ export function createScanner(
           adjacent.index + adjacent.segment.length,
         );
         span = { start, end, term: block.text.slice(start, end) };
+        hitRange = undefined;
       }
     }
-    const range = makeRange(block.parts, span.start, span.end);
-    if (
-      !range ||
-      ![...range.getClientRects()].some(
-        (rect) =>
-          pointer!.clientX >= rect.left &&
-          pointer!.clientX <= rect.right &&
-          pointer!.clientY >= rect.top &&
-          pointer!.clientY <= rect.bottom,
-      )
-    )
-      return;
+    const range = hitRange ?? makeRange(block.parts, span.start, span.end);
+    if (!range || (!hitRange && !containsPointer(range))) return;
+    const context = contextFor(block, span);
     return {
       term: span.term,
       range,
-      context: contextFor(block, span),
+      context,
+      pointerIndex: offset === undefined ? undefined : offset - span.start,
+      requirePhrase,
+      compound: originalCompound(context, span.compoundPart),
       occurrence: span.occurrence,
       focusRanges: span.related?.flatMap(({ start, end }) => {
         const range = makeRange(block.parts, start, end);
@@ -851,7 +979,7 @@ export function createScanner(
       }),
     };
   }
-  function selectedWord() {
+  function selectedWord(): LookupTarget | undefined {
     const selection = getSelection();
     if (
       !selection?.rangeCount ||
@@ -911,9 +1039,10 @@ export function createScanner(
           )
         : undefined;
     return {
-      term,
+      term: span?.term ?? term,
       range,
       context,
+      compound: originalCompound(context, span?.compoundPart),
       occurrence: span?.occurrence,
       focusRanges: span?.related?.flatMap(({ start, end }) => {
         const range = makeRange(block!.parts, start, end);
@@ -922,14 +1051,16 @@ export function createScanner(
     };
   }
   async function prepareLookup(
-    word: NonNullable<ReturnType<typeof wordAtPointer>>,
-  ) {
+    word: LookupTarget,
+  ): Promise<LookupTarget | undefined> {
     const { context, range } = word;
+    const fallback = word.requirePhrase ? undefined : word;
     const languages = getSettings().studyLanguages;
     if (
       !options.language &&
       (!context.language || !languages.includes(context.language))
     ) {
+      if (word.requirePhrase) return;
       const matches = await Promise.all(
         languages.map((language) =>
           dictionariesClient({
@@ -941,23 +1072,32 @@ export function createScanner(
         ),
       );
       const index = matches.findIndex((result) => result.words.length > 0);
+      const language = languages[index < 0 ? 0 : index]!;
       return {
         ...word,
         context: {
           ...context,
-          language: languages[index < 0 ? 0 : index]!,
+          language,
         },
         occurrence: undefined,
+        refineContext:
+          !word.compound && getSettings().wordLoading[language] !== "onLookup",
       };
     }
-    if (
-      !context.language ||
-      getSettings().wordLoading[context.language] !== "onLookup" ||
-      word.occurrence
-    )
-      return word;
+    if (!context.language || word.occurrence || word.compound) return fallback;
     const parent = range.startContainer.parentElement?.closest(blockSelector);
     const element = parent && root.contains(parent) ? parent : root;
+    const key = scanKey(context.language, context.sentence);
+    let ready = parsed.get(key);
+    if (getSettings().wordLoading[context.language] !== "onLookup") {
+      const block = blocks.get(element);
+      const scanned =
+        ready ??
+        (block && !queued.has(element)
+          ? parsed.get(scanKey(context.language, block.text))
+          : undefined);
+      return fallback && { ...fallback, refineContext: !scanned };
+    }
     const block = lookupBlock(
       element,
       range.startContainer,
@@ -966,53 +1106,70 @@ export function createScanner(
     const first = block?.parts.find(
       (part) => part.node === range.startContainer,
     );
-    if (!block || !first) return word;
+    if (!block || !first) return fallback;
     const offset = first.start + range.startOffset - context.start;
-    render(
-      element,
-      block.text,
-      block.parts,
-      {
-        language: block.language,
-        spans: block.spans,
-      },
-      generation,
-    );
+    if (blocks.get(element) !== block)
+      render(element, block.text, block.parts, block, generation);
     const id = session;
-    const key = JSON.stringify([context.language, context.sentence]);
-    parsed.delete(key);
-    const {
-      results: [result],
-    } = await readerClient({
-      action: "scan",
-      lookup: true,
-      session: id,
-      language: context.language,
-      texts: [context.sentence],
-    });
-    if (session !== id || readBlock(element).text !== block.text) return word;
-    const ready = parsed.get(key) || result!;
-    applyScanResult(id, context.sentence, ready);
+    if (ready?.retryAt && ready.retryAt <= Date.now()) {
+      parsed.delete(key);
+      ready = undefined;
+    }
+    if (ready) applyScanResult(id, context.sentence, ready, element);
+    else {
+      const {
+        results: [result],
+      } = await readerClient({
+        action: "scan",
+        lookup: true,
+        session: id,
+        language: context.language,
+        texts: [context.sentence],
+      });
+      if (session !== id || readBlock(element).text !== block.text)
+        return fallback;
+      ready = parsed.get(key) ?? result!;
+      applyScanResult(id, context.sentence, ready);
+    }
+    const pointerIndex = word.pointerIndex;
     const span =
+      (pointerIndex === undefined
+        ? undefined
+        : ready.spans.find(
+            (span) =>
+              span.compoundPart &&
+              span.start >= context.start &&
+              span.end <= context.end &&
+              span.start <= context.start + pointerIndex &&
+              span.end > context.start + pointerIndex,
+          )) ||
       ready.spans.find(
-        (span) => span.start <= context.start && span.end >= context.end,
+        (span) =>
+          span.start <= context.start &&
+          span.end >= context.end &&
+          (!word.requirePhrase ||
+            (span.ids.length > 0 &&
+              span.start < context.start &&
+              span.end > context.end)),
       ) ||
       ready.spans.find(
         (span) =>
           span.start === context.start &&
           span.related?.some(({ end }) => end === context.end),
       );
-    if (!span) return word;
+    if (!span) return fallback;
+    const nextContext = {
+      ...context,
+      surface: context.sentence.slice(span.start, span.end),
+      start: span.start,
+      end: span.end,
+    };
     return {
       term: span.term,
       range:
         makeRange(block.parts, offset + span.start, offset + span.end) || range,
-      context: {
-        ...context,
-        surface: span.term,
-        start: span.start,
-        end: span.end,
-      },
+      context: nextContext,
+      compound: originalCompound(nextContext, span.compoundPart),
       occurrence: span.occurrence,
       focusRanges: span.related?.flatMap(({ start, end }) => {
         const range = makeRange(block.parts, offset + start, offset + end);

@@ -25,6 +25,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "cleanupDictionaries":
     case "dictionaries":
     case "searchDictionaries":
+    case "germanCompoundParts":
     case "setDictionary":
     case "moveDictionary":
     case "deleteDictionary":
@@ -40,6 +41,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "createSession":
     case "session":
     case "closeLookup":
+    case "compoundGrammar":
       return handleLookup(request);
     case "selectReadingCard":
     case "word":

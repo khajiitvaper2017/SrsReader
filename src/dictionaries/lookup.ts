@@ -6,6 +6,7 @@ import type {
   LookupWord,
   Phrase,
 } from "@/dictionaries/model";
+import { meaningTags } from "@/dictionaries/model";
 import { nechybujteCacheKey } from "@/dictionaries/nechybujte";
 import { isOnlineDictionary, mergeOnline } from "@/dictionaries/online";
 import { spanishDictCacheKey } from "@/dictionaries/spanishdict";
@@ -14,7 +15,14 @@ import {
   parsingCandidates,
   type ParsingCandidate,
 } from "@/languages/parsing-rules";
-import { folded, normalize } from "@/languages/text";
+import {
+  folded,
+  germanHyphenatedCompounds,
+  hasGermanSuspensionHyphen,
+  joinedGermanCompound,
+  normalize,
+  swissGermanSpelling,
+} from "@/languages/text";
 import { db } from "@/platform/database/db";
 import { wordId } from "@/vocabulary/model";
 import { getSettings } from "@/settings/store";
@@ -24,12 +32,15 @@ import { applyDefinitionOverrides, meaningKey } from "@/vocabulary/definitions";
 
 type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
-const cache = new Map<string, LookupResult>();
+const lookupCache = new Map<string, LookupResult>();
+// Prefix probes should not evict ordinary word lookups.
+const compoundCache = new Map<string, LookupResult>();
 let phraseCache = { size: 0, rowsByKey: new Map<string, Phrase[]>() };
 const phraseCacheLimit = 50_000;
 
 export function clearLookupCache() {
-  cache.clear();
+  lookupCache.clear();
+  compoundCache.clear();
   phraseCache = { size: 0, rowsByKey: new Map() };
 }
 export async function activeDictionaries(language: string) {
@@ -136,7 +147,8 @@ async function dictionaryLookup(
   language: string,
   localAnalysis: boolean,
   withDefinitions: boolean,
-  timing?: DictionaryLookupTiming,
+  timing: DictionaryLookupTiming | undefined,
+  cache: Map<string, LookupResult>,
 ): Promise<Map<string, LookupResult>> {
   const dictionaries = await activeDictionaries(language);
   const results = new Map<string, LookupResult>();
@@ -324,7 +336,17 @@ export async function lookupMany(
   localAnalysis = true,
   withDefinitions = true,
   timing?: DictionaryLookupTiming,
+  cache = lookupCache,
 ): Promise<Map<string, LookupResult>> {
+  const joined = new Map<string, string>();
+  if (language === "de")
+    for (const term of terms) {
+      const alternative = joinedGermanCompound(term);
+      if (alternative) joined.set(normalize(term), alternative);
+    }
+  const requested = terms;
+  if (joined.size)
+    terms = [...new Set([...terms.map(normalize), ...joined.values()])];
   const settings = await getSettings();
   const ordered = await listDictionaries(settings);
   const results = await dictionaryLookup(
@@ -333,6 +355,7 @@ export async function lookupMany(
     localAnalysis,
     withDefinitions,
     timing,
+    cache,
   );
   const lemmas = [
     ...new Set([
@@ -423,5 +446,320 @@ export async function lookupMany(
         ? [{ ...word, meanings }]
         : [];
     });
-  return results;
+  for (const [term, alternative] of joined) {
+    if (results.get(term)!.words.length) continue;
+    const words = results
+      .get(alternative)!
+      .words.filter(
+        (word) =>
+          word.meanings.length &&
+          folded(word.lemma, language) === folded(alternative, language),
+      );
+    if (words.length) results.set(term, { words, unresolved: [] });
+  }
+  return joined.size
+    ? new Map(
+        requested.map((term) => [
+          normalize(term),
+          results.get(normalize(term))!,
+        ]),
+      )
+    : results;
+}
+
+type GermanCompoundPart = { term: string; start: number; end: number };
+type GermanCompoundMatch = {
+  lemma?: string;
+  inflectedHead?: string;
+  pluralStem?: string;
+  adjective?: string;
+};
+
+function* splitGermanCompound(
+  term: string,
+  lemmas: Map<string, GermanCompoundMatch>,
+): Generator<string[], GermanCompoundPart[]> {
+  if (
+    !/^[\p{L}\p{M}]+$/u.test(term) &&
+    germanHyphenatedCompounds(term).next().value?.[0] !== term
+  )
+    return [];
+  const letters = [...term.matchAll(/[\p{L}\p{M}]/gu)];
+  if (letters.length < 4 || letters.length > 60) return [];
+  const word = letters.map(([letter]) => letter);
+  const startsAt = letters.map(({ index }) =>
+    term[index - 1] === "[" ? index - 1 : index,
+  );
+  const endsAt = letters.map(({ 0: letter, index }) => {
+    const end = index + letter.length;
+    return term[end] === "]" ? end + 1 : end;
+  });
+  const hyphens = startsAt.flatMap((start, index) =>
+    /[-‐‑]/u.test(term[start - 1] ?? "") ? [index] : [],
+  );
+  // Short fragments can be syllable breaks, as in don-au.
+  const preferred = new Set(
+    hyphens.filter(
+      (index, i) =>
+        index - (hyphens[i - 1] ?? 0) >= 3 &&
+        (hyphens[i + 1] ?? word.length) - index >= 3,
+    ),
+  );
+  const boundaryCount = [0];
+  for (let index = 0; index < word.length; index++)
+    boundaryCount.push(boundaryCount[index]! + Number(preferred.has(index)));
+  const partCost = word.length + 1;
+  const crossingCost = partCost ** 2;
+
+  const noun = (letters: string[]) =>
+    letters[0]!.toLocaleUpperCase("de") + letters.slice(1).join("");
+  type Edge = {
+    part: string;
+    end: number;
+    linked?: boolean;
+    adjective?: boolean;
+    caseFallback?: boolean;
+  };
+  const edges: Edge[][] = Array.from({ length: word.length }, () => []);
+  function addEdges(start: number, end: number, limit: number) {
+    const part = normalize(noun(word.slice(start, end)));
+    const caseFallback =
+      (start === 0 ||
+        preferred.has(start) ||
+        (!hyphens.length &&
+          end === word.length &&
+          /^\p{Ll}$/u.test(word[0]!))) &&
+      (end === word.length || preferred.has(end)) &&
+      /^\p{Ll}$/u.test(word[start]!);
+    edges[start]!.push({ part, end, caseFallback });
+    for (const linker of ["s", "es", "n", "en"]) {
+      const next = end + linker.length;
+      if (next <= limit && word.slice(end, next).join("") === linker)
+        edges[start]!.push({ part, end: next, linked: true });
+    }
+  }
+  for (let split = 2; split <= word.length - 2; split++) {
+    addEdges(0, split, word.length - 2);
+    addEdges(split, word.length, word.length);
+    if (
+      !hyphens.length &&
+      /^\p{Ll}$/u.test(word[0]!) &&
+      /^\p{Ll}$/u.test(word[split]!)
+    )
+      edges[split]!.push({
+        part: normalize(word.slice(split).join("")),
+        end: word.length,
+        adjective: true,
+      });
+  }
+
+  // Explicitly separated lowercase adjectives keep their spelling and may be inflected.
+  if (hyphens.length) {
+    let chunkStart = 0;
+    for (const end of [...hyphens, word.length]) {
+      if (end - chunkStart >= 3 && /^\p{Ll}$/u.test(word[chunkStart]!))
+        edges[chunkStart]!.push({
+          part: normalize(word.slice(chunkStart, end).join("")),
+          end,
+          adjective: true,
+        });
+      chunkStart = end;
+    }
+  }
+
+  // A suspended stem may be a single noun, with a linking ending before the dash.
+  if (hasGermanSuspensionHyphen(term)) {
+    for (let end = word.length - 2; end <= word.length; end++)
+      addEdges(0, end, word.length);
+  }
+
+  // Two-part compounds need only prefix and suffix lookups.
+  const starts = edges[0]!;
+  yield edges.flatMap((choices) => choices.map(({ part }) => part));
+
+  function bestSplit() {
+    const best: (
+      { score: number; paths: GermanCompoundPart[][] } | undefined
+    )[] = [{ score: 0, paths: [[]] }];
+    for (const [start, choices] of edges.entries()) {
+      const prefix = best[start];
+      if (!prefix) continue;
+      for (const { part, end, linked, adjective, caseFallback } of choices) {
+        const match = lemmas.get(part);
+        const inflectedHead =
+          end === word.length ? match?.inflectedHead : undefined;
+        const lemma = adjective
+          ? match?.adjective
+          : ((end < word.length ? match?.pluralStem : undefined) ??
+            match?.lemma ??
+            inflectedHead);
+        if (!lemma) continue;
+        const crossed = boundaryCount[end]! - boundaryCount[start + 1]!;
+        const score =
+          prefix.score +
+          crossed * crossingCost +
+          partCost +
+          Number(linked || (!adjective && !match?.lemma)) +
+          Number(caseFallback === true);
+        let target = best[end];
+        if (!target || score < target.score) {
+          target = { score, paths: [] };
+          best[end] = target;
+        }
+        if (score !== target.score || target.paths.length === 2) continue;
+        for (const path of prefix.paths) {
+          const next = [
+            ...path,
+            {
+              term: lemma,
+              start: startsAt[start]!,
+              end: endsAt[end - 1]!,
+            },
+          ];
+          if (
+            !target.paths.some((other) =>
+              next.every(
+                (part, i) =>
+                  part.term === other[i]?.term && part.end === other[i]?.end,
+              ),
+            )
+          )
+            target.paths.push(next);
+          if (target.paths.length === 2) break;
+        }
+      }
+    }
+    return best[word.length];
+  }
+
+  const pairs = bestSplit();
+  if (pairs && pairs.score < crossingCost)
+    return pairs.paths.length === 1 ? pairs.paths[0]! : [];
+  const firstInterior = Math.min(
+    ...starts
+      .filter(({ part, adjective }) =>
+        adjective ? lemmas.get(part)?.adjective : lemmas.get(part)?.lemma,
+      )
+      .map(({ end }) => end),
+  );
+  const lastInterior = edges.findLastIndex((choices) =>
+    choices.some(({ end, part, adjective }) => {
+      const match = lemmas.get(part);
+      return (
+        end === word.length &&
+        (adjective ? match?.adjective : match?.lemma || match?.inflectedHead)
+      );
+    }),
+  );
+  if (firstInterior + 2 > lastInterior)
+    return pairs?.paths.length === 1 ? pairs.paths[0]! : [];
+
+  for (let start = firstInterior; start + 2 <= lastInterior; start++) {
+    for (let end = start + 2; end <= lastInterior; end++)
+      addEdges(start, end, lastInterior);
+  }
+  yield edges.flatMap((choices) => choices.map(({ part }) => part));
+  const paths = bestSplit()?.paths ?? [];
+  return paths.length === 1 ? paths[0]! : [];
+}
+
+export async function lookupGermanCompounds(
+  terms: string[],
+  timing?: DictionaryLookupTiming,
+) {
+  const lemmas = new Map<string, GermanCompoundMatch>();
+  async function readLemmas(parts: string[]) {
+    const missing = [...new Set(parts)].filter((part) => !lemmas.has(part));
+    if (!missing.length) return;
+    const matches = await lookupMany(
+      missing,
+      "de",
+      false,
+      false,
+      timing,
+      compoundCache,
+    );
+    for (const part of missing) {
+      const words = matches.get(part)?.words ?? [];
+      const match =
+        words.find((word) => word.lemma === part && word.meanings.length) ??
+        words.find(
+          (word) =>
+            word.meanings.length &&
+            swissGermanSpelling(word.lemma) === swissGermanSpelling(part),
+        );
+      // Every redirect must describe an inflection, not a chain of name variants.
+      const inflectedHeads = new Set(
+        words
+          .filter(
+            (word) =>
+              word.meanings.length &&
+              word.forms.length &&
+              word.forms.every((form) =>
+                /^(?:(?:genitiv|genitive) singular|(?:(?:nominativ|genitiv|dativ|akkusativ|accusativ)e?[/ ])*plural(?: (?:in)?definite)?)$/iu.test(
+                  form,
+                ),
+              ),
+          )
+          .map((word) => word.lemma),
+      );
+      const adjectives = new Set(
+        /^\p{Ll}/u.test(part)
+          ? words
+              .filter(
+                (word) =>
+                  (word.lemma === part || word.forms.length > 0) &&
+                  word.meanings.some((meaning) =>
+                    meaningTags(meaning).some((tag) =>
+                      /^(?:adj|adjective)$/iu.test(tag),
+                    ),
+                  ),
+              )
+              .map((word) => word.lemma)
+          : [],
+      );
+      lemmas.set(part, {
+        lemma: match?.lemma,
+        adjective:
+          adjectives.size === 1 ? adjectives.values().next().value : undefined,
+        inflectedHead:
+          inflectedHeads.size === 1
+            ? inflectedHeads.values().next().value
+            : undefined,
+        // An attested Blase → Blasen plural supplies the stem in Blasengröße.
+        pluralStem: words.find(
+          (word) =>
+            word.meanings.length &&
+            word.lemma + "n" === part &&
+            word.forms.some((form) => /\bplural\b/iu.test(form)),
+        )?.lemma,
+      });
+    }
+  }
+
+  const splits = new Map<string, GermanCompoundPart[]>();
+  let pending = terms.map((term) => ({
+    term,
+    split: splitGermanCompound(term, lemmas),
+  }));
+  while (pending.length) {
+    const parts: string[] = [];
+    pending = pending.filter(({ term, split }) => {
+      const step = split.next();
+      if (!step.done) {
+        for (const part of step.value) parts.push(part);
+        return true;
+      }
+      if (step.value.length) splits.set(term, step.value);
+      return false;
+    });
+    await readLemmas(parts);
+  }
+  return splits;
+}
+
+export async function lookupGermanCompoundParts(term: string) {
+  term = normalize(term.trim());
+  const splits = await lookupGermanCompounds([term]);
+  return splits.get(term)?.map((part) => part.term) ?? [];
 }

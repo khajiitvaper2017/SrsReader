@@ -37,10 +37,29 @@ export function createBlockReader(
     let node: Node | null;
     let text = "";
     const parts: Part[] = [];
+    const layoutContainers = new WeakMap<Element, Element>();
+    function layoutContainer(parent: Element): Element {
+      const cached = layoutContainers.get(parent);
+      if (cached) return cached;
+      const container =
+        parent === element ||
+        !["inline", "contents"].includes(getComputedStyle(parent).display)
+          ? parent
+          : layoutContainer(parent.parentElement!);
+      layoutContainers.set(parent, container);
+      return container;
+    }
+    let previousContainer: Element | undefined;
     while ((node = walker.nextNode())) {
       if (node instanceof Element) {
         if (node.tagName === "BR" && node.closest(blockSelector) === element)
           text += "\n";
+        else if (
+          node.matches(blockSelector) &&
+          text &&
+          !text.endsWith("\u2029")
+        )
+          text += "\u2029";
         continue;
       }
       const parent = node.parentElement;
@@ -53,6 +72,15 @@ export function createBlockReader(
         continue;
       const textNode = node as Text;
       if (!parent.checkVisibility({ checkVisibilityCSS: true })) continue;
+      const container = layoutContainer(parent);
+      if (
+        previousContainer &&
+        container !== previousContainer &&
+        text &&
+        !text.endsWith("\u2029")
+      )
+        text += "\u2029";
+      previousContainer = container;
       parts.push({
         node: textNode,
         start: text.length,

@@ -32,12 +32,14 @@ export async function lookup(
   const terms = [...new Set([...(contextual?.terms || []), lookupTerm])];
   const grammar = contextual?.grammar;
   const baseTokens =
-    grammar?.sentence.tokens.filter((token) =>
-      grammar.group
-        ? grammar.group.tokenIds.includes(token.id) &&
-          !grammar.group.tokenIds.includes(token.head)
-        : grammar.tokenIds.includes(token.id),
-    ) || [];
+    grammar && !grammar.splitAbbreviation
+      ? grammar.sentence.tokens.filter((token) =>
+          grammar.group
+            ? grammar.group.tokenIds.includes(token.id) &&
+              !grammar.group.tokenIds.includes(token.head)
+            : grammar.tokenIds.includes(token.id),
+        )
+      : [];
   const bases = [
     ...new Set([
       ...(grammar?.group ? [grammar.group.lemma] : []),

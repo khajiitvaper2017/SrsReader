@@ -69,9 +69,18 @@ export function createPopup(
     closePopup();
     popupRange = requestedRange;
     try {
-      word = await scanner.prepareLookup(word);
+      const prepared = await scanner.prepareLookup(word);
+      if (!prepared) {
+        if (popupRange === requestedRange) popupRange = undefined;
+        return;
+      }
+      word = prepared;
     } catch (error) {
       console.warn("SrsReader: sentence lookup failed", error);
+      if (word.requirePhrase) {
+        if (popupRange === requestedRange) popupRange = undefined;
+        return;
+      }
     }
     if (
       popupRange !== requestedRange ||
@@ -79,23 +88,20 @@ export function createPopup(
       word.range.collapsed
     )
       return;
-    const { term, range, context, occurrence, focusRanges } = word;
+    const { term, range, context, occurrence, focusRanges, compound } = word;
+    const selection = { term, context, occurrence, compound };
     popupRange = range;
     if (options.onLookup) {
-      options.onLookup(term, context, occurrence);
+      options.onLookup(selection);
       return;
     }
     const session = await lookupClient({
       action: "createSession",
-      term,
-      context,
-      occurrence,
+      ...selection,
       refineContext:
         options.scope !== "extensionPages" &&
-        !occurrence &&
-        !!context.language &&
-        getSettings().udpipe &&
-        getSettings().wordLoading[context.language] !== "onLookup",
+        word.refineContext &&
+        getSettings().udpipe,
     });
     if (
       popupRange !== range ||

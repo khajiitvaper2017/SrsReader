@@ -19,7 +19,7 @@ const timeoutMs = 30_000;
 const encoder = new TextEncoder();
 const inFlight = new Map<string, Promise<AnalysisRecord>>();
 
-export function analysisChunks(text: string, language: string) {
+function analysisChunks(text: string, language: string) {
   const chunks: { text: string; start: number }[] = [];
   let start = 0;
   let current = "";
@@ -57,10 +57,18 @@ export function analysisChunks(text: string, language: string) {
   return chunks;
 }
 
-export async function cacheKey(text: string, language: string, model: string) {
+async function cacheKey(text: string, language: string, model: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
-    encoder.encode(JSON.stringify(["udpipe", model, "ranges", language, text])),
+    encoder.encode(
+      JSON.stringify([
+        "udpipe",
+        model,
+        text.includes("\u00ad") ? "ranges-without-soft-hyphens" : "ranges",
+        language,
+        text,
+      ]),
+    ),
   );
   return [...new Uint8Array(digest)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
@@ -114,7 +122,9 @@ async function processBatch(
       // Multipart string fields change LF to CRLF, which breaks token offsets.
       body.set(
         "data",
-        new Blob([text], { type: "text/plain;charset=utf-8" }),
+        new Blob([text.replaceAll("\u00ad", "")], {
+          type: "text/plain;charset=utf-8",
+        }),
         "text.txt",
       );
       const response = await fetch(
@@ -308,13 +318,42 @@ export async function analyzeTexts(
   });
 }
 
+export async function compoundGrammar(occurrence: Occurrence, surface: string) {
+  const record = await db.analyses.get(occurrence.key);
+  if (record?.text.slice(occurrence.start, occurrence.end) !== surface) return;
+  for (const original of record.analysis?.sentences ?? []) {
+    const sentence = normalizeTokenQuotes(original);
+    const tokenIds = sentence.tokens
+      .filter(
+        (token) =>
+          token.start !== undefined &&
+          token.end !== undefined &&
+          token.start < occurrence.end &&
+          token.end > occurrence.start &&
+          token.upos !== "PUNCT" &&
+          /\p{L}/u.test(token.form),
+      )
+      .map((token) => token.id);
+    if (tokenIds.length) return { sentence, tokenIds };
+  }
+}
+
 export async function occurrenceAnalysis(
   occurrence: Occurrence | undefined,
   surface: string,
 ) {
   if (!occurrence) return;
   const record = await db.analyses.get(occurrence.key);
-  if (record?.text.slice(occurrence.start, occurrence.end) !== surface) return;
+  if (!record) return;
+  const splitAbbreviation =
+    record.language === "de" &&
+    record.text[occurrence.end] === "." &&
+    record.text.slice(occurrence.start, occurrence.end + 1) === surface;
+  if (
+    !splitAbbreviation &&
+    record.text.slice(occurrence.start, occurrence.end) !== surface
+  )
+    return;
   const original = record.analysis?.sentences.find((sentence) =>
     sentence.tokens.some(
       (token) =>
@@ -335,7 +374,9 @@ export async function occurrenceAnalysis(
   );
   if (!analysis) return;
   return {
-    terms: [...new Set([...analysis.terms, ...(occurrence.phrases || [])])],
-    grammar: occurrenceGrammar(sentence, token),
+    terms: splitAbbreviation
+      ? [surface]
+      : [...new Set([...analysis.terms, ...(occurrence.phrases || [])])],
+    grammar: { ...occurrenceGrammar(sentence, token), splitAbbreviation },
   };
 }

@@ -3,6 +3,7 @@ import { broadcast, notify } from "@/background/events";
 import type { Request } from "@/dictionaries/contracts";
 import { meaningTags } from "@/dictionaries/model";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
+import { lookupGermanCompoundParts } from "@/dictionaries/lookup";
 import { lookup } from "@/dictionaries/resolve";
 import { searchDictionaries } from "@/dictionaries/search";
 import {
@@ -31,6 +32,8 @@ async function execute(request: Request, settings: Settings) {
       return cleanupDictionaryData();
     case "dictionaries":
       return listDictionaries(settings);
+    case "germanCompoundParts":
+      return lookupGermanCompoundParts(request.term);
     case "searchDictionaries":
       return searchDictionaries(request);
     case "setDictionary":

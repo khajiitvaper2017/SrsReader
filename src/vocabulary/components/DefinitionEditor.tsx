@@ -35,6 +35,8 @@ export function DefinitionEditor({
   definitionIndex,
   sourceMeaning,
   settings,
+  draft,
+  onDraftChange,
   onSaved,
   onError,
   onCancel,
@@ -47,11 +49,14 @@ export function DefinitionEditor({
   definitionIndex?: number;
   sourceMeaning?: Meaning;
   settings: Settings;
+  draft?: string;
+  onDraftChange?: (value: string) => void;
   onSaved: (word: Vocabulary) => Promise<void>;
   onError: (message: string) => void;
   onCancel?: () => void;
 }) {
-  const [definition, setDefinition] = useState(() => {
+  const [definition, setDraft] = useState(() => {
+    if (draft !== undefined) return draft;
     const meaning =
       sourceMeaning ||
       (definitionIndex === undefined
@@ -67,6 +72,10 @@ export function DefinitionEditor({
     });
     return senses.join("\n");
   });
+  function setDefinition(value: string) {
+    setDraft(value);
+    onDraftChange?.(value);
+  }
   const [busy, setBusy] = useState(false);
   const senses = definitionSenses(definition);
   const [status, setStatus] = useState("");
@@ -156,7 +165,7 @@ export function DefinitionEditor({
           (tags.tags ? (
             tags.tags.split(/\s+/u).map((tag) => (
               <Badge key={tag} title={tags.tagDescriptions?.[tag]}>
-                {tag}
+                {tag.toLowerCase()}
               </Badge>
             ))
           ) : (

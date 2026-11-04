@@ -162,7 +162,7 @@ export function Meanings({
                           color={conflicts[tag] ? "red" : undefined}
                           title={tagTitle(tag)}
                         >
-                          {tag}
+                          {tag.toLowerCase()}
                         </Button>
                       </Menu.Target>
 
@@ -181,7 +181,7 @@ export function Meanings({
                       color={conflicts[tag] ? "red" : undefined}
                       title={tagTitle(tag)}
                     >
-                      {tag}
+                      {tag.toLowerCase()}
                     </Badge>
                   ),
                 )}

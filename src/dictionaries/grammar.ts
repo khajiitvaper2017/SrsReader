@@ -4,7 +4,7 @@ import {
   type Definition,
   type Meaning,
 } from "@/dictionaries/model";
-import type { OccurrenceGrammar } from "@/languages/analysis";
+import type { AnalysisToken, OccurrenceGrammar } from "@/languages/analysis";
 import { t } from "@/shared/i18n/i18n";
 
 const tagFeatures = new Map<string, [string, string[]]>(
@@ -19,8 +19,8 @@ const tagFeatures = new Map<string, [string, string[]]>(
     ["UPOS", "ADP", "prep preposition postposition"],
     ["UPOS", "CCONJ,SCONJ", "conj conjunction"],
     ["UPOS", "NUM", "num numeral"],
-    ["UPOS", "INTJ", "int interj interjection"],
-    ["UPOS", "PART", "particle"],
+    ["UPOS", "INTJ", "int interj interjection intj"],
+    ["UPOS", "PART", "particle ptkl"],
     ["Animacy", "Anim", "anim animate"],
     ["Animacy", "Inan", "inanim inanimate"],
     ["Gender", "Masc", "m masc masculine"],
@@ -76,16 +76,31 @@ export function dictionaryPartsOfSpeech(meanings: Meaning[]): string[] {
     .filter(Boolean);
 }
 
+function partsOfSpeechForMatching(token: AnalysisToken): string[] {
+  // Dictionaries can classify an adverbial negator as an adverb.
+  if (
+    token.upos === "PART" &&
+    token.feats.Polarity === "Neg" &&
+    token.deprel.split(":")[0] === "advmod"
+  )
+    return ["PART", "ADV"];
+  return [token.upos];
+}
+
 export function grammarConflicts(
   meaning: Meaning,
   grammar?: OccurrenceGrammar,
 ): Record<string, string> {
   if (!grammar || meaning.dictionaryId === "personal") return {};
+  const tokens = grammar.sentence.tokens.filter((token) =>
+    grammar.tokenIds.includes(token.id),
+  );
   const analyses: Record<string, string>[] = grammar.group
     ? [{ ...grammar.group.feats, UPOS: "VERB" }]
-    : grammar.sentence.tokens
-        .filter((token) => grammar.tokenIds.includes(token.id))
-        .map((token) => ({ ...token.feats, UPOS: token.upos }));
+    : tokens.map((token) => ({ ...token.feats, UPOS: token.upos }));
+  const partsOfSpeech = grammar.group
+    ? ["VERB"]
+    : tokens.flatMap(partsOfSpeechForMatching);
   const rules = meaningTags(meaning).flatMap((tag) => {
     const explicit = tag.match(/^([A-Z][\w[\]]*)=(.+)$/u);
     const rule = explicit
@@ -107,6 +122,9 @@ export function grammarConflicts(
       .flatMap((rule) => rule.values);
     if (
       !analyses.length ||
+      (feature === "UPOS" &&
+        (grammar.splitAbbreviation ||
+          partsOfSpeech.some((pos) => allowed.includes(pos)))) ||
       analyses.some(
         (analysis) =>
           !analysis[feature] ||
@@ -287,7 +305,7 @@ export function meaningsMatchPartOfSpeech(
     ? ["VERB"]
     : grammar.sentence.tokens
         .filter((token) => grammar.tokenIds.includes(token.id))
-        .map((token) => token.upos);
+        .flatMap(partsOfSpeechForMatching);
   return (
     !parsed.length ||
     parsed.some((pos) => !pos || pos === "_" || expected.has(pos))

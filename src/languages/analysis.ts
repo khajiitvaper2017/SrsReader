@@ -39,6 +39,7 @@ export type TextAnalysis = {
   surfaces: SurfaceAnalysis[];
 };
 export type OccurrenceGrammar = {
+  splitAbbreviation?: boolean;
   sentence: AnalysisSentence;
   tokenIds: string[];
   group?: {
@@ -60,7 +61,7 @@ function reflexive(token: AnalysisToken) {
   return token.deprel === "expl:pv" && /^(se|si)$/iu.test(token.form);
 }
 
-export function componentsOf(token: AnalysisToken, tokens: AnalysisToken[]) {
+function componentsOf(token: AnalysisToken, tokens: AnalysisToken[]) {
   if (!token.id.includes("-")) return [token];
   const [first, last] = token.id.split("-").map(Number);
   return tokens.filter(

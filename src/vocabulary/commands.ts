@@ -9,7 +9,6 @@ import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
 import { analyzeTexts, occurrenceAnalysis } from "@/languages/udpipe";
 import { udpipeModel } from "@/languages/codes";
 import { udpipePermission } from "@/languages/udpipe-permission";
-import { folded } from "@/languages/text";
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
 import { db } from "@/platform/database/db";
@@ -17,7 +16,7 @@ import { listWords } from "@/vocabulary/list";
 import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import type { Request } from "@/vocabulary/contracts";
-import { wordId } from "@/vocabulary/model";
+import { personalWordLemma, wordId } from "@/vocabulary/model";
 import { snapshot } from "@/vocabulary/snapshot";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import {
@@ -125,7 +124,7 @@ async function execute(request: Request, settings: Settings) {
     }
     case "defineWord": {
       settings = { ...settings, studyLanguage: request.language };
-      const lemma = folded(request.term.trim(), settings.studyLanguage);
+      const lemma = personalWordLemma(request.term, settings.studyLanguage);
       const word: LookupWord = request.id
         ? await snapshot(
             await resolved(request.term, request.id, request.occurrence),

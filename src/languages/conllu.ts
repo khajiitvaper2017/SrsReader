@@ -13,8 +13,11 @@ function attributes(value: string) {
 
 export function parseConllu(result: string, text: string): AnalysisSentence[] {
   const offsets = [0];
-  for (const character of text)
-    offsets.push(offsets[offsets.length - 1]! + character.length);
+  for (const character of text) {
+    const offset = offsets[offsets.length - 1]! + character.length;
+    if (character === "\u00ad") offsets[offsets.length - 1] = offset;
+    else offsets.push(offset);
+  }
   return result
     .trim()
     .split(/\r?\n\s*\r?\n/u)
@@ -64,11 +67,12 @@ export function parseConllu(result: string, text: string): AnalysisSentence[] {
             typeof start !== "number" ||
             typeof end !== "number" ||
             end <= start ||
-            text.slice(start, end) !== form
+            text.slice(start, end).replaceAll("\u00ad", "") !== form
           )
             throw new Error("UDPipe token does not match original text");
           token.start = start;
           token.end = end;
+          token.form = text.slice(start, end);
         } else if (
           !id.includes(".") &&
           !tokens.some((parent) => {

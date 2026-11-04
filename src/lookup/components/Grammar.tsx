@@ -120,10 +120,10 @@ function Features({ feats }: { feats: Record<string, string> }) {
 
 export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
   const { sentence, group, tokenIds } = grammar;
-  const selectedTokens = sentence.tokens.filter((token) =>
-    tokenIds.includes(token.id),
+  const displayedTokens = sentence.tokens.filter((token) =>
+    (group?.tokenIds ?? tokenIds).includes(token.id),
   );
-  const wordForms = selectedTokens.map((token) => {
+  const wordForms = displayedTokens.map((token) => {
     const head = sentence.tokens.find((part) => part.id === token.head);
     const verb = /^(VERB|AUX)$/u.test(token.upos);
     return (
@@ -140,8 +140,10 @@ export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
           <Features feats={token.feats} />
         )}
         <Text variant="supporting">
-          {label("relations", token.deprel)}
-          {head ? ` → ${head.form} (${head.lemma})` : ""}
+          {token.deprel === "aux:pass" && head
+            ? t("sentence_grammar.passive_auxiliary_role", { head: head.form })
+            : label("relations", token.deprel) +
+              (head ? ` → ${head.form} (${head.lemma})` : "")}
         </Text>
       </Stack>
     );

@@ -79,6 +79,18 @@ export function ReadingSettings({
               })
             }
           />
+          {settings.studyLanguage === "de" && (
+            <Switch
+              label={t("split_german_compounds")}
+              description={t("split_german_compounds_help")}
+              checked={settings.splitGermanCompounds}
+              onChange={(event) =>
+                void update({
+                  splitGermanCompounds: event.currentTarget.checked,
+                })
+              }
+            />
+          )}
           <Switch
             label={t("use_udpipe")}
             description={t("udpipe_help")}

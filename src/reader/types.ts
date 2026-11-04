@@ -1,8 +1,7 @@
 import type { ScanSpan } from "@/reader/scan";
 import type { LanguagesPreferences } from "@/languages/preferences";
 import type { ReaderPreferences } from "@/reader/preferences";
-import type { ReadingContext } from "@/vocabulary/model";
-import type { Occurrence } from "@/languages/analysis";
+import type { LookupPage } from "@/lookup/model";
 import type { PageScope } from "@/reader/input-prevention";
 
 export type Part = { node: Text; start: number; end: number };
@@ -19,11 +18,7 @@ export type ReaderOptions = {
   language?: string;
   settings?: import("@/settings/model").Settings;
   root?: HTMLElement;
-  onLookup?: (
-    term: string,
-    context: ReadingContext,
-    occurrence?: Occurrence,
-  ) => void;
+  onLookup?: (page: LookupPage) => void;
   source?: { url: string; title: string };
 };
 export type Pointer = {

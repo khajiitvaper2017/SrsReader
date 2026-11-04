@@ -6,6 +6,7 @@ import { z } from "zod";
 export const requests = [
   z.object({ action: z.literal("cleanupDictionaries") }),
   z.object({ action: z.literal("dictionaries") }),
+  z.object({ action: z.literal("germanCompoundParts"), term: selection.term }),
   z.object({
     action: z.literal("searchDictionaries"),
     query: z.string().trim().min(1).max(500),
@@ -34,11 +35,11 @@ export const requests = [
     localOnly: z.boolean().optional(),
   }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = {
   cleanupDictionaries: { revisions: number; records: number };
   dictionaries: Dictionary[];
+  germanCompoundParts: string[];
   searchDictionaries: {
     entries: { id: string; key: string; reading: string; meaning: Meaning }[];
     hasMore: boolean;

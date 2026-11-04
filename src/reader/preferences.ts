@@ -10,6 +10,7 @@ export const readerPreferencesSchema = z.object({
   wordLoading: z
     .record(z.string(), z.enum(["automatic", "onLookup"]))
     .default({}),
+  splitGermanCompounds: z.boolean().default(false),
   enabledHosts: z.array(z.string()).default([]),
   disabledHosts: z.array(z.string()).default([]),
   theme: z.enum(["system", "light", "dark", "oled"]).default("system"),
