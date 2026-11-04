@@ -144,7 +144,13 @@ export async function scanTexts(
   }
   const dottedTerms = new Map<Candidate, string>();
   const blocks = texts.map((text, index) => {
-    const analysis = analyses[index] || [];
+    // Slash-separated words use word segments and indexed dictionary phrases.
+    const analysis = (analyses[index] || []).filter(
+      (surface) =>
+        !/[\p{L}\p{M}\p{N}].*\/.*[\p{L}\p{M}\p{N}]/su.test(
+          text.slice(surface.start, surface.end),
+        ),
+    );
     const candidates: Candidate[] = analysis.map((surface) => ({
       start: surface.start,
       end: surface.end,
