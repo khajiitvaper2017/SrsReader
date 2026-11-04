@@ -107,7 +107,6 @@ export async function deleteDictionary(
   return;
 }
 
-export const loadDictionaries = (ids: string[]) => db.dictionaries.bulkGet(ids);
 export async function listDictionaries(settings?: Settings) {
   settings ??= await getSettings();
   const dictionaries = await db.dictionaries.orderBy("order").toArray();

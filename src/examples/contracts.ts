@@ -12,8 +12,7 @@ export const requests = [
   }),
   z.object({ action: z.literal("exampleCorpus"), language: languageSchema }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = {
   examples: ExamplesResult;
   exampleCorpus: { count: number; installed: boolean };

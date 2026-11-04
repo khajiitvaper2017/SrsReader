@@ -47,7 +47,7 @@ const entrySchema = z.object({
   }),
 });
 
-export function parseSpanishDict(html: string): LookupResult {
+function parseSpanishDict(html: string): LookupResult {
   let entry: z.infer<typeof entrySchema>;
   try {
     const json = html.match(

@@ -19,7 +19,7 @@ export const indexSchema = z.object({
   downloadUrl: z.string().optional(),
 });
 
-export type DictionaryIndex = z.infer<typeof indexSchema>;
+type DictionaryIndex = z.infer<typeof indexSchema>;
 
 export type Dictionary = {
   id: string;

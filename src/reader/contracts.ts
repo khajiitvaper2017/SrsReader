@@ -11,14 +11,13 @@ export const requests = [
     texts: z.array(z.string()),
   }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type ScanResult = {
   language: string;
   spans: ScanSpan[];
   retryAt?: number;
 };
-export type ScanTiming = DictionaryScanTiming & {
+type ScanTiming = DictionaryScanTiming & {
   workerMs: number;
   udpipeMs: number;
   udpipeHttpWorkMs: number;

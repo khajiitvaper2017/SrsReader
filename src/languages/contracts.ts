@@ -6,6 +6,5 @@ export const requests = [
     texts: z.array(z.string().max(6000)),
   }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = { detectLanguage: (string | null)[] };

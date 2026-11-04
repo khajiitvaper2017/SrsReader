@@ -125,12 +125,6 @@ export async function languageWords(language: string) {
     )
   ).filter((word): word is WordWithCards => !!word);
 }
-export async function allWords() {
-  return (await projectWords(await db.vocabulary.toArray())).filter(
-    (word): word is WordWithCards => !!word,
-  );
-}
-
 export async function reviewCards(cards: Card[]): Promise<ReviewWord[]> {
   if (!cards.length) return [];
   const notes = new Map(
@@ -477,7 +471,7 @@ export async function deleteWord(
 ) {
   return deleteWords([request.id]);
 }
-export async function deleteWords(ids: string[]) {
+async function deleteWords(ids: string[]) {
   if (!ids.length) return;
   const notes = await db.notes.where("wordId").anyOf(ids).toArray();
   const cards = notes.length

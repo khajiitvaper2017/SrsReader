@@ -1,6 +1,6 @@
 import type { LayerState } from "@/srs/engines/rwkv/model";
 
-export type PackedLayer = {
+type PackedLayer = {
   shift: Uint16Array;
   scales: Float32Array;
   codes: Int8Array;
@@ -10,7 +10,7 @@ export type StoredLayers =
   | { compact: true; layers: PackedLayer[] }
   | { compact: false; layers: LayerState[] };
 const f32 = Math.fround;
-export function roundEven(value: number) {
+function roundEven(value: number) {
   const floor = Math.floor(value),
     fraction = value - floor;
   return fraction === 0.5
@@ -19,7 +19,7 @@ export function roundEven(value: number) {
       : floor + 1
     : Math.round(value);
 }
-export function toHalf(value: number) {
+function toHalf(value: number) {
   const sign = value < 0 || Object.is(value, -0) ? 0x8000 : 0;
   const x = Math.abs(value);
   if (Number.isNaN(x)) return 0x7e00;
@@ -35,7 +35,7 @@ export function toHalf(value: number) {
     ? sign | 0x7c00
     : sign | ((exponent + 15) << 10) | fraction;
 }
-export function fromHalf(value: number) {
+function fromHalf(value: number) {
   const sign = value & 0x8000 ? -1 : 1,
     exponent = (value >> 10) & 31,
     fraction = value & 1023;

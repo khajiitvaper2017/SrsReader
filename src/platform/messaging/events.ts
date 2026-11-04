@@ -20,14 +20,14 @@ export type ChangeMessage = {
     expandedDictionaries?: string[];
   };
 };
-export type ParsedMessage = {
+type ParsedMessage = {
   event: "parsed";
   term: string;
   language: string;
   candidates: ScanSpan["candidates"];
 };
-export type FrameMessage = { event: "closeLookup" };
-export type ParsedOccurrenceMessage = {
+type FrameMessage = { event: "closeLookup" };
+type ParsedOccurrenceMessage = {
   event: "parsedOccurrence";
   language: string;
   occurrence: Occurrence;

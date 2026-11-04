@@ -145,7 +145,7 @@ function cloze(
   return result + (only ? "" : value.slice(cursor));
 }
 
-export function renderTemplate(
+function renderTemplate(
   template: string,
   fields: Record<string, string>,
   {

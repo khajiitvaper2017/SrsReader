@@ -17,7 +17,7 @@ const bindingFor = (kind: CardMedia["kind"]) =>
     : kind === "wordAudio"
       ? "wordAudio"
       : "sentenceAudio";
-export const sentenceAudioName = (sentence: string) =>
+const sentenceAudioName = (sentence: string) =>
   `_srs_sentence_audio_${encodeURIComponent(sentence)}`;
 
 async function mediaDocument(wordId: string, noteId?: string) {

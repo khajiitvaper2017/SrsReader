@@ -16,8 +16,7 @@ export const requests = [
     source: audioInfoSchema.optional(),
   }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = {
   audio: AudioInfo | null;
   audioSources: AudioInfo[];

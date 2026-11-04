@@ -12,6 +12,3 @@ export const dictionariesPreferencesSchema = z.object({
     .record(z.string(), preferenceSchema.omit({ fallback: true }))
     .default({}),
 });
-export type DictionariesPreferences = z.infer<
-  typeof dictionariesPreferencesSchema
->;

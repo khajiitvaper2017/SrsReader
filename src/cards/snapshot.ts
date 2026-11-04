@@ -28,7 +28,7 @@ const styles = new Set(
   ),
 );
 
-export const dictionaryImageName = (dictionaryId: string, path: string) =>
+const dictionaryImageName = (dictionaryId: string, path: string) =>
   `_srs_${encodeURIComponent(dictionaryId)}_${encodeURIComponent(path)}`;
 
 function snapshotImageName(

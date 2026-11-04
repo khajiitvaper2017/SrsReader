@@ -8,11 +8,11 @@ export const learningStepsSchema = z.array(
     .regex(/^(?:\d+(?:\.\d+)?|\.\d+)[mhd]$/)
     .refine((step) => parseFloat(step) > 0),
 );
-export const retentionBandSchema = z.object({
+const retentionBandSchema = z.object({
   upTo: z.number().positive().nullable(),
   retention: z.number().min(0.7).max(0.99),
 });
-export const timedReviewSchema = z.object({
+const timedReviewSchema = z.object({
   enabled: z.boolean().default(false),
   showBar: z.boolean().default(true),
   skipNew: z.boolean().default(true),

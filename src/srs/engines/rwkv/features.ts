@@ -28,7 +28,7 @@ export const emptyFeatures = (): FeatureGlobal => ({
 const mod = (x: number, n: number) => ((x % n) + n) % n;
 const log = (x: number) => (x === -1 ? 0 : Math.log(1 + 1e-5 + x));
 
-export function entityCode(identity: string, length: number) {
+function entityCode(identity: string, length: number) {
   let hash = 2166136261;
   for (let i = 0; i < identity.length; i++)
     hash = Math.imul(hash ^ identity.charCodeAt(i), 16777619);

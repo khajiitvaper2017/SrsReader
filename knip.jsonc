@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [".trail/**"],
+  // WXT copies this package's worker files in build:publicAssets.
+  "ignoreDependencies": ["@browsermt/bergamot-translator"],
+}

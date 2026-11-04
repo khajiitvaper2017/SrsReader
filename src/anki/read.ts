@@ -202,9 +202,7 @@ function modernDeck(row: Record<string, unknown>) {
   };
 }
 
-export async function collectionFromBytes(
-  bytes: Uint8Array,
-): Promise<AnkiCollection> {
+async function collectionFromBytes(bytes: Uint8Array): Promise<AnkiCollection> {
   const database = await openCollection(bytes);
   try {
     const rows = (name: string) =>
@@ -363,7 +361,7 @@ export class PackageReader {
   }
 }
 
-export function suggestedBindings(model: AnkiModel): FieldBindings {
+function suggestedBindings(model: AnkiModel): FieldBindings {
   const bindings: FieldBindings = {};
   const aliases: Record<keyof FieldBindings, RegExp> = {
     word: /^(word|expression|term|vocab(?:ulary)?|front|слово|wyraz|słówko|polski|expression|表現|単語|語彙|見出し語)$/iu,

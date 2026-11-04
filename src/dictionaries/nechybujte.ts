@@ -54,7 +54,7 @@ function content(element: Element | null) {
     : [];
 }
 
-export function parseNechybujte(html: string): LookupResult {
+function parseNechybujte(html: string): LookupResult {
   const document = new DOMParser().parseFromString(html, "text/html");
   const header = document.querySelector("#entry-header");
   const body = document.querySelector("section.main-body");

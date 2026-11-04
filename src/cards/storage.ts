@@ -41,7 +41,7 @@ export async function getCardDocument(
   return card && note && noteType ? { card, note, noteType } : undefined;
 }
 
-export async function getWordCards(id: string) {
+async function getWordCards(id: string) {
   const notes = await db.notes.where("wordId").equals(id).primaryKeys();
   return notes.length ? db.cards.where("noteId").anyOf(notes).toArray() : [];
 }

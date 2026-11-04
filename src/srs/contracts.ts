@@ -74,8 +74,7 @@ export const requests = [
     year: z.number().int().min(1970).max(9998).optional(),
   }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = {
   studyOverview: Awaited<ReturnType<typeof studyOverview>>;
   createFrequencyDeck: Deck;

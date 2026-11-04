@@ -31,7 +31,7 @@ export const cardMediaId = (
   sentence = "",
 ) => JSON.stringify([wordId, kind, kind === "audio" ? sentence : ""]);
 
-export const cardMediaInfoSchema = z
+const cardMediaInfoSchema = z
   .object({
     id: z.string(),
     wordId: z.string(),

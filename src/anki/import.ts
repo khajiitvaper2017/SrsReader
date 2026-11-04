@@ -34,7 +34,7 @@ import { freshWord } from "@/vocabulary/service";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import { wordId, type Vocabulary } from "@/vocabulary/model";
 
-export function mediaType(name: string) {
+function mediaType(name: string) {
   const extension = name.split(".").at(-1)?.toLowerCase();
   return (
     (

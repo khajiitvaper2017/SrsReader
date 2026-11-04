@@ -116,8 +116,7 @@ export const requests = [
     value: z.number().min(0.7).max(0.99).nullable(),
   }),
 ] as const;
-export const requestSchema = z.discriminatedUnion("action", requests);
-export type Request = z.infer<typeof requestSchema>;
+export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = {
   saveCardFields: void;
   saveCustomTranslation: void;

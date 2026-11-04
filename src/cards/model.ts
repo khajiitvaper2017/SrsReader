@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { scheduleSchema } from "@/srs/model";
 
-export const fieldDefinitionSchema = z.object({
+const fieldDefinitionSchema = z.object({
   name: z.string().min(1),
   label: z.string().optional(),
 });
