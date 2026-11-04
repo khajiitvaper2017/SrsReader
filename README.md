@@ -6,7 +6,7 @@ Read the [user guide](docs/README.md), also available in the app’s **Docs** ta
 
 ## Build
 
-Requires Node.js 22.13 or newer and pnpm 12.15.0. See the [pnpm installation guide](https://pnpm.io/installation) if pnpm is not installed.
+Requires Node.js 24 or newer and pnpm 12.15.0. See the [pnpm installation guide](https://pnpm.io/installation) if pnpm is not installed.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -21,3 +21,5 @@ For automatic reloads during development, run `pnpm dev` or `pnpm dev:firefox` a
 Run `pnpm fix` to apply ESLint fixes and Prettier formatting; `pnpm typecheck` checks TypeScript.
 
 Run `pnpm check:unused` to find unused files, exports, types, and dependencies. Run `pnpm fix:unused` to make unused exports and types private. Review unused files and dependencies before removing them. After cleanup, run `pnpm typecheck`, `pnpm exec eslint .`, and `pnpm build`.
+
+Run end-to-end extension checks with `pnpm exec playwright install chromium`, then `pnpm test:e2e`. The checks use a temporary browser profile and do not access your normal profile. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to use an existing Chromium executable instead of the downloaded browser.

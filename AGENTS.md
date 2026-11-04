@@ -1,6 +1,6 @@
 ## Build and development
 
-- Use Node.js 22.13 or newer and pnpm 12.15.0. Run `pnpm install --frozen-lockfile` to install from `pnpm-lock.yaml`. Installation also runs `wxt prepare`.
+- Use Node.js 24 or newer and pnpm 12.15.0. Run `pnpm install --frozen-lockfile` to install from `pnpm-lock.yaml`. Installation also runs `wxt prepare`.
 - Run `pnpm dev` for Chromium or `pnpm dev:firefox` for Firefox.
 - Run `pnpm build` for Chromium or `pnpm build:firefox` for Firefox. WXT writes builds to `.output/`.
 - Run `pnpm zip` or `pnpm zip:firefox` to create installable archives.
@@ -61,6 +61,7 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 - Review UI changes for duplicated controls, inconsistent patterns, and theme overrides. Use existing lint rules to catch violations.
 
 <!-- trail:start -->
+
 ## Trail — repo context graph
 
 This repo is indexed in `.trail/cache/`: small linked markdown nodes that explain each
