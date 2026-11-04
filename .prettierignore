@@ -1,5 +1,7 @@
 /.output/
 /.wxt/
+/.trail/
+/.claude/*.local.json
 /dicts/
 /graft/
 /public/licenses/
