@@ -51,7 +51,6 @@ const SearchPage = React.lazy(() =>
     default: module.SearchPage,
   })),
 );
-const DocsPage = React.lazy(() => import("@/app/pages/DocsPage"));
 export function App() {
   const [hash, setHash] = useState(location.hash.slice(1) || "review");
   const [page = "review", query] = hash.split("?");
@@ -81,7 +80,6 @@ export function App() {
     addEventListener("hashchange", hash);
     return () => removeEventListener("hashchange", hash);
   }, []);
-  const docs = page === "docs" || page.startsWith("docs/");
   const reviewing =
     page === "review/session" || page.startsWith("review/session/");
   const reviewLanguage = page.split("/")[2] || settings.studyLanguage;
@@ -90,20 +88,15 @@ export function App() {
     [settings, reviewLanguage],
   );
   const deckId = reviewing ? page.split("/")[3] : undefined;
-  const inSetup = page === "setup" || !settings.setupComplete;
-  const setup = inSetup && !docs;
+  const setup = page === "setup" || !settings.setupComplete;
   const links = (
-    inSetup
-      ? [
-          { id: "setup", label: t("setup"), icon: SlidersHorizontal },
-          { id: "docs", label: t("docs"), icon: BookOpen },
-        ]
+    setup
+      ? [{ id: "setup", label: t("setup"), icon: SlidersHorizontal }]
       : [
           { id: "review", label: t("study_languages"), icon: BookOpen },
           { id: "words", label: t("words"), icon: BookMarked },
           { id: "search", label: t("search"), icon: Search },
           { id: "settings", label: t("settings"), icon: SettingsIcon },
-          { id: "docs", label: t("docs"), icon: BookOpen },
         ]
   ).map((link) => ({
     ...link,
@@ -184,11 +177,7 @@ export function App() {
       <AppShell.Main>
         <Container size={reviewing ? "sm" : "lg"} px={0}>
           <React.Suspense fallback={null}>
-            {docs ? (
-              <React.Suspense fallback={null}>
-                <DocsPage topic={page.split("/")[1] || "getting-started"} />
-              </React.Suspense>
-            ) : setup ? (
+            {setup ? (
               <SettingsPage
                 settings={settings}
                 setSettings={setSettings}

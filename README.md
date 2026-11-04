@@ -2,8 +2,6 @@
 
 A local browser reader with dictionaries, word mining, and spaced repetition. Supports Chromium browsers and Firefox.
 
-Read the [user guide](docs/README.md), also available in the app’s **Docs** tab in English and Ukrainian.
-
 ## Build
 
 Requires Node.js 24 or newer and pnpm 12.15.0. See the [pnpm installation guide](https://pnpm.io/installation) if pnpm is not installed.
@@ -14,9 +12,7 @@ pnpm zip
 pnpm zip:firefox
 ```
 
-Load the builds using the [installation guide](docs/en/getting-started.md).
-
-For automatic reloads during development, run `pnpm dev` or `pnpm dev:firefox` and load the development build once. Keep the command running while you edit files. See the [automatic reload setup](docs/en/getting-started.md#automatic-reloads).
+For automatic reloads during development, run `pnpm dev` or `pnpm dev:firefox` and load the development build once. Keep the command running while you edit files.
 
 Run `pnpm fix` to apply ESLint fixes and Prettier formatting; `pnpm typecheck` checks TypeScript.
 

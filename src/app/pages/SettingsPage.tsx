@@ -1,7 +1,6 @@
 import type { DictionaryRole } from "@/dictionaries/display";
 import { isOnlineDictionary } from "@/dictionaries/online";
 import {
-  Anchor,
   Button,
   Group,
   Paper,
@@ -363,7 +362,6 @@ export function SettingsPage({
                 <Text variant="supporting">
                   {t("translation_stays_on_your_device_models_download_on")}
                 </Text>
-                <Anchor href="#docs/reading">{t("docs_reading")}</Anchor>
               </Stack>
             </Paper>
           </Stack>,

@@ -26,7 +26,7 @@
 - Follow each feature's existing `client.ts`, `contracts.ts`, and `commands.ts` pattern for background requests. `src/background/` routes requests and broadcasts changes.
 - `src/platform/` contains browser messaging, database storage, migrations, and write locks. Reuse these services.
 - `src/shared/` contains shared UI, the Mantine theme, styles, and translations. Update both `src/shared/i18n/locales/en.json` and `uk.json` for UI text.
-- User guides live in `docs/en/` and `docs/uk/`. Keep both languages current when documenting a feature.
+- Do not create user guides or documentation pages before version 1.0.0.
 - `wxt.config.ts` defines extension permissions, browser settings, and bundled assets. `public/` contains static assets.
 
 ## UI standards
