@@ -176,15 +176,22 @@ export function occurrenceGrammar(
   return grammar;
 }
 
-export function normalizeTokenQuotes(
-  sentence: AnalysisSentence,
-): AnalysisSentence {
+export function normalizeTokens(sentence: AnalysisSentence): AnalysisSentence {
   return {
     ...sentence,
-    tokens: sentence.tokens.map((token) => {
+    tokens: sentence.tokens.map((token, index) => {
       const quotes = /^["“”„‟«»]+|["“”„‟«»]+$/gu;
-      const form = token.form.replace(quotes, "");
-      const lemma = token.lemma.replace(quotes, "");
+      let form = token.form.replace(quotes, "");
+      let lemma = token.lemma.replace(quotes, "");
+      const previous = sentence.tokens[index - 1];
+      if (
+        token.start !== undefined &&
+        previous?.end === token.start &&
+        /\p{L}$/u.test(previous.form)
+      ) {
+        form = form.replace(/^[-‐‑]+(?=\p{L})/u, "");
+        lemma = lemma.replace(/^[-‐‑]+(?=\p{L})/u, "");
+      }
       if (!form || (form === token.form && lemma === token.lemma)) return token;
       const start =
         token.start === undefined
@@ -207,7 +214,7 @@ export function analysisTerms(
   key: string,
 ): SurfaceAnalysis[] {
   return sentences.flatMap((sentence) => {
-    const { tokens } = normalizeTokenQuotes(sentence);
+    const { tokens } = normalizeTokens(sentence);
     const multiwords = tokens.filter((token) => token.id.includes("-"));
     const groups = constructionGroups(tokens);
     return tokens.flatMap((token) => {

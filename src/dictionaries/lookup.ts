@@ -473,6 +473,7 @@ type GermanCompoundMatch = {
   inflectedHead?: string;
   pluralStem?: string;
   adjective?: string;
+  prefix?: string;
 };
 
 function* splitGermanCompound(
@@ -518,6 +519,7 @@ function* splitGermanCompound(
     end: number;
     linked?: boolean;
     adjective?: boolean;
+    prefix?: boolean;
     caseFallback?: boolean;
   };
   const edges: Edge[][] = Array.from({ length: word.length }, () => []);
@@ -541,6 +543,11 @@ function* splitGermanCompound(
   for (let split = 2; split <= word.length - 2; split++) {
     addEdges(0, split, word.length - 2);
     addEdges(split, word.length, word.length);
+    edges[0]!.push({
+      part: normalize(word.slice(0, split).join("") + "-"),
+      end: split,
+      prefix: true,
+    });
     if (
       !hyphens.length &&
       /^\p{Ll}$/u.test(word[0]!) &&
@@ -584,15 +591,24 @@ function* splitGermanCompound(
     for (const [start, choices] of edges.entries()) {
       const prefix = best[start];
       if (!prefix) continue;
-      for (const { part, end, linked, adjective, caseFallback } of choices) {
+      for (const {
+        part,
+        end,
+        linked,
+        adjective,
+        prefix: affix,
+        caseFallback,
+      } of choices) {
         const match = lemmas.get(part);
         const inflectedHead =
           end === word.length ? match?.inflectedHead : undefined;
-        const lemma = adjective
-          ? match?.adjective
-          : ((end < word.length ? match?.pluralStem : undefined) ??
-            match?.lemma ??
-            inflectedHead);
+        const lemma = affix
+          ? match?.prefix
+          : adjective
+            ? match?.adjective
+            : ((end < word.length ? match?.pluralStem : undefined) ??
+              match?.lemma ??
+              inflectedHead);
         if (!lemma) continue;
         const crossed = boundaryCount[end]! - boundaryCount[start + 1]!;
         const score =
@@ -637,8 +653,12 @@ function* splitGermanCompound(
     return pairs.paths.length === 1 ? pairs.paths[0]! : [];
   const firstInterior = Math.min(
     ...starts
-      .filter(({ part, adjective }) =>
-        adjective ? lemmas.get(part)?.adjective : lemmas.get(part)?.lemma,
+      .filter(({ part, adjective, prefix }) =>
+        prefix
+          ? lemmas.get(part)?.prefix
+          : adjective
+            ? lemmas.get(part)?.adjective
+            : lemmas.get(part)?.lemma,
       )
       .map(({ end }) => end),
   );
@@ -720,6 +740,15 @@ export async function lookupGermanCompounds(
       );
       lemmas.set(part, {
         lemma: match?.lemma,
+        prefix: words.find(
+          (word) =>
+            folded(word.lemma, "de") === folded(part, "de") &&
+            word.meanings.some((meaning) =>
+              meaningTags(meaning).some((tag) =>
+                /^(?:pref|prefix|präfix)$/iu.test(tag),
+              ),
+            ),
+        )?.lemma,
         adjective:
           adjectives.size === 1 ? adjectives.values().next().value : undefined,
         inflectedHead:

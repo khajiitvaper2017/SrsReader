@@ -1,7 +1,7 @@
 import { logScanWarning, type ScanWarning } from "@/platform/messaging/events";
 import {
   analysisTerms,
-  normalizeTokenQuotes,
+  normalizeTokens,
   occurrenceGrammar,
   type AnalysisRecord,
   type AnalysisSentence,
@@ -322,7 +322,7 @@ export async function compoundGrammar(occurrence: Occurrence, surface: string) {
   const record = await db.analyses.get(occurrence.key);
   if (record?.text.slice(occurrence.start, occurrence.end) !== surface) return;
   for (const original of record.analysis?.sentences ?? []) {
-    const sentence = normalizeTokenQuotes(original);
+    const sentence = normalizeTokens(original);
     const tokenIds = sentence.tokens
       .filter(
         (token) =>
@@ -364,7 +364,7 @@ export async function occurrenceAnalysis(
     ),
   );
   if (!original) return;
-  const sentence = normalizeTokenQuotes(original);
+  const sentence = normalizeTokens(original);
   const token = sentence.tokens.find(
     (token) => token.start === occurrence.start && token.end === occurrence.end,
   );
