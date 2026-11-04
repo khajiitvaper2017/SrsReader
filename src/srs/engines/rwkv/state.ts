@@ -32,7 +32,7 @@ export async function loadRwkvState(
   );
   if (
     (card && existing.length !== ids.length) ||
-    (!card && (await replayedReview(wordId, meta.cursor)))
+    (!card && (await replayedReview(wordId)))
   ) {
     await invalidateRwkv();
     throw Object.assign(new Error(t("rwkv_not_ready")), {

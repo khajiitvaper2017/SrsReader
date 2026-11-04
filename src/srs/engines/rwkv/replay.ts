@@ -1,3 +1,4 @@
+import { scheduleSchema } from "@/srs/model";
 import { downloadModel, loadModel } from "@/srs/engines/rwkv/assets";
 import { cacheKey, rwkvStatus } from "@/srs/engines/rwkv/cache";
 import { buildFeatures, emptyFeatures } from "@/srs/engines/rwkv/features";
@@ -45,8 +46,9 @@ export async function replayBatch(settings: Settings) {
           language,
           time: review.time,
           day:
-            review.after?.last_review_day ??
-            studyDay(review.time, settings.rolloverHour),
+            (review.after
+              ? scheduleSchema.parse(review.after).lastReviewDay
+              : null) ?? studyDay(review.time, settings.rolloverHour),
           rating: review.rating,
           durationMs: review.durationMs,
         },
@@ -77,14 +79,10 @@ export async function replayBatch(settings: Settings) {
       });
       current.features = row.global;
     }
-    current.cursor = review.sequence;
+    current.cursor++;
     if (performance.now() - started >= 150) break;
   }
-  if (
-    !history.length ||
-    (current.cursor === history.at(-1)!.sequence && history.length < 128)
-  )
-    current.cursor = target;
+  if (!history.length || current.cursor >= target) current.cursor = target;
   await commitReplay(entities, cards, current);
   return rwkvStatus(settings);
 }

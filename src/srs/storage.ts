@@ -7,6 +7,7 @@ import type { SchedulingPreferences } from "@/srs/preferences";
 import type { Schedule } from "@/srs/model";
 import type { ReviewWord } from "@/vocabulary/model";
 import type { Grade } from "ts-fsrs";
+import { fsrsScheduler } from "@/srs/scheduler";
 
 export type ReviewCommit = {
   word: ReviewWord;
@@ -71,11 +72,12 @@ export async function commitReview({
         afterVersion: saved.version,
         afterSrsVersion: saved.srsVersion,
         after: saved.schedule,
+        fsrsLog: result.revlogs[rating - 1] ?? null,
         log:
           settings.algorithm === "rwkv" ? { rwkvMode: settings.rwkvMode } : {},
         scheduler:
           settings.algorithm === "fsrs"
-            ? "ts-fsrs@5.4.2/FSRS-6"
+            ? fsrsScheduler(saved.schedule!.fsrs.version)
             : "rwkv-sm56-w8-s8",
         retention: result.retention,
         durationMs,
@@ -87,7 +89,10 @@ export async function commitReview({
         const answer = neural.answers[rating - 1]!;
         await db.rwkvEntities.bulkPut(answer.entities);
         await db.rwkvCards.put(answer.card);
-        await db.rwkvMeta.put({ ...answer.meta, cursor: sequence });
+        await db.rwkvMeta.put({
+          ...answer.meta,
+          cursor: await db.reviews.count(),
+        });
       }
       await db.srsMeta.put({
         ...meta,

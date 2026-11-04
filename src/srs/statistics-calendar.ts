@@ -25,7 +25,10 @@ export function calendarStatistics(
   for (const word of words) {
     if (word.known || word.suspended || !word.card || word.card.state === 0)
       continue;
-    const day = Math.max(today, studyDay(word.card.due, settings.rolloverHour));
+    const day = Math.max(
+      today,
+      studyDay(word.card.dueAt, settings.rolloverHour),
+    );
     const entry = days[day - start];
     if (entry) entry.due++;
   }

@@ -1,5 +1,4 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { defineConfig } from "wxt";
 import en from "./src/shared/i18n/locales/en.json";
@@ -11,14 +10,6 @@ export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   zip: { excludeSources: ["dicts/**", "graft/**"] },
   vite: () => ({
-    resolve: {
-      alias: {
-        // CSSOM's browser bundle has no module exports; use its CommonJS entry.
-        "@acemir/cssom": createRequire(import.meta.resolve("linkedom")).resolve(
-          "@acemir/cssom",
-        ),
-      },
-    },
     plugins: [
       {
         name: "block-page-paint-until-settings",

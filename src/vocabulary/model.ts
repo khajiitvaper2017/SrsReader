@@ -100,7 +100,7 @@ export function stateOf(
       (card) =>
         card.schedule &&
         card.schedule.state !== 0 &&
-        card.schedule.due <= Date.now(),
+        card.schedule.dueAt <= Date.now(),
     )
   )
     return "due";
@@ -109,7 +109,7 @@ export function stateOf(
   return active.some(
     (card) =>
       card.schedule!.state !== 2 ||
-      card.schedule!.scheduled_days < matureIntervalDays,
+      card.schedule!.scheduledDays < matureIntervalDays,
   )
     ? "learning"
     : "review";

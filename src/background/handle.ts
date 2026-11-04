@@ -75,6 +75,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "rwkvStatus":
     case "prepareRwkv":
     case "activateAlgorithm":
+    case "previewFsrsMigration":
     case "rescheduleModel":
     case "reschedule":
       return handleSrs(request, settings);

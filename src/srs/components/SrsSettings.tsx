@@ -20,7 +20,7 @@ import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
 import { useSrsSettings } from "@/srs/hooks/useSrsSettings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
-import { learningStepsSchema } from "@/srs/preferences";
+import { fsrsVersionSchema, learningStepsSchema } from "@/srs/preferences";
 import { useState } from "react";
 function NumberSetting({
   label,
@@ -71,10 +71,26 @@ export function SrsSettings({
 }) {
   const { busy, message, setMessage, status, bands, setBands, task, prepare } =
     useSrsSettings({ settings, onError });
-  const [pendingModel, setPendingModel] = useState<{
+  type ModelSelection = {
     algorithm: Settings["algorithm"];
+    fsrsVersion: Settings["fsrsVersion"];
     rwkvMode: Settings["rwkvMode"];
-  } | null>(null);
+  };
+  const [pendingModel, setPendingModel] = useState<
+    | (ModelSelection & { preview?: { eligible: number; skipped: number } })
+    | null
+  >(null);
+  const previewModel = (next: ModelSelection) =>
+    void task(async () => {
+      const preview =
+        next.algorithm === "fsrs"
+          ? await srsClient({
+              action: "previewFsrsMigration",
+              version: next.fsrsVersion,
+            })
+          : undefined;
+      setPendingModel({ ...next, preview });
+    });
   const number = (
     label: string,
     key:
@@ -107,7 +123,18 @@ export function SrsSettings({
         title={t("srs_switch_model")}
       >
         <Stack>
-          <Text>{t("srs_switch_model_confirm")}</Text>
+          <Text>
+            {t(
+              pendingModel?.algorithm === "fsrs"
+                ? "srs_switch_fsrs_confirm"
+                : "srs_switch_model_confirm",
+            )}
+          </Text>
+          {pendingModel?.preview && (
+            <Text variant="supporting">
+              {t("srs_fsrs_preview", pendingModel.preview)}
+            </Text>
+          )}
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setPendingModel(null)}>
               {t("cancel")}
@@ -121,11 +148,21 @@ export function SrsSettings({
                   await onChange(
                     await srsClient({ action: "activateAlgorithm", ...next }),
                   );
-                  setMessage(t("srs_algorithm_ready"));
+                  setMessage(
+                    t(
+                      next.algorithm === "fsrs"
+                        ? "srs_fsrs_ready"
+                        : "srs_algorithm_ready",
+                    ),
+                  );
                 });
               }}
             >
-              {t("srs_switch_and_reschedule")}
+              {t(
+                pendingModel?.algorithm === "fsrs"
+                  ? "srs_switch_version"
+                  : "srs_switch_and_reschedule",
+              )}
             </Button>
           </Group>
         </Stack>
@@ -137,7 +174,7 @@ export function SrsSettings({
         value={settings.algorithm}
         disabled={busy}
         data={[
-          { value: "fsrs", label: "FSRS-6 (ts-fsrs 5.4.2)" },
+          { value: "fsrs", label: "FSRS" },
           { value: "rwkv", label: "RWKV w64 (SM56)" },
         ]}
         onChange={(algorithm) => {
@@ -145,9 +182,37 @@ export function SrsSettings({
             (algorithm === "fsrs" || algorithm === "rwkv") &&
             algorithm !== settings.algorithm
           )
-            setPendingModel({ algorithm, rwkvMode: settings.rwkvMode });
+            previewModel({
+              algorithm,
+              fsrsVersion: settings.fsrsVersion,
+              rwkvMode: settings.rwkvMode,
+            });
         }}
       />
+      {settings.algorithm === "fsrs" && (
+        <Select
+          label={t("srs_fsrs_version")}
+          description={t("srs_fsrs_version_help")}
+          value={settings.fsrsVersion}
+          disabled={busy}
+          data={fsrsVersionSchema.options.map((version) => ({
+            value: version,
+            label:
+              version === "7"
+                ? t("srs_fsrs_latest", { version: "FSRS-7" })
+                : `FSRS-${version}`,
+          }))}
+          onChange={(value) => {
+            const version = fsrsVersionSchema.safeParse(value);
+            if (version.success && version.data !== settings.fsrsVersion)
+              previewModel({
+                algorithm: settings.algorithm,
+                fsrsVersion: version.data,
+                rwkvMode: settings.rwkvMode,
+              });
+          }}
+        />
+      )}
       {settings.algorithm === "rwkv" && (
         <Select
           label={t("rwkv_mode")}
@@ -163,8 +228,9 @@ export function SrsSettings({
               (value === "curve" || value === "instant") &&
               value !== settings.rwkvMode
             )
-              setPendingModel({
+              previewModel({
                 algorithm: settings.algorithm,
+                fsrsVersion: settings.fsrsVersion,
                 rwkvMode: value,
               });
           }}

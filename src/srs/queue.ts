@@ -82,14 +82,14 @@ export async function reviewQueue(
       words.some(
         (word) =>
           (word.card!.state === 2 || word.card!.interday) &&
-          word.card!.due <= now,
+          word.card!.dueAt <= now,
       ),
     forecast: [1, 2, 3].map((days) => ({
       days,
       count: words.filter(
         (word) =>
           word.card!.state !== 0 &&
-          studyDay(word.card!.due, settings.rolloverHour) === day + days,
+          studyDay(word.card!.dueAt, settings.rolloverHour) === day + days,
       ).length,
     })),
   };

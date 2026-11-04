@@ -2,8 +2,12 @@ import { db } from "@/platform/database/db";
 import { t } from "@/shared/i18n/i18n";
 import { entityKey } from "@/srs/engines/rwkv/model";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
+import { getSettings } from "@/settings/store";
+import { scheduleSchema } from "@/srs/model";
+import { rollbackFsrs } from "@/srs/scheduler";
 
 export async function undoReview(id: string) {
+  const settings = await getSettings();
   return db.transaction(
     "rw",
     [
@@ -26,9 +30,28 @@ export async function undoReview(id: string) {
       const current = await db.cards.get(review.cardId);
       if (!current || current.srsVersion !== review.afterSrsVersion)
         throw new Error(t("this_word_changed_after_that_review_and_cannot"));
+      const before = review.before?.schedule
+        ? scheduleSchema.parse(review.before.schedule)
+        : null;
+      const schedule =
+        review.fsrsLog && current.schedule && before
+          ? {
+              ...before,
+              ...rollbackFsrs(
+                current.id,
+                current.schedule,
+                review.fsrsLog,
+                review.retention,
+                settings,
+              ),
+              fsrs: before.fsrs,
+              lastReviewDay: before?.lastReviewDay ?? null,
+              interday: before?.interday ?? false,
+            }
+          : before;
       await db.cards.put({
         ...current,
-        schedule: review.before?.schedule ?? null,
+        schedule,
         suspended: review.before?.suspended ?? false,
         leech: review.before?.leech ?? false,
         srsVersion: current.srsVersion + 1,
@@ -52,7 +75,10 @@ export async function undoReview(id: string) {
         await db.rwkvEntities.bulkPut(undo.entities);
         if (undo.card) await db.rwkvCards.put(undo.card);
         else await db.rwkvCards.delete(review.cardId);
-        await db.rwkvMeta.put({ ...undo.meta, cursor: meta.sequence });
+        await db.rwkvMeta.put({
+          ...undo.meta,
+          cursor: await db.reviews.count(),
+        });
       } else await invalidateRwkv();
       if (meta) await db.srsMeta.put({ ...meta, undo: undefined });
       return review.wordId;

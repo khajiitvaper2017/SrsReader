@@ -183,8 +183,14 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
     id: z.literal("main"),
     sequence: count,
     scheduledModel: z.string().optional(),
+    fsrsMigration: z.object({ model: z.string(), skipped: count }).optional(),
     reschedule: z
-      .object({ model: z.string(), after: z.string(), count })
+      .object({
+        model: z.string(),
+        after: z.string(),
+        count,
+        skipped: count.optional(),
+      })
       .optional(),
     undo: z
       .object({

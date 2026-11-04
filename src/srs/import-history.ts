@@ -3,26 +3,23 @@ import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import type { Card } from "@/cards/model";
 import { emptySchedule } from "@/srs/model";
-import { fsrsAnswers } from "@/srs/engines/fsrs";
+import { scheduleAnswers, fsrsScheduler } from "@/srs/scheduler";
 import { cacheKey } from "@/srs/engines/rwkv/cache";
-import { buildFeatures, emptyFeatures } from "@/srs/engines/rwkv/features";
+import { emptyFeatures } from "@/srs/engines/rwkv/features";
 import {
   entityKey,
   type EntityStates,
   type RwkvModel,
 } from "@/srs/engines/rwkv/model";
-import { pack, unpack } from "@/srs/engines/rwkv/precision";
-import type { RwkvCard } from "@/srs/engines/rwkv/records";
+import { unpack } from "@/srs/engines/rwkv/precision";
+import { simulateAnswers } from "@/srs/engines/rwkv/simulate";
 import {
   invalidateRwkv,
   loadCard,
   loadEntities,
 } from "@/srs/engines/rwkv/storage";
 import { rwkvInterval } from "@/srs/engines/rwkv/interval";
-import { reviewIntervals } from "@/srs/intervals";
 import { effectiveRetention } from "@/srs/retention";
-import { studyDay } from "@/srs/study-day";
-import { scheduleAnswers } from "@/srs/transitions";
 import { reviewCards } from "@/vocabulary/storage";
 
 export type HistoricalAnswer = {
@@ -61,8 +58,13 @@ export async function replayHistoricalAnswers(
   const history = await db.reviews.toArray();
   const previousCount = history.length;
   const existing = new Set(history.map((review) => review.id));
+  const appended = new Set<string>();
+  const meta = await db.srsMeta.get("main");
+  let sequence = meta?.sequence ?? 0;
   const scheduler =
-    settings.algorithm === "fsrs" ? "ts-fsrs@5.4.2/FSRS-6" : "rwkv-sm56-w8-s8";
+    settings.algorithm === "fsrs"
+      ? fsrsScheduler(settings.fsrsVersion)
+      : "rwkv-sm56-w8-s8";
   for (const event of events) {
     if (existing.has(event.id)) continue;
     if (!targets.has(event.cardId)) throw new Error(t("card_not_found"));
@@ -75,73 +77,70 @@ export async function replayHistoricalAnswers(
       afterVersion: 0,
       afterSrsVersion: 0,
       after: null,
+      fsrsLog: null,
       log: {},
       scheduler,
       retention: retentions.get(event.cardId)!,
-      sequence: 0,
+      sequence: ++sequence,
       active: true,
     });
     existing.add(event.id);
+    appended.add(event.id);
   }
   if (history.length === previousCount) return;
-  history.sort((a, b) => a.time - b.time || a.id.localeCompare(b.id));
+  history.sort((a, b) => a.time - b.time || a.sequence - b.sequence);
   const working = new Map(
     cards.map((card) => [card.id, { ...card, schedule: null } as Card]),
   );
   const touched = new Set<string>();
-  const meta = await db.srsMeta.get("main");
   await invalidateRwkv();
   let global = emptyFeatures();
   for (const [index, review] of history.entries()) {
     if (index > 0 && index % 500 === 0) {
       report?.(index, history.length);
     }
-    review.sequence = index + 1;
     if (!review.active) continue;
-    let neural:
-      | {
-          card: RwkvCard;
-          entities: Awaited<ReturnType<typeof loadEntities>>;
-        }
-      | undefined;
+    let neural: ReturnType<typeof simulateAnswers> | undefined;
     if (model) {
       const previous = await loadCard(review.cardId);
-      const row = buildFeatures(
-        {
-          wordId: review.cardId,
-          language: review.language,
-          time: review.time,
-          day: studyDay(review.time, settings.rolloverHour),
-          rating: review.rating,
-          durationMs: review.durationMs,
-        },
-        previous?.features,
-        global,
-      );
-      const keys = row.ids.map((id, stream) => entityKey(stream, id));
+      const ids = [
+        review.cardId,
+        review.language,
+        review.cardId,
+        "main",
+        "main",
+      ];
+      const keys = ids.map((id, stream) => entityKey(stream, id));
       const entities = (await loadEntities(keys)).filter(
         (entity) => entity !== undefined,
       );
       const states: EntityStates = new Map(
         entities.map((entity) => [entity.id, unpack(entity.state)]),
       );
-      const result = model.step(row.features, row.ids, states);
-      const updated = row.ids.map((id, stream) => ({
-        id: entityKey(stream, id),
-        state: pack(
-          result.states.get(entityKey(stream, id))!,
-          stream === 0 || stream === 2,
-        ),
-      }));
-      const card = {
-        id: review.cardId,
-        features: row.card,
-        curve: { w: result.heads.w, s: result.heads.s, d: result.heads.d },
-      };
-      await db.rwkvEntities.bulkPut(updated);
-      await db.rwkvCards.put(card);
-      global = row.global;
-      neural = { card, entities: updated };
+      neural = simulateAnswers(
+        {
+          model,
+          meta: {
+            id: "main",
+            key: cacheKey(settings),
+            cursor: index,
+            features: global,
+          },
+          card: previous,
+          ids,
+          entities,
+          states,
+        },
+        review.cardId,
+        review.language,
+        review.time,
+        review.durationMs,
+        settings,
+      );
+      const answer = neural.answers[review.rating - 1]!;
+      await db.rwkvEntities.bulkPut(answer.entities);
+      await db.rwkvCards.put(answer.card);
+      global = answer.meta.features;
     }
     const card = working.get(review.cardId);
     if (!card) continue;
@@ -156,62 +155,41 @@ export async function replayHistoricalAnswers(
     };
     const schedule = card.schedule || emptySchedule(review.time);
     const retention = retentions.get(card.id)!;
-    const answers = fsrsAnswers(schedule, review.time, retention, settings);
-    const raw = answers.map((answer) => answer.interval);
-    if (model && neural)
-      raw[review.rating - 1] = rwkvInterval(
-        model,
-        {
-          card: neural.card,
-          entities: neural.entities.filter((entity) => entity !== undefined),
-          meta: {
-            id: "main",
-            key: cacheKey(settings),
-            cursor: review.sequence,
-            features: global,
-          },
-        },
-        card.language,
-        retention,
-        settings,
-        review.time,
-      );
-    const intervals = reviewIntervals(
-      raw,
-      settings,
-      `${card.id}:${schedule.reps}`,
-      schedule.state === 2 ||
-        (schedule.state === 3
-          ? settings.relearningSteps
-          : settings.learningSteps
-        ).length === 0,
-    );
-    card.schedule = scheduleAnswers(
+    const answers = scheduleAnswers(
+      card.id,
       schedule,
-      answers.map((answer) => answer.memory),
-      intervals,
       review.time,
+      retention,
       settings,
-    )[review.rating - 1]!;
+      neural?.answers.map((answer) =>
+        rwkvInterval(neural.model, answer, card.language, retention, settings),
+      ),
+    );
+    const answer = answers[review.rating - 1]!;
+    card.schedule = answer.schedule;
+
     card.srsVersion++;
     card.version++;
     card.updated = Date.now();
-    review.before = before;
-    review.after = card.schedule;
-    review.afterSrsVersion = card.srsVersion;
-    review.afterVersion = card.version;
+    if (appended.has(review.id)) {
+      review.before = before;
+      review.after = card.schedule;
+      review.afterSrsVersion = card.srsVersion;
+      review.afterVersion = card.version;
+      review.fsrsLog = answer.revlog;
+    }
     touched.add(card.id);
   }
-  await db.reviews.clear();
-  for (let offset = 0; offset < history.length; offset += 500)
-    await db.reviews.bulkPut(history.slice(offset, offset + 500));
+  const added = history.filter((review) => appended.has(review.id));
+  for (let offset = 0; offset < added.length; offset += 500)
+    await db.reviews.bulkAdd(added.slice(offset, offset + 500));
   await db.cards.bulkPut(
     [...working.values()].filter((card) => touched.has(card.id)),
   );
   await db.srsMeta.put({
     ...meta,
     id: "main",
-    sequence: history.length,
+    sequence,
     undo: undefined,
   });
   if (model)

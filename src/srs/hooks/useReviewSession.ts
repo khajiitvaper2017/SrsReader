@@ -227,8 +227,8 @@ export function useReviewSession({
           introduced: card.state === 0,
           recall:
             card.state === 2 ||
-            (card.last_review !== null &&
-              studyDay(card.last_review, settings.rolloverHour) <
+            (card.lastReviewAt !== null &&
+              studyDay(card.lastReviewAt, settings.rolloverHour) <
                 studyDay(time, settings.rolloverHour)),
           durationMs,
         },

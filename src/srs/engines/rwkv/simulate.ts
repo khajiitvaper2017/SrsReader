@@ -2,22 +2,25 @@ import { buildFeatures } from "@/srs/engines/rwkv/features";
 import { entityKey } from "@/srs/engines/rwkv/model";
 import { pack } from "@/srs/engines/rwkv/precision";
 import type { RwkvCard, RwkvMeta } from "@/srs/engines/rwkv/records";
-import { loadRwkvState } from "@/srs/engines/rwkv/state";
+import type { loadRwkvState } from "@/srs/engines/rwkv/state";
 import type { SchedulingPreferences as Settings } from "@/srs/preferences";
 import { studyDay } from "@/srs/study-day";
 
-export async function simulateAnswers(
+export function simulateAnswers(
+  {
+    model,
+    meta,
+    card,
+    ids,
+    entities,
+    states,
+  }: Awaited<ReturnType<typeof loadRwkvState>>,
   wordId: string,
   language: string,
   time: number,
   durationMs: number | null,
   settings: Settings,
 ) {
-  const { model, meta, card, ids, entities, states } = await loadRwkvState(
-    wordId,
-    language,
-    settings,
-  );
   const answers = [1, 2, 3, 4].map((rating) => {
     const row = buildFeatures(
       {
@@ -33,7 +36,6 @@ export async function simulateAnswers(
     );
     const result = model.step(row.features, ids, states);
     return {
-      heads: result.heads,
       entities: ids.map((id, stream) => {
         const key = entityKey(stream, id);
         return {

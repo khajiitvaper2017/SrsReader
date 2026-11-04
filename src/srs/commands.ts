@@ -15,6 +15,7 @@ import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 import { grade } from "@/srs/grading";
 import { reviewQueue } from "@/srs/queue";
 import {
+  previewFsrsMigration,
   requireScheduledModel,
   rescheduleExisting,
   rescheduleModel,
@@ -43,6 +44,7 @@ export function handleSrs(request: Request, settings: Settings) {
     request.action === "resetRwkv" ||
     request.action === "prepareRwkv" ||
     request.action === "activateAlgorithm" ||
+    request.action === "previewFsrsMigration" ||
     request.action === "rescheduleModel" ||
     request.action === "reschedule"
     ? srsWrite(async () => execute(request, await getSettings()))
@@ -183,12 +185,15 @@ async function execute(request: Request, settings: Settings) {
       return rwkvStatus(settings);
     case "prepareRwkv":
       return replayBatch(settings);
+    case "previewFsrsMigration":
+      return previewFsrsMigration(request.version);
     case "activateAlgorithm": {
       if (request.algorithm === "rwkv" && !(await rwkvStatus(settings)).ready)
         throw new Error(t("rwkv_not_ready"));
       const value = {
         ...settings,
         algorithm: request.algorithm,
+        fsrsVersion: request.fsrsVersion ?? settings.fsrsVersion,
         rwkvMode: request.rwkvMode ?? settings.rwkvMode,
       };
       await saveSettings(value);

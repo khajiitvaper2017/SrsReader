@@ -140,10 +140,12 @@ export function WordDetails({
             <span>{t("next_review")}</span>
             <strong>
               {word.card.state === 2 || word.card.interday
-                ? new Date(word.card.due).toLocaleDateString(
+                ? new Date(word.card.dueAt).toLocaleDateString(
                     i18n.resolvedLanguage,
                   )
-                : new Date(word.card.due).toLocaleString(i18n.resolvedLanguage)}
+                : new Date(word.card.dueAt).toLocaleString(
+                    i18n.resolvedLanguage,
+                  )}
             </strong>
             <span>
               {t("review_history_counts", {

@@ -11,7 +11,7 @@ export const cacheKey = (settings: Settings) =>
   JSON.stringify([
     weightHash,
     specHash,
-    "w8-s8-features-v1",
+    "w8-s8-features-v2-chronological",
     Intl.DateTimeFormat().resolvedOptions().timeZone,
     settings.rolloverHour,
   ]);

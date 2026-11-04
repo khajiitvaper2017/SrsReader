@@ -1,12 +1,16 @@
 import { t } from "@/shared/i18n/i18n";
 import { reviewBindingsSchema } from "@/srs/controls";
 import { z } from "zod";
+import type { StepUnit } from "ts-fsrs";
+
+export const fsrsVersionSchema = z.enum(["7", "6"]);
 
 export const learningStepsSchema = z.array(
   z
     .string()
     .regex(/^(?:\d+(?:\.\d+)?|\.\d+)[mhd]$/)
-    .refine((step) => parseFloat(step) > 0),
+    .refine((step) => parseFloat(step) > 0)
+    .transform((step) => step as StepUnit),
 );
 const retentionBandSchema = z.object({
   upTo: z.number().positive().nullable(),
@@ -31,6 +35,7 @@ export const srsPreferencesSchema = z.object({
   showPartOfSpeech: z.boolean().default(true),
   retention: z.number().min(0.7).max(0.99).default(0.8),
   algorithm: z.enum(["fsrs", "rwkv"]).default("fsrs"),
+  fsrsVersion: fsrsVersionSchema.default("7"),
   rwkvMode: z.enum(["curve", "instant"]).default("curve"),
   learningSteps: learningStepsSchema.default(["10m"]),
   relearningSteps: learningStepsSchema.default(["10m"]),

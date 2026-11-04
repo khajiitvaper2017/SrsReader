@@ -284,6 +284,28 @@ export function installMigrations(database: Dexie) {
         await tx.table("settings").put(settings);
       }
     });
+  database
+    .version(23)
+    .stores({
+      reviews:
+        "id, cardId, wordId, language, time, [cardId+time], [time+sequence], &sequence",
+    })
+    .upgrade(async (tx) => {
+      await tx
+        .table("cards")
+        .toCollection()
+        .modify((card) => {
+          if (card.schedule)
+            card.schedule = scheduleSchema.parse(card.schedule);
+          card.srsVersion++;
+          card.version++;
+        });
+      await tx.table("srsMeta").update("main", {
+        undo: undefined,
+        scheduledModel: undefined,
+        reschedule: undefined,
+      });
+    });
 }
 
 async function migrateCards(tx: Transaction, hasLegacyMedia: boolean) {

@@ -8,6 +8,7 @@ import type { studyOverview } from "@/srs/decks";
 import type { Deck } from "@/srs/deck-model";
 import { z } from "zod";
 import { languageSchema } from "@/languages/model";
+import { fsrsVersionSchema } from "@/srs/preferences";
 
 export const requests = [
   z.object({
@@ -58,8 +59,13 @@ export const requests = [
   z.object({ action: z.literal("resetRwkv") }),
   z.object({ action: z.literal("prepareRwkv") }),
   z.object({
+    action: z.literal("previewFsrsMigration"),
+    version: fsrsVersionSchema,
+  }),
+  z.object({
     action: z.literal("activateAlgorithm"),
     algorithm: z.enum(["fsrs", "rwkv"]),
+    fsrsVersion: fsrsVersionSchema.optional(),
     rwkvMode: z.enum(["curve", "instant"]).optional(),
   }),
   z.object({ action: z.literal("rescheduleModel") }),
@@ -93,7 +99,8 @@ export type Responses = {
   prepareRwkv: Responses["rwkvStatus"];
   resetRwkv: void;
   activateAlgorithm: Settings;
-  rescheduleModel: { count: number; cursor: string | null };
+  rescheduleModel: { count: number; skipped: number; cursor: string | null };
+  previewFsrsMigration: { eligible: number; skipped: number };
   reschedule: { count: number; cursor: string | null };
   reviewStats: ReviewStatistics;
   stats: { total: number; known: number; due: number; today: number };

@@ -8,7 +8,11 @@ async function rescheduleModel() {
       result = await rpc({ action: "rescheduleModel" });
       window.dispatchEvent(
         new CustomEvent("srs-progress", {
-          detail: { rescheduled: result.count, ready: result.cursor === null },
+          detail: {
+            rescheduled: result.count,
+            skipped: result.skipped,
+            ready: result.cursor === null,
+          },
         }),
       );
     } while (result.cursor !== null);

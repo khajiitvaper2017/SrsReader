@@ -1,3 +1,4 @@
+import { scheduleSchema } from "@/srs/model";
 import {
   BlobReader,
   BlobWriter,
@@ -264,9 +265,9 @@ function scheduleRow(card: Card, created: number, position: number) {
       : type === 2 || state.interday
         ? Math.max(
             0,
-            Math.floor(state.due / 86400000) - Math.floor(created / 86400),
+            Math.floor(state.dueAt / 86400000) - Math.floor(created / 86400),
           )
-        : Math.floor(state.due / 1000);
+        : Math.floor(state.dueAt / 1000);
   let data = object(
     (() => {
       try {
@@ -276,19 +277,19 @@ function scheduleRow(card: Card, created: number, position: number) {
       }
     })(),
   );
-  if (state?.fsrs.stability)
-    data = { ...data, s: state.fsrs.stability, d: state.fsrs.difficulty };
+  if (state?.stability)
+    data = { ...data, s: state.stability, d: state.difficulty };
   return [
     type,
     queue,
     due,
-    Math.max(0, Math.round(state?.scheduled_days ?? 0)),
-    state?.fsrs.difficulty
-      ? Math.round(100 + ((state.fsrs.difficulty - 1) / 9) * 1000)
+    Math.max(0, Math.round(state?.scheduledDays ?? 0)),
+    state?.difficulty
+      ? Math.round(100 + ((state.difficulty - 1) / 9) * 1000)
       : Number(card.source?.factor) || 2500,
     state?.reps ?? 0,
     state?.lapses ?? 0,
-    state?.learning_steps ?? 0,
+    state?.learningStep ?? 0,
     0,
     0,
     Number(card.source?.flags) || 0,
@@ -303,15 +304,18 @@ const interval = (days: number | undefined) =>
       ? -Math.max(1, Math.round(days * 86400))
       : Math.round(days);
 function reviewRow(review: Review) {
-  const before = review.before?.schedule;
+  const before = review.before?.schedule
+    ? scheduleSchema.parse(review.before.schedule)
+    : null;
+  const after = review.after ? scheduleSchema.parse(review.after) : null;
   const state = before?.state ?? 0;
   return [
     -1,
     review.rating,
-    interval(review.after?.scheduled_days),
-    interval(before?.scheduled_days),
-    review.after?.fsrs.difficulty
-      ? Math.round(100 + ((review.after.fsrs.difficulty - 1) / 9) * 1000)
+    interval(after?.scheduledDays),
+    interval(before?.scheduledDays),
+    after?.difficulty
+      ? Math.round(100 + ((after.difficulty - 1) / 9) * 1000)
       : 2500,
     Math.round(review.durationMs ?? 0),
     state === 2 ? 1 : state === 3 ? 2 : 0,

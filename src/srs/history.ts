@@ -3,9 +3,25 @@ import type {
   RwkvEntity,
   RwkvMeta,
 } from "@/srs/engines/rwkv/records";
-import { scheduleSchema } from "@/srs/model";
+import { scheduleSchema, timestampSchema } from "@/srs/model";
 import { cardSchema } from "@/cards/model";
 import { z } from "zod";
+import { fsrsVersionSchema } from "@/srs/preferences";
+
+export const fsrsLogSchema = z.object({
+  cardId: z.union([z.string(), z.number()]),
+  dueAt: timestampSchema,
+  lastReviewAt: timestampSchema.nullable(),
+  reviewTime: timestampSchema,
+  rating: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  state: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]),
+  scheduleStatus: z.enum(["new", "learning", "review"]),
+  stability: z.number().finite().nonnegative(),
+  difficulty: z.number().finite().nonnegative(),
+  stabilityFast: z.number().finite().nonnegative().optional(),
+  scheduledDays: z.number().finite().nonnegative(),
+  learningStep: z.number().int().nonnegative(),
+});
 
 export const reviewSchema = z.object({
   id: z.string(),
@@ -27,15 +43,19 @@ export const reviewSchema = z.object({
     })
     .nullable(),
   afterVersion: z.number().int(),
+  fsrsLog: fsrsLogSchema.nullable().default(null),
   log: z.record(
     z.string(),
     z.union([z.number().finite(), z.string(), z.null()]),
   ),
-  scheduler: z.enum([
-    "ts-fsrs@5.4.2/FSRS-6",
-    "rwkv-sm40v2-w8-s8",
-    "rwkv-sm55-w8-s8",
-    "rwkv-sm56-w8-s8",
+  scheduler: z.union([
+    z.enum([
+      "ts-fsrs@5.4.2/FSRS-6",
+      "rwkv-sm40v2-w8-s8",
+      "rwkv-sm55-w8-s8",
+      "rwkv-sm56-w8-s8",
+    ]),
+    z.templateLiteral(["ts-fsrs@6.0.0/FSRS-", fsrsVersionSchema]),
   ]),
   sequence: z.number().int().nonnegative().default(0),
   active: z.boolean().default(true),
@@ -51,7 +71,13 @@ export type SrsMeta = {
   id: string;
   sequence: number;
   scheduledModel?: string;
-  reschedule?: { model: string; after: string; count: number };
+  reschedule?: {
+    model: string;
+    after: string;
+    count: number;
+    skipped?: number;
+  };
+  fsrsMigration?: { model: string; skipped: number };
   undo?: {
     reviewId: string;
     entities: RwkvEntity[];

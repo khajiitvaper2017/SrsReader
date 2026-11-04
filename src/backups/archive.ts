@@ -73,7 +73,7 @@ export async function readSettings(file: File) {
 
 const learningSchema = z.object({
   format: z.literal("srs-reader-learning"),
-  version: z.literal(5),
+  version: z.union([z.literal(5), z.literal(6)]),
   vocabulary: z.array(vocabularySchema),
   noteTypes: z.array(noteTypeSchema),
   notes: z.array(noteSchema),
@@ -126,7 +126,7 @@ export async function exportLearning() {
         JSON.stringify({
           ...snapshot,
           format: "srs-reader-learning",
-          version: 5,
+          version: 6,
           audio: snapshot.audio.map(({ blob, ...info }, i) => ({
             ...info,
             path: `audio/${i}`,
