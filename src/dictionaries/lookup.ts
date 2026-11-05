@@ -622,7 +622,7 @@ function* splitGermanCompound(
           target = { score, paths: [] };
           best[end] = target;
         }
-        if (score !== target.score || target.paths.length === 2) continue;
+        if (score !== target.score) continue;
         for (const path of prefix.paths) {
           const next = [
             ...path,
@@ -632,6 +632,18 @@ function* splitGermanCompound(
               end: endsAt[end - 1]!,
             },
           ];
+          const previous = target.paths[0];
+          if (previous) {
+            const boundary = next.findIndex(
+              (part, index) => part.end !== previous[index]?.end,
+            );
+            if (boundary >= 0) {
+              // shortcut: boundary ties favor longer left parts; use context to resolve semantic ambiguity.
+              if (next[boundary]!.end < previous[boundary]!.end) continue;
+              target.paths = [];
+            }
+          }
+          if (target.paths.length === 2) continue;
           if (
             !target.paths.some((other) =>
               next.every(
