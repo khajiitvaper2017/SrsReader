@@ -4,12 +4,14 @@ import type { AudioInfo } from "@/audio/model";
 import { localVoices, playBlob, speak, stopAudio } from "@/audio/playback";
 import { preparePronunciation } from "@/audio/prepare";
 import type { LookupWord } from "@/dictionaries/model";
+import { normalize } from "@/languages/text";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export function usePronunciation({
   word,
+  form,
   sentence,
   noteId,
   settings,
@@ -17,6 +19,8 @@ export function usePronunciation({
   prepareRecording,
 }: {
   word?: Pick<LookupWord, "id" | "lemma" | "language">;
+  /** Additional recording-search form and word TTS text, not a replacement word identity. */
+  form?: string;
   sentence?: string;
   noteId?: string;
   settings: Settings;
@@ -24,6 +28,7 @@ export function usePronunciation({
   /** Reuse recordings prepared by the review session. */
   prepareRecording?: typeof preparePronunciation;
 }) {
+  const pronunciationForm = form ? normalize(form).trim() : undefined;
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,15 +43,21 @@ export function usePronunciation({
     let pending: ReturnType<typeof preparePronunciation> | undefined;
     return (source?: AudioInfo) => {
       if (!word || sentence) return Promise.resolve(undefined);
-      if (prepareRecording) return prepareRecording(word.id, source);
+      if (prepareRecording && !pronunciationForm)
+        return prepareRecording(word.id, source);
       if (source) {
         pending = undefined;
-        return preparePronunciation(word.id, source);
+        return preparePronunciation(word.id, source, pronunciationForm);
       }
-      return (pending ??= preparePronunciation(word.id));
+      return (pending ??= preparePronunciation(
+        word.id,
+        undefined,
+        pronunciationForm,
+      ));
     };
   }, [
     word?.id,
+    pronunciationForm,
     sentence,
     settings.audioSources,
     settings.audioDialects,
@@ -56,11 +67,13 @@ export function usePronunciation({
     setOpen(false);
     setSources([]);
     setActive("");
+    setBusy(false);
+    setLoading(false);
     return () => {
       clearTimeout(hold.current);
       playback.current++;
     };
-  }, [word?.id, sentence, noteId]);
+  }, [word?.id, pronunciationForm, sentence, noteId]);
   useEffect(() => {
     if (!open || !word) return;
     let alive = true;
@@ -73,10 +86,19 @@ export function usePronunciation({
     });
     if (!sentence) {
       setLoading(true);
-      void audioClient({ action: "audio", id: word.id, download: false })
+      void audioClient({
+        action: "audio",
+        id: word.id,
+        download: false,
+        form: pronunciationForm,
+      })
         .then((cached) => {
           if (alive) setSources(cached ? [cached] : []);
-          return audioClient({ action: "audioSources", id: word.id });
+          return audioClient({
+            action: "audioSources",
+            id: word.id,
+            form: pronunciationForm,
+          });
         })
         .then((found) => {
           if (alive)
@@ -101,13 +123,18 @@ export function usePronunciation({
     open,
     word?.id,
     word?.language,
+    pronunciationForm,
     sentence,
     settings.audioSources,
     settings.audioDialects,
   ]);
   function playVoice(voice: string) {
     if (!word) return;
-    void speak(sentence || word.lemma, word.language, voice).catch((error) =>
+    void speak(
+      sentence || pronunciationForm || word.lemma,
+      word.language,
+      voice,
+    ).catch((error) =>
       onError(error instanceof Error ? error.message : String(error)),
     );
   }

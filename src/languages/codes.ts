@@ -8,6 +8,7 @@ const languages: Record<
     morphology?: string;
     udpipe?: string;
     udpipeAlternative?: string;
+    icu?: boolean;
   }
 > = catalog;
 export const supportedLanguages = [
@@ -22,6 +23,10 @@ export function languageIso3(code: string) {
 }
 export function morphologyLanguage(code: string) {
   return code ? languages[languageCode(code)]?.morphology : undefined;
+}
+export function icuLanguage(code: string): string | undefined {
+  const language = code ? languageCode(code) : undefined;
+  return language && languages[language]?.icu ? language : undefined;
 }
 export function udpipeModels(code: string) {
   const language = code ? languages[languageCode(code)] : undefined;

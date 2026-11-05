@@ -7,6 +7,7 @@ import { t } from "@/shared/i18n/i18n";
 import { Volume2 } from "lucide-react";
 export function AudioButton({
   word,
+  form,
   sentence,
   noteId,
   settings,
@@ -14,6 +15,8 @@ export function AudioButton({
   prepareRecording,
 }: {
   word: Pick<LookupWord, "id" | "lemma" | "language">;
+  /** Additional recording-search form and word TTS text; retains the original word identity. */
+  form?: string;
   sentence?: string;
   noteId?: string;
   settings: Settings;
@@ -36,6 +39,7 @@ export function AudioButton({
     label,
   } = usePronunciation({
     word,
+    form,
     sentence,
     noteId,
     settings,

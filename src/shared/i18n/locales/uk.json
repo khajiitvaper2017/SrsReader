@@ -1071,6 +1071,7 @@
   "language_feature_word_forms": "Словоформи",
   "language_feature_online_dictionary": "Онлайн-словник",
   "language_feature_examples": "Приклади",
+  "language_feature_icu": "Запис чисел словами (ICU)",
   "language_settings_for": "Налаштування для мови",
   "studied_reading_help": "Автоматично визначає й розпізнає текст мовами, які ви вивчаєте. Для коротких уривків може використовувати мову сторінки. Текст іншими мовами та текст, мову якого не визначено, пропускається.",
   "dictionary_types": "Типи словників",

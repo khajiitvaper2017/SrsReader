@@ -178,6 +178,9 @@ importers:
       '@mantine/hooks':
         specifier: 9.7.4
         version: 9.7.4(react@19.3.1)
+      '@pointnet/cldr-spellout':
+        specifier: 48.2.0
+        version: 48.2.0
       '@sqlite.org/sqlite-wasm':
         specifier: 3.54.1-build1
         version: 3.54.1-build1
@@ -682,6 +685,10 @@ packages:
     engines: {node: '>=20'}
     hasBin: true
 
+  '@pointnet/cldr-spellout@48.2.0':
+    resolution: {integrity: sha512-WxNzw+BM9hGsocXmtfGNH/yIVXr8RuM7oDLGx6pje8MjL/QajhRMRcloEWYE6Pkxap9azX+R79R0/R7x2CxZ+w==}
+    engines: {node: '>=24'}
+
   '@rolldown/binding-android-arm-eabi@1.2.15':
     resolution: {integrity: sha512-aLcgK9gIJ3YRvrrtfSBbRa27F5WrpiTaPulnFpsHPxpUHgFlSgnU4854MHwoRGEBhfRJDWCS2WQ7lIjskE9Olw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1096,6 +1103,9 @@ packages:
 
   citty@0.2.2:
     resolution: {integrity: sha512-+6vJA3L98yv+IdfKGZHBNiGW5KHn22e/JwID0Strsz8h4S/csAu/OuICwxrg44k5MRiZHWIo8XXuJgQTriRP4w==}
+
+  cldr-rbnf@48.2.0:
+    resolution: {integrity: sha512-wFhWUOvGGGGSbBc99zJIjMvBxZ7s/fzPdtjLEkccbi8Uk+h/K1AzRiKjGtIqU1FEFNEkO8elkzojpEea0/td1Q==}
 
   cliui@8.0.1:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
@@ -2400,6 +2410,10 @@ snapshots:
     dependencies:
       playwright: 1.64.1
 
+  '@pointnet/cldr-spellout@48.2.0':
+    dependencies:
+      cldr-rbnf: 48.2.0
+
   '@rolldown/binding-android-arm-eabi@1.2.15':
     optional: true
 
@@ -2729,6 +2743,8 @@ snapshots:
       readdirp: 5.1.1
 
   citty@0.2.2: {}
+
+  cldr-rbnf@48.2.0: {}
 
   cliui@8.0.1:
     dependencies:

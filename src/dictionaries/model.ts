@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { OccurrenceGrammar } from "@/languages/analysis";
+import type { NumeralLookup } from "@/languages/numerals";
 
 export const dictionaryId = (title: string, language: string, target: string) =>
   JSON.stringify([title, language, target]);
@@ -176,4 +177,5 @@ export type LookupResult = {
   warning?: string;
   onlinePending?: boolean;
   grammar?: OccurrenceGrammar;
+  numeral?: NumeralLookup;
 };

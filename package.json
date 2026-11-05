@@ -24,6 +24,7 @@
     "@browsermt/bergamot-translator": "^0.4.9",
     "@mantine/core": "9.7.4",
     "@mantine/hooks": "9.7.4",
+    "@pointnet/cldr-spellout": "48.2.0",
     "@sqlite.org/sqlite-wasm": "3.54.1-build1",
     "@zip.js/zip.js": "^2.24.0",
     "bzip2": "^0.1.1",

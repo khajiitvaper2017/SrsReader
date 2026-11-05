@@ -2,6 +2,7 @@ import type { ScanSpan } from "@/reader/scan";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { Occurrence } from "@/languages/analysis";
 import type { LookupPage } from "@/lookup/model";
+import { numeralAt, parseNumeral } from "@/languages/numerals";
 import {
   detectLanguages,
   languageSample,
@@ -855,6 +856,31 @@ export function createScanner(
         if (containsPointer(range)) hitRange = range;
         else span = undefined;
       }
+      const numeric = numeralAt(block.text, position, block.language);
+      if (
+        numeric &&
+        !(
+          span &&
+          span.start <= numeric.start &&
+          span.end >= numeric.end &&
+          (span.start < numeric.start || span.end > numeric.end)
+        )
+      ) {
+        const range = makeRange(block.parts, numeric.start, numeric.end);
+        if (containsPointer(range)) {
+          const term = block.text.slice(numeric.start, numeric.end);
+          const exact =
+            span?.start === numeric.start &&
+            span.end === numeric.end &&
+            span.term === term;
+          span = {
+            ...numeric,
+            term,
+            occurrence: exact ? span?.occurrence : undefined,
+          };
+          hitRange = range;
+        }
+      }
     }
     // The caret can land outside a phrase or marked compound at its edge.
     span ??= block.spans.find(
@@ -1157,6 +1183,16 @@ export function createScanner(
       applyScanResult(id, context.sentence, ready);
     }
     const pointerIndex = word.pointerIndex;
+    if (parseNumeral(word.term, context.language)) {
+      const exact = ready.spans.find(
+        (span) =>
+          span.start === context.start &&
+          span.end === context.end &&
+          span.term === word.term &&
+          context.surface === word.term,
+      );
+      return fallback && { ...fallback, occurrence: exact?.occurrence };
+    }
     const span =
       (pointerIndex === undefined
         ? undefined

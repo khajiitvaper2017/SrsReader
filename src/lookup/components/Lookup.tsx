@@ -19,6 +19,7 @@ import { Meanings } from "@/dictionaries/components/Meanings";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { WordExamples } from "@/examples/components/WordExamples";
 import { folded } from "@/languages/text";
+import { parseNumeral } from "@/languages/numerals";
 import { useLookupNavigation } from "@/lookup/hooks/useLookupNavigation";
 import { useLookupWord } from "@/lookup/hooks/useLookupWord";
 import { Grammar } from "@/lookup/components/Grammar";
@@ -134,6 +135,16 @@ function LookupEntry({
   } = useLookupWord({ page, onLookup, onBack });
   const compound = page.compound;
   const surface = result?.grammar?.group?.form || term;
+  const numeral = result?.numeral;
+  const writtenNumeral =
+    word &&
+    numeral &&
+    (folded(word.lemma, word.language) === folded(term, word.language) ||
+      parseNumeral(word.lemma, word.language))
+      ? numeral.readings.find((reading) => reading.kind === numeral.preferred)
+          ?.text
+      : undefined;
+  const heading = writtenNumeral ?? word?.lemma ?? term;
   const hiddenCandidateDictionaries = new Map(
     result?.words
       .filter((candidate) => !wordMatchesGrammar(candidate, result.grammar))
@@ -166,7 +177,7 @@ function LookupEntry({
                     !result?.grammar &&
                     !compoundAnalysis &&
                     folded(surface, word.language) ===
-                      folded(word.lemma, word.language)
+                      folded(heading, word.language)
                   }
                   openDelay={650}
                   events={{ hover: true, focus: true, touch: true }}
@@ -192,7 +203,7 @@ function LookupEntry({
                       tabIndex={0}
                       style={{ minWidth: 0, overflowWrap: "anywhere" }}
                     >
-                      {word.lemma}
+                      {heading}
                     </Title>
                   </HoverCard.Target>
                   <HoverCard.Dropdown
@@ -349,7 +360,12 @@ function LookupEntry({
                 <Plus aria-hidden="true" size={16} />
               </ActionIcon>
               {sentenceButton}
-              <AudioButton word={word} settings={settings} onError={setError} />
+              <AudioButton
+                word={word}
+                form={writtenNumeral}
+                settings={settings}
+                onError={setError}
+              />
             </Group>
           </Group>
 
@@ -398,9 +414,9 @@ function LookupEntry({
           )}
           <ErrorBox error={error} />
           <SrsProgress />
+          {!word && !!result?.words.length && <Title order={1}>{term}</Title>}
           {!word && !!result?.words.length && (
             <Stack>
-              <Title order={1}>{term}</Title>
               <Meanings
                 meanings={result.words.flatMap(
                   (candidate) => candidate.meanings,
@@ -413,27 +429,28 @@ function LookupEntry({
               />
             </Stack>
           )}
+          {word &&
+            (context ? (
+              <SentenceTranslation
+                key={`${word.id}:${context.sentence}:${context.start}`}
+                context={context}
+                language={word.language}
+                settings={settings}
+                wordId={word.id}
+                label={t("translate_current_sentence")}
+                collapsed
+                compact
+                onTranslated={(translation) =>
+                  onContext({ ...context, translation })
+                }
+              >
+                {renderHeader}
+              </SentenceTranslation>
+            ) : (
+              renderHeader()
+            ))}
           {word && (
             <>
-              {context ? (
-                <SentenceTranslation
-                  key={`${word.id}:${context.sentence}:${context.start}`}
-                  context={context}
-                  language={word.language}
-                  settings={settings}
-                  wordId={word.id}
-                  label={t("translate_current_sentence")}
-                  collapsed
-                  compact
-                  onTranslated={(translation) =>
-                    onContext({ ...context, translation })
-                  }
-                >
-                  {renderHeader}
-                </SentenceTranslation>
-              ) : (
-                renderHeader()
-              )}
               {(word.forms.filter(
                 (form) => !form.startsWith("redirected from "),
               ).length > 0 ||

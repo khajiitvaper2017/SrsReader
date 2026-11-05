@@ -2,6 +2,7 @@ import type { Occurrence, OccurrenceGrammar } from "@/languages/analysis";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
+import { parseNumeral } from "@/languages/numerals";
 import { useDictionaryVisibility } from "@/vocabulary/hooks/useDictionaryVisibility";
 import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings";
 import {
@@ -226,7 +227,8 @@ export function useLookupWord({
       };
       const local = await dictionariesClient({ ...request, localOnly: true });
       if (!alive) return;
-      if (local.words.length || !local.onlinePending) show(local);
+      if (local.numeral || local.words.length || !local.onlinePending)
+        show(local);
       let contextualShown = false;
       const context = page.context;
       if (
@@ -249,11 +251,17 @@ export function useLookupWord({
             texts: [context.sentence],
           });
           if (!alive) return;
+          const numeric =
+            local.numeral || parseNumeral(page.term, request.language);
           const span = parsed?.spans.find(
             (span) =>
               span.occurrence &&
-              span.start <= context.start &&
-              span.end >= context.end,
+              (numeric
+                ? span.start === context.start &&
+                  span.end === context.end &&
+                  span.term === page.term &&
+                  context.surface === page.term
+                : span.start <= context.start && span.end >= context.end),
           );
           if (!span?.occurrence) return;
           const contextual = await dictionariesClient({
@@ -261,7 +269,8 @@ export function useLookupWord({
             term: span.term,
             occurrence: span.occurrence,
           });
-          if (!alive || !contextual.words.length) return;
+          if (!alive || (!contextual.numeral && !contextual.words.length))
+            return;
           contextualShown = true;
           setRefined({
             page,

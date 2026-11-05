@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { onlineDictionaries } from "@/dictionaries/online";
 import {
+  icuLanguage,
   languageIso3,
   languageFlag,
   languageLabel,
@@ -43,6 +44,7 @@ export function LanguageSettings({
           (dictionary) => dictionary.language === language,
         ) && t("language_feature_online_dictionary"),
         languageIso3(language) && t("language_feature_examples"),
+        icuLanguage(language) && t("language_feature_icu"),
       ].filter(Boolean),
     }))
     .sort(

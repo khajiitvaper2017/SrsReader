@@ -1024,6 +1024,7 @@
   "language_feature_word_forms": "Word forms",
   "language_feature_online_dictionary": "Online dictionary",
   "language_feature_examples": "Examples",
+  "language_feature_icu": "Number spell-out (ICU)",
   "language_settings_for": "Language-specific settings",
   "studied_reading_help": "Automatically detects and parses text in your studied languages. Short passages can use the page language. Text in other or unidentified languages is skipped.",
   "dictionary_types": "Dictionary types",

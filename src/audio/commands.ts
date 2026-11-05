@@ -11,6 +11,7 @@ import type { Settings } from "@/settings/model";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { getWord } from "@/vocabulary/storage";
+import { normalize } from "@/languages/text";
 
 export function handleAudio(request: Request, settings: Settings) {
   return request.action === "setAudioSources"
@@ -31,7 +32,13 @@ async function execute(request: Request, settings: Settings) {
         string,
         string,
       ];
-      return findPronunciations(language, lemma, reading, settings);
+      return findPronunciations(
+        language,
+        lemma,
+        reading,
+        settings,
+        request.form,
+      );
     }
     case "audio": {
       if (request.source) {
@@ -50,6 +57,12 @@ async function execute(request: Request, settings: Settings) {
       if (!request.download) {
         const saved = await getAudio(request.id);
         if (!saved) return null;
+        const [, lemma] = JSON.parse(request.id) as [string, string, string];
+        if (
+          saved.lemma !== lemma &&
+          saved.lemma !== (request.form && normalize(request.form))
+        )
+          return null;
         const { blob, ...info } = saved;
         return info;
       }
@@ -60,6 +73,7 @@ async function execute(request: Request, settings: Settings) {
         word?.lemma || identity[1],
         word?.reading || identity[2],
         settings,
+        request.form,
       );
       if (!record) return null;
       const { blob, ...info } = record;

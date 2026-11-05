@@ -10,6 +10,7 @@ import {
 } from "@/audio/providers";
 import { getAudio, saveAudio } from "@/audio/storage";
 import { languageIso3 } from "@/languages/codes";
+import { normalize } from "@/languages/text";
 import { t } from "@/shared/i18n/i18n";
 import { httpsUrl } from "@/shared/url";
 import { wordId } from "@/vocabulary/model";
@@ -159,6 +160,7 @@ async function* pronunciationSources(
   lemma: string,
   reading: string,
   preferences: AudioPreferences,
+  form?: string,
 ) {
   let found = false;
   let failure: unknown;
@@ -167,20 +169,24 @@ async function* pronunciationSources(
     languagePod101: languagePodSources,
     forvo: forvoSources,
   };
+  const id = wordId(language, lemma, reading);
+  const terms = form && form !== lemma ? [lemma, form] : [lemma];
   for (const source of preferences.audioSources) {
     if (!source.enabled) continue;
-    try {
-      for await (const info of providers[source.type](
-        language,
-        lemma,
-        reading,
-        preferences.audioDialects[language] ?? [language],
-      )) {
-        found = true;
-        yield info;
+    for (const term of terms) {
+      try {
+        for await (const info of providers[source.type](
+          language,
+          term,
+          term === lemma ? reading : "",
+          preferences.audioDialects[language] ?? [language],
+        )) {
+          found = true;
+          yield info.id === id ? info : { ...info, id };
+        }
+      } catch (error) {
+        failure = error;
       }
-    } catch (error) {
-      failure = error;
     }
   }
   if (!found && failure) throw failure;
@@ -191,6 +197,7 @@ export async function findPronunciations(
   lemma: string,
   reading: string,
   preferences: AudioPreferences,
+  form?: string,
 ) {
   const sources = new Map<string, AudioInfo>();
   for await (const source of pronunciationSources(
@@ -198,6 +205,7 @@ export async function findPronunciations(
     lemma,
     reading,
     preferences,
+    form && normalize(form),
   ))
     sources.set(source.url, source);
   return [...sources.values()];
@@ -232,8 +240,14 @@ export async function cachePronunciation(
   lemma: string,
   reading: string,
   preferences: AudioPreferences,
+  form?: string,
 ) {
-  const saved = await getAudio(wordId(language, lemma, reading));
+  const cached = await getAudio(wordId(language, lemma, reading));
+  const normalizedForm = form && normalize(form);
+  const saved =
+    cached && (cached.lemma === lemma || cached.lemma === normalizedForm)
+      ? cached
+      : undefined;
   const dialects = preferences.audioDialects[language] ?? [language];
   if (
     saved &&
@@ -246,6 +260,7 @@ export async function cachePronunciation(
       lemma,
       reading,
       preferences,
+      normalizedForm,
     )) {
       const record = await cacheAudioSource(source, dialects);
       if (record) return record;

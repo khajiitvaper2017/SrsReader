@@ -14,6 +14,7 @@ import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { occurrenceAnalysis } from "@/languages/udpipe";
 import type { Occurrence } from "@/languages/analysis";
+import { numberSpellout } from "@/languages/number-spellout";
 import { listDictionaries } from "@/dictionaries/storage";
 import { dictionaryDisplay, displayedWords } from "@/dictionaries/display";
 import { wordId } from "@/vocabulary/model";
@@ -124,6 +125,11 @@ export async function lookup(
     warning,
     onlinePending: localOnly && needsOnline,
     grammar: contextual?.grammar,
+    numeral: await numberSpellout(
+      term,
+      settings.studyLanguage,
+      contextual?.grammar,
+    ),
   };
   for (const candidate of terms) {
     const match = matches.get(normalize(candidate));
@@ -160,7 +166,7 @@ export async function lookup(
         head.slice(1);
     }
   }
-  for (const lemma of bases) {
+  for (const lemma of result.numeral ? [] : bases) {
     if (germanNoun && result.words.length) continue;
     const headword = germanNoun ? nounLemma : lemma;
     if (
