@@ -560,6 +560,7 @@ function LookupEntry({
                 variant="light"
                 px={4}
                 miw={0}
+                flex={1}
               >
                 {t("mine_word")}
               </Button>
@@ -571,6 +572,7 @@ function LookupEntry({
               variant="light"
               px={4}
               miw={0}
+              flex={1}
             >
               {saved?.known ? t("unmaster") : t("master")}
             </Button>
@@ -586,6 +588,7 @@ function LookupEntry({
                 variant="light"
                 px={4}
                 miw={0}
+                flex={1}
               >
                 <Play aria-hidden="true" size={16} /> {t("resume")}
               </Button>
@@ -599,6 +602,7 @@ function LookupEntry({
                 variant="light"
                 px={4}
                 miw={0}
+                flex={1}
               >
                 <Undo2 aria-hidden="true" size={16} /> {t("cancel")}
               </Button>
