@@ -258,9 +258,19 @@ async function dictionaryLookup(
         if (visitedEntries.has(entryKey)) continue;
         visitedEntries.add(entryKey);
         const dictionary = dictionaryByRevision.get(entry.revisionId)!;
-        const definitions = entry.definitions.filter((d) => !Array.isArray(d));
+        const definitions = entry.definitions.flatMap((definition) =>
+          !Array.isArray(definition)
+            ? [definition]
+            : definition[0] && !graph.get(normalize(definition[0]))?.length
+              ? [
+                  [definition[1].join(", "), definition[0]]
+                    .filter(Boolean)
+                    .join(": "),
+                ]
+              : [],
+        );
         if (
-          entry.defined &&
+          (entry.defined || definitions.length) &&
           (!current.verbOnly ||
             /(?:^|\s)(?:v|verb)(?:\s|$)/i.test(entry.tags)) &&
           (!current.perfectiveOnly || /(?:^|\s)pf(?:\s|$)/i.test(entry.tags))
