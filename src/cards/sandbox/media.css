@@ -1,0 +1,38 @@
+:where(button[data-srs-sound], button[data-srs-tts]) {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--mantine-primary-color-light);
+  color: var(--mantine-primary-color-light-color);
+  font: inherit;
+  font-size: var(--mantine-font-size-md);
+  font-variant-emoji: text;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+:where(
+  button[data-srs-sound]:enabled:hover,
+  button[data-srs-tts]:enabled:hover
+) {
+  background: var(--mantine-primary-color-light-hover);
+}
+
+:where(
+  button[data-srs-sound]:focus-visible,
+  button[data-srs-tts]:focus-visible
+) {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+:where(button[data-srs-sound]:disabled, button[data-srs-tts]:disabled) {
+  opacity: 0.5;
+  cursor: default;
+}

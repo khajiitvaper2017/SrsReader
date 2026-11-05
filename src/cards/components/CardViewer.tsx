@@ -13,6 +13,7 @@ import { stopAudio } from "@/audio/playback";
 import { readCardStorage, writeCardStorage } from "@/cards/sandbox/storage";
 import { reviewInputSchema } from "@/srs/controls";
 import dictionaryCss from "@/shared/styles/dictionary.css?inline";
+import mediaCss from "@/cards/sandbox/media.css?inline";
 
 function themeVariables() {
   const style = getComputedStyle(document.documentElement);
@@ -26,6 +27,9 @@ function themeVariables() {
     "color-violet-text",
     "color-violet-light",
     "primary-color-filled",
+    "primary-color-light",
+    "primary-color-light-hover",
+    "primary-color-light-color",
     "spacing-xs",
     "spacing-sm",
     "spacing-md",
@@ -119,7 +123,7 @@ export function CardViewer({
               dark,
               language: note.language,
               scan,
-              theme: themeVariables() + dictionaryCss,
+              theme: themeVariables() + dictionaryCss + mediaCss,
               hideSources: settings.hideDictionarySources,
               showPartOfSpeech: settings.showPartOfSpeech,
               autoplay: revealed && settings.autoplay,
