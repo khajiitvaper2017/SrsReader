@@ -19,6 +19,25 @@ import {
 } from "@/vocabulary/storage";
 import { deleteCards, ensureReaderCard } from "@/cards/storage";
 import Dexie from "dexie";
+import { deckContains, deckIdsInTree, deckTree } from "@/srs/deck-tree";
+import type { Deck } from "@/srs/deck-model";
+
+async function keepParentDecks(decks: Deck[], path: string) {
+  const parents = deckTree(decks).filter(
+    (parent) =>
+      parent.name !== path &&
+      deckContains(parent.name, path) &&
+      !decks.some((deck) => deck.id === parent.id),
+  );
+  await db.decks.bulkPut(
+    parents.map((parent) => ({
+      id: crypto.randomUUID(),
+      name: parent.name,
+      language: parent.language,
+      created: parent.created,
+    })),
+  );
+}
 
 export async function studyOverview(settings: Settings) {
   const [words, decks] = await Promise.all([
@@ -60,6 +79,9 @@ export async function studyOverview(settings: Settings) {
         decks: groups.decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
+          label: deck.label,
+          depth: deck.depth,
+          parentId: deck.parentId,
           dictionaryId: deck.dictionaryId,
           ...summary(deck.words),
         })),
@@ -75,19 +97,68 @@ export async function manageStudyDeck(
 ) {
   if (operation === "refresh") return refreshFrequencyDeck(language, deckId);
   const mined = deckId === "mined";
-  const deck = mined ? undefined : await db.decks.get(deckId);
-  if (
-    (mined && operation === "delete") ||
-    (!mined && (!deck || deck.language !== language))
-  )
+  if (mined && operation === "delete")
     throw new Error(t("study_deck_not_found"));
+  const decks = await db.decks.where("language").equals(language).toArray();
+  const ids = mined ? [] : deckIdsInTree(decks, deckId);
+  if (!mined && operation === "delete")
+    await keepParentDecks(
+      decks,
+      deckTree(decks).find((deck) => deck.id === deckId)!.name,
+    );
   const cards = await db.cards
     .where("language")
     .equals(language)
-    .filter((card) => card.deckId === (mined ? null : deckId))
+    .filter((card) =>
+      mined ? card.deckId === null : ids.includes(card.deckId!),
+    )
     .primaryKeys();
   await deleteCards(cards);
-  if (!mined && operation === "delete") await db.decks.delete(deckId);
+  if (!mined && operation === "delete") await db.decks.bulkDelete(ids);
+}
+
+export async function saveStudyDeck(
+  language: string,
+  name: string,
+  parentId: string | null,
+  id?: string,
+) {
+  const decks = await db.decks.where("language").equals(language).toArray();
+  const nodes = deckTree(decks);
+  const current = id ? nodes.find((deck) => deck.id === id) : undefined;
+  const parent = parentId
+    ? nodes.find((deck) => deck.id === parentId)
+    : undefined;
+  if ((id && !current) || (parentId && !parent))
+    throw new Error(t("study_deck_not_found"));
+  if (current && parent && deckContains(current.name, parent.name))
+    throw new Error(t("study_deck_parent_invalid"));
+  const path = parent ? `${parent.name}::${name}` : name;
+  const moving = new Set(current ? deckIdsInTree(decks, current.id) : []);
+  const updated = decks
+    .filter((deck) => moving.has(deck.id))
+    .map((deck) => ({
+      ...deck,
+      name: path + deck.name.slice(current!.name.length),
+    }));
+  if (!current || !decks.some((deck) => deck.id === current.id))
+    updated.push({
+      id: crypto.randomUUID(),
+      name: path,
+      language,
+      created: Date.now(),
+    });
+  if (
+    nodes.some(
+      (node) =>
+        !moving.has(node.id) &&
+        node.id !== id &&
+        updated.some((deck) => deck.name === node.name),
+    )
+  )
+    throw new Error(t("study_deck_name_exists"));
+  if (current) await keepParentDecks(decks, current.name);
+  await db.decks.bulkPut(updated);
 }
 
 async function frequencyDeckWords(dictionaryId: string, limit: number) {
@@ -149,6 +220,12 @@ export async function createFrequencyDeck(
   name: string,
 ) {
   const { dictionary, words } = await frequencyDeckWords(dictionaryId, limit);
+  if (
+    (
+      await db.decks.where("language").equals(dictionary.language).toArray()
+    ).some((deck) => deck.name === name)
+  )
+    throw new Error(t("study_deck_name_exists"));
   const vocabulary: Vocabulary[] = [];
   for (const word of words) {
     if (!(await db.vocabulary.get(word.id))) {

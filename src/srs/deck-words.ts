@@ -1,6 +1,7 @@
 import type { Deck } from "@/srs/deck-model";
 import type { ReviewWord, WordWithCards } from "@/vocabulary/model";
 import { t } from "@/shared/i18n/i18n";
+import { deckContains, deckTree } from "@/srs/deck-tree";
 
 export const isFrequencyWord = (term: string) => /\p{L}/u.test(term);
 
@@ -11,18 +12,26 @@ export function studyGroups<T extends GroupWord>(words: T[], decks: Deck[]) {
       ? word.document.card.deckId === id
       : word.linkedCards.some((card) => card.deckId === id) ||
         (id === null && !word.linkedCards.length && word.mined !== false);
+  const direct = decks.map((deck) => ({
+    ...deck,
+    words: words.filter(
+      (word) =>
+        belongs(word, deck.id) &&
+        (!deck.dictionaryId || isFrequencyWord(word.lemma)),
+    ),
+  }));
   return {
     mined: words.filter((word) => belongs(word, null)),
-    decks: [...decks]
-      .sort((a, b) => a.created - b.created)
-      .map((deck) => ({
-        ...deck,
-        words: words.filter(
-          (word) =>
-            belongs(word, deck.id) &&
-            (!deck.dictionaryId || isFrequencyWord(word.lemma)),
-        ),
-      })),
+    decks: deckTree(decks).map((deck) => ({
+      ...deck,
+      words: direct
+        .filter(
+          (child) =>
+            child.language === deck.language &&
+            deckContains(deck.name, child.name),
+        )
+        .flatMap((child) => child.words),
+    })),
   };
 }
 export function wordsInDeck<T extends GroupWord>(

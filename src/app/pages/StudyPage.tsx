@@ -1,6 +1,7 @@
 import { AnkiTransfer } from "@/anki/components/AnkiTransfer";
 import {
   ActionIcon,
+  Box,
   Button,
   Group,
   Menu,
@@ -28,9 +29,16 @@ import { number, t } from "@/shared/i18n/i18n";
 import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { srsClient } from "@/srs/client";
+import { DeckEditor } from "@/srs/components/DeckEditor";
+import { deckPathLabel } from "@/srs/deck-tree";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
 import type { Responses } from "@/srs/contracts";
 import {
+  ChevronDown,
+  ChevronRight,
+  FolderPlus,
+  Pencil,
+  CalendarClock,
   Eraser,
   List,
   MoreHorizontal,
@@ -44,7 +52,7 @@ type DeckAction = {
   language: string;
   deckId: string;
   name: string;
-  operation: "refresh" | "clear" | "delete";
+  operation: "refresh" | "clear" | "delete" | "reschedule";
 };
 
 export function StudyPage({
@@ -62,6 +70,11 @@ export function StudyPage({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<"language" | "deck" | null>(null);
+  const [deckEditor, setDeckEditor] = useState<{
+    language: string;
+    id?: string;
+    parentId: string | null;
+  } | null>(null);
   const [confirmation, setConfirmation] = useState<DeckAction | null>(null);
   const [language, setLanguage] = useState(settings.studyLanguage);
   const [dictionaryId, setDictionaryId] = useState("");
@@ -140,17 +153,35 @@ export function StudyPage({
     setError("");
     setNotice("");
     try {
-      await srsClient({
-        action: "manageDeck",
-        language: action.language,
-        deckId: action.deckId,
-        operation: action.operation,
-      });
+      let rescheduled = 0;
+      if (action.operation === "reschedule") {
+        let after = "";
+        while (true) {
+          const result = await srsClient({
+            action: "reschedule",
+            language: action.language,
+            deckId: action.deckId,
+            after,
+          });
+          rescheduled += result.count;
+          if (result.cursor === null) break;
+          after = result.cursor;
+        }
+      } else {
+        await srsClient({
+          action: "manageDeck",
+          language: action.language,
+          deckId: action.deckId,
+          operation: action.operation,
+        });
+      }
       setConfirmation(null);
       setNotice(
         action.operation === "refresh"
           ? t("study_deck_refreshed", { name: action.name })
-          : "",
+          : action.operation === "reschedule"
+            ? t("study_deck_rescheduled", { count: rescheduled })
+            : "",
       );
       load();
     } catch (error) {
@@ -167,6 +198,9 @@ export function StudyPage({
       narrow={narrow}
       busy={busy}
       start={start}
+      edit={(id, parentId) =>
+        setDeckEditor({ language: row.language, id, parentId })
+      }
       manage={(action) => {
         if (action.operation === "refresh") void manageDeck(action);
         else setConfirmation(action);
@@ -191,6 +225,18 @@ export function StudyPage({
               }}
             >
               {t("study_add_language")}
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<FolderPlus size={16} />}
+              onClick={() => {
+                setError("");
+                setDeckEditor({
+                  language: settings.studyLanguage,
+                  parentId: null,
+                });
+              }}
+            >
+              {t("study_add_deck")}
             </Menu.Item>
             <Menu.Item
               onClick={() => {
@@ -238,6 +284,17 @@ export function StudyPage({
         </Paper>
       )}
       <ReviewStatistics />
+      {deckEditor && languages && (
+        <DeckEditor
+          selection={deckEditor}
+          overview={languages}
+          onClose={() => setDeckEditor(null)}
+          onSaved={() => {
+            setDeckEditor(null);
+            load();
+          }}
+        />
+      )}
       <Modal
         opened={modal !== null}
         onClose={() => {
@@ -338,9 +395,11 @@ export function StudyPage({
           if (!busy) setConfirmation(null);
         }}
         title={t(
-          confirmation?.operation === "delete"
-            ? "study_delete_deck_title"
-            : "study_clear_deck_title",
+          confirmation?.operation === "reschedule"
+            ? "study_reschedule_deck_title"
+            : confirmation?.operation === "delete"
+              ? "study_delete_deck_title"
+              : "study_clear_deck_title",
           { name: confirmation?.name },
         )}
         closeOnClickOutside={!busy}
@@ -351,9 +410,11 @@ export function StudyPage({
           <ErrorBox error={error} />
           <Text>
             {t(
-              confirmation?.operation === "delete"
-                ? "study_delete_deck_confirm"
-                : "study_clear_deck_confirm",
+              confirmation?.operation === "reschedule"
+                ? "study_reschedule_deck_confirm"
+                : confirmation?.operation === "delete"
+                  ? "study_delete_deck_confirm"
+                  : "study_clear_deck_confirm",
             )}
           </Text>
           <Group justify="flex-end">
@@ -361,15 +422,19 @@ export function StudyPage({
               {t("cancel")}
             </Button>
             <Button
-              color="red"
+              color={
+                confirmation?.operation === "reschedule" ? undefined : "red"
+              }
               variant="filled"
               onClick={() => void manageDeck(confirmation)}
               loading={busy}
             >
               {t(
-                confirmation?.operation === "delete"
-                  ? "study_delete_deck"
-                  : "study_clear_deck",
+                confirmation?.operation === "reschedule"
+                  ? "study_reschedule_deck"
+                  : confirmation?.operation === "delete"
+                    ? "study_delete_deck"
+                    : "study_clear_deck",
               )}
             </Button>
           </Group>
@@ -385,19 +450,45 @@ function StudyRows({
   busy,
   start,
   manage,
+  edit,
 }: {
   row: Responses["studyOverview"][number];
   narrow: boolean | undefined;
   busy: boolean;
   start: (language: string, deckId?: string) => Promise<void>;
   manage: (action: DeckAction) => void;
+  edit: (id: string | undefined, parentId: string | null) => void;
 }) {
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const visible = row.decks.filter((deck) => {
+    let parentId = deck.parentId;
+    while (parentId) {
+      if (collapsed.has(parentId)) return false;
+      parentId =
+        row.decks.find((parent) => parent.id === parentId)?.parentId ?? null;
+    }
+    return true;
+  });
   return (
     <>
       {[
-        { ...row, id: undefined, name: languageLabel(row.language) },
-        { ...row.mined, id: "mined", name: t("study_mined_words") },
-        ...row.decks,
+        {
+          ...row,
+          id: undefined,
+          name: languageLabel(row.language),
+          label: languageLabel(row.language),
+          depth: -1,
+          parentId: null,
+        },
+        {
+          ...row.mined,
+          id: "mined",
+          name: t("study_mined_words"),
+          label: t("study_mined_words"),
+          depth: 0,
+          parentId: null,
+        },
+        ...visible,
       ].map((deck) => {
         const actions = deck.id && (
           <Menu position="bottom-end" withinPortal>
@@ -406,7 +497,7 @@ function StudyRows({
                 variant="subtle"
                 aria-label={t("study_deck_actions_for", {
                   language: languageName(row.language),
-                  name: deck.name,
+                  name: deckPathLabel(deck.name),
                 })}
                 onClick={(event) => event.stopPropagation()}
                 disabled={busy}
@@ -417,7 +508,7 @@ function StudyRows({
             <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
               <Menu.Item
                 component="a"
-                href={`#words/${row.language}/${deck.id}`}
+                href={`#words/${row.language}/${encodeURIComponent(deck.id!)}`}
                 leftSection={<List size={16} />}
               >
                 {t("study_view_words")}
@@ -429,13 +520,43 @@ function StudyRows({
                     manage({
                       language: row.language,
                       deckId: deck.id!,
-                      name: deck.name,
+                      name: deckPathLabel(deck.name),
                       operation: "refresh",
                     })
                   }
                 >
                   {t("study_refresh_deck")}
                 </Menu.Item>
+              )}
+              <Menu.Item
+                leftSection={<CalendarClock size={16} />}
+                disabled={!deck.wordCount}
+                onClick={() =>
+                  manage({
+                    language: row.language,
+                    deckId: deck.id!,
+                    name: deckPathLabel(deck.name),
+                    operation: "reschedule",
+                  })
+                }
+              >
+                {t("study_reschedule_deck")}
+              </Menu.Item>
+              {deck.id !== "mined" && (
+                <>
+                  <Menu.Item
+                    leftSection={<Pencil size={16} />}
+                    onClick={() => edit(deck.id, deck.parentId)}
+                  >
+                    {t("study_edit_deck")}
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<FolderPlus size={16} />}
+                    onClick={() => edit(undefined, deck.id!)}
+                  >
+                    {t("study_add_subdeck")}
+                  </Menu.Item>
+                </>
               )}
               <Menu.Divider />
               <Menu.Item
@@ -446,7 +567,7 @@ function StudyRows({
                   manage({
                     language: row.language,
                     deckId: deck.id!,
-                    name: deck.name,
+                    name: deckPathLabel(deck.name),
                     operation: "clear",
                   })
                 }
@@ -461,7 +582,7 @@ function StudyRows({
                     manage({
                       language: row.language,
                       deckId: deck.id!,
-                      name: deck.name,
+                      name: deckPathLabel(deck.name),
                       operation: "delete",
                     })
                   }
@@ -472,7 +593,7 @@ function StudyRows({
             </Menu.Dropdown>
           </Menu>
         );
-        const name = (
+        const labelButton = (
           <Button
             variant="transparent"
             disabled={busy || !deck.total}
@@ -482,12 +603,57 @@ function StudyRows({
               void start(row.language, deck.id);
             }}
           >
-            {deck.name}
+            {deck.label}
           </Button>
+        );
+        const hasChildren = row.decks.some(
+          (child) => child.parentId === deck.id,
+        );
+        const name = (
+          <Group gap="xs" wrap="nowrap" miw={0}>
+            {hasChildren ? (
+              <ActionIcon
+                aria-label={t(
+                  collapsed.has(deck.id!)
+                    ? "study_expand_deck"
+                    : "study_collapse_deck",
+                  { name: deck.label },
+                )}
+                aria-expanded={!collapsed.has(deck.id!)}
+                disabled={busy}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setCollapsed((previous) => {
+                    const next = new Set(previous);
+                    if (next.has(deck.id!)) next.delete(deck.id!);
+                    else next.add(deck.id!);
+                    return next;
+                  });
+                }}
+              >
+                {collapsed.has(deck.id!) ? (
+                  <ChevronRight size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </ActionIcon>
+            ) : deck.id ? (
+              <Box w="var(--mantine-spacing-xl)" flex="0 0 auto" />
+            ) : null}
+            {labelButton}
+          </Group>
         );
         if (narrow)
           return (
-            <Paper key={deck.id || row.language} p="sm">
+            <Paper
+              key={deck.id || row.language}
+              p="sm"
+              ml={
+                deck.depth > 0
+                  ? `calc(var(--mantine-spacing-lg) * ${deck.depth})`
+                  : undefined
+              }
+            >
               <Stack gap="xs">
                 <Group wrap="nowrap" justify="space-between">
                   {name}
@@ -518,7 +684,15 @@ function StudyRows({
             }}
             style={{ cursor: busy || !deck.total ? "default" : "pointer" }}
           >
-            <Table.Td pl={deck.id ? "xl" : undefined}>{name}</Table.Td>
+            <Table.Td
+              pl={
+                deck.id
+                  ? `calc(var(--mantine-spacing-xl) * ${deck.depth + 1})`
+                  : undefined
+              }
+            >
+              {name}
+            </Table.Td>
             <Table.Td ta="right">{number(deck.fresh)}</Table.Td>
             <Table.Td ta="right">{number(deck.learning)}</Table.Td>
             <Table.Td ta="right">{number(deck.due)}</Table.Td>

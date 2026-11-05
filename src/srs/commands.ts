@@ -32,11 +32,13 @@ import {
   createFrequencyDeck,
   manageStudyDeck,
   studyOverview,
+  saveStudyDeck,
 } from "@/srs/decks";
 import { sentenceExamples } from "@/examples/sentences";
 
 export function handleSrs(request: Request, settings: Settings) {
   return request.action === "createFrequencyDeck" ||
+    request.action === "saveDeck" ||
     request.action === "manageDeck" ||
     request.action === "grade" ||
     request.action === "undo" ||
@@ -56,6 +58,15 @@ async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "studyOverview":
       return studyOverview(settings);
+    case "saveDeck":
+      await saveStudyDeck(
+        request.language,
+        request.name,
+        request.parentId,
+        request.id,
+      );
+      await notify(undefined, "collection");
+      return;
     case "manageDeck":
       await manageStudyDeck(
         request.language,
@@ -210,6 +221,7 @@ async function execute(request: Request, settings: Settings) {
         request.after,
         false,
         request.language,
+        request.deckId,
       );
       await notify(undefined, "srs");
       return result;

@@ -37,6 +37,18 @@ export const requests = [
   }),
   z.object({ action: z.literal("studyOverview") }),
   z.object({
+    action: z.literal("saveDeck"),
+    language: languageSchema,
+    id: z.string().min(1).optional(),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .refine((name) => !name.includes("::") && !/\p{Cc}/u.test(name)),
+    parentId: z.string().min(1).nullable(),
+  }),
+  z.object({
     action: z.literal("manageDeck"),
     language: languageSchema,
     deckId: z.string().min(1),
@@ -72,6 +84,7 @@ export const requests = [
   z.object({
     action: z.literal("reschedule"),
     language: languageSchema,
+    deckId: z.string().optional(),
     after: z.string().default(""),
   }),
   z.object({ action: z.literal("stats") }),
@@ -85,6 +98,7 @@ export type Responses = {
   studyOverview: Awaited<ReturnType<typeof studyOverview>>;
   createFrequencyDeck: Deck;
   manageDeck: void;
+  saveDeck: void;
   sentenceExamples: SentenceExample[];
   grade: { word: ReviewWord; reviewId: string };
   undo: void;

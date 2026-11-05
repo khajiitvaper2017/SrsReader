@@ -4,6 +4,7 @@ import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
 import { db } from "@/platform/database/db";
 import type { Deck } from "@/srs/deck-model";
+import { deckTree } from "@/srs/deck-tree";
 import { useDebouncedValue } from "@mantine/hooks";
 import type { Request } from "@/vocabulary/contracts";
 import { vocabularyClient } from "@/vocabulary/client";
@@ -25,7 +26,7 @@ export function useWords({
   const [decks, setDecks] = useState<Deck[]>();
   const overview = settings.studyLanguages.map((language) => ({
     language,
-    decks: decks?.filter((deck) => deck.language === language) ?? [],
+    decks: deckTree(decks?.filter((deck) => deck.language === language) ?? []),
   }));
   const [loading, setLoading] = useState(true);
   const pending = useRef(0);

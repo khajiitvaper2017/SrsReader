@@ -87,7 +87,9 @@ export function App() {
     () => ({ ...settings, studyLanguage: reviewLanguage }),
     [settings, reviewLanguage],
   );
-  const deckId = reviewing ? page.split("/")[3] : undefined;
+  const deckId = reviewing
+    ? decodeURIComponent(page.split("/")[3] || "") || undefined
+    : undefined;
   const setup = page === "setup" || !settings.setupComplete;
   const links = (
     setup
@@ -200,7 +202,9 @@ export function App() {
                 key={page}
                 settings={settings}
                 language={page.split("/")[1] || settings.studyLanguage}
-                deckId={page.split("/")[2]}
+                deckId={
+                  decodeURIComponent(page.split("/")[2] || "") || undefined
+                }
               />
             ) : page === "search" ? (
               <SearchPage settings={settings} />

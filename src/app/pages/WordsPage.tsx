@@ -18,6 +18,7 @@ import { WordDetails } from "@/vocabulary/components/WordDetails";
 import { WordList } from "@/vocabulary/components/WordList";
 import { useWords } from "@/vocabulary/hooks/useWords";
 import { wordStateLabels, wordStates } from "@/vocabulary/state";
+import { deckPathLabel } from "@/srs/deck-tree";
 export function WordsPage({
   settings,
   language,
@@ -35,8 +36,10 @@ export function WordsPage({
     ? t("words_all_decks")
     : deckId === "mined"
       ? t("study_mined_words")
-      : row?.decks.find((deck) => deck.id === deckId)?.name ||
-        t("study_deck_not_found");
+      : deckPathLabel(
+          row?.decks.find((deck) => deck.id === deckId)?.name ||
+            t("study_deck_not_found"),
+        );
   return (
     <Stack>
       <Group justify="space-between">
@@ -71,12 +74,12 @@ export function WordsPage({
                 { value: "mined", label: t("study_mined_words") },
                 ...(row?.decks.map((deck) => ({
                   value: deck.id,
-                  label: deck.name,
+                  label: deckPathLabel(deck.name),
                 })) || []),
               ]}
               onChange={(value) => {
                 if (value)
-                  location.hash = `words/${language}${value === "all" ? "" : `/${value}`}`;
+                  location.hash = `words/${language}${value === "all" ? "" : `/${encodeURIComponent(value)}`}`;
               }}
             />
             <TextInput

@@ -66,6 +66,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "queue":
     case "studyOverview":
     case "manageDeck":
+    case "saveDeck":
     case "createFrequencyDeck":
     case "sentenceExamples":
     case "preview":

@@ -18,6 +18,8 @@ import {
 } from "@/srs/scheduler";
 import { Reschedule } from "ts-fsrs/reschedule";
 import { reviewCards } from "@/vocabulary/storage";
+import { deckIdsInTree } from "@/srs/deck-tree";
+import { recalculateLapses } from "@/srs/lapses";
 
 const schedulingModel = (settings: Settings) =>
   settings.algorithm === "fsrs"
@@ -189,6 +191,7 @@ export async function rescheduleExisting(
   after = "",
   allCards = false,
   language?: string,
+  deckId?: string,
 ) {
   const settings = await getSettings();
   if (settings.algorithm === "rwkv" && !(await rwkvStatus(settings)).ready)
@@ -198,12 +201,39 @@ export async function rescheduleExisting(
   const batchSize =
     settings.algorithm === "rwkv" && settings.rwkvMode === "instant" ? 10 : 100;
   const now = Date.now();
+  const deckIds =
+    deckId && deckId !== "mined"
+      ? new Set(
+          deckIdsInTree(
+            await db.decks.where("language").equals(language!).toArray(),
+            deckId,
+          ),
+        )
+      : undefined;
+  if (!allCards && !after) {
+    const selected = await db.cards
+      .where("language")
+      .equals(language!)
+      .filter(
+        (card) =>
+          !deckId ||
+          (deckId === "mined"
+            ? card.deckId === null
+            : deckIds!.has(card.deckId!)),
+      )
+      .primaryKeys();
+    await recalculateLapses(selected);
+  }
   const cards: Card[] = await db.cards
     .where("id")
     .above(after)
     .filter(
       (card) =>
         (allCards || (card.language === language && !card.suspended)) &&
+        (!deckId ||
+          (deckId === "mined"
+            ? card.deckId === null
+            : deckIds!.has(card.deckId!))) &&
         card.schedule?.state === 2 &&
         card.schedule.lastReviewAt !== null,
     )
