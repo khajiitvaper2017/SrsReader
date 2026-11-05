@@ -17,6 +17,7 @@ import { t } from "@/shared/i18n/i18n";
 import { Logo } from "@/shared/ui/Logo";
 import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { srsClient } from "@/srs/client";
+import { useSyncLifecycle } from "@/sync/hooks/useSync";
 import {
   BookMarked,
   BookOpen,
@@ -52,6 +53,7 @@ const SearchPage = React.lazy(() =>
   })),
 );
 export function App() {
+  useSyncLifecycle();
   const [hash, setHash] = useState(location.hash.slice(1) || "review");
   const [page = "review", query] = hash.split("?");
   const params = new URLSearchParams(query);

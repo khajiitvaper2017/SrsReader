@@ -38,6 +38,10 @@ import {
   requests as vocabularyRequests,
   type Responses as vocabularyResponses,
 } from "@/vocabulary/contracts";
+import {
+  requests as syncRequests,
+  type Responses as syncResponses,
+} from "@/sync/contracts";
 import { z } from "zod";
 
 export const requestSchema = z.discriminatedUnion("action", [
@@ -51,6 +55,7 @@ export const requestSchema = z.discriminatedUnion("action", [
   ...srsRequests,
   ...audioRequests,
   ...backgroundRequests,
+  ...syncRequests,
 ]);
 export type Request = z.infer<typeof requestSchema>;
 export type Responses = settingsResponses &
@@ -62,4 +67,5 @@ export type Responses = settingsResponses &
   vocabularyResponses &
   srsResponses &
   audioResponses &
-  backgroundResponses;
+  backgroundResponses &
+  syncResponses;

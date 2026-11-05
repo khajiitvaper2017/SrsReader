@@ -4,13 +4,15 @@ import { isWebsiteEnabled } from "@/reader/preferences";
 import { settingsClient } from "@/settings/client";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
-import { t } from "@/shared/i18n/i18n";
+import { i18n, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Logo } from "@/shared/ui/Logo";
 import { srsClient } from "@/srs/client";
+import { useSync } from "@/sync/hooks/useSync";
 import {
   BookMarked,
   BookOpen,
+  RefreshCw,
   Settings,
   SlidersHorizontal,
   Upload,
@@ -45,6 +47,16 @@ const initial = await loadPopupData()
 
 export function Popup() {
   const [settings, setSettings] = useSettings();
+  const sync = useSync();
+  const canSync = sync.status?.connected && !sync.status.authorizationRequired;
+  const syncBusy = !!sync.operation || !!sync.status?.running;
+  const syncLabel = t(canSync ? "sync_now" : "sync_title");
+  const syncErrorKey = sync.error?.toLowerCase();
+  const syncError = sync.error
+    ? syncErrorKey && i18n.exists(syncErrorKey)
+      ? t(syncErrorKey)
+      : t("sync_error_detail", { detail: sync.error })
+    : "";
   const [{ host, stats, dictionaryCount }, setData] = useState(initial.data);
   const [error, setError] = useState(initial.error);
   const load = useCallback(() => {
@@ -90,8 +102,22 @@ export function Popup() {
     <Stack gap="md" p="md">
       <Group align="center" justify="space-between" component="header">
         <Logo small />
+        <ActionIcon
+          title={syncLabel}
+          aria-label={syncLabel}
+          aria-busy={syncBusy}
+          loading={syncBusy}
+          disabled={sync.loading || !sync.status}
+          variant="subtle"
+          onClick={() => {
+            if (canSync) void sync.syncNow();
+            else open("settings/sync");
+          }}
+        >
+          <RefreshCw aria-hidden="true" size={16} />
+        </ActionIcon>
       </Group>
-      <ErrorBox error={error} />
+      <ErrorBox error={error || syncError} />
       {!settings.setupComplete ? (
         <Button onClick={() => open("setup")} variant="filled">
           <SlidersHorizontal aria-hidden="true" size={16} /> {t("setup")}{" "}

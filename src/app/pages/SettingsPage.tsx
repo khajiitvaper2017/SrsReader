@@ -26,6 +26,7 @@ import { ReadingSettings } from "@/reader/components/ReadingSettings";
 import { settingsClient } from "@/settings/client";
 import type { useSettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
+import { SyncSettings } from "@/sync/components/SyncSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { ReviewSettings } from "@/srs/components/ReviewSettings";
@@ -33,6 +34,7 @@ import { ReviewControls } from "@/srs/components/ReviewControls";
 import {
   BookOpen,
   Check,
+  Cloud,
   Database,
   Languages,
   Keyboard,
@@ -155,6 +157,11 @@ export function SettingsPage({
       value: "audio",
       label: t("settings_audio_translation"),
       icon: <Volume2 size={16} />,
+    },
+    {
+      value: "sync",
+      label: t("sync_title"),
+      icon: <Cloud size={16} />,
     },
     {
       value: "backups",
@@ -366,6 +373,9 @@ export function SettingsPage({
             </Paper>
           </Stack>,
         )}
+      </Tabs.Panel>
+      <Tabs.Panel value="sync">
+        <SyncSettings />
       </Tabs.Panel>
       <Tabs.Panel value="backups">
         <BackupSettings setSettings={setSettings} tasks={tasks} />

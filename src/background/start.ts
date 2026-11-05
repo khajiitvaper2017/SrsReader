@@ -8,8 +8,10 @@ import { getSettings, saveSettings } from "@/settings/store";
 import { notify } from "@/background/events";
 import { srsWrite } from "@/platform/locks";
 import { connectImportHost, handleImports } from "@/imports/commands";
+import { startSync } from "@/sync/service";
 
 export function startBackground() {
+  startSync();
   browser.runtime.onConnect.addListener(connectImportHost);
   if (import.meta.env.BROWSER === "firefox") {
     browser.permissions.onRemoved.addListener(() => {

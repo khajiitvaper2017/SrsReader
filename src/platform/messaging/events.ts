@@ -9,7 +9,8 @@ export type ChangeScope =
   | "settings"
   | "dictionaries"
   | "dictionaryVisibility"
-  | "srs";
+  | "srs"
+  | "sync";
 export type ChangeMessage = {
   event: "changed";
   scope: ChangeScope;

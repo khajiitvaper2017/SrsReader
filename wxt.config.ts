@@ -4,6 +4,11 @@ import { defineConfig } from "wxt";
 import en from "./src/shared/i18n/locales/en.json";
 import uk from "./src/shared/i18n/locales/uk.json";
 
+// Public key only: fixes the unpacked Chromium ID used by the Google Chrome
+// extension OAuth client. No signing key or OAuth client secret is bundled.
+const chromiumKey =
+  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyxu+YaR5pEgMuX0vWacW0ag8Ic36AA74q14jBYxChU0l8CtgYbOx4PmSUaW7e+z8gqKeEYCq47r/lWRF03joFYgnRLtOfsyUrZGuJVCznp7TyyWJdozvjiqjPZSirHc0+MZQ7Smw8fMZvNRuXyAy/5JKmx6m7+vAZtszIaqTs2MABSh5onlZWWep5dPEtPgz7qCHvD4/A75dxOAg1jc+/oql5dVutT4tWY+1lqWFuC8ssLOuz2jvW6/ziB19OEc8qUIz+10LnidvQtqSurlxHSb+E+tRaMVPEuF9Iud/cefvc7t7WWZ7ON1QLbZqS1mVha7z4gGzcHNxaiM762EIHwIDAQAB";
+
 export default defineConfig({
   srcDir: "src",
   entrypointsDir: "../entrypoints",
@@ -64,13 +69,34 @@ export default defineConfig({
   },
   manifest: ({ browser }) => ({
     name: "SrsReader",
-    ...(browser === "chrome" ? { minimum_chrome_version: "125" } : {}),
+    ...(browser === "chrome"
+      ? {
+          minimum_chrome_version: "125",
+          key: chromiumKey,
+          ...(process.env.WXT_GOOGLE_CLIENT_ID
+            ? {
+                oauth2: {
+                  client_id: process.env.WXT_GOOGLE_CLIENT_ID,
+                  scopes: [
+                    "openid",
+                    "email",
+                    "https://www.googleapis.com/auth/drive.appdata",
+                  ],
+                },
+              }
+            : {}),
+        }
+      : {}),
     default_locale: "en",
     description: "__MSG_extensionDescription__",
     permissions: [
       "storage",
       "unlimitedStorage",
-      ...(browser === "chrome" ? ["offscreen" as const] : []),
+      "tabs",
+      "alarms",
+      ...(browser === "chrome"
+        ? ["identity" as const, "offscreen" as const]
+        : []),
     ],
     content_security_policy: {
       extension_pages:
@@ -94,9 +120,14 @@ export default defineConfig({
               strict_min_version: "154.0",
               data_collection_permissions: {
                 required: ["none"],
-                optional: ["websiteContent"],
+                optional: [
+                  "websiteContent",
+                  "authenticationInfo",
+                  "personallyIdentifyingInfo",
+                ],
               },
             },
+            gecko_android: { strict_min_version: "154.0" },
           },
         }
       : {}),

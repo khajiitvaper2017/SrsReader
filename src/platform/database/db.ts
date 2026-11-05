@@ -29,9 +29,15 @@ import type {
   AnkiReview,
 } from "@/cards/model";
 import type { ImportTask } from "@/imports/model";
+import type { SyncMeta, SyncRecord } from "@/sync/model";
+import { installSyncTracking } from "@/sync/tracking";
 import Dexie, { type Table } from "dexie";
 
 class ReaderDatabase extends Dexie {
+  syncRecords!: Table<SyncRecord, string>;
+  syncAuthored!: Table<SyncRecord, string>;
+  syncDependencies!: Table<SyncRecord, [string, number]>;
+  syncMeta!: Table<SyncMeta, string>;
   noteTypes!: Table<NoteType, string>;
   notes!: Table<Note, string>;
   cards!: Table<Card, string>;
@@ -75,6 +81,7 @@ class ReaderDatabase extends Dexie {
   constructor() {
     super("srs-reader");
     installMigrations(this);
+    installSyncTracking(this);
   }
 }
 export const db = new ReaderDatabase();

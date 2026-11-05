@@ -14,6 +14,7 @@ import { srsWrite } from "@/platform/locks";
 import { getSettings } from "@/settings/store";
 import { saveBlob, type ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
+import { withRestoredTracking } from "@/sync/tracking";
 import {
   fullManifestSchema,
   fullRowSchemas,
@@ -21,7 +22,29 @@ import {
   type FullManifest,
 } from "@/backups/full-model";
 
-const transientTables = ["importTasks", "importFiles"];
+// Device identity, revision clocks, authored records and account transfer state
+// are installation-local, just like a running import's temporary payload.
+const transientTables = [
+  "importTasks",
+  "importFiles",
+  "syncRecords",
+  "syncAuthored",
+  "syncMeta",
+  "syncDependencies",
+];
+const learningTables: Record<string, true> = {
+  vocabulary: true,
+  reviews: true,
+  audio: true,
+  noteTypes: true,
+  notes: true,
+  cards: true,
+  cardAssets: true,
+  ankiReviews: true,
+  decks: true,
+  sentences: true,
+  settings: true,
+};
 const tables = () =>
   db.tables.filter((table) => !transientTables.includes(table.name));
 const progress =
@@ -140,7 +163,7 @@ export async function readFull(
     const manifest = fullManifestSchema.parse(
       JSON.parse(await manifestFile.getData(new TextWriter())),
     );
-    if (manifest.databaseVersion !== db.verno)
+    if (manifest.databaseVersion < 23 || manifest.databaseVersion > db.verno)
       throw new Error(t("full_backup_version"));
     const database = await databaseFile.getData(
       new BlobWriter("application/json"),
@@ -158,7 +181,7 @@ export async function readFull(
       meta.formatName !== "dexie" ||
       meta.formatVersion !== 1 ||
       meta.data.databaseName !== db.name ||
-      meta.data.databaseVersion !== db.verno ||
+      meta.data.databaseVersion !== manifest.databaseVersion ||
       meta.data.tables.length !== expected.length ||
       new Set(meta.data.tables.map((table) => table.name)).size !==
         expected.length ||
@@ -207,7 +230,7 @@ export async function readFull(
     // and row counts all succeed before the destination is touched.
     staged = new Dexie(name);
     staged
-      .version(db.verno)
+      .version(meta.data.databaseVersion)
       .stores(
         Object.fromEntries(
           meta.data.tables.map((table) => [table.name, table.schema]),
@@ -258,6 +281,9 @@ async function copyTable(
   target: Table,
   report: (rows: number) => void,
 ) {
+  const remaining = learningTables[target.name]
+    ? new Set(await target.toCollection().primaryKeys())
+    : undefined;
   let last: string | undefined;
   for (;;) {
     const rows = await Dexie.waitFor(
@@ -269,12 +295,16 @@ async function copyTable(
         .toArray(),
     );
     if (!rows.length) break;
-    await target.bulkAdd(rows);
+    await target.bulkPut(rows);
+    if (remaining)
+      for (const row of rows)
+        remaining.delete(row[target.schema.primKey.keyPath as string]);
     last = rows[rows.length - 1][
       source.schema.primKey.keyPath as string
     ] as string;
     report(rows.length);
   }
+  if (remaining?.size) await target.bulkDelete([...remaining]);
 }
 
 export async function restoreFull(
@@ -286,20 +316,29 @@ export async function restoreFull(
     const previousModels = await cacheSnapshot();
     try {
       await replaceCaches(backup.models);
-      await db.transaction("rw", db.tables, async () => {
-        await idleImports();
-        for (const table of db.tables) await table.clear();
-        let done = 0;
-        for (const table of tables())
-          await copyTable(backup.staged.table(table.name), table, (rows) => {
-            done += rows;
-            report({
-              phase: t("full_backup_restoring"),
-              done,
-              total: backup.rows,
+      await db.transaction("rw", db.tables, () =>
+        withRestoredTracking(async () => {
+          await idleImports();
+          for (const table of db.tables)
+            if (!table.name.startsWith("sync") && !learningTables[table.name])
+              await table.clear();
+          let done = 0;
+          const restoredTables = tables().sort(
+            (a, b) =>
+              (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
+              (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
+          );
+          for (const table of restoredTables)
+            await copyTable(backup.staged.table(table.name), table, (rows) => {
+              done += rows;
+              report({
+                phase: t("full_backup_restoring"),
+                done,
+                total: backup.rows,
+              });
             });
-          });
-      });
+        }),
+      );
     } catch (error) {
       await replaceCaches(previousModels);
       throw error;

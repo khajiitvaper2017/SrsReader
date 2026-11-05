@@ -306,6 +306,12 @@ export function installMigrations(database: Dexie) {
         reschedule: undefined,
       });
     });
+  database.version(24).stores({
+    syncRecords: "key, kind, device, counter",
+    syncAuthored: "key, kind, counter",
+    syncDependencies: "[device+counter], key",
+    syncMeta: "id",
+  });
 }
 
 async function migrateCards(tx: Transaction, hasLegacyMedia: boolean) {

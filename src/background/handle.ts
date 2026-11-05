@@ -12,10 +12,22 @@ import { getSettings } from "@/settings/store";
 import { handleSrs } from "@/srs/commands";
 import { handleVocabulary } from "@/vocabulary/commands";
 import { handleImports } from "@/imports/commands";
+import { handleSync } from "@/sync/commands";
 
 export async function handle(request: Request, warn?: ScanWarning) {
   const settings = await getSettings();
   switch (request.action) {
+    case "syncStatus":
+    case "syncStorage":
+    case "syncConnect":
+    case "syncCancel":
+    case "syncDisconnect":
+    case "syncNow":
+    case "syncAutomatic":
+    case "syncAppOpened":
+    case "syncOnline":
+    case "syncEdited":
+      return handleSync(request);
     case "runImport":
     case "closeImportHost":
       return handleImports(request.action);
