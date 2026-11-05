@@ -176,13 +176,21 @@ export function occurrenceGrammar(
   return grammar;
 }
 
-export function normalizeTokens(sentence: AnalysisSentence): AnalysisSentence {
+export function normalizeTokens(
+  sentence: AnalysisSentence,
+  language: string | undefined,
+): AnalysisSentence {
   return {
     ...sentence,
     tokens: sentence.tokens.map((token, index) => {
       const quotes = /^["“”„‟«»]+|["“”„‟«»]+$/gu;
       let form = token.form.replace(quotes, "");
       let lemma = token.lemma.replace(quotes, "");
+      if (language === "de") {
+        const punctuation = /^[‘’‚‛]+|[‘’‚‛!?]+$/gu;
+        form = form.replace(punctuation, "");
+        lemma = lemma.replace(punctuation, "");
+      }
       const previous = sentence.tokens[index - 1];
       if (
         token.start !== undefined &&
@@ -191,6 +199,17 @@ export function normalizeTokens(sentence: AnalysisSentence): AnalysisSentence {
       ) {
         form = form.replace(/^[-‐‑]+(?=\p{L})/u, "");
         lemma = lemma.replace(/^[-‐‑]+(?=\p{L})/u, "");
+      }
+      if (
+        language === "de" &&
+        (token.upos === "NOUN" || token.upos === "PROPN") &&
+        /[-‐‑]/u.test(form)
+      ) {
+        lemma = form
+          .toLocaleLowerCase("de")
+          .startsWith(lemma.toLocaleLowerCase("de"))
+          ? form.slice(0, lemma.length)
+          : form;
       }
       if (!form || (form === token.form && lemma === token.lemma)) return token;
       const start =
@@ -212,9 +231,10 @@ export function analysisTerms(
   sentences: AnalysisSentence[],
   text: string,
   key: string,
+  language: string | undefined,
 ): SurfaceAnalysis[] {
   return sentences.flatMap((sentence) => {
-    const { tokens } = normalizeTokens(sentence);
+    const { tokens } = normalizeTokens(sentence, language);
     const multiwords = tokens.filter((token) => token.id.includes("-"));
     const groups = constructionGroups(tokens);
     return tokens.flatMap((token) => {

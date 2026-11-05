@@ -149,6 +149,10 @@ export async function scanTexts(
       (surface) =>
         !/[\p{L}\p{M}\p{N}].*\/.*[\p{L}\p{M}\p{N}]/su.test(
           text.slice(surface.start, surface.end),
+        ) &&
+        !(
+          language === "de" &&
+          /\d.*[-‐‑]|[-‐‑].*\d/u.test(text.slice(surface.start, surface.end))
         ),
     );
     const candidates: Candidate[] = analysis.map((surface) => ({
@@ -334,7 +338,8 @@ export async function scanTexts(
     for (const candidates of blocks) {
       for (const candidate of candidates) {
         const suspended = hasGermanSuspensionHyphen(candidate.term);
-        if (candidate.analysis?.properName && !suspended) continue;
+        if (candidate.analysis?.properName && !suspended && !candidate.joined)
+          continue;
         const term = normalize(
           suspended
             ? candidate.term
@@ -355,6 +360,9 @@ export async function scanTexts(
       [
         ...new Set([
           ...splitTerms.values(),
+          ...[...splitTerms.keys()].map((candidate) =>
+            normalize(candidate.term),
+          ),
           ...suspendedLists.flatMap((lists) => lists.map((list) => list[2]!)),
         ]),
       ],
@@ -374,7 +382,8 @@ export async function scanTexts(
       const markedSplits: Candidate[] = [];
       const replacements = new Map<Candidate, Candidate[]>();
       for (const candidate of candidates) {
-        const term = splitTerms.get(candidate);
+        const written = normalize(candidate.term);
+        const term = splits.has(written) ? written : splitTerms.get(candidate);
         const parts = term && splits.get(term);
         if (!parts) continue;
         const last = parts.at(-1)!;
@@ -383,15 +392,9 @@ export async function scanTexts(
         if (term !== surface) {
           // Match both spellings before translating lemma offsets to the page.
           const prefix = foldGerman(term.slice(0, last.start));
-          const tail = foldGerman(term.slice(last.start));
           const written = foldGerman(surface);
           const surfaceTail = written.slice(prefix.length);
-          if (
-            !written.startsWith(prefix) ||
-            !surfaceTail ||
-            (!surfaceTail.startsWith(tail) && !tail.startsWith(surfaceTail))
-          )
-            continue;
+          if (!written.startsWith(prefix) || !surfaceTail) continue;
           const offsets = new Map([[0, 0]]);
           let offset = 0;
           for (const { segment, index } of graphemes.segment(surface)) {
@@ -416,9 +419,9 @@ export async function scanTexts(
           const joined = (
             sharedEnd ? term + sharedEnd : term.slice(0, last.start) + last.term
           )
-            .replace(/[-‐‑[\]]/gu, "")
+            .replace(/[-‐‑[\]()]/gu, "")
             .toLocaleLowerCase("de");
-          headword = parts.some((part) => /^\p{Ll}/u.test(part.term))
+          headword = /^\p{Ll}/u.test(last.term)
             ? surface.replace(/[-‐‑]/gu, " ")
             : joined[0]!.toLocaleUpperCase("de") + joined.slice(1);
         }

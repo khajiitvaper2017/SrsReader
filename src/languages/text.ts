@@ -8,10 +8,11 @@ export const swissGermanSpelling = (text: string) => text.replaceAll("ß", "ss")
 
 export const germanHyphenatedCompounds = (text: string) =>
   text.matchAll(
-    /(?<![\p{L}\p{M}\p{N}])(?=[\p{L}\p{M}]+(?:\[(?:s|es|n|en)\])?[-‐‑])\p{L}[\p{L}\p{M}]*(?:\[(?:s|es|n|en)\])?(?:[-‐‑]\p{L}[\p{L}\p{M}]*(?:\[(?:s|es|n|en)\])?)*[-‐‑]?(?![\p{L}\p{M}\p{N}])/gu,
+    /(?<![\p{L}\p{M}\p{N}])(?=\(?[\p{L}\p{M}]+(?:\[(?:s|es|n|en)\])?\)?[-‐‑])\(?\p{L}[\p{L}\p{M}]*(?:\[(?:s|es|n|en)\])?\)?(?:[-‐‑]\)?\(?\p{L}[\p{L}\p{M}]*(?:\[(?:s|es|n|en)\])?\)?)*[-‐‑]?\)?(?![\p{L}\p{M}\p{N}])/gu,
   );
 
-export const hasGermanSuspensionHyphen = (term: string) => /[-‐‑]$/u.test(term);
+export const hasGermanSuspensionHyphen = (term: string) =>
+  /[-‐‑]\)?$/u.test(term);
 
 export function joinedGermanCompound(term: string) {
   term = normalize(term);
@@ -21,7 +22,7 @@ export function joinedGermanCompound(term: string) {
     germanHyphenatedCompounds(term).next().value?.[0] !== term
   )
     return;
-  const joined = folded(term.replace(/[-‐‑[\]]/gu, ""), "de");
+  const joined = folded(term.replace(/[-‐‑[\]()]/gu, ""), "de");
   return joined[0]!.toLocaleUpperCase("de") + joined.slice(1);
 }
 

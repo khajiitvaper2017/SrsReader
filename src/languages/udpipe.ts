@@ -197,7 +197,7 @@ async function processBatch(
       if (local.length)
         record.analysis = {
           sentences: local,
-          surfaces: analysisTerms(local, record.text, record.key),
+          surfaces: analysisTerms(local, record.text, record.key, language),
         };
     }
     if (!record.analysis && attempted)
@@ -249,6 +249,7 @@ export async function analyzeTexts(
           hit.analysis.sentences,
           hit.text,
           hit.key,
+          language,
         );
       }
       results.set(record.text, Promise.resolve(hit));
@@ -322,7 +323,7 @@ export async function compoundGrammar(occurrence: Occurrence, surface: string) {
   const record = await db.analyses.get(occurrence.key);
   if (record?.text.slice(occurrence.start, occurrence.end) !== surface) return;
   for (const original of record.analysis?.sentences ?? []) {
-    const sentence = normalizeTokens(original);
+    const sentence = normalizeTokens(original, record.language);
     const tokenIds = sentence.tokens
       .filter(
         (token) =>
@@ -364,12 +365,17 @@ export async function occurrenceAnalysis(
     ),
   );
   if (!original) return;
-  const sentence = normalizeTokens(original);
+  const sentence = normalizeTokens(original, record.language);
   const token = sentence.tokens.find(
     (token) => token.start === occurrence.start && token.end === occurrence.end,
   );
   if (!token) return;
-  const analysis = analysisTerms([original], record.text, record.key).find(
+  const analysis = analysisTerms(
+    [original],
+    record.text,
+    record.key,
+    record.language,
+  ).find(
     (item) => item.start === occurrence.start && item.end === occurrence.end,
   );
   if (!analysis) return;

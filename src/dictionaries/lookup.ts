@@ -483,7 +483,10 @@ type GermanCompoundMatch = {
   inflectedHead?: string;
   pluralStem?: string;
   adjective?: string;
-  prefix?: string;
+  modifier?: string;
+  affix?: string;
+  stem?: string;
+  verb?: string;
 };
 
 function* splitGermanCompound(
@@ -498,6 +501,7 @@ function* splitGermanCompound(
   const letters = [...term.matchAll(/[\p{L}\p{M}]/gu)];
   if (letters.length < 4 || letters.length > 60) return [];
   const word = letters.map(([letter]) => letter);
+  const suspended = hasGermanSuspensionHyphen(term);
   const startsAt = letters.map(({ index }) =>
     term[index - 1] === "[" ? index - 1 : index,
   );
@@ -529,7 +533,7 @@ function* splitGermanCompound(
     end: number;
     linked?: boolean;
     adjective?: boolean;
-    prefix?: boolean;
+    affix?: boolean;
     caseFallback?: boolean;
   };
   const edges: Edge[][] = Array.from({ length: word.length }, () => []);
@@ -543,21 +547,43 @@ function* splitGermanCompound(
           /^\p{Ll}$/u.test(word[0]!))) &&
       (end === word.length || preferred.has(end)) &&
       /^\p{Ll}$/u.test(word[start]!);
-    edges[start]!.push({ part, end, caseFallback });
+    const choices: Edge[] = [{ part, end, caseFallback }];
+    if (start > 0)
+      choices.push({
+        part: "-" + folded(word.slice(start, end).join(""), "de"),
+        end,
+        affix: true,
+      });
+    edges[start]!.push(...choices);
+    if (end < word.length)
+      edges[start]!.push({
+        part: folded(word.slice(start, end).join(""), "de"),
+        end,
+        adjective: true,
+        caseFallback: true,
+      });
     for (const linker of ["s", "es", "n", "en"]) {
       const next = end + linker.length;
       if (next <= limit && word.slice(end, next).join("") === linker)
-        edges[start]!.push({ part, end: next, linked: true });
+        edges[start]!.push(
+          ...choices.map((choice) => ({ ...choice, end: next, linked: true })),
+        );
     }
   }
   for (let split = 2; split <= word.length - 2; split++) {
     addEdges(0, split, word.length - 2);
     addEdges(split, word.length, word.length);
     edges[0]!.push({
-      part: normalize(word.slice(0, split).join("") + "-"),
+      part: folded(word.slice(0, split).join(""), "de") + "-",
       end: split,
-      prefix: true,
+      affix: true,
     });
+    if (suspended)
+      for (const linker of ["s", "es", "n", "en"]) {
+        const end = word.length - linker.length;
+        if (end > split && word.slice(end).join("") === linker)
+          addEdges(split, end, word.length);
+      }
     if (
       !hyphens.length &&
       /^\p{Ll}$/u.test(word[0]!) &&
@@ -585,7 +611,7 @@ function* splitGermanCompound(
   }
 
   // A suspended stem may be a single noun, with a linking ending before the dash.
-  if (hasGermanSuspensionHyphen(term)) {
+  if (suspended) {
     for (let end = word.length - 2; end <= word.length; end++)
       addEdges(0, end, word.length);
   }
@@ -606,18 +632,21 @@ function* splitGermanCompound(
         end,
         linked,
         adjective,
-        prefix: affix,
+        affix,
         caseFallback,
       } of choices) {
         const match = lemmas.get(part);
         const inflectedHead =
           end === word.length ? match?.inflectedHead : undefined;
         const lemma = affix
-          ? match?.prefix
+          ? match?.affix
           : adjective
-            ? match?.adjective
+            ? end < word.length
+              ? match?.modifier
+              : match?.adjective
             : ((end < word.length ? match?.pluralStem : undefined) ??
               match?.lemma ??
+              (end < word.length ? match?.stem : match?.verb) ??
               inflectedHead);
         if (!lemma) continue;
         const crossed = boundaryCount[end]! - boundaryCount[start + 1]!;
@@ -625,8 +654,20 @@ function* splitGermanCompound(
           prefix.score +
           crossed * crossingCost +
           partCost +
-          Number(linked || (!adjective && !match?.lemma)) +
-          Number(caseFallback === true);
+          Number(
+            linked ||
+              (!adjective &&
+                !affix &&
+                !match?.lemma &&
+                lemma !== match?.pluralStem),
+          ) +
+          Number(lemma === match?.stem) +
+          Number(affix === true && part.startsWith("-")) * 2 +
+          Number(!affix && !!lemmas.get(folded(part, "de") + "-")?.affix) +
+          Number(
+            caseFallback === true &&
+              (!adjective || !!lemmas.get(noun(word.slice(start, end)))?.lemma),
+          );
         let target = best[end];
         if (!target || score < target.score) {
           target = { score, paths: [] };
@@ -675,12 +716,12 @@ function* splitGermanCompound(
     return pairs.paths.length === 1 ? pairs.paths[0]! : [];
   const firstInterior = Math.min(
     ...starts
-      .filter(({ part, adjective, prefix }) =>
-        prefix
-          ? lemmas.get(part)?.prefix
+      .filter(({ part, adjective, affix }) =>
+        affix
+          ? lemmas.get(part)?.affix
           : adjective
-            ? lemmas.get(part)?.adjective
-            : lemmas.get(part)?.lemma,
+            ? lemmas.get(part)?.modifier
+            : lemmas.get(part)?.lemma || lemmas.get(part)?.stem,
       )
       .map(({ end }) => end),
   );
@@ -689,7 +730,9 @@ function* splitGermanCompound(
       const match = lemmas.get(part);
       return (
         end === word.length &&
-        (adjective ? match?.adjective : match?.lemma || match?.inflectedHead)
+        (adjective
+          ? match?.adjective
+          : match?.lemma || match?.verb || match?.inflectedHead)
       );
     }),
   );
@@ -713,8 +756,16 @@ export async function lookupGermanCompounds(
   async function readLemmas(parts: string[]) {
     const missing = [...new Set(parts)].filter((part) => !lemmas.has(part));
     if (!missing.length) return;
+    const stems = new Map(
+      missing.map((part) => [
+        part,
+        /^\p{Lu}[\p{L}\p{M}]+$/u.test(part)
+          ? [part + "e", folded(part, "de") + "en", folded(part, "de") + "n"]
+          : [],
+      ]),
+    );
     const matches = await lookupMany(
-      missing,
+      [...new Set([...missing, ...[...stems.values()].flat()])],
       "de",
       false,
       false,
@@ -751,39 +802,97 @@ export async function lookupGermanCompounds(
               .filter(
                 (word) =>
                   (word.lemma === part || word.forms.length > 0) &&
-                  word.meanings.some((meaning) =>
+                  (word.meanings.some((meaning) =>
                     meaningTags(meaning).some((tag) =>
                       /^(?:adj|adjective)$/iu.test(tag),
                     ),
-                  ),
+                  ) ||
+                    (word.forms.some((form) =>
+                      /(?:^Partizip |^(?:present|past).*participle|Deklination|\b(?:strong|weak|mixed)\b)/iu.test(
+                        form,
+                      ),
+                    ) &&
+                      word.meanings.some((meaning) =>
+                        meaningTags(meaning).some((tag) =>
+                          /^(?:v|verb)$/iu.test(tag),
+                        ),
+                      ))),
               )
               .map((word) => word.lemma)
           : [],
       );
+      const modifiers = new Set([
+        ...adjectives,
+        ...words
+          .filter(
+            (word) =>
+              word.lemma === part &&
+              word.meanings.some((meaning) =>
+                meaningTags(meaning).some((tag) =>
+                  /^(?:adv|adverb)$/iu.test(tag),
+                ),
+              ),
+          )
+          .map((word) => word.lemma),
+      ]);
+      const stemLemmas = new Set(
+        (stems.get(part) || []).flatMap((stem) =>
+          (matches.get(stem)?.words || [])
+            .filter(
+              (word) =>
+                word.lemma === stem &&
+                word.meanings.some((meaning) =>
+                  meaningTags(meaning).some((tag) =>
+                    (stem === part + "e"
+                      ? /^(?:n|noun|s|substantiv)$/iu
+                      : /^(?:v|verb)$/iu
+                    ).test(tag),
+                  ),
+                ),
+            )
+            .map((word) => word.lemma),
+        ),
+      );
       lemmas.set(part, {
         lemma: match?.lemma,
-        prefix: words.find(
+        stem: stemLemmas.has(part + "e")
+          ? part + "e"
+          : stemLemmas.size === 1
+            ? stemLemmas.values().next().value
+            : undefined,
+        verb: words.find(
+          (word) =>
+            folded(word.lemma, "de") === folded(part, "de") &&
+            word.meanings.some((meaning) =>
+              meaningTags(meaning).some((tag) => /^(?:v|verb)$/iu.test(tag)),
+            ),
+        )?.lemma,
+        affix: words.find(
           (word) =>
             folded(word.lemma, "de") === folded(part, "de") &&
             word.meanings.some((meaning) =>
               meaningTags(meaning).some((tag) =>
-                /^(?:pref|prefix|präfix)$/iu.test(tag),
+                (part.startsWith("-")
+                  ? /^(?:suf|suff|suffix)$/iu
+                  : /^(?:pref|prefix|präf|präfix)$/iu
+                ).test(tag),
               ),
             ),
         )?.lemma,
         adjective:
           adjectives.size === 1 ? adjectives.values().next().value : undefined,
+        modifier:
+          modifiers.size === 1 ? modifiers.values().next().value : undefined,
         inflectedHead:
-          inflectedHeads.size === 1
-            ? inflectedHeads.values().next().value
-            : undefined,
+          inflectedHeads.size > 1 ? part : inflectedHeads.values().next().value,
         // An attested Blase → Blasen plural supplies the stem in Blasengröße.
-        pluralStem: words.find(
-          (word) =>
-            word.meanings.length &&
-            word.lemma + "n" === part &&
-            word.forms.some((form) => /\bplural\b/iu.test(form)),
-        )?.lemma,
+        pluralStem:
+          words.find(
+            (word) =>
+              word.meanings.length &&
+              word.lemma + "n" === part &&
+              word.forms.some((form) => /\bplural\b/iu.test(form)),
+          )?.lemma ?? (inflectedHeads.size > 1 ? part : undefined),
       });
     }
   }

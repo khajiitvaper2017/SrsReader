@@ -1089,7 +1089,10 @@ export function createScanner(
     const element = parent && root.contains(parent) ? parent : root;
     const key = scanKey(context.language, context.sentence);
     let ready = parsed.get(key);
-    if (getSettings().wordLoading[context.language] !== "onLookup") {
+    if (
+      getSettings().wordLoading[context.language] !== "onLookup" &&
+      !(context.language === "de" && getSettings().splitGermanCompounds)
+    ) {
       const block = blocks.get(element);
       const scanned =
         ready ??
@@ -1108,6 +1111,28 @@ export function createScanner(
     );
     if (!block || !first) return fallback;
     const offset = first.start + range.startOffset - context.start;
+    if (!ready && !queued.has(element)) {
+      const scanned = parsed.get(scanKey(context.language, block.text));
+      if (scanned)
+        ready = {
+          ...scanned,
+          spans: scanned.spans
+            .filter(
+              (span) =>
+                span.start >= offset &&
+                span.end <= offset + context.sentence.length,
+            )
+            .map((span) => ({
+              ...span,
+              start: span.start - offset,
+              end: span.end - offset,
+              related: span.related?.map(({ start, end }) => ({
+                start: start - offset,
+                end: end - offset,
+              })),
+            })),
+        };
+    }
     if (blocks.get(element) !== block)
       render(element, block.text, block.parts, block, generation);
     const id = session;

@@ -1,13 +1,13 @@
 import { isOnlineDictionary, mergeOnline } from "@/dictionaries/online";
 import { lookupSpanishDict } from "@/dictionaries/spanishdict";
-import { lookupMany } from "@/dictionaries/lookup";
+import { lookupGermanCompounds, lookupMany } from "@/dictionaries/lookup";
 import type { LookupResult, LookupWord } from "@/dictionaries/model";
 import {
   lookupNechybujte,
   nechybujteCacheKey,
   normalizeCzechReflexive,
 } from "@/dictionaries/nechybujte";
-import { folded, normalize } from "@/languages/text";
+import { folded, hasGermanSuspensionHyphen, normalize } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
@@ -138,17 +138,41 @@ export async function lookup(
     ...word,
     meanings: applyDefinitionOverrides(word.meanings, saved[index]),
   }));
+  const germanNoun =
+    settings.studyLanguage === "de" &&
+    baseTokens.some((token) => token.upos === "NOUN" || token.upos === "PROPN");
+  let nounLemma = normalize(lookupTerm);
+  if (
+    germanNoun &&
+    !result.words.length &&
+    !hasGermanSuspensionHyphen(nounLemma)
+  ) {
+    const last = (await lookupGermanCompounds([nounLemma]))
+      .get(nounLemma)
+      ?.at(-1);
+    if (last) {
+      const head = last.term.replace(/^-/, "");
+      nounLemma =
+        nounLemma.slice(0, last.start) +
+        (last.start === 0 || /[-‐‑(]/u.test(nounLemma[last.start - 1]!)
+          ? head[0]!.toLocaleUpperCase("de")
+          : head[0]!.toLocaleLowerCase("de")) +
+        head.slice(1);
+    }
+  }
   for (const lemma of bases) {
+    if (germanNoun && result.words.length) continue;
+    const headword = germanNoun ? nounLemma : lemma;
     if (
       result.words.some(
         (word) =>
-          folded(word.lemma, word.language) === folded(lemma, word.language),
+          folded(word.lemma, word.language) === folded(headword, word.language),
       )
     )
       continue;
     result.words.push({
-      id: wordId(settings.studyLanguage, lemma, ""),
-      lemma,
+      id: wordId(settings.studyLanguage, headword, ""),
+      lemma: headword,
       language: settings.studyLanguage,
       reading: "",
       forms: [],
