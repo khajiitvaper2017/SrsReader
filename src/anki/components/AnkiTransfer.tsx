@@ -1,16 +1,21 @@
 import {
+  Accordion,
   Alert,
   Button,
   FileButton,
   Group,
   Modal,
   MultiSelect,
+  Paper,
   Select,
+  SimpleGrid,
   Stack,
-  Table,
+  Switch,
   Text,
   Title,
+  useMantineTheme,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { liveQuery } from "dexie";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
@@ -25,7 +30,8 @@ import { rpc } from "@/platform/messaging/send";
 import { saveBlob, type ImportProgress } from "@/shared/download";
 import { i18n, number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
-import { fieldText } from "@/cards/template";
+import { AnkiCardPreview } from "@/anki/components/AnkiCardPreview";
+import { deckPathLabel, deckTree } from "@/srs/deck-tree";
 
 const roles: (keyof FieldBindings)[] = [
   "word",
@@ -46,6 +52,8 @@ export function AnkiTransfer({
   settings: Settings;
   onComplete: () => void;
 }) {
+  const theme = useMantineTheme();
+  const narrow = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
   const [opened, setOpened] = useState<"import" | "export" | null>(null);
   const [file, setFile] = useState<File>();
   const resetFile = useRef<() => void>(null);
@@ -55,6 +63,7 @@ export function AnkiTransfer({
     language: settings.studyLanguage,
     deckIds: [],
     duplicates: "keep",
+    mergeNoteTypes: false,
     bindings: {},
   });
   const [busy, setBusy] = useState(false);
@@ -69,9 +78,16 @@ export function AnkiTransfer({
         .where("language")
         .equals(options.language)
         .toArray()
-        .then(setDecks)
+        .then((decks) => setDecks(deckTree(decks)))
         .catch((error: Error) => setError(error.message));
   }, [opened, options.language]);
+
+  useEffect(
+    () => () => {
+      void preview?.close();
+    },
+    [preview],
+  );
 
   async function inspect(value: File | null) {
     if (!value) return;
@@ -89,6 +105,7 @@ export function AnkiTransfer({
         language: settings.studyLanguage,
         deckIds: result.decks.map((deck) => deck.id),
         duplicates: "keep",
+        mergeNoteTypes: false,
         bindings: Object.fromEntries(
           result.noteTypes.map((type) => [type.id, type.suggestedBindings]),
         ),
@@ -131,6 +148,8 @@ export function AnkiTransfer({
       await rpc({ action: "invalidate" });
       onComplete();
       setOpened(null);
+      setPreview(undefined);
+      setFile(undefined);
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -145,7 +164,7 @@ export function AnkiTransfer({
       type.deckIds.some((id) => options.deckIds.includes(id)),
     ) ?? [];
   const incompatibleTypes =
-    options.mode === "preserve"
+    options.mode === "preserve" && !options.mergeNoteTypes
       ? selectedTypes.filter((type) =>
           preview?.incompatibleNoteTypes.includes(type.id),
         )
@@ -199,10 +218,15 @@ export function AnkiTransfer({
         closeButtonProps={{ "aria-label": t("close") }}
         opened={opened !== null}
         onClose={() => {
-          if (!busy) setOpened(null);
+          if (!busy) {
+            setOpened(null);
+            setPreview(undefined);
+            setFile(undefined);
+          }
         }}
         title={t(opened === "export" ? "anki_export" : "anki_import")}
-        size="xl"
+        size={opened === "import" ? "80rem" : "md"}
+        fullScreen={narrow}
         closeOnClickOutside={!busy}
         closeOnEscape={!busy}
         withCloseButton={!busy}
@@ -222,26 +246,31 @@ export function AnkiTransfer({
               {t("loading")}
             </Text>
           )}
-          <LanguageSelect
-            label={t("language")}
-            value={options.language}
-            onChange={(language) => {
-              setOptions({ ...options, language });
-              setExportDeck("");
-            }}
-            disabled={busy}
-          />
           {opened === "export" ? (
-            <Select
-              label={t("anki_decks")}
-              value={exportDeck}
-              disabled={busy}
-              data={[
-                { value: "", label: t("anki_all_decks") },
-                ...decks.map((deck) => ({ value: deck.id, label: deck.name })),
-              ]}
-              onChange={(value) => setExportDeck(value ?? "")}
-            />
+            <Stack>
+              <LanguageSelect
+                label={t("language")}
+                value={options.language}
+                onChange={(language) => {
+                  setOptions({ ...options, language });
+                  setExportDeck("");
+                }}
+                disabled={busy}
+              />
+              <Select
+                label={t("anki_decks")}
+                value={exportDeck}
+                disabled={busy}
+                data={[
+                  { value: "", label: t("anki_all_decks") },
+                  ...decks.map((deck) => ({
+                    value: deck.id,
+                    label: deckPathLabel(deck.name),
+                  })),
+                ]}
+                onChange={(value) => setExportDeck(value ?? "")}
+              />
+            </Stack>
           ) : (
             preview &&
             !busy && (
@@ -254,55 +283,96 @@ export function AnkiTransfer({
                     reviews: number(preview.reviews),
                   })}
                 </Text>
-                <MultiSelect
-                  label={t("anki_decks")}
-                  data={preview.decks.map((deck) => ({
-                    value: deck.id,
-                    label: `${deck.name} (${number(deck.cards)})`,
-                  }))}
-                  value={options.deckIds}
-                  onChange={(deckIds) => setOptions({ ...options, deckIds })}
-                  searchable
-                  disabled={busy}
-                />
-                <Select
-                  label={t("anki_import_mode")}
-                  value={options.mode}
-                  onChange={(value) =>
-                    setOptions({
-                      ...options,
-                      mode: value as AnkiImportOptions["mode"],
-                    })
-                  }
-                  disabled={busy}
-                  data={[
-                    { value: "preserve", label: t("anki_preserve") },
-                    { value: "convert", label: t("anki_convert") },
-                  ]}
-                />
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <LanguageSelect
+                    label={t("language")}
+                    value={options.language}
+                    onChange={(language) => {
+                      setOptions({ ...options, language });
+                      setExportDeck("");
+                    }}
+                    disabled={busy}
+                  />
+                  <MultiSelect
+                    label={t("anki_decks")}
+                    data={preview.decks.map((deck) => ({
+                      value: deck.id,
+                      label: `${deckPathLabel(deck.name)} (${number(deck.cards)})`,
+                    }))}
+                    value={options.deckIds}
+                    onChange={(deckIds) => setOptions({ ...options, deckIds })}
+                    searchable
+                    description={t("anki_decks_help")}
+                    disabled={busy}
+                  />
+                </SimpleGrid>
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <Stack gap="xs">
+                    <Select
+                      label={t("anki_import_mode")}
+                      value={options.mode}
+                      onChange={(value) =>
+                        setOptions({
+                          ...options,
+                          mode: value as AnkiImportOptions["mode"],
+                        })
+                      }
+                      disabled={busy}
+                      data={[
+                        { value: "preserve", label: t("anki_preserve") },
+                        { value: "convert", label: t("anki_convert") },
+                      ]}
+                    />
+                    <Text variant="supporting">
+                      {t(
+                        options.mode === "preserve"
+                          ? "anki_preserve_help"
+                          : "anki_convert_help",
+                      )}
+                    </Text>
+                  </Stack>
+                  <Select
+                    label={t("anki_duplicates")}
+                    value={options.duplicates}
+                    onChange={(value) =>
+                      setOptions({
+                        ...options,
+                        duplicates: value as AnkiImportOptions["duplicates"],
+                      })
+                    }
+                    disabled={busy}
+                    data={[
+                      { value: "keep", label: t("anki_duplicates_keep") },
+                      { value: "update", label: t("anki_duplicates_update") },
+                    ]}
+                  />
+                </SimpleGrid>
+                <Text variant="supporting">{t("anki_history_help")}</Text>
+                {options.mode === "preserve" && (
+                  <Stack gap="xs">
+                    <Switch
+                      label={t("anki_merge_note_types")}
+                      checked={options.mergeNoteTypes}
+                      disabled={busy}
+                      onChange={(event) =>
+                        setOptions({
+                          ...options,
+                          mergeNoteTypes: event.currentTarget.checked,
+                        })
+                      }
+                    />
+                    <Text variant="supporting">
+                      {t("anki_merge_note_types_help")}
+                    </Text>
+                  </Stack>
+                )}
                 <Text variant="supporting">
                   {t(
-                    options.mode === "preserve"
-                      ? "anki_preserve_help"
-                      : "anki_convert_help",
+                    options.duplicates === "update"
+                      ? "anki_update_help"
+                      : "anki_keep_help",
                   )}
                 </Text>
-                <Select
-                  label={t("anki_duplicates")}
-                  value={options.duplicates}
-                  onChange={(value) =>
-                    setOptions({
-                      ...options,
-                      duplicates: value as AnkiImportOptions["duplicates"],
-                    })
-                  }
-                  disabled={busy}
-                  data={[
-                    { value: "keep", label: t("anki_duplicates_keep") },
-                    { value: "update", label: t("anki_duplicates_update") },
-                  ]}
-                />
-                <Text variant="supporting">{t("anki_history_help")}</Text>
                 {incompatibleTypes.length > 0 && (
                   <Alert color="red">
                     {t("anki_incompatible_note_types", {
@@ -317,64 +387,123 @@ export function AnkiTransfer({
                     {warning}
                   </Alert>
                 ))}
-                {selectedTypes.map((type) => (
-                  <Stack gap="xs" key={type.id}>
-                    <Title order={3}>{type.name}</Title>
-                    <Text variant="supporting">
-                      {t("anki_note_type_summary", {
-                        fields: number(type.fields.length),
-                        templates: number(type.templates),
-                        notes: number(type.notes),
-                      })}
-                    </Text>
-                    {roles.map((role) => (
-                      <Select
-                        key={role}
-                        label={t(`card_field_${role}`)}
-                        value={
-                          options.bindings[type.id]?.[role]?.toString() ?? ""
-                        }
-                        data={[
-                          { value: "", label: t("anki_not_mapped") },
-                          ...type.fields.map((name, index) => ({
-                            value: String(index),
-                            label: name,
-                          })),
-                        ]}
-                        disabled={busy}
-                        required={options.mode === "convert" && role === "word"}
-                        onChange={(value) => {
-                          const bindings = { ...options.bindings[type.id] };
-                          if (!value) delete bindings[role];
-                          else bindings[role] = Number(value);
-                          setOptions({
-                            ...options,
-                            bindings: {
-                              ...options.bindings,
-                              [type.id]: bindings,
-                            },
-                          });
-                        }}
-                      />
-                    ))}
-                    <Table.ScrollContainer minWidth={300}>
-                      <Table>
-                        <Table.Tbody>
-                          {type.fields.map((name, index) => (
-                            <Table.Tr key={index}>
-                              <Table.Th>{name}</Table.Th>
-                              <Table.Td>
-                                <Text lineClamp={3}>
-                                  {fieldText(type.sampleFields?.[index] ?? "")}
-                                </Text>
-                              </Table.Td>
-                            </Table.Tr>
+                {selectedTypes.map((type) => {
+                  const bindings = options.bindings[type.id] ?? {};
+                  const mapped = new Set(Object.values(bindings));
+                  const unmapped = type.fields.filter(
+                    (_, index) => !mapped.has(index),
+                  );
+                  const missingWord =
+                    options.mode === "convert" && bindings.word === undefined;
+                  return (
+                    <Paper withBorder p="md" key={type.id} miw={0}>
+                      <Stack>
+                        <Stack gap="xs">
+                          <Title order={3}>{type.name}</Title>
+                          <Text variant="supporting">
+                            {t("anki_note_type_summary", {
+                              fields: number(type.fields.length),
+                              templates: number(type.templates),
+                              notes: number(type.notes),
+                            })}
+                          </Text>
+                        </Stack>
+                        <AnkiCardPreview
+                          type={type}
+                          preview={preview}
+                          language={options.language}
+                          settings={settings}
+                        />
+                        {missingWord && (
+                          <Alert color="yellow">
+                            {t("anki_word_field_required", { name: type.name })}
+                          </Alert>
+                        )}
+                        {unmapped.length > 0 &&
+                          (options.mode === "convert" ? (
+                            <Alert color="yellow">
+                              {t("anki_unmapped_convert", {
+                                fields: unmapped.join(", "),
+                              })}
+                            </Alert>
+                          ) : (
+                            <Text variant="supporting">
+                              {t("anki_unmapped_preserve", {
+                                fields: unmapped.join(", "),
+                              })}
+                            </Text>
                           ))}
-                        </Table.Tbody>
-                      </Table>
-                    </Table.ScrollContainer>
-                  </Stack>
-                ))}
+                        <Accordion
+                          key={options.mode}
+                          defaultValue={
+                            options.mode === "convert" ? "mapping" : null
+                          }
+                        >
+                          <Accordion.Item value="mapping">
+                            <Accordion.Control>
+                              {t(
+                                options.mode === "preserve"
+                                  ? "anki_optional_mapping"
+                                  : "anki_field_mapping",
+                              )}
+                            </Accordion.Control>
+                            <Accordion.Panel>
+                              <Stack gap="xs">
+                                <Text variant="supporting">
+                                  {t(
+                                    options.mode === "preserve"
+                                      ? "anki_optional_mapping_help"
+                                      : "anki_mapping_help",
+                                  )}
+                                </Text>
+                                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+                                  {roles.map((role) => (
+                                    <Select
+                                      key={role}
+                                      label={t(`card_field_${role}`)}
+                                      value={bindings[role]?.toString() ?? ""}
+                                      data={[
+                                        {
+                                          value: "",
+                                          label: t("anki_not_mapped"),
+                                        },
+                                        ...type.fields.map((name, index) => ({
+                                          value: String(index),
+                                          label: name,
+                                        })),
+                                      ]}
+                                      required={
+                                        options.mode === "convert" &&
+                                        role === "word"
+                                      }
+                                      error={
+                                        missingWord && role === "word"
+                                          ? t("anki_select_word_field")
+                                          : undefined
+                                      }
+                                      onChange={(value) => {
+                                        const next = { ...bindings };
+                                        if (!value) delete next[role];
+                                        else next[role] = Number(value);
+                                        setOptions({
+                                          ...options,
+                                          bindings: {
+                                            ...options.bindings,
+                                            [type.id]: next,
+                                          },
+                                        });
+                                      }}
+                                    />
+                                  ))}
+                                </SimpleGrid>
+                              </Stack>
+                            </Accordion.Panel>
+                          </Accordion.Item>
+                        </Accordion>
+                      </Stack>
+                    </Paper>
+                  );
+                })}
               </>
             )
           )}

@@ -26,8 +26,21 @@ export async function loadCardAssets(
   namespace: string,
   html: string,
   css: string,
+  source?: {
+    names: string[];
+    get: (name: string) => Promise<CardAsset | undefined>;
+  },
 ): Promise<CardAsset[]> {
-  let shared = sharedAssets.get(namespace);
+  const get =
+    source?.get ??
+    ((name: string) => db.cardAssets.get(assetId(namespace, name)));
+  let shared = source
+    ? Promise.resolve(
+        source.names.filter((name) =>
+          /\.(?:js|css|woff2?|ttf|otf)$/i.test(name),
+        ),
+      )
+    : sharedAssets.get(namespace);
   if (!shared) {
     // Index keys contain filenames only; a large package's audio/image blobs stay in storage.
     shared = db.cardAssets
@@ -54,9 +67,8 @@ export async function loadCardAssets(
     if (/^(?:https?:|blob:|data:|#)/i.test(name)) continue;
     if (seen.has(name)) continue;
     seen.add(name);
-    let asset = await db.cardAssets.get(assetId(namespace, name));
-    if (!asset && fieldText(name) !== name)
-      asset = await db.cardAssets.get(assetId(namespace, fieldText(name)));
+    let asset = await get(name);
+    if (!asset && fieldText(name) !== name) asset = await get(fieldText(name));
     let decoded = name;
     if (!asset) {
       try {
@@ -64,13 +76,10 @@ export async function loadCardAssets(
       } catch {
         /* Keep literal percent characters. */
       }
-      if (decoded !== name)
-        asset = await db.cardAssets.get(assetId(namespace, decoded));
+      if (decoded !== name) asset = await get(decoded);
     }
     if (!asset && /[?#]/.test(name))
-      asset = await db.cardAssets.get(
-        assetId(namespace, decoded.split(/[?#]/)[0]!),
-      );
+      asset = await get(decoded.split(/[?#]/)[0]!);
     if (!asset) continue;
     if (loaded.has(asset.id)) continue;
     loaded.add(asset.id);
@@ -81,7 +90,12 @@ export async function loadCardAssets(
   return assets;
 }
 
-export async function requestedCardAsset(namespace: string, name: string) {
+export async function requestedCardAsset(
+  namespace: string,
+  name: string,
+  get: (name: string) => Promise<CardAsset | undefined> = (name) =>
+    db.cardAssets.get(assetId(namespace, name)),
+) {
   const clean = name.replace(/^\.\//, "");
   let decoded = clean;
   try {
@@ -95,7 +109,7 @@ export async function requestedCardAsset(namespace: string, name: string) {
     decoded,
     decoded.split(/[?#]/)[0]!,
   ])) {
-    const asset = await db.cardAssets.get(assetId(namespace, candidate));
+    const asset = await get(candidate);
     if (asset) return asset.blob;
   }
 }

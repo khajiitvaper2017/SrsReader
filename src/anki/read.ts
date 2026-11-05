@@ -17,7 +17,15 @@ import type {
   AnkiRevlog,
   RawObject,
 } from "@/anki/model";
-import type { FieldBindings } from "@/cards/model";
+import {
+  assetId,
+  type CardAsset,
+  type FieldBindings,
+  type NoteType,
+} from "@/cards/model";
+import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
+import { mediaType } from "@/anki/media";
+import { matchesNoteType, previousFields, sameAnkiItem } from "@/anki/merge";
 import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
 import { templateWarnings } from "@/cards/template";
@@ -361,7 +369,10 @@ export class PackageReader {
   }
 }
 
-function suggestedBindings(model: AnkiModel): FieldBindings {
+function suggestedBindings(
+  model: AnkiModel,
+  previous?: NoteType,
+): FieldBindings {
   const bindings: FieldBindings = {};
   const aliases: Record<keyof FieldBindings, RegExp> = {
     word: /^(word|expression|term|vocab(?:ulary)?|front|слово|wyraz|słówko|polski|expression|表現|単語|語彙|見出し語)$/iu,
@@ -380,23 +391,33 @@ function suggestedBindings(model: AnkiModel): FieldBindings {
     image: /^(image|picture|illustration|картинка|зображення|画像)$/iu,
   };
   for (const key of Object.keys(aliases) as (keyof FieldBindings)[]) {
-    const index = model.flds.findIndex((field) =>
-      aliases[key].test(field.name.trim()),
-    );
+    const oldIndex = previous?.bindings[key];
+    const oldField =
+      previous && oldIndex !== undefined
+        ? previousFields(previous)[oldIndex]
+        : undefined;
+    let index = oldField
+      ? model.flds.findIndex((field) => sameAnkiItem(oldField, field))
+      : -1;
+    if (index === -1)
+      index = model.flds.findIndex((field) =>
+        aliases[key].test(field.name.trim()),
+      );
     if (index !== -1) bindings[key] = index;
   }
   return bindings;
 }
 
 export async function incompatibleNoteTypeIds(models: AnkiModel[]) {
+  const active = new Set(await db.notes.orderBy("noteTypeId").uniqueKeys());
   const existing = (await db.noteTypes.toArray()).filter(
-    (type) => type.sourceId !== undefined,
+    (type) => type.sourceId !== undefined && active.has(type.id),
   );
   return models
     .filter((model) =>
       existing.some(
         (type) =>
-          type.sourceId === model.id &&
+          matchesNoteType(model, type) &&
           (type.kind !== (model.type === 1 ? "cloze" : "standard") ||
             JSON.stringify(type.fields.map((field) => field.name)) !==
               JSON.stringify(model.flds.map((field) => field.name)) ||
@@ -411,55 +432,137 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
   const reader = new PackageReader(file);
   try {
     const collection = await reader.open();
+    const existingTypes = (await db.noteTypes.toArray()).sort(
+      (a, b) => b.fields.length - a.fields.length,
+    );
     const notes = new Map(collection.notes.map((note) => [note.id, note]));
-    const ancestors = new Map(
-      collection.decks.map((deck) => [
-        deck.id,
-        collection.decks
-          .filter(
-            (parent) =>
-              deck.name === parent.name ||
-              deck.name.startsWith(`${parent.name}::`),
-          )
-          .map((parent) => parent.id),
-      ]),
+    const namespace = `anki-preview:${crypto.randomUUID()}`;
+    const media = new Map(reader.media.map((item) => [item.name, item]));
+    const assets = new Map<string, Promise<CardAsset | undefined>>();
+    function getAsset(name: string) {
+      let result = assets.get(name);
+      if (!result) {
+        result = (async () => {
+          const item = media.get(name);
+          if (!item) return;
+          const bytes = await reader.bytes(item.entry, reader.compressed);
+          if (item.size !== undefined && item.size !== bytes.byteLength)
+            throw invalid();
+          const mime = mediaType(name);
+          return {
+            id: assetId(namespace, name),
+            namespace,
+            name,
+            mime,
+            blob: new Blob([bytes.slice().buffer], { type: mime }),
+          };
+        })();
+        assets.set(name, result);
+      }
+      return result;
+    }
+    const cardDeckId = (card: AnkiCard) =>
+      card.odid !== "0" ? card.odid : card.did;
+    const deckNames = new Map(
+      collection.decks.map((deck) => [deck.id, deck.name]),
     );
     return {
-      noteTypes: collection.models.map((model) => ({
-        id: model.id,
-        name: model.name,
-        kind: model.type === 1 ? "cloze" : "standard",
-        fields: model.flds.map((field) => field.name),
-        templates: model.tmpls.length,
-        notes: collection.notes.filter((note) => note.mid === model.id).length,
-        cards: collection.cards.filter(
+      loadAssets: (namespace, html, css) =>
+        loadCardAssets(namespace, html, css, {
+          names: [...media.keys()],
+          get: getAsset,
+        }),
+      requestAsset: (namespace, name) =>
+        requestedCardAsset(namespace, name, getAsset),
+      close: () => reader.close(),
+      noteTypes: collection.models.flatMap((model) => {
+        const cards = collection.cards.filter(
           (card) => notes.get(card.nid)?.mid === model.id,
-        ).length,
-        suggestedBindings: suggestedBindings(model),
-        sampleFields:
-          collection.notes
-            .find((note) => note.mid === model.id)
-            ?.flds.split("\x1f") ?? [],
-        deckIds: [
-          ...new Set(
-            collection.cards
-              .filter((card) => notes.get(card.nid)?.mid === model.id)
-              .flatMap((card) => {
-                const id = card.odid !== "0" ? card.odid : card.did;
-                return ancestors.get(id) ?? [id];
-              }),
+        );
+        if (!cards.length) return [];
+        const noteType: NoteType = {
+          id: model.id,
+          name: model.name,
+          kind: model.type === 1 ? "cloze" : "standard",
+          fields: model.flds.map((field) => ({ name: field.name })),
+          templates: model.tmpls.map((template) => ({
+            name: template.name,
+            front: template.qfmt,
+            back: template.afmt,
+          })),
+          css: model.css,
+          bindings: suggestedBindings(
+            model,
+            existingTypes.find((type) => matchesNoteType(model, type)),
           ),
-        ],
-      })),
-      decks: collection.decks.map((deck) => ({
-        id: deck.id,
-        name: deck.name,
-        cards: collection.cards.filter((card) => {
-          const id = card.odid !== "0" ? card.odid : card.did;
-          const name = collection.decks.find((deck) => deck.id === id)?.name;
-          return id === deck.id || name?.startsWith(`${deck.name}::`);
-        }).length,
-      })),
+          created: 0,
+        };
+        const sampleCards = new Map<number, AnkiCard>();
+        for (const card of cards)
+          if (!sampleCards.has(card.ord)) sampleCards.set(card.ord, card);
+        const samples = [...sampleCards.values()]
+          .sort((a, b) => a.ord - b.ord)
+          .map((card) => {
+            const note = notes.get(card.nid)!;
+            return {
+              deckName: deckNames.get(cardDeckId(card)) ?? "",
+              document: {
+                noteType,
+                note: {
+                  id: note.id,
+                  noteTypeId: model.id,
+                  language: "",
+                  fields: note.flds.split("\x1f"),
+                  tags: note.tags.trim().split(/\s+/).filter(Boolean),
+                  mediaNamespace: namespace,
+                  version: 0,
+                  created: 0,
+                  updated: 0,
+                },
+                card: {
+                  id: card.id,
+                  noteId: note.id,
+                  templateOrdinal: card.ord,
+                  deckId: null,
+                  language: "",
+                  schedule: null,
+                  suspended: card.queue === -1,
+                  leech: false,
+                  retentionOverride: null,
+                  srsVersion: 0,
+                  version: 0,
+                  created: 0,
+                  updated: 0,
+                  sourceId: card.id,
+                  source: { flags: card.flags },
+                },
+              },
+            };
+          });
+        return [
+          {
+            id: model.id,
+            name: model.name,
+            kind: noteType.kind,
+            fields: model.flds.map((field) => field.name),
+            templates: model.tmpls.length,
+            notes: collection.notes.filter((note) => note.mid === model.id)
+              .length,
+            cards: cards.length,
+            suggestedBindings: noteType.bindings,
+            samples,
+            deckIds: [...new Set(cards.map(cardDeckId))],
+          },
+        ];
+      }),
+      decks: collection.decks
+        .map((deck) => ({
+          id: deck.id,
+          name: deck.name,
+          cards: collection.cards.filter((card) => cardDeckId(card) === deck.id)
+            .length,
+        }))
+        .filter((deck) => deck.cards > 0),
       notes: collection.notes.length,
       cards: collection.cards.length,
       media: reader.media.length,
@@ -497,7 +600,8 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
       }),
       incompatibleNoteTypes: await incompatibleNoteTypeIds(collection.models),
     };
-  } finally {
+  } catch (error) {
     await reader.close();
+    throw error;
   }
 }

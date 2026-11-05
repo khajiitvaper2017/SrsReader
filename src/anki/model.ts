@@ -1,4 +1,8 @@
-import { fieldBindingsSchema, type FieldBindings } from "@/cards/model";
+import {
+  fieldBindingsSchema,
+  type FieldBindings,
+  type CardDocument,
+} from "@/cards/model";
 import { z } from "zod";
 import { languageSchema } from "@/languages/model";
 
@@ -7,6 +11,7 @@ export const importOptionsSchema = z.object({
   language: languageSchema,
   deckIds: z.array(z.string()).default([]),
   duplicates: z.enum(["keep", "update"]).default("keep"),
+  mergeNoteTypes: z.boolean().default(false),
   bindings: z.record(z.string(), fieldBindingsSchema).default({}),
 });
 export type AnkiImportOptions = z.infer<typeof importOptionsSchema>;
@@ -20,7 +25,7 @@ export type AnkiPreview = {
     notes: number;
     cards: number;
     suggestedBindings: FieldBindings;
-    sampleFields: string[];
+    samples: { document: CardDocument; deckName: string }[];
     deckIds: string[];
   }[];
   decks: { id: string; name: string; cards: number }[];
@@ -31,6 +36,9 @@ export type AnkiPreview = {
   suspended: number;
   warnings: string[];
   incompatibleNoteTypes: string[];
+  loadAssets: typeof import("@/cards/sandbox/assets").loadCardAssets;
+  requestAsset: typeof import("@/cards/sandbox/assets").requestedCardAsset;
+  close: () => Promise<unknown>;
 };
 
 export type RawObject = Record<string, unknown>;

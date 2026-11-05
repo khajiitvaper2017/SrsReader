@@ -1,3 +1,7 @@
+import { mediaType } from "@/anki/media";
+import { deckTree } from "@/srs/deck-tree";
+import { matchesNoteType, mergeNoteType, retainedFields } from "@/anki/merge";
+import { recalculateLapses } from "@/srs/lapses";
 import { parseHTML } from "linkedom";
 import Dexie from "dexie";
 import { PackageReader, incompatibleNoteTypeIds } from "@/anki/read";
@@ -34,36 +38,6 @@ import { freshWord } from "@/vocabulary/service";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import { wordId, type Vocabulary } from "@/vocabulary/model";
 
-function mediaType(name: string) {
-  const extension = name.split(".").at(-1)?.toLowerCase();
-  return (
-    (
-      {
-        png: "image/png",
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        gif: "image/gif",
-        webp: "image/webp",
-        avif: "image/avif",
-        svg: "image/svg+xml",
-        mp3: "audio/mpeg",
-        ogg: "audio/ogg",
-        opus: "audio/ogg",
-        wav: "audio/wav",
-        m4a: "audio/mp4",
-        mp4: "video/mp4",
-        webm: "video/webm",
-        ttf: "font/ttf",
-        otf: "font/otf",
-        woff: "font/woff",
-        woff2: "font/woff2",
-        css: "text/css",
-        js: "text/javascript",
-      } as Record<string, string>
-    )[extension ?? ""] ?? "application/octet-stream"
-  );
-}
-
 function plain(value: string, reading = false) {
   const { document } = parseHTML(`<html><body>${value}</body></html>`);
   document
@@ -88,6 +62,8 @@ async function typeId(model: AnkiModel) {
       model.flds.map((field) => field.name),
       model.tmpls.map((template) => template.name),
       model.type,
+      model.css,
+      model.tmpls.map((template) => [template.qfmt, template.afmt]),
     ]),
   );
   const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
@@ -273,22 +249,43 @@ export async function importPackage(
       studyLanguage: options.language,
     };
     const selected = new Set(options.deckIds);
-    const selectedNames = source.decks
-      .filter((deck) => selected.has(deck.id))
-      .map((deck) => deck.name);
-    const deckNames = new Map(source.decks.map((deck) => [deck.id, deck.name]));
     const sourceCards = source.cards.filter((card) => {
       const id = card.odid !== "0" ? card.odid : card.did;
-      return (
-        !selected.size ||
-        selected.has(id) ||
-        selectedNames.some((name) => deckNames.get(id)?.startsWith(`${name}::`))
-      );
+      return !selected.size || selected.has(id);
     });
     const noteIds = new Set(sourceCards.map((card) => card.nid));
     const sourceNotes = source.notes.filter((note) => noteIds.has(note.id));
-    const models = new Map(source.models.map((model) => [model.id, model]));
-    if (options.mode === "preserve") {
+    const activeTypes = new Set(
+      await db.notes.orderBy("noteTypeId").uniqueKeys(),
+    );
+    const existingTypes = (await db.noteTypes.toArray()).filter((type) =>
+      activeTypes.has(type.id),
+    );
+    const usedModels = new Set(sourceNotes.map((note) => note.mid));
+    const models = new Map(
+      source.models
+        .filter((model) => usedModels.has(model.id))
+        .map((model) => {
+          const previous = existingTypes
+            .filter((type) => matchesNoteType(model, type))
+            .sort(
+              (a, b) =>
+                b.fields.length +
+                b.templates.length -
+                (a.fields.length + a.templates.length),
+            )[0];
+          const merged =
+            options.mode === "preserve" && options.mergeNoteTypes && previous
+              ? mergeNoteType(model, previous)
+              : {
+                  model,
+                  fieldMap: model.flds.map((_, index) => index),
+                  templateMap: model.tmpls.map((_, index) => index),
+                };
+          return [model.id, { ...merged, id: typeId(merged.model) }] as const;
+        }),
+    );
+    if (options.mode === "preserve" && !options.mergeNoteTypes) {
       const used = new Set(sourceNotes.map((note) => note.mid));
       const incompatible = await incompatibleNoteTypeIds(
         source.models.filter((model) => used.has(model.id)),
@@ -334,11 +331,18 @@ export async function importPackage(
       byNote.set(card.nid, values);
     }
     for (const [index, original] of sourceNotes.entries()) {
-      const model = models.get(original.mid)!;
-      const bindings: FieldBindings = options.bindings[model.id] ?? {};
-      for (const value of Object.values(bindings))
-        if (value !== undefined && !model.flds[value])
+      const plan = models.get(original.mid)!;
+      const model = plan.model;
+      const incomingBindings = options.bindings[model.id] ?? {};
+      for (const value of Object.values(incomingBindings))
+        if (value !== undefined && plan.fieldMap[value] === undefined)
           throw new Error(t("anki_invalid_mapping"));
+      const bindings: FieldBindings = Object.fromEntries(
+        Object.entries(incomingBindings).map(([role, index]) => [
+          role,
+          index === undefined ? undefined : plan.fieldMap[index],
+        ]),
+      );
       if (options.mode === "convert" && bindings.word === undefined)
         throw new Error(t("anki_word_field_required", { name: model.name }));
       const id = `anki:note:${original.guid || `${source.created}:${original.id}`}`;
@@ -351,7 +355,25 @@ export async function importPackage(
         skipped++;
         continue;
       }
-      const values = original.flds.split("\x1f");
+      const previousType =
+        previous &&
+        existingTypes.find((type) => type.id === previous.noteTypeId);
+      if (
+        options.mode === "preserve" &&
+        previousType &&
+        !matchesNoteType(model, previousType)
+      )
+        throw new Error(t("anki_unrelated_note_type", { name: model.name }));
+      const values =
+        previousType && options.mode === "preserve" && options.mergeNoteTypes
+          ? retainedFields(previousType, previous!.fields, model)
+          : model.flds.map(() => "");
+      const incomingValues = original.flds.split("\x1f");
+      if (incomingValues.length !== plan.fieldMap.length)
+        throw new Error(t("anki_invalid_package"));
+      incomingValues.forEach((value, index) => {
+        values[plan.fieldMap[index]!] = value;
+      });
       let word: Vocabulary | undefined;
       if (bindings.word !== undefined) {
         const lemma = plain(values[bindings.word]!);
@@ -436,7 +458,7 @@ export async function importPackage(
         });
       } else {
         noteType = {
-          id: await typeId(model),
+          id: await plan.id,
           name: model.name,
           kind: model.type === 1 ? "cloze" : "standard",
           fields: model.flds.map((field) => ({ name: field.name })),
@@ -482,9 +504,14 @@ export async function importPackage(
       notes.push(note);
       for (const originalCard of byNote.get(original.id) ?? []) {
         // Conversion retains each source card's independent history with the app template.
-        const cardId = `anki:card:${original.guid || original.id}:${originalCard.ord}`;
+        const ordinal =
+          options.mode === "preserve" && model.type !== 1
+            ? plan.templateMap[originalCard.ord]!
+            : originalCard.ord;
+        if (ordinal === undefined) throw new Error(t("anki_invalid_package"));
+        const cardId = `anki:card:${original.guid || original.id}:${ordinal}`;
         const previousCard = await db.cards.get(cardId);
-        const sourceId = `anki:${original.guid || original.id}:${originalCard.ord}`;
+        const sourceId = `anki:${original.guid || original.id}:${ordinal}`;
         const history = normalizedHistory(
           sourceHistories.get(originalCard.id) ?? [],
           cardId,
@@ -496,12 +523,16 @@ export async function importPackage(
         cards.push({
           id: cardId,
           noteId: id,
-          templateOrdinal: options.mode === "convert" ? 0 : originalCard.ord,
-          deckId: `anki:deck:${options.language}:${did}`,
+          templateOrdinal: options.mode === "convert" ? 0 : ordinal,
+          deckId:
+            previousCard?.language === options.language
+              ? previousCard.deckId
+              : `anki:deck:${options.language}:${did}`,
           language: options.language,
           schedule: previousCard?.schedule ?? emptySchedule(now),
-          suspended: originalCard.queue === -1,
-          leech: original.tags.split(/\s+/).includes("leech"),
+          suspended: previousCard?.suspended ?? originalCard.queue === -1,
+          leech:
+            previousCard?.leech ?? original.tags.split(/\s+/).includes("leech"),
           retentionOverride: previousCard?.retentionOverride ?? null,
           srsVersion: previousCard?.srsVersion ?? 0,
           version: (previousCard?.version ?? -1) + 1,
@@ -510,6 +541,7 @@ export async function importPackage(
           sourceId: originalCard.id,
           source: {
             ...originalCard,
+            flags: previousCard?.source?.flags ?? originalCard.flags,
             deck: sourceDecks.get(did),
             collectionCreated: source.created,
           },
@@ -585,6 +617,52 @@ export async function importPackage(
                 if (previous && previous.mediaNamespace !== namespace)
                   oldNamespaces.add(previous.mediaNamespace);
               }
+              if (options.mergeNoteTypes && options.mode === "preserve") {
+                const names = new Set(reader.media.map((media) => media.name));
+                const related = await db.notes
+                  .where("noteTypeId")
+                  .anyOf(
+                    existingTypes
+                      .filter((type) =>
+                        [...models.values()].some(({ model }) =>
+                          matchesNoteType(model, type),
+                        ),
+                      )
+                      .map((type) => type.id),
+                  )
+                  .toArray();
+                const assetNamespaces = new Set([
+                  ...oldNamespaces,
+                  ...related.map((note) => note.mediaNamespace),
+                ]);
+                for (const oldNamespace of assetNamespaces) {
+                  const keys = await db.cardAssets
+                    .where("[namespace+name]")
+                    .between(
+                      [oldNamespace, Dexie.minKey],
+                      [oldNamespace, Dexie.maxKey],
+                    )
+                    .keys();
+                  const missing = keys.flatMap((key) =>
+                    Array.isArray(key) &&
+                    typeof key[1] === "string" &&
+                    !names.has(key[1])
+                      ? [key[1]]
+                      : [],
+                  );
+                  const retained = await db.cardAssets.bulkGet(
+                    missing.map((name) => assetId(oldNamespace, name)),
+                  );
+                  await db.cardAssets.bulkPut(
+                    retained.map((asset) => ({
+                      ...asset!,
+                      id: assetId(namespace, asset!.name),
+                      namespace,
+                    })),
+                  );
+                  missing.forEach((name) => names.add(name));
+                }
+              }
               await db.noteTypes.bulkPut(
                 [...types.values()].filter((type) => usedTypes.has(type.id)),
               );
@@ -607,6 +685,12 @@ export async function importPackage(
                   card.srsVersion = current.srsVersion;
                   card.schedule = current.schedule;
                   card.retentionOverride = current.retentionOverride;
+                  card.suspended = current.suspended;
+                  card.leech = current.leech;
+                  if (current.language === card.language)
+                    card.deckId = current.deckId;
+                  if (card.source && current.source?.flags !== undefined)
+                    card.source.flags = current.source.flags;
                 }
               }
               await db.cards.bulkPut(cards);
@@ -619,7 +703,13 @@ export async function importPackage(
                 )
                   await db.reviews.update(review.id, { active: false });
               }
-              const deckIds = new Set(cards.map((card) => card.deckId!));
+              const deckIds = new Set(
+                cards.flatMap((card) =>
+                  card.deckId?.startsWith(`anki:deck:${options.language}:`)
+                    ? [card.deckId]
+                    : [],
+                ),
+              );
               for (const deckId of deckIds) {
                 const sourceId = deckId.slice(
                   `anki:deck:${options.language}:`.length,
@@ -627,10 +717,33 @@ export async function importPackage(
                 const original = sourceDecks.get(sourceId);
                 const previous = await db.decks.get(deckId);
                 await db.decks.put({
+                  ...previous,
                   id: deckId,
-                  name: original?.name || "Default",
+                  name: previous?.name ?? original?.name ?? "Default",
                   language: options.language,
                   created: previous?.created ?? now,
+                });
+              }
+              const savedDecks = await db.decks
+                .where("language")
+                .equals(options.language)
+                .toArray();
+              for (const parent of deckTree(savedDecks)) {
+                if (savedDecks.some((deck) => deck.id === parent.id)) continue;
+                const original = source.decks.find(
+                  (deck) => deck.name === parent.name,
+                );
+                const sourceId = original
+                  ? `anki:deck:${options.language}:${original.id}`
+                  : undefined;
+                await db.decks.put({
+                  id:
+                    sourceId && !savedDecks.some((deck) => deck.id === sourceId)
+                      ? sourceId
+                      : crypto.randomUUID(),
+                  name: parent.name,
+                  language: options.language,
+                  created: now,
                 });
               }
               const reportHistory = (done: number, total: number) =>
@@ -647,12 +760,14 @@ export async function importPackage(
                   ],
                 });
               reportHistory(0, events.length);
-              await replayHistoricalAnswers(
-                events,
-                cards.map((card) => card.id),
-                reportHistory,
-                model,
-              );
+              if (events.length)
+                await replayHistoricalAnswers(
+                  events,
+                  cards.map((card) => card.id),
+                  reportHistory,
+                  model,
+                );
+              await recalculateLapses(cards.map((card) => card.id));
               reportHistory(events.length, events.length);
             })(),
             2_147_483_647,

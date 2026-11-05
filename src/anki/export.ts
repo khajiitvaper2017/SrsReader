@@ -1,3 +1,4 @@
+import { deckIdsInTree } from "@/srs/deck-tree";
 import { scheduleSchema } from "@/srs/model";
 import {
   BlobReader,
@@ -340,11 +341,22 @@ export async function exportPackage(
         db.decks,
       ],
       async () => {
+        const allDecks = await db.decks.toArray();
+        const selectedDecks = deckId
+          ? new Set(
+              deckIdsInTree(
+                allDecks.filter(
+                  (deck) => !language || deck.language === language,
+                ),
+                deckId,
+              ),
+            )
+          : undefined;
         const cards = (
           language
             ? await db.cards.where("language").equals(language).toArray()
             : await db.cards.toArray()
-        ).filter((card) => !deckId || card.deckId === deckId);
+        ).filter((card) => !selectedDecks || selectedDecks.has(card.deckId!));
         const noteIds = [...new Set(cards.map((card) => card.noteId))];
         const notes = (await db.notes.bulkGet(noteIds)).filter(
           (note): note is Note => !!note,
@@ -378,7 +390,7 @@ export async function exportPackage(
           assets,
           reviews,
           rawReviews,
-          decks: await db.decks.toArray(),
+          decks: allDecks,
         };
       },
     ),

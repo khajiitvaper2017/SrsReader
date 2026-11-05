@@ -46,6 +46,8 @@ export function CardViewer({
   settings,
   loading = false,
   loadAssets = loadCardAssets,
+  requestAsset = requestedCardAsset,
+  deckName: previewDeckName,
   onError,
   onLookup,
   onReady,
@@ -55,13 +57,15 @@ export function CardViewer({
   settings: Settings;
   loading?: boolean;
   loadAssets?: typeof loadCardAssets;
+  requestAsset?: typeof requestedCardAsset;
+  deckName?: string;
   onError?: (message: string) => void;
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
-  const callbacks = useRef({ onError, onLookup, onReady });
-  callbacks.current = { onError, onLookup, onReady };
+  const callbacks = useRef({ onError, onLookup, onReady, requestAsset });
+  callbacks.current = { onError, onLookup, onReady, requestAsset };
   const [ready, setReady] = useState(false);
   const [displayedCard, setDisplayedCard] = useState("");
   const [height, setHeight] = useState(180);
@@ -80,7 +84,8 @@ export function CardViewer({
     id: null,
     name: "",
   });
-  const deckName = deck.id === card.deckId ? deck.name : "";
+  const deckName =
+    previewDeckName ?? (deck.id === card.deckId ? deck.name : "");
   useEffect(() => {
     let cancelled = false;
     void (
@@ -195,7 +200,8 @@ export function CardViewer({
       ) {
         const active = activeCard.current;
         const source = event.source as Window;
-        void requestedCardAsset(active.namespace, value.name)
+        void callbacks.current
+          .requestAsset(active.namespace, value.name)
           .then((blob) => {
             if (
               activeCard.current.id !== active.id ||
