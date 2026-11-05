@@ -261,7 +261,14 @@ async function dictionaryLookup(
         const definitions = entry.definitions.flatMap((definition) =>
           !Array.isArray(definition)
             ? [definition]
-            : definition[0] && !graph.get(normalize(definition[0]))?.length
+            : definition[0] &&
+                !rows.some(
+                  (candidate) =>
+                    candidate.defined &&
+                    candidate.key === entry.key &&
+                    candidate.reading === entry.reading,
+                ) &&
+                !graph.get(normalize(definition[0]))?.length
               ? [
                   [definition[1].join(", "), definition[0]]
                     .filter(Boolean)

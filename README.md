@@ -4,6 +4,8 @@ A local browser reader with dictionaries, word mining, and spaced repetition. Su
 
 Lookup footer actions share equal widths within their row, keeping their midpoint aligned with the review-rating row regardless of label length.
 
+Dictionary lookup omits unresolved reference-only meanings when the same headword and reading have a real definition. Resolvable references and standalone unresolved references remain available.
+
 ## Build
 
 Requires Node.js 24 or newer and pnpm 12.15.0. See the [pnpm installation guide](https://pnpm.io/installation) if pnpm is not installed.
