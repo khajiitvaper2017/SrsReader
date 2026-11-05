@@ -41,17 +41,21 @@ export const wordWriteTables = () => [
 function extraFields(document?: CardDocument) {
   if (!document) return [];
   const bound = new Set(Object.values(document.noteType.bindings));
-  return document.noteType.fields.flatMap((field, index) =>
-    bound.has(index) ||
-    (document.noteType.id.startsWith("reader:") && index < 10)
-      ? []
-      : [
-          {
-            name: field.label || field.name,
-            value: fieldText(document.note.fields[index] || "", false),
-          },
-        ],
-  );
+  return document.noteType.fields.flatMap((field, index) => {
+    if (
+      bound.has(index) ||
+      (document.noteType.id.startsWith("reader:") && index < 10)
+    )
+      return [];
+    const html = (document.note.fields[index] || "").replace(
+      /<\/(?:div|p|li|tr|h[1-6]|section|blockquote)\s*>/gi,
+      "$&\n",
+    );
+    const value = fieldText(html, false)
+      .trim()
+      .replace(/\n{3,}/g, "\n\n");
+    return value ? [{ name: field.label || field.name, value }] : [];
+  });
 }
 
 async function projectWords(

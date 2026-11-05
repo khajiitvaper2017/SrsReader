@@ -11,7 +11,7 @@ export function CardFields({
     <Stack gap="xs" data-srs-reader>
       {fields.map((field, index) => (
         <Stack key={index} gap={0}>
-          <Title order={3} style={{ overflowWrap: "anywhere" }}>
+          <Title order={4} style={{ overflowWrap: "anywhere" }}>
             {field.name}
           </Title>
           <Text style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
