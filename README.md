@@ -27,6 +27,14 @@ Connect Playwright with `chromium.connectOverCDP("http://127.0.0.1:9223")`. The 
 
 Stop the command with Ctrl+C. After `pnpm build`, restart it to load the new extension code. Settings, dictionaries, and learning data survive restarts. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable; otherwise the command uses Playwright's installed Chromium.
 
+### Common-action benchmarks
+
+After `pnpm build`, run `pnpm test:browser` in another terminal with the saved German/Czech dictionaries, then `pnpm benchmark`. The saved reader must be unpaused, study both languages, allow `127.0.0.1`, and use automatic scanning with word colors and a mouse/key/hover lookup binding. Close active lookup popups first: cold measurements restart the extension worker (not the browser or its profile).
+
+The headless suite measures initial viewport/full-page and incremental scroll scans, cold/warm word lookup and dictionary content paint, nested lookup, saving a custom word, vocabulary search/open, and study question/reveal/rating. Vocabulary and study use a disposable profile with 60+ local cards; saved settings and learning progress are never changed. No dictionary imports are performed.
+
+Console output gives median/p95; raw samples, scan phase timings, signed RPC overhead residuals, action outcomes, and errors go to `test-results/action-benchmarks.json`. `BENCH_SAMPLES=7` changes repetitions (3–100, default 5); `BENCH_REPORT=/path/report.json` changes the report path. Failures exit nonzero; unmeasured actions are not passed or timed as skips. There are no timing thresholds. Timings include browser automation overhead; deliberate hover/search debounce delay is reported separately. “Cold” clears worker memory caches, not OS/disk caches.
+
 ## Google Drive build configuration
 
 Optional sync stores learning data in Google Drive's hidden application-data folder. Dictionaries, models, and caches are not synced.
