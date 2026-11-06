@@ -76,6 +76,7 @@ export function WordExamples({
     >
       {(translationButton, translation, failure) => (
         <Stack
+          data-reading-language={word.language}
           data-reading-source-url={example.context.url}
           data-reading-source-title={example.context.title}
         >

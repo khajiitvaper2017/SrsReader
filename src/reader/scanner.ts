@@ -395,7 +395,7 @@ export function createScanner(
     for (const block of candidates) changed = queueBlock(block) || changed;
     if (changed) schedule();
   }
-  function schedule(delay = 500) {
+  function schedule(delay = website ? 500 : 0) {
     if (!queued.size || (starting && website)) return;
     queuedAt ??= performance.now();
     if (scanTimer !== undefined) return;
@@ -770,7 +770,7 @@ export function createScanner(
         profile = undefined;
       }
       scanning = false;
-      schedule(website ? 0 : 500);
+      schedule(0);
     }
   }
   function contextFor(

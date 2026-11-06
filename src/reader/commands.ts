@@ -5,8 +5,11 @@ import { udpipePermission } from "@/languages/udpipe-permission";
 import { udpipeModel } from "@/languages/codes";
 import { scanTexts } from "@/reader/scan";
 import type { Request } from "@/reader/contracts";
+import { scanCache } from "@/reader/cache";
 import type { Settings } from "@/settings/model";
 import { cacheScannedTexts } from "@/examples/sentences";
+import { getWords } from "@/vocabulary/storage";
+import { stateOf } from "@/vocabulary/model";
 
 export const handleReader = execute;
 async function execute(
@@ -23,6 +26,42 @@ async function execute(
             spans: [],
           })),
         };
+      const cache = scanCache.results;
+      const key = JSON.stringify([
+        request.language,
+        request.lookup,
+        request.texts,
+        settings,
+      ]);
+      const cached = cache.get(key);
+      if (
+        cached &&
+        cached.every((result) => !result.retryAt || result.retryAt > Date.now())
+      ) {
+        const ids = [
+          ...new Set(
+            cached.flatMap((result) =>
+              result.spans.flatMap((span) => span.ids),
+            ),
+          ),
+        ];
+        const words = new Map(
+          (await getWords(ids))
+            .filter((word) => word !== undefined)
+            .map((word) => [word.id, word]),
+        );
+        for (const result of cached)
+          for (const span of result.spans) {
+            for (const candidate of span.candidates)
+              candidate.state = stateOf(
+                words.get(candidate.id),
+                settings.matureIntervalDays,
+              );
+            span.state = span.candidates[0]?.state ?? "unparsed";
+          }
+        return { results: cached };
+      }
+      cache.delete(key);
       const started = performance.now();
       const udpipeAllowed =
         settings.udpipe &&
@@ -84,6 +123,17 @@ async function execute(
             [request.texts[index]!],
             [spans],
             request.language,
+          );
+        },
+        (completed) => {
+          if (cache.size >= 64) cache.delete(cache.keys().next().value!);
+          cache.set(
+            key,
+            completed.map((spans, index) => ({
+              language: request.language,
+              spans,
+              retryAt: analyses[index]?.retryAt,
+            })),
           );
         },
       );

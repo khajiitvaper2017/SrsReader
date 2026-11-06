@@ -1,5 +1,6 @@
 import { clearWordLists } from "@/vocabulary/list";
 import { clearLookupCache } from "@/dictionaries/lookup";
+import { scanCache } from "@/reader/cache";
 import { getWord } from "@/vocabulary/storage";
 import type {
   ChangeMessage,
@@ -21,6 +22,7 @@ export async function notify(
   scope: ChangeScope = wordId ? "vocabulary" : "collection",
 ) {
   clearWordLists();
+  if (scope !== "sync") scanCache.results = new Map();
   if (!wordId) clearLookupCache();
   const word = wordId ? await getWord(wordId) : undefined;
   const message: ChangeMessage = {

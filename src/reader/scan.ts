@@ -79,6 +79,7 @@ export async function scanTexts(
   warn: ScanWarning,
   timing: DictionaryScanTiming,
   onProgress: (index: number, spans: ScanSpan[]) => Promise<void>,
+  onComplete: (spans: ScanSpan[][]) => void,
 ) {
   const started = performance.now();
   const ordered = await listDictionaries(settings);
@@ -572,12 +573,14 @@ export async function scanTexts(
           const value = JSON.stringify(spans);
           if (emitted[index] === value) continue;
           emitted[index] = value;
+          results[index] = spans;
           await onProgress(index, spans);
         }
       }
+      onComplete(results);
     })().catch((error) =>
       warn("Online word loading failed", { error: String(error) }),
     );
-  }
+  } else onComplete(results);
   return results;
 }
