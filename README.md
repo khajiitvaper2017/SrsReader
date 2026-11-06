@@ -8,6 +8,8 @@ Lookup footer actions share equal widths within their row, keeping their midpoin
 
 Dictionary lookup omits unresolved reference-only meanings when the same headword and reading have a real definition. Resolvable references and standalone unresolved references remain available.
 
+Dictionary grammar matching recognizes `m`, `masc`, `masculine`, and `mask` as masculine gender tags.
+
 Numeral lookup uses ICU-compatible CLDR spell-outs in supported studied languages. The context-selected written number, year, or ordinal replaces the numeric popup heading, with no separate form panel. Parser dependencies and locale date names identify calendar readings; a four-digit value alone does not imply a year. The original lookup term, source range, dictionary identity, and normal lookup controls remain unchanged. Pronunciation searches both the original numeral and the selected written form, merging recordings under the original word identity; word TTS uses the selected written form. Ordinary words keep their selected-lemma pronunciation lookup. The studied-language selector lists ICU capability. Unsupported languages/readings are omitted, with no language substitution.
 
 ## Build

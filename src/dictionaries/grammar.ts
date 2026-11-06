@@ -23,7 +23,7 @@ const tagFeatures = new Map<string, [string, string[]]>(
     ["UPOS", "PART", "particle ptkl"],
     ["Animacy", "Anim", "anim animate"],
     ["Animacy", "Inan", "inanim inanimate"],
-    ["Gender", "Masc", "m masc masculine"],
+    ["Gender", "Masc", "m masc masculine mask"],
     ["Gender", "Fem", "f fem feminine"],
     ["Gender", "Neut", "neut neuter"],
     ["Aspect", "Imp", "impf imperfective"],
