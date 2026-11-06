@@ -4,6 +4,13 @@
   overflow-x: auto;
   min-width: 0;
 }
+.dictionary-boundary {
+  /* Keep containment outside the dictionary's own selector scope. */
+  contain: layout paint style;
+  isolation: isolate;
+  position: relative;
+  min-width: 0;
+}
 .dictionary-content a {
   color: var(--mantine-color-anchor);
 }
@@ -16,18 +23,15 @@
   margin-block: 2px;
 }
 .dictionary-content ol[data-sc-content="glosses"] {
-  list-style: decimal !important;
+  list-style: decimal;
   padding-inline-start: 24px;
-}
-.dictionary-content ol[data-sc-content="glosses"] > li::before {
-  content: none !important;
 }
 .dictionary-content li::marker {
   color: var(--mantine-color-violet-text);
 }
 .dictionary-content [data-sc-content="tags"] span {
-  color: var(--mantine-color-violet-text) !important;
-  background: var(--mantine-color-violet-light) !important;
+  color: var(--mantine-color-violet-text);
+  background: var(--mantine-color-violet-light);
 }
 .dictionary-content details {
   font-size: var(--mantine-font-size-xs);
@@ -37,14 +41,10 @@
   cursor: pointer;
 }
 .dictionary-content [data-sc-content="preamble"] {
-  display: flex !important;
+  display: flex;
   align-items: flex-start;
   flex-wrap: wrap;
   gap: var(--mantine-spacing-xs);
-}
-.dictionary-content [data-sc-content="preamble"] > details {
-  /* Keep a box for each toggle when dictionary styles use display: contents. */
-  display: block !important;
 }
 .dictionary-content [data-sc-content="preamble"] > details[open] {
   flex: 1 1 100%;

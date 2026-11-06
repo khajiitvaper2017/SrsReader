@@ -11,35 +11,47 @@ export function safeUrl(value: unknown) {
 export function scopedStyles(css: string, scope: string) {
   try {
     const sheet = new CSSStyleSheet();
-    sheet.replaceSync(css.replace(/@import[^;]*;/gi, ""));
+    sheet.replaceSync(css);
     function rules(list: CSSRuleList): string {
       return [...list]
         .map((rule) => {
-          if (rule instanceof CSSStyleRule) {
-            const declarations = [...rule.style]
-              .filter(
-                (name) =>
-                  !/position|z-index|content|animation|transition|behavior/i.test(
-                    name,
-                  ) &&
-                  !/url\s*\(|expression|@import/i.test(
-                    rule.style.getPropertyValue(name),
-                  ),
+          const style = "style" in rule ? rule.style : undefined;
+          if (
+            (rule instanceof CSSStyleRule ||
+              rule.constructor.name === "CSSNestedDeclarations") &&
+            style instanceof CSSStyleDeclaration
+          ) {
+            for (const name of [...style]) {
+              const value = style.getPropertyValue(name);
+              if (
+                /^(?:z-index|behavior|animation(?:-.+)?|transition(?:-.+)?)$/i.test(
+                  name,
+                ) ||
+                (name === "position" &&
+                  !["static", "relative", "absolute"].includes(value)) ||
+                /url\s*\(|(?:-webkit-)?image-set\s*\(|expression|@import/i.test(
+                  value,
+                )
               )
-              .map((name) => `${name}:${rule.style.getPropertyValue(name)}`)
-              .join(";");
-            return `${rule.selectorText
-              .split(",")
-              .map((selector) => `${scope} ${selector.trim()}`)
-              .join(",")}{${declarations}}`;
+                style.removeProperty(name);
+            }
+            if (!(rule instanceof CSSStyleRule)) return style.cssText;
+            return `${rule.selectorText}{${style.cssText}${rules(rule.cssRules)}}`;
           }
           if (rule instanceof CSSMediaRule)
             return `@media ${rule.conditionText}{${rules(rule.cssRules)}}`;
+          if (rule instanceof CSSSupportsRule)
+            return `@supports ${rule.conditionText}{${rules(rule.cssRules)}}`;
+          if (rule instanceof CSSContainerRule)
+            return `@container ${rule.conditionText}{${rules(rule.cssRules)}}`;
+          if (rule instanceof CSSLayerBlockRule)
+            return `@layer ${rule.name}{${rules(rule.cssRules)}}`;
           return "";
         })
         .join("\n");
     }
-    return rules(sheet.cssRules);
+    // Native nesting preserves selector lists; @scope also bounds sibling selectors.
+    return `@scope (${scope}){:scope{${rules(sheet.cssRules)}}}`;
   } catch {
     return "";
   }

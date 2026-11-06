@@ -191,7 +191,7 @@ function scopeCss(css: string, scope: string): string {
     if (/^@(?:media|supports|container|layer)\b/i.test(prelude))
       result += `${prelude}{${scopeCss(content, scope)}}`;
     else if (prelude.startsWith("@")) result += `${prelude}{${content}}`;
-    else
+    else if (/(?:^|,)\s*(?:html|body|:root)(?=[\s.#[:]|$)/.test(prelude))
       result += `${prelude
         .split(/,(?![^()[\]]*[)\]])/)
         .map((selector) =>
@@ -200,6 +200,9 @@ function scopeCss(css: string, scope: string): string {
             : `${scope} ${selector.trim()}`,
         )
         .join(",")}{${content}}`;
+    else
+      // Let native nesting handle selector-list commas inside :is(), :not(), etc.
+      result += `@scope (${scope}){:scope{${prelude}{${content}}}}`;
     i = end - 1;
     start = end;
   }

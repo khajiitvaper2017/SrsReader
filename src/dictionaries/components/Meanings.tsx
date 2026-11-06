@@ -19,7 +19,7 @@ import { t } from "@/shared/i18n/i18n";
 import { TextTranslation } from "@/translation/components/SentenceTranslation";
 import { Button, Menu } from "@mantine/core";
 import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
-import type { ReactNode } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 export function Meanings({
   meanings,
   language,
@@ -46,6 +46,7 @@ export function Meanings({
   /** Render a matching sentence below a dictionary entry. */
   renderExample?: (meaning: Meaning) => ReactNode;
 }) {
+  const instanceId = useId();
   const {
     visible: displayed,
     styles,
@@ -53,6 +54,19 @@ export function Meanings({
     monolingual,
     definitionLanguages,
   } = useMeanings({ meanings, language, settings });
+  const dictionaryStyles = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(styles).map(([dictionaryId, css]) => [
+          dictionaryId,
+          scopedStyles(
+            css,
+            `[data-meanings="${CSS.escape(instanceId)}"] [data-dictionary="${CSS.escape(dictionaryId)}"] .dictionary-content`,
+          ),
+        ]),
+      ),
+    [styles, instanceId],
+  );
   const conflictsByMeaning = new Map(
     displayed.map((meaning) => [meaning, grammarConflicts(meaning, grammar)]),
   );
@@ -92,7 +106,7 @@ export function Meanings({
     })
     .sort((a, b) => Number(!a.visible.length) - Number(!b.visible.length));
   return (
-    <Stack gap="xs">
+    <Stack gap="xs" data-meanings={instanceId}>
       {dictionaries.map(
         ({
           dictionaryId,
@@ -190,6 +204,7 @@ export function Meanings({
           };
           return (
             <Stack key={dictionaryId} data-dictionary={dictionaryId} gap="xs">
+              <style>{dictionaryStyles[dictionaryId]}</style>
               {!visible.length && (
                 <Group justify="space-between" data-srs-reader>
                   <Group style={{ flex: 1, minWidth: 0 }}>
@@ -289,13 +304,9 @@ export function Meanings({
                         </Group>
                       )}
                     </Group>
-                    <style>
-                      {scopedStyles(
-                        styles[meaning.dictionaryId] || "",
-                        `[data-meaning="${index}"]`,
-                      )}
-                    </style>
-                    {translation || renderDefinitions(definitions)}
+                    <div className="dictionary-boundary">
+                      {translation || renderDefinitions(definitions)}
+                    </div>
                     {failure}
                     {renderExample?.(meaning)}
                     {meaning.attribution &&
