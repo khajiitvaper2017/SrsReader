@@ -2,6 +2,8 @@
 
 A local browser reader with dictionaries, word mining, and spaced repetition. Supports Chromium browsers and Firefox.
 
+Website colouring follows layout changes without rescanning unchanged text. New subtitles and streamed text update only the affected text blocks. Sync status updates do not interrupt colouring.
+
 Lookup footer actions share equal widths within their row, keeping their midpoint aligned with the review-rating row regardless of label length.
 
 Dictionary lookup omits unresolved reference-only meanings when the same headword and reading have a real definition. Resolvable references and standalone unresolved references remain available.

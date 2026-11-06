@@ -124,6 +124,7 @@ export function startReader(
     }
     if (message.event === "closeLookup") popup.close();
     if (message.event === "changed") {
+      if (message.scope === "sync") return;
       if (message.word) {
         scanner.updateWord(message.word.id, message.word.state);
         return;

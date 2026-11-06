@@ -22,7 +22,8 @@ export function createHighlights(settings: Settings) {
     focus: (range: Range) => focus.add(range),
     clearFocus: () => focus.clear(),
     configure: (value: Settings) => {
-      style.textContent = wordHighlightCss(value);
+      const css = wordHighlightCss(value);
+      if (style.textContent !== css) style.textContent = css;
     },
     dispose: () => {
       style.remove();

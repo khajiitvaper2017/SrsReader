@@ -366,7 +366,7 @@ export function createScanner(
     }
     return true;
   }
-  function collect(element: Element) {
+  function collectBlocks(element: Element, candidates: Set<Element>) {
     if (
       !isActive() ||
       (options.onLookup && !getSettings().scanPopups) ||
@@ -374,7 +374,6 @@ export function createScanner(
     )
       return;
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    const candidates = new Set<Element>();
     let node: Node | null;
     while ((node = walker.nextNode())) {
       const parent = node.parentElement;
@@ -388,6 +387,10 @@ export function createScanner(
       const block = parent.closest(blockSelector);
       if (block) candidates.add(block);
     }
+  }
+  function collect(element: Element) {
+    const candidates = new Set<Element>();
+    collectBlocks(element, candidates);
     let changed = false;
     for (const block of candidates) changed = queueBlock(block) || changed;
     if (changed) schedule();
@@ -446,7 +449,8 @@ export function createScanner(
       if (!range) continue;
       block.spans.push({ ...span, range });
       block.ranges.push(range);
-      highlights.get(span.state).add(range);
+      const highlight = highlights.get(span.state);
+      if (!highlight.has(range)) highlight.add(range);
     }
     if (getSettings().wordLoading[block.language] !== "onLookup") {
       let matched = 0;
@@ -471,7 +475,8 @@ export function createScanner(
         );
         if (range) {
           block.ranges.push(range);
-          highlights.get("unparsed").add(range);
+          const highlight = highlights.get("unparsed");
+          if (!highlight.has(range)) highlight.add(range);
         }
       }
     }
@@ -1277,6 +1282,10 @@ export function createScanner(
       });
     }
     observer = new MutationObserver((records) => {
+      const candidates = new Set<Element>();
+      const subtrees = new Set<Element>();
+      const rebuildRanges = new Set<Element>();
+      let removed = false;
       for (const record of records) {
         const element =
           record.target instanceof Element
@@ -1291,37 +1300,41 @@ export function createScanner(
                 record.attributeName === "data-reading-language"
               )
                 queued.add(block);
-              else queueBlock(block);
+              else candidates.add(block);
             }
-          collect(element);
-          if (queued.size) schedule();
+          subtrees.add(element);
           continue;
         }
         if (element) {
           const block = element.closest(blockSelector);
-          if (
-            block &&
-            blocks.has(block) &&
-            queueBlock(block, record.type === "characterData")
-          )
-            schedule();
+          if (block && (blocks.has(block) || record.type === "characterData")) {
+            candidates.add(block);
+            if (record.type === "characterData") rebuildRanges.add(block);
+          }
         }
-        if (element && record.type === "characterData") collect(element);
         for (const added of record.addedNodes)
-          if (added instanceof Element) collect(added);
-          else if (added.parentElement) collect(added.parentElement);
+          if (added instanceof Element) subtrees.add(added);
+          else {
+            const block = added.parentElement?.closest(blockSelector);
+            if (block) candidates.add(block);
+          }
+        removed ||= record.removedNodes.length > 0;
       }
-      for (const element of blocks.keys())
-        if (!element.isConnected) {
-          deleteBlock(element);
-        }
-      for (const element of observed)
-        if (!element.isConnected) {
-          viewport?.unobserve(element);
-          observed.delete(element);
-          visible.delete(element);
-          queued.delete(element);
-        }
+      for (const element of subtrees) collectBlocks(element, candidates);
+      for (const block of candidates)
+        if (root.contains(block)) queueBlock(block, rebuildRanges.has(block));
+      if (queued.size) schedule();
+      if (removed) {
+        for (const element of blocks.keys())
+          if (!element.isConnected) deleteBlock(element);
+        for (const element of observed)
+          if (!element.isConnected) {
+            viewport?.unobserve(element);
+            observed.delete(element);
+            visible.delete(element);
+            queued.delete(element);
+          }
+      }
     });
     observer.observe(root, {
       childList: true,
