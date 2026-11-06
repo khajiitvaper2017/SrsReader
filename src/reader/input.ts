@@ -29,6 +29,15 @@ export function installReaderInput(
   };
   const suppressedButtons = new Set<number>();
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let touchTimer: ReturnType<typeof setTimeout> | undefined;
+  let touchStart = 0;
+  let touchId: number | undefined;
+  let touchPoint: Pointer | undefined;
+  let touchHeld = false;
+  let lastTap = 0;
+  let lastTapPoint: Pointer | undefined;
+  let lastTouch = 0;
+  let pendingTap: ReturnType<typeof setTimeout> | undefined;
   const wordAtPointer = () => scanner.wordAtPointer(pointer);
   function relayKeys(event?: KeyboardEvent, pressed = false) {
     if (event)
@@ -97,12 +106,28 @@ export function installReaderInput(
     event.preventDefault();
     event.stopImmediatePropagation();
   }
-  ctx.addEventListener(window, "scroll", popup.reposition, {
-    capture: true,
-    passive: true,
-  });
+  function cancelTouch() {
+    clearTimeout(touchTimer);
+    clearTimeout(pendingTap);
+    touchId = undefined;
+    touchPoint = undefined;
+    touchStart = 0;
+    touchHeld = false;
+    lastTap = 0;
+    lastTapPoint = undefined;
+  }
+  ctx.addEventListener(
+    window,
+    "scroll",
+    () => {
+      cancelTouch();
+      popup.reposition();
+    },
+    { capture: true, passive: true },
+  );
   ctx.addEventListener(window, "resize", popup.reposition);
   ctx.addEventListener(document, "mousemove", (event) => {
+    if (Date.now() - lastTouch < 800) return;
     pointer = {
       clientX: event.clientX,
       clientY: event.clientY,
@@ -241,11 +266,170 @@ export function installReaderInput(
     suppressedButtons.clear();
     pointer = undefined;
     clearTimeout(timer);
+    cancelTouch();
+  });
+  ctx.addEventListener(
+    document,
+    "touchstart",
+    (event) => {
+      const touches = (event as TouchEvent).touches;
+      const touch = touches[0];
+      clearTimeout(timer);
+      suppressedButtons.clear();
+      clearTimeout(touchTimer);
+      clearTimeout(pendingTap);
+      touchHeld = false;
+      touchId = undefined;
+      touchPoint = undefined;
+      lastTouch = Date.now();
+      if (touches.length !== 1 || !touch) {
+        cancelTouch();
+        return;
+      }
+      if ((event.target as Element)?.closest("[data-srs-reader]")) {
+        cancelTouch();
+        return;
+      }
+      popup.close();
+      if (
+        !isActive() ||
+        !root.contains(event.target as Node) ||
+        (event.target as Element)?.closest(excluded)
+      ) {
+        cancelTouch();
+        return;
+      }
+      touchId = touch.identifier;
+      touchPoint = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        target: event.target,
+      };
+      pointer = touchPoint;
+      touchStart = Date.now();
+      if (
+        lastTapPoint &&
+        Math.hypot(
+          touch.clientX - lastTapPoint.clientX,
+          touch.clientY - lastTapPoint.clientY,
+        ) > 24
+      )
+        lastTap = 0;
+      if (
+        getSettings().lookupBindings.some(
+          (binding) => binding.type === "touch" && binding.gesture === "hold",
+        )
+      )
+        // Beat the browser's native long-press selection delay.
+        touchTimer = setTimeout(() => {
+          pointer = touchPoint;
+          touchHeld = activate();
+          if (touchHeld) {
+            lastTap = 0;
+            lastTapPoint = undefined;
+          }
+        }, 300);
+    },
+    { capture: true, passive: true },
+  );
+  ctx.addEventListener(
+    document,
+    "touchmove",
+    (event) => {
+      const touches = (event as TouchEvent).touches;
+      const touch = touches[0];
+      if (
+        touches.length !== 1 ||
+        !touch ||
+        !touchPoint ||
+        touch.identifier !== touchId ||
+        Math.hypot(
+          touch.clientX - touchPoint.clientX,
+          touch.clientY - touchPoint.clientY,
+        ) > 10
+      )
+        cancelTouch();
+    },
+    { capture: true, passive: true },
+  );
+  ctx.addEventListener(
+    document,
+    "touchend",
+    (event) => {
+      const touchEvent = event as TouchEvent;
+      const touch = touchEvent.changedTouches[0];
+      if (!touch || touch.identifier !== touchId || !touchPoint) return;
+      if (
+        Math.hypot(
+          touch.clientX - touchPoint.clientX,
+          touch.clientY - touchPoint.clientY,
+        ) > 10
+      ) {
+        cancelTouch();
+        return;
+      }
+      clearTimeout(touchTimer);
+      lastTouch = Date.now();
+      touchId = undefined;
+      pointer = touchPoint;
+      touchPoint = undefined;
+      if (touchHeld) {
+        touchHeld = false;
+        consume(event);
+        return;
+      }
+      if (
+        !isActive() ||
+        touchEvent.touches.length ||
+        Date.now() - touchStart > 500
+      ) {
+        cancelTouch();
+        return;
+      }
+      const bindings = getSettings().lookupBindings;
+      const doubleTap = bindings.some(
+        (binding) =>
+          binding.type === "touch" && binding.gesture === "doubleTap",
+      );
+      if (doubleTap && lastTap && Date.now() - lastTap < 320) {
+        lastTap = 0;
+        lastTapPoint = undefined;
+        if (activate()) consume(event);
+      } else if (doubleTap) {
+        lastTap = Date.now();
+        lastTapPoint = pointer;
+        const tapPoint = pointer;
+        pendingTap = setTimeout(() => {
+          pointer = tapPoint;
+          if (
+            getSettings().lookupBindings.some(
+              (binding) =>
+                binding.type === "touch" && binding.gesture === "tap",
+            )
+          )
+            activate();
+          lastTap = 0;
+          lastTapPoint = undefined;
+        }, 320);
+      } else if (
+        bindings.some(
+          (binding) => binding.type === "touch" && binding.gesture === "tap",
+        ) &&
+        activate()
+      )
+        consume(event);
+    },
+    { capture: true, passive: false },
+  );
+  ctx.addEventListener(document, "touchcancel", cancelTouch, {
+    capture: true,
+    passive: true,
   });
   ctx.addEventListener(
     document,
     "mousedown",
     (event) => {
+      if (Date.now() - lastTouch < 800) return;
       if (!root.contains(event.target as Node)) return;
       suppressedButtons.delete(event.button);
       if ((event.target as Element)?.closest("[data-srs-reader]")) return;
@@ -280,14 +464,22 @@ export function installReaderInput(
       document,
       eventName,
       (event) => {
+        if (eventName === "contextmenu" && touchHeld) {
+          consume(event);
+          return;
+        }
         if (suppressedButtons.has(event.button)) consume(event);
       },
       { capture: true },
     );
   return {
-    cancel: () => clearTimeout(timer),
+    cancel: () => {
+      clearTimeout(timer);
+      cancelTouch();
+    },
     dispose: () => {
       clearTimeout(timer);
+      cancelTouch();
       heldKeys.clear();
       suppressedButtons.clear();
       pointer = undefined;

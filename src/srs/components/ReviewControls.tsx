@@ -33,7 +33,8 @@ export function ReviewControls({
               value={settings.reviewBindings[action]}
               error={error?.action === action ? error.message : undefined}
               onChange={(binding) => {
-                if (binding?.type === "hover") return;
+                if (binding?.type === "hover" || binding?.type === "touch")
+                  return;
                 const conflict =
                   binding &&
                   reviewActions.find(

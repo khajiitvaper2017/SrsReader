@@ -15,6 +15,10 @@ export const lookupBindingSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("key"), code: z.string().min(1), ...modifiers }),
   z.object({ type: z.literal("hover"), code: z.string(), ...modifiers }),
+  z.object({
+    type: z.literal("touch"),
+    gesture: z.enum(["tap", "doubleTap", "hold"]),
+  }),
 ]);
 export type LookupBinding = z.infer<typeof lookupBindingSchema>;
 export const readerKeysSchema = z.object({
@@ -47,16 +51,22 @@ const noModifiers = { ctrl: false, alt: false, shift: false, meta: false };
 export const lookupPresets: LookupBinding[] = [
   { type: "mouse", button: 1, ...noModifiers },
   { type: "hover", code: "", ...noModifiers, shift: true },
+  { type: "touch", gesture: "tap" },
+  { type: "touch", gesture: "doubleTap" },
+  { type: "touch", gesture: "hold" },
   { type: "mouse", button: 4, ...noModifiers },
   { type: "hover", code: "", ...noModifiers },
 ];
 export function bindingLabel(binding: LookupBinding) {
-  const keys = [
-    binding.ctrl && t("ctrl"),
-    binding.alt && t("key_alt"),
-    binding.shift && t("key_shift"),
-    binding.meta && t("key_meta"),
-  ].filter(Boolean);
+  const keys =
+    binding.type === "touch"
+      ? []
+      : [
+          binding.ctrl && t("ctrl"),
+          binding.alt && t("key_alt"),
+          binding.shift && t("key_shift"),
+          binding.meta && t("key_meta"),
+        ].filter(Boolean);
   if (binding.type === "mouse")
     keys.push(
       [
@@ -67,6 +77,7 @@ export function bindingLabel(binding: LookupBinding) {
         t("mouse_forward"),
       ][binding.button]!,
     );
+  else if (binding.type === "touch") keys.push(t(`touch_${binding.gesture}`));
   else if (binding.code) {
     const keyNames: Record<string, string> = {
       Space: t("space"),
@@ -96,20 +107,25 @@ export function bindingLabel(binding: LookupBinding) {
 export const bindingKey = (binding: LookupBinding) =>
   JSON.stringify([
     binding.type,
-    binding.type === "mouse" ? binding.button : binding.code,
-    binding.ctrl,
-    binding.alt,
-    binding.shift,
-    binding.meta,
+    binding.type === "mouse"
+      ? binding.button
+      : binding.type === "touch"
+        ? binding.gesture
+        : binding.code,
+    binding.type !== "touch" && binding.ctrl,
+    binding.type !== "touch" && binding.alt,
+    binding.type !== "touch" && binding.shift,
+    binding.type !== "touch" && binding.meta,
   ]);
 export function matchesModifiers(
   binding: LookupBinding,
   event: Pick<MouseEvent, "ctrlKey" | "altKey" | "shiftKey" | "metaKey">,
 ) {
   return (
-    binding.ctrl === event.ctrlKey &&
-    binding.alt === event.altKey &&
-    binding.shift === event.shiftKey &&
-    binding.meta === event.metaKey
+    binding.type === "touch" ||
+    (binding.ctrl === event.ctrlKey &&
+      binding.alt === event.altKey &&
+      binding.shift === event.shiftKey &&
+      binding.meta === event.metaKey)
   );
 }
