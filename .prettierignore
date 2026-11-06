@@ -1,5 +1,6 @@
 /.output/
 /.wxt/
+/.test-browser/
 /.trail/
 /.claude/*.local.json
 /dicts/

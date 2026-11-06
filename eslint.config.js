@@ -3,7 +3,16 @@ import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  { ignores: [".output/**", ".wxt/**", "dicts/**", "graft/**", "public/**"] },
+  {
+    ignores: [
+      ".output/**",
+      ".wxt/**",
+      ".test-browser/**",
+      "dicts/**",
+      "graft/**",
+      "public/**",
+    ],
+  },
   {
     files: ["**/*.{js,ts,tsx}"],
     extends: [js.configs.recommended, tseslint.configs.recommended],

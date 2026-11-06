@@ -19,6 +19,14 @@ For automatic reloads, run `pnpm dev` or `pnpm dev:firefox` and load the develop
 - `pnpm check:unused` — find unused code and dependencies.
 - `pnpm test:e2e` — run extension checks in a temporary browser profile. First run `pnpm exec playwright install chromium`, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable.
 
+### Persistent test browser
+
+Run `pnpm test:browser` to start headless Chromium with a saved profile in `.test-browser/profile/`. It uses the current `.output/chrome-mv3/` build without rebuilding, resetting data, or importing dictionaries.
+
+Connect Playwright with `chromium.connectOverCDP("http://127.0.0.1:9223")`. The endpoint is local-only and controls the test profile, not your normal browser.
+
+Stop the command with Ctrl+C. After `pnpm build`, restart it to load the new extension code. Settings, dictionaries, and learning data survive restarts. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable; otherwise the command uses Playwright's installed Chromium.
+
 ## Google Drive build configuration
 
 Optional sync stores learning data in Google Drive's hidden application-data folder. Dictionaries, models, and caches are not synced.

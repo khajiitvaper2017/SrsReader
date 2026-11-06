@@ -7,6 +7,14 @@
 - Treat `.wxt/` and `.output/` as generated files. Do not edit them. Run `pnpm exec wxt prepare` if generated WXT types are missing.
 - Always rebuild for chrome after finishing the work.
 
+## Browser testing
+
+- Keep browser checks headless. Do not open visible browser windows.
+- For focused checks, connect Playwright to `http://127.0.0.1:9223`. If it is not running, start it with `pnpm test:browser`.
+- Reuse `.test-browser/profile/` and its installed German and Czech dictionaries. Do not reset the profile, repeat setup, or reimport dictionaries for routine checks.
+- The launcher uses the existing Chromium build. After rebuilding extension code, stop and restart the launcher to load it without losing data.
+- Keep `pnpm test:e2e` isolated from this saved profile. Run only the checks needed for the change, not the full suite each time.
+
 ## Linting and fixes
 
 - Run `pnpm typecheck` to check TypeScript and `pnpm exec eslint .` to lint. There is no `lint` script.
@@ -61,6 +69,7 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 - Review UI changes for duplicated controls, inconsistent patterns, and theme overrides. Use existing lint rules to catch violations.
 
 <!-- trail:start -->
+
 ## Trail — repo context graph
 
 This repo is indexed in `.trail/cache/`: small linked markdown nodes that explain each
