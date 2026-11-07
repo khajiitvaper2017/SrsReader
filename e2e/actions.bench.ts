@@ -34,6 +34,242 @@ declare const chrome: {
   };
 };
 
+type BenchPaint = { at: number; navigationMs: number; sessionMs?: number };
+declare global {
+  var __srsBench: {
+    eventAt?: number;
+    input?: { type: string; code?: string; button?: number };
+    renderedAt?: number;
+    dictionary?: BenchPaint;
+    study?: BenchPaint;
+    vocabulary?: BenchPaint;
+    vocabularyKind?: "search" | "open";
+    vocabularyTerm?: string;
+    studyKind: "question" | "reveal" | "rating";
+  };
+}
+
+// Browser timestamps end at paint, independently of Playwright's retry schedule.
+function observePaints() {
+  const state = (globalThis.__srsBench = {
+    studyKind: "question",
+  } as typeof globalThis.__srsBench);
+  const now = () => performance.timeOrigin + performance.now();
+  for (const type of ["mousedown", "mousemove", "keydown", "click", "input"]) {
+    document.addEventListener(
+      type,
+      (event) => {
+        const input = state.input;
+        if (
+          state.eventAt !== undefined ||
+          input?.type !== type ||
+          (input.code && (event as KeyboardEvent).code !== input.code) ||
+          (input.button !== undefined &&
+            (event as MouseEvent).button !== input.button)
+        )
+          return;
+        state.eventAt = now();
+      },
+      true,
+    );
+  }
+  if (location.pathname.endsWith("lookup.html")) {
+    let observed: Element | undefined;
+    let pending = false;
+    let sessionStarted: number | undefined;
+    window.addEventListener("message", (event) => {
+      if (
+        event.source !== window.parent ||
+        event.data?.type !== "srs-reader-session"
+      )
+        return;
+      state.dictionary = undefined;
+      observed = undefined;
+      sessionStarted = event.data.session ? performance.now() : undefined;
+    });
+    const ready = () => {
+      const content = document.querySelector(".dictionary-content");
+      return content?.textContent?.trim() &&
+        content.getBoundingClientRect().height &&
+        content
+          .closest("[data-dictionary]")
+          ?.querySelector(":scope > style")
+          ?.textContent?.trim()
+        ? content
+        : undefined;
+    };
+    const check = () => {
+      const content = ready();
+      if (!content || content === observed || pending) return;
+      pending = true;
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          pending = false;
+          if (ready() !== content) {
+            check();
+            return;
+          }
+          observed = content;
+          state.dictionary = {
+            at: now(),
+            navigationMs: performance.now(),
+            ...(sessionStarted !== undefined && {
+              sessionMs: performance.now() - sessionStarted,
+            }),
+          };
+        }),
+      );
+    };
+    new MutationObserver(check).observe(document, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+    });
+    check();
+  }
+  if (window !== top || !location.pathname.endsWith("app.html")) return;
+  let rendered: Window | null = null;
+  let pending = false;
+  const ready = () => {
+    if (state.vocabularyKind) {
+      if (
+        state.eventAt === undefined ||
+        !document.styleSheets.length ||
+        document.fonts.status !== "loaded"
+      )
+        return false;
+      if (state.vocabularyKind === "search") {
+        const words = [...document.querySelectorAll("button")].filter(
+          (button) => /^Benchwort/.test(button.textContent || ""),
+        );
+        return (
+          words.length === 1 &&
+          words[0]!.textContent?.startsWith(state.vocabularyTerm!) &&
+          words[0]!.getBoundingClientRect().height
+        );
+      }
+      const heading = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")].find(
+        (element) => element.textContent === state.vocabularyTerm,
+      );
+      const content = document.querySelector(".dictionary-content");
+      return (
+        heading?.getBoundingClientRect().height &&
+        content?.textContent?.trim() &&
+        content.getBoundingClientRect().height
+      );
+    }
+    const frame = document.querySelector<HTMLIFrameElement>(
+      'iframe[title="Study card"]',
+    );
+    const control = [...document.querySelectorAll("button")].find((button) =>
+      state.studyKind === "reveal"
+        ? /^Good/.test(button.textContent || "")
+        : button.textContent?.trim() === "Show answer",
+    );
+    return (
+      state.renderedAt !== undefined &&
+      rendered &&
+      frame?.contentWindow === rendered &&
+      frame.getBoundingClientRect().height &&
+      getComputedStyle(frame).visibility === "visible" &&
+      frame.parentElement?.getAttribute("aria-busy") === "false" &&
+      control &&
+      !control.disabled &&
+      control.getBoundingClientRect().height
+    );
+  };
+  const check = () => {
+    const kind = state.vocabularyKind ? "vocabulary" : "study";
+    if (state[kind] || pending || !ready()) return;
+    pending = true;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        pending = false;
+        if (!ready()) return;
+        state[kind] = { at: now(), navigationMs: performance.now() };
+      }),
+    );
+  };
+  window.addEventListener("message", (event) => {
+    // The sandbox emits rendered only after its document load and fonts.ready.
+    if (
+      event.data?.channel !== "srs-card-frame" ||
+      event.data.type !== "rendered" ||
+      (state.studyKind !== "question" && state.eventAt === undefined)
+    )
+      return;
+    rendered = event.source as Window;
+    state.renderedAt = now();
+    check();
+  });
+  new MutationObserver(check).observe(document, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+    attributes: true,
+  });
+}
+
+async function armInput(
+  frame: Page | Frame,
+  binding?: LookupBinding,
+  action?: "reveal" | "rating" | "search" | "open",
+  term?: string,
+) {
+  await frame.evaluate(
+    ({ binding, action, term }) => {
+      const state = globalThis.__srsBench;
+      state.eventAt = undefined;
+      state.input = !binding
+        ? { type: action === "search" ? "input" : "click" }
+        : binding.type === "mouse"
+          ? { type: "mousedown", button: binding.button }
+          : binding.type === "key"
+            ? { type: "keydown", code: binding.code }
+            : { type: "mousemove" };
+      if (action === "search" || action === "open") {
+        state.vocabularyKind = action;
+        state.vocabularyTerm = term;
+        state.vocabulary = undefined;
+      } else if (action === "reveal" || action === "rating") {
+        state.vocabularyKind = undefined;
+        state.studyKind = action;
+        state.study = undefined;
+        state.renderedAt = undefined;
+      } else {
+        state.dictionary = undefined;
+      }
+    },
+    { binding, action, term },
+  );
+}
+
+async function paintMetrics(
+  frame: Page | Frame,
+  kind: "dictionary" | "study" | "vocabulary",
+  inputFrame?: Page | Frame,
+): Promise<Record<string, number>> {
+  await frame.waitForFunction((kind) => globalThis.__srsBench[kind], kind);
+  const paint = await frame.evaluate(
+    (kind) => globalThis.__srsBench[kind]!,
+    kind,
+  );
+  if (!inputFrame)
+    return paint.sessionMs === undefined
+      ? { navigationToContentPaintMs: paint.navigationMs }
+      : { sessionToContentPaintMs: paint.sessionMs };
+  const eventAt = await inputFrame.evaluate(
+    () => globalThis.__srsBench.eventAt,
+  );
+  assert(
+    eventAt !== undefined,
+    "The measured activation event was not observed",
+  );
+  assert(paint.at >= eventAt, "Paint must follow the measured activation");
+  return { eventToContentPaintMs: paint.at - eventAt };
+}
+
 const samples = Number(process.env.BENCH_SAMPLES || 5);
 assert(
   Number.isInteger(samples) && samples >= 3 && samples <= 100,
@@ -133,13 +369,13 @@ function add(
 
 async function timed(
   action: string,
-  run: () => Promise<void>,
+  run: () => Promise<void | Record<string, number>>,
   delayMs = 0,
   details?: unknown,
 ) {
   currentAction = action;
   const started = performance.now();
-  await run();
+  const measured = await run();
   const totalMs = performance.now() - started;
   add(
     action,
@@ -147,6 +383,14 @@ async function timed(
       totalMs,
       deliberateDelayMs: delayMs,
       processingResidualMs: Math.max(0, totalMs - delayMs),
+      ...(measured || {}),
+      ...(measured && {
+        automationResidualMs:
+          totalMs -
+          (measured.eventToContentPaintMs ??
+            measured.navigationToContentPaintMs ??
+            totalMs),
+      }),
     },
     details,
   );
@@ -254,11 +498,22 @@ async function dictionaryReady(frame: Frame) {
   await painted(frame);
 }
 
-async function lookup(page: Page, binding: LookupBinding, action: string) {
+async function lookup(
+  page: Page,
+  binding: LookupBinding,
+  action: string,
+  metadataForCold?: Page,
+) {
   await page.locator("#lookup").scrollIntoViewIfNeeded();
   const box = await page.locator("#lookup").boundingBox();
   assert(box);
   const point = { x: box.x + 10, y: box.y + box.height / 2 };
+  if (binding.type !== "hover") await page.mouse.move(point.x, point.y);
+  if (action.endsWith(".cold")) {
+    assert(metadataForCold);
+    await coldWorker(metadataForCold);
+  }
+  await armInput(page, binding);
   await timed(
     action,
     async () => {
@@ -270,41 +525,28 @@ async function lookup(page: Page, binding: LookupBinding, action: string) {
       const frame = await handle.contentFrame();
       assert(frame);
       await dictionaryReady(frame);
+      return paintMetrics(frame, "dictionary", page);
     },
     binding.type === "hover" ? 260 : 0,
     {
       cache: action.endsWith("cold")
         ? "worker restarted; OS/disk cache uncontrolled"
         : "same term and worker",
-      completion: "nonempty dictionary content and two animation frames",
+      completion:
+        "nonempty dictionary content, inline source styles, two animation frames",
       includes:
-        "Playwright transport + popup preparation/iframe startup + lookup + render",
+        "event-to-paint excludes automation; totalMs retains the automation envelope",
     },
   );
   const frame = await page.locator("iframe[data-srs-reader]").elementHandle();
   assert(frame);
   const content = await frame.contentFrame();
   assert(content);
-  const renderMs = await content.evaluate(() => {
-    if (
-      "__benchDictionaryPaint" in globalThis &&
-      typeof globalThis.__benchDictionaryPaint === "number"
-    )
-      return globalThis.__benchDictionaryPaint;
-    return null;
+  const render = await paintMetrics(content, "dictionary");
+  add(action.replace("lookup.", "dictionary.render."), render, {
+    includes:
+      "iframe navigation/bootstrap or reused-frame session update, RPC, dictionary DOM/CSS, two animation frames; not React-only render time",
   });
-  assert(
-    renderMs !== null,
-    "Dictionary render observer did not observe content",
-  );
-  add(
-    action.replace("lookup.", "dictionary.render."),
-    { navigationToContentPaintMs: renderMs },
-    {
-      includes:
-        "iframe navigation/bootstrap, RPC, dictionary DOM/CSS, two animation frames; not React-only render time",
-    },
-  );
   return content;
 }
 
@@ -312,7 +554,7 @@ async function dismiss(page: Page) {
   const box = await page.locator("#lookup").boundingBox();
   assert(box);
   await page.mouse.click(box.x + box.width - 2, box.y + box.height / 2);
-  await page.locator("iframe[data-srs-reader]").waitFor({ state: "detached" });
+  await page.locator("iframe[data-srs-reader]").waitFor({ state: "hidden" });
 }
 
 async function nestedPoint(
@@ -396,36 +638,7 @@ async function savedActions(
     const page = await context.newPage();
     pages.push(page);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.addInitScript(() => {
-      if (!location.pathname.endsWith("lookup.html")) return;
-      const observer = new MutationObserver(() => {
-        const content = document.querySelector(".dictionary-content");
-        if (
-          !content?.textContent?.trim() ||
-          !content.getBoundingClientRect().height ||
-          !content
-            .closest("[data-dictionary]")
-            ?.querySelector(":scope > style")
-            ?.textContent?.trim()
-        )
-          return;
-        observer.disconnect();
-        requestAnimationFrame(() =>
-          requestAnimationFrame(() => {
-            // Only the benchmark's own frame reads this observer timestamp.
-            const target = globalThis as typeof globalThis & {
-              __benchDictionaryPaint: number;
-            };
-            target.__benchDictionaryPaint = performance.now();
-          }),
-        );
-      });
-      observer.observe(document, {
-        subtree: true,
-        childList: true,
-        characterData: true,
-      });
-    });
+    await page.addInitScript(observePaints);
     for (let index = 0; index < samples; index++) {
       console.log(`${language}: reader sample ${index + 1}/${samples}`);
       currentAction = `${language}.scan.page`;
@@ -470,10 +683,8 @@ async function savedActions(
         },
         incremental,
       );
-      await page.locator("#lookup").scrollIntoViewIfNeeded();
       currentAction = `${language}.lookup.cold`;
-      await coldWorker(metadata);
-      await lookup(page, binding, `${language}.lookup.cold`);
+      await lookup(page, binding, `${language}.lookup.cold`, metadata);
       await dismiss(page);
       const frame = await lookup(page, binding, `${language}.lookup.warm`);
       const term = language === "de" ? "Haus" : "pes";
@@ -488,6 +699,7 @@ async function savedActions(
         .first()
         .elementHandle();
       assert(previousContent);
+      await armInput(frame, binding);
       await timed(
         `${language}.lookup.nested`,
         async () => {
@@ -498,12 +710,12 @@ async function savedActions(
           await expect(
             frame.getByRole("button", { name: "Previous word", exact: true }),
           ).toBeVisible();
-          await expect
-            .poll(() =>
-              previousContent.evaluate((element) => element.isConnected),
-            )
-            .toBe(false);
+          await frame.waitForFunction(
+            (element) => !element.isConnected,
+            previousContent,
+          );
           await dictionaryReady(frame);
+          return paintMetrics(frame, "dictionary", frame);
         },
         binding.type === "hover" ? 260 : 0,
         {
@@ -553,6 +765,17 @@ async function fixtureActions() {
     (await isolated.waitForEvent("serviceworker"));
   const url = new URL(worker.url());
   const base = `${url.protocol}//${url.host}`;
+  // onInstalled opens Setup in a new popup; it must not compete with fixtures.
+  await expect
+    .poll(
+      () =>
+        isolated!
+          .pages()
+          .some((page) => page.url() === `${base}/app.html#setup`),
+      { timeout: 30000 },
+    )
+    .toBe(true);
+  await Promise.all(isolated.pages().map((page) => page.close()));
   const metadata = await isolated.newPage();
   await metadata.goto(`${base}/manifest.json`);
   const settings = await rpc(metadata, { action: "settings" });
@@ -619,6 +842,7 @@ async function fixtureActions() {
   }
   const page = await isolated.newPage();
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page.addInitScript(observePaints);
   for (let index = 0; index < samples; index++) {
     console.log(`Vocabulary sample ${index + 1}/${samples}`);
     await page.goto(`${base}/app.html#words/de`);
@@ -628,6 +852,7 @@ async function fixtureActions() {
     });
     await search.waitFor();
     const term = `Benchwort${String(index).padStart(3, "0")}`;
+    await armInput(page, undefined, "search", term);
     await timed(
       "vocabulary.search",
       async () => {
@@ -638,7 +863,7 @@ async function fixtureActions() {
         await expect(
           page.getByRole("button").filter({ hasText: new RegExp(`^${term}`) }),
         ).toBeVisible();
-        await painted(page);
+        return paintMetrics(page, "vocabulary", page);
       },
       150,
       {
@@ -646,9 +871,10 @@ async function fixtureActions() {
         profile: "isolated",
         deliberateDelay: "existing search debounce",
         includes:
-          "input + debounce + query + list paint + Playwright transport",
+          "browser input + debounce + query + list paint; totalMs includes automation",
       },
     );
+    await armInput(page, undefined, "open", term);
     await timed(
       "vocabulary.open",
       async () => {
@@ -663,7 +889,7 @@ async function fixtureActions() {
           .locator(".dictionary-content")
           .first()
           .waitFor({ state: "visible" });
-        await painted(page);
+        return paintMetrics(page, "vocabulary", page);
       },
       0,
       { profile: "isolated", fixtureWords: count },
@@ -674,6 +900,8 @@ async function fixtureActions() {
     .frameLocator("iframe:visible:not([inert])")
     .locator("body");
   for (let index = 0; index < samples; index++) {
+    // Always measure a real app navigation, including the first question.
+    await page.goto(`${base}/manifest.json`);
     console.log(`Study sample ${index + 1}/${samples}`);
     let before = "";
     await timed(
@@ -685,7 +913,15 @@ async function fixtureActions() {
           page.getByRole("button", { name: "Show answer", exact: true }),
         ).toBeVisible();
         before = (await card.innerText()).trim();
-        await painted(page);
+        assert(
+          await card.evaluate((element) =>
+            [...element.ownerDocument.querySelectorAll("head style")].some(
+              (style) => !!style.textContent?.trim(),
+            ),
+          ),
+          "Study card styles were not installed",
+        );
+        return paintMetrics(page, "study");
       },
       0,
       {
@@ -694,6 +930,7 @@ async function fixtureActions() {
         completion: "question iframe content and reveal control",
       },
     );
+    await armInput(page, undefined, "reveal");
     await timed(
       "study.reveal",
       async () => {
@@ -702,11 +939,12 @@ async function fixtureActions() {
           .click();
         await expect(card).toContainText("Benchmark definition");
         await expect(page.getByRole("button", { name: /^Good/ })).toBeEnabled();
-        await painted(page);
+        return paintMetrics(page, "study", page);
       },
       0,
       { profile: "isolated" },
     );
+    await armInput(page, undefined, "rating");
     await timed(
       "study.rating",
       async () => {
@@ -717,7 +955,7 @@ async function fixtureActions() {
         await expect(card).toContainText("Benchwort");
         await expect(card).not.toHaveText(before);
         await expect(card).not.toContainText("Benchmark definition");
-        await painted(page);
+        return paintMetrics(page, "study", page);
       },
       0,
       {
@@ -726,7 +964,6 @@ async function fixtureActions() {
           "next question rendered after persistent grade/queue update",
       },
     );
-    await page.goto(`${base}/manifest.json`);
   }
   const reviews = await metadata.evaluate(async () => {
     const opened = Promise.withResolvers<IDBDatabase>();
@@ -927,10 +1164,15 @@ try {
     environment,
     notes: [
       "No timing thresholds. Milliseconds unless a metric name denotes counts/bytes.",
-      "Actions include Playwright transport unless explicitly navigation-relative.",
+      "Lookup and study content-paint metrics use browser event/navigation timestamps, not assertion completion. totalMs retains the automation-inclusive envelope.",
+      "Reused dictionary frames report sessionToContentPaintMs instead of navigationToContentPaintMs.",
       "processingResidualMs subtracts the intentional hover/search debounce, not measured scheduler wait.",
+      "automationResidualMs is signed totalMs minus browser content-paint latency; it includes input preparation, transport, assertion retries, and post-paint checks.",
+      "Study questions always navigate from manifest.json; unlike earlier reports, the first sample is not a same-document hash navigation.",
+      "Disposable startup Setup pages are closed before fixtures; earlier reports included their competing render/notification work.",
       "rpcResidualMs is signed request wall minus summed timed worker work; includes IPC/scheduling/serialization and untimed cache-hit handling, not pure transport.",
-      "Cold lookups restart only the extension service worker; OS/disk caches remain warm.",
+      "Cold lookups restart only the extension service worker after pointer/scroll preparation; OS/disk caches remain warm and concurrent scanner work can repopulate worker caches.",
+      "The reader prepares popup UI during page idle. Cold samples restart backend caches, not the prepared popup UI.",
       "Saved profile dictionaries/settings/progress are never written. Vocabulary/study fixtures are deleted with their temporary profile.",
       "Missing/failed actions are not skipped or reported as successful samples.",
     ],
@@ -941,13 +1183,18 @@ try {
   console.table(
     actions.map((action) => {
       const metric =
-        action.metrics.totalMs ||
+        action.metrics.eventToContentPaintMs ||
+        action.metrics.sessionToContentPaintMs ||
+        action.metrics.navigationToContentPaintMs ||
         action.metrics.navigationToHighlightMs ||
-        action.metrics.navigationToContentPaintMs;
+        action.metrics.totalMs;
       return {
         action: action.action,
         status: action.status,
         n: action.samples.length,
+        metric: Object.keys(action.metrics).find(
+          (key) => action.metrics[key] === metric,
+        ),
         medianMs: metric?.median?.toFixed(1),
         p95Ms: metric?.p95.toFixed(1),
       };

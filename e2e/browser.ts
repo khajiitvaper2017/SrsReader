@@ -4,6 +4,14 @@ import { chromium } from "@playwright/test";
 import { access } from "node:fs/promises";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
+declare const chrome: {
+  developerPrivate: {
+    updateProfileConfiguration(config: {
+      inDeveloperMode: boolean;
+    }): Promise<void>;
+    reload(id: string): Promise<void>;
+  };
+};
 
 const extension = fileURLToPath(
   new URL("../.output/chrome-mv3", import.meta.url),
@@ -42,6 +50,16 @@ try {
     (await context.waitForEvent("serviceworker", { timeout: 30000 }));
   const url = new URL(worker.url());
   const app = `${url.protocol}//${url.host}/app.html`;
+  // Unpacked extension service workers can retain an older build across restarts.
+  const extensions = await context.newPage();
+  await extensions.goto("chrome://extensions");
+  await extensions.evaluate(async (id) => {
+    await chrome.developerPrivate.updateProfileConfiguration({
+      inDeveloperMode: true,
+    });
+    await chrome.developerPrivate.reload(id);
+  }, url.host);
+  await extensions.close();
   if (!context.pages().some((page) => page.url().startsWith(app))) {
     const page = await context.newPage();
     await page.goto(app);
