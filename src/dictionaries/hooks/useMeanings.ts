@@ -2,7 +2,71 @@ import type { Dictionary, Meaning } from "@/dictionaries/model";
 import { dictionaryTags, listDictionaries } from "@/dictionaries/storage";
 import { displayedMeanings } from "@/dictionaries/display";
 import type { Settings } from "@/settings/model";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+type DictionaryMetadata = {
+  dictionaries: Dictionary[];
+  styles: Record<string, string>;
+  tagDescriptions: Record<string, string>;
+  definitionLanguages: Record<string, string>;
+};
+const emptyMetadata: DictionaryMetadata = {
+  dictionaries: [],
+  styles: {},
+  tagDescriptions: {},
+  definitionLanguages: {},
+};
+// Lookup-language overrides retain preferences; new settings snapshots replace them.
+const metadataCache = new WeakMap<
+  Settings["dictionaryPreferences"],
+  { value?: DictionaryMetadata; pending: Promise<DictionaryMetadata> }
+>();
+
+export function dictionaryMetadata(
+  settings: Settings,
+): Promise<DictionaryMetadata> {
+  const key = settings.dictionaryPreferences;
+  const existing = metadataCache.get(key);
+  if (existing) return existing.pending;
+  const entry: {
+    value?: DictionaryMetadata;
+    pending: Promise<DictionaryMetadata>;
+  } = {
+    pending: listDictionaries(settings).then(async (rows) => {
+      const tags = await dictionaryTags(rows.map((row) => row.revisionId));
+      return {
+        dictionaries: rows,
+        definitionLanguages: Object.fromEntries(
+          rows.map((row) => [row.id, row.target]),
+        ),
+        styles: Object.fromEntries(rows.map((row) => [row.id, row.styles])),
+        tagDescriptions: Object.fromEntries(
+          rows.flatMap((row) =>
+            tags
+              .filter(
+                (tag) =>
+                  tag.revisionId === row.revisionId &&
+                  tag.description &&
+                  tag.description !== tag.name,
+              )
+              .map((tag) => [
+                `${row.id}:${tag.name}`,
+                tag.description || tag.name,
+              ]),
+          ),
+        ),
+      };
+    }),
+  };
+  metadataCache.set(key, entry);
+  void entry.pending.then(
+    (value) => {
+      entry.value = value;
+    },
+    () => metadataCache.delete(key),
+  );
+  return entry.pending;
+}
 
 export function useMeanings({
   meanings,
@@ -13,71 +77,38 @@ export function useMeanings({
   language: string;
   settings: Settings;
 }) {
-  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
-  const visible = displayedMeanings(meanings, settings, dictionaries);
-  const [styles, setStyles] = useState<Record<string, string>>({});
-  const [tagDescriptions, setTagDescriptions] = useState<
-    Record<string, string>
-  >({});
-  const [monolingual, setMonolingual] = useState<string[]>([]);
-  const [definitionLanguages, setDefinitionLanguages] = useState<
-    Record<string, string>
-  >({});
+  const [metadata, setMetadata] = useState(
+    () =>
+      metadataCache.get(settings.dictionaryPreferences)?.value ?? emptyMetadata,
+  );
   useEffect(() => {
     let alive = true;
-    void listDictionaries(settings).then(async (rows) => {
-      const tags = await dictionaryTags(
-        rows.filter((row) => row !== undefined).map((row) => row.revisionId),
-      );
-      if (alive) {
-        setDictionaries(rows);
-        setDefinitionLanguages(
-          Object.fromEntries(
-            rows
-              .filter((row) => row !== undefined)
-              .map((row) => [row.id, row.target]),
-          ),
-        );
-        setTagDescriptions(
-          Object.fromEntries(
-            rows
-              .filter((row) => row !== undefined)
-              .flatMap((row) =>
-                tags
-                  .filter(
-                    (tag) =>
-                      tag.revisionId === row.revisionId &&
-                      tag.description &&
-                      tag.description !== tag.name,
-                  )
-                  .map((tag) => [
-                    `${row.id}:${tag.name}`,
-                    tag.description || tag.name,
-                  ]),
-              ),
-          ),
-        );
-        setStyles(
-          Object.fromEntries(
-            rows.filter((d) => d !== undefined).map((d) => [d.id, d.styles]),
-          ),
-        );
-        setMonolingual(
-          rows
-            .filter((d) => d?.language === language && d.target === language)
-            .map((d) => d!.id),
-        );
-      }
+    void dictionaryMetadata(settings).then((value) => {
+      if (alive) setMetadata(value);
     });
     return () => {
       alive = false;
     };
-  }, [meanings, language, settings]);
+  }, [settings]);
+  const visible = useMemo(
+    () => displayedMeanings(meanings, settings, metadata.dictionaries),
+    [meanings, settings, metadata.dictionaries],
+  );
+  const monolingual = useMemo(
+    () =>
+      metadata.dictionaries
+        .filter(
+          (dictionary) =>
+            dictionary.language === language && dictionary.target === language,
+        )
+        .map((dictionary) => dictionary.id),
+    [metadata.dictionaries, language],
+  );
   return {
     visible,
-    styles,
-    tagDescriptions,
+    styles: metadata.styles,
+    tagDescriptions: metadata.tagDescriptions,
+    definitionLanguages: metadata.definitionLanguages,
     monolingual,
-    definitionLanguages,
   };
 }

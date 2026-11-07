@@ -1,6 +1,7 @@
 import ImportWorker from "@/dictionaries/import.worker?worker";
 import LanguageDataWorker from "@/languages/language-data.worker?worker";
 import AnkiImportWorker from "@/anki/import.worker?worker";
+import ExamplesWorker from "@/examples/query.worker?worker";
 import { importInputSchema, type ImportTask } from "@/imports/model";
 import { db } from "@/platform/database/db";
 import { rpc } from "@/platform/messaging/send";
@@ -145,10 +146,45 @@ async function run() {
 export function startImportHost() {
   let connection: ReturnType<typeof browser.runtime.connect>;
   let closing = false;
+  let examplesWorker: Worker | undefined;
+  const exampleQueries = new Set<string>();
   const connect = () => {
     connection = browser.runtime.connect({ name: "import-host" });
     connection.onMessage.addListener((message) => {
       if (message?.type === "run") void run().catch(console.error);
+      if (message?.type !== "examples") return;
+      try {
+        if (!examplesWorker) {
+          examplesWorker = new ExamplesWorker();
+          examplesWorker.onmessage = (event) => {
+            exampleQueries.delete(event.data.id);
+            connection.postMessage({ type: "examples-result", ...event.data });
+          };
+          examplesWorker.onerror = (event) => {
+            for (const id of exampleQueries)
+              connection.postMessage({
+                type: "examples-result",
+                id,
+                error: event.message || t("background_host_failed"),
+              });
+            exampleQueries.clear();
+            examplesWorker?.terminate();
+            examplesWorker = undefined;
+          };
+        }
+        exampleQueries.add(message.id);
+        examplesWorker.postMessage({
+          id: message.id,
+          request: message.request,
+        });
+      } catch (error) {
+        exampleQueries.delete(message.id);
+        connection.postMessage({
+          type: "examples-result",
+          id: message.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     });
     connection.onDisconnect.addListener(() => {
       if (!closing) connect();
@@ -160,6 +196,7 @@ export function startImportHost() {
     () => {
       closing = true;
       connection.disconnect();
+      examplesWorker?.terminate();
     },
     { once: true },
   );

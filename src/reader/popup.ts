@@ -42,18 +42,52 @@ export function createPopup(
     window.removeEventListener("pointercancel", finishResize, true);
     window.removeEventListener("blur", finishResize);
   }
-  function closePopup() {
+  function syncSession() {
+    popup?.contentWindow?.postMessage(
+      { type: "srs-reader-session", session: popupSession ?? null },
+      new URL(browser.runtime.getURL("/")).origin,
+    );
+  }
+  function preload() {
+    if (popup) return popup;
+    popup = document.createElement("iframe");
+    popup.dataset.srsReader = "";
+    popup.title = t("srsreader_dictionary");
+    popup.allow = "translator; language-detector";
+    popup.src =
+      browser.runtime.getURL("/lookup.html") +
+      (popupSession ? `?session=${encodeURIComponent(popupSession)}` : "");
+    Object.assign(popup.style, {
+      display: "block",
+      width: "100%",
+      height: "100%",
+      border: "0",
+    });
+    container = document.createElement("div");
+    container.dataset.srsReader = "";
+    container.dataset.srsReaderPopup = "";
+    container.hidden = true;
+    container.append(popup);
+    document.documentElement.append(container);
+    return popup;
+  }
+  function release() {
+    container?.remove();
+    container = undefined;
+    popup = undefined;
+  }
+  function closePopup(immediate = false) {
     finishResize();
     observer.disconnect();
     anchor = undefined;
     manualOffset = undefined;
     clipping.length = 0;
-    container?.remove();
-    container = undefined;
-    popup = undefined;
+    if (immediate) release();
+    else if (container) container.hidden = true;
     popupRange = undefined;
     popupSession = undefined;
     popupReady = false;
+    syncSession();
     highlights.clearFocus();
   }
   async function show(
@@ -148,23 +182,11 @@ export function createPopup(
       width: Math.min(manualSize?.width ?? 360, maxWidth),
       height: Math.min(manualSize?.height ?? 460, maxHeight),
     };
-    popup = document.createElement("iframe");
-    popup.dataset.srsReader = "";
+    popup = preload();
+    syncSession();
     popup.dataset.srsReaderSide = side;
-    popup.title = t("srsreader_dictionary");
-    popup.allow = "translator; language-detector";
-    popup.src =
-      browser.runtime.getURL("/lookup.html") +
-      `?session=${encodeURIComponent(session)}`;
-    Object.assign(popup.style, {
-      display: "block",
-      width: "100%",
-      height: "100%",
-      border: "0",
-    });
-    container = document.createElement("div");
-    container.dataset.srsReader = "";
-    container.dataset.srsReaderPopup = "";
+    container ||= document.createElement("div");
+    container.hidden = false;
     Object.assign(container.style, {
       position: "fixed",
       boxSizing: "border-box",
@@ -191,7 +213,7 @@ export function createPopup(
       maxHeight: `${maxHeight}px`,
       transform: side === "above" ? "translateY(-100%)" : "none",
     });
-    container.addEventListener("pointerdown", (event) => {
+    container.onpointerdown = (event) => {
       if (!container || !popupRange || event.button !== 0) return;
       const bounds = container.getBoundingClientRect();
       if (
@@ -213,9 +235,11 @@ export function createPopup(
       container.style.maxWidth = `${Math.max(1, innerWidth - bounds.left - 8)}px`;
       container.style.maxHeight = `${Math.max(1, innerHeight - bounds.top - 8)}px`;
       reposition();
-    });
-    container.append(popup);
-    document.documentElement.append(container);
+    };
+    if (!container.isConnected) {
+      container.append(popup);
+      document.documentElement.append(container);
+    }
     reposition();
     observer.observe(container);
     observer.observe(anchor);
@@ -291,11 +315,13 @@ export function createPopup(
     close: closePopup,
     reposition,
     updateVisibility,
+    preload,
+    syncSession,
     markReady: () => {
       popupReady = true;
     },
     get element() {
-      return popup;
+      return popupRange ? popup : undefined;
     },
     get session() {
       return popupSession;

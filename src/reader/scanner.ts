@@ -397,8 +397,16 @@ export function createScanner(
   }
   function schedule(delay = website ? 500 : 0) {
     if (!queued.size || (starting && website)) return;
+    for (const element of visible)
+      if (queued.has(element)) {
+        delay = 0;
+        break;
+      }
     queuedAt ??= performance.now();
-    if (scanTimer !== undefined) return;
+    if (scanTimer !== undefined) {
+      if (delay) return;
+      clearTimeout(scanTimer);
+    }
     scanTimer = setTimeout(() => {
       scanTimer = undefined;
       void drain();
@@ -1272,10 +1280,13 @@ export function createScanner(
       const version = generation;
       viewport = new IntersectionObserver((entries) => {
         if (version !== generation) return;
+        let scanVisible = false;
         for (const entry of entries)
-          if (entry.isIntersecting) visible.add(entry.target);
-          else visible.delete(entry.target);
-        if (starting) {
+          if (entry.isIntersecting) {
+            visible.add(entry.target);
+            scanVisible ||= queued.has(entry.target);
+          } else visible.delete(entry.target);
+        if (starting || scanVisible) {
           starting = false;
           schedule(0);
         }

@@ -149,13 +149,11 @@ export function installReaderInput(
       event.origin !== new URL(browser.runtime.getURL("/")).origin
     )
       return;
-    if (
-      !options.onLookup &&
-      event.data?.type === "srs-reader-ready" &&
-      event.data.session === session
-    ) {
-      popup.markReady();
-      relayKeys();
+    if (!options.onLookup && event.data?.type === "srs-reader-ready") {
+      if (event.data.session === session) {
+        popup.markReady();
+        relayKeys();
+      } else popup.syncSession();
     }
     const parsed = readerKeysSchema.safeParse(event.data);
     if (!parsed.success || parsed.data.session !== session) return;
@@ -430,9 +428,12 @@ export function installReaderInput(
     "mousedown",
     (event) => {
       if (Date.now() - lastTouch < 800) return;
-      if (!root.contains(event.target as Node)) return;
       suppressedButtons.delete(event.button);
       if ((event.target as Element)?.closest("[data-srs-reader]")) return;
+      if (!root.contains(event.target as Node)) {
+        popup.close();
+        return;
+      }
       pointer = {
         clientX: event.clientX,
         clientY: event.clientY,

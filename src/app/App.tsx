@@ -27,11 +27,15 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-const ReviewPage = React.lazy(() =>
-  import("@/app/pages/ReviewPage").then((module) => ({
-    default: module.ReviewPage,
-  })),
-);
+const loadReviewPage = () => import("@/app/pages/ReviewPage");
+// Initial study navigation must not wait for Suspense's fallback minimum.
+const ReviewPage = location.hash.startsWith("#review/session")
+  ? (await loadReviewPage()).ReviewPage
+  : React.lazy(() =>
+      loadReviewPage().then((module) => ({
+        default: module.ReviewPage,
+      })),
+    );
 const StudyPage = React.lazy(() =>
   import("@/app/pages/StudyPage").then((module) => ({
     default: module.StudyPage,

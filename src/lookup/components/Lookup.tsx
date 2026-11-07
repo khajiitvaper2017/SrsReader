@@ -1,5 +1,7 @@
 import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { dictionaryMetadata } from "@/dictionaries/hooks/useMeanings";
+import { useSettings } from "@/settings/hooks/useSettings";
 import {
   ActionIcon,
   Anchor,
@@ -44,11 +46,16 @@ import {
   Undo2,
 } from "lucide-react";
 export function Lookup() {
-  const { pages, setPages, error } = useLookupNavigation();
+  const [settings] = useSettings();
+  useEffect(() => {
+    // Prepare source styles before the first lookup.
+    void dictionaryMetadata(settings).catch(console.warn);
+  }, [settings]);
+  const { pages, setPages, error, session } = useLookupNavigation();
   if (!pages.length) return <ErrorBox error={error} />;
   return (
     <LookupEntry
-      key={pages.length}
+      key={`${session}:${pages.length}`}
       page={pages[pages.length - 1]!}
       onContext={(context) =>
         setPages((current) =>

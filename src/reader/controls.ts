@@ -32,6 +32,10 @@ export const readerKeysSchema = z.object({
   shiftKey: z.boolean(),
   metaKey: z.boolean(),
 });
+export const readerSessionSchema = z.object({
+  type: z.literal("srs-reader-session"),
+  session: z.string().uuid().nullable(),
+});
 export const inputPreventionSchema = z
   .object({
     textHover: z.boolean(),

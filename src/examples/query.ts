@@ -30,8 +30,8 @@ async function getCorpus(language: string) {
 
 export async function exampleCorpusInfo(language: string) {
   if (!language) return { count: 0, installed: false };
-  const corpus = await getCorpus(language);
-  return { count: corpus?.sentences.length || 0, installed: !!corpus };
+  const corpus = await db.exampleCorpora.get(languageCode(language));
+  return { count: corpus?.count || 0, installed: !!corpus };
 }
 
 export async function wordExamples(

@@ -94,8 +94,15 @@ export function startReader(
     active =
       settings.setupComplete &&
       (scope !== "webpages" || isWebsiteEnabled(settings, location.hostname));
-    if (!active || !preservePopup) popup.close();
+    if (!active || !preservePopup) popup.close(!active);
     scanner.reset();
+    preloadPopup();
+  }
+  function preloadPopup() {
+    if (!active || scope !== "webpages" || document.hidden) return;
+    requestIdleCallback(() => {
+      if (active && !document.hidden) popup.preload();
+    });
   }
   const onMessage = (message: RuntimeEvent) => {
     if (message.event === "scanWarning") {
@@ -141,12 +148,16 @@ export function startReader(
   };
   browser.runtime.onMessage.addListener(onMessage);
   void configure().catch(console.warn);
+  ctx.addEventListener(document, "visibilitychange", () => {
+    if (document.hidden && !popup.element) popup.close(true);
+    if (!document.hidden) preloadPopup();
+  });
   ctx.onInvalidated(() => {
     active = false;
     clearTimeout(refreshTimer);
     input.dispose();
     scanner.dispose();
-    popup.close();
+    popup.close(true);
     highlights.dispose();
     browser.runtime.onMessage.removeListener(onMessage);
   });
