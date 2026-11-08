@@ -134,9 +134,9 @@ export function AudioSettings({
             onMove={moveSource}
             disabled={saving}
           >
-            {(source, handle) => (
+            {(source, controls) => (
               <Group wrap="nowrap">
-                {handle}
+                {controls}
                 <Switch
                   flex={1}
                   miw={0}

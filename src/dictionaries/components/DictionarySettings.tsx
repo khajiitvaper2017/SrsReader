@@ -98,39 +98,41 @@ export function DictionarySettings({
         onMove={(id, target) => moveDictionary(id, target, role)}
         disabled={busy}
       >
-        {(dictionary, handle) => (
+        {(dictionary, controls) => (
           <Paper p="sm">
-            <Group gap="sm" align="center">
-              {handle}
-              <Stack gap={0} miw={0} flex={1}>
-                <strong>{dictionary.index.title}</strong>
-                <Text variant="supporting">
-                  {isOnlineDictionary(dictionary.id) ? (
-                    t(`${dictionary.id}_online_help`)
-                  ) : (
-                    <>
-                      {dictionary.count > 0
-                        ? t("dictionary_entries", {
-                            language: languageLabel(dictionary.language),
-                            target: dictionary.target
-                              ? languageLabel(dictionary.target)
-                              : t("unspecified"),
-                            count: dictionary.count,
-                          })
-                        : languageLabel(dictionary.language)}
-                      {dictionary.frequencyCount > 0 &&
-                        t("frequency_count", {
-                          count: dictionary.frequencyCount,
+            <Group gap="sm" align="center" wrap="wrap">
+              <Group gap="sm" wrap="nowrap" flex="1 1 16rem" miw={0}>
+                {controls}
+                <Stack gap={0} miw={0} flex={1}>
+                  <strong>{dictionary.index.title}</strong>
+                  <Text variant="supporting">
+                    {isOnlineDictionary(dictionary.id) ? (
+                      t(`${dictionary.id}_online_help`)
+                    ) : (
+                      <>
+                        {dictionary.count > 0
+                          ? t("dictionary_entries", {
+                              language: languageLabel(dictionary.language),
+                              target: dictionary.target
+                                ? languageLabel(dictionary.target)
+                                : t("unspecified"),
+                              count: dictionary.count,
+                            })
+                          : languageLabel(dictionary.language)}
+                        {dictionary.frequencyCount > 0 &&
+                          t("frequency_count", {
+                            count: dictionary.frequencyCount,
+                          })}
+                        {" · "}
+                        {t("dictionary_revision", {
+                          revision: dictionary.index.revision,
                         })}
-                      {" · "}
-                      {t("dictionary_revision", {
-                        revision: dictionary.index.revision,
-                      })}
-                    </>
-                  )}
-                </Text>
-              </Stack>
-              <Group gap="xs" justify="flex-end">
+                      </>
+                    )}
+                  </Text>
+                </Stack>
+              </Group>
+              <Group gap="xs" justify="flex-end" flex="1 1 auto">
                 {dictionary.index.isUpdatable && (
                   <ActionIcon
                     title={t("check_updates")}
@@ -178,7 +180,7 @@ export function DictionarySettings({
                   </>
                 )}
                 <Select
-                  w={120}
+                  w={160}
                   aria-label={t("dictionary_display", {
                     title: dictionary.index.title,
                   })}
