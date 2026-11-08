@@ -22,6 +22,7 @@ import { ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import { useId, useMemo, type ReactNode } from "react";
 export function Meanings({
   meanings,
+  forms = [],
   language,
   settings,
   onIgnoreTag,
@@ -34,6 +35,8 @@ export function Meanings({
   renderExample,
 }: {
   meanings: Meaning[];
+  /** Inflection evidence keeps base-verb meanings visible for participial modifiers. */
+  forms?: string[];
   language: string;
   settings: Settings;
   onIgnoreTag?: (tag: string) => void;
@@ -68,7 +71,10 @@ export function Meanings({
     [styles, instanceId],
   );
   const conflictsByMeaning = new Map(
-    displayed.map((meaning) => [meaning, grammarConflicts(meaning, grammar)]),
+    displayed.map((meaning) => [
+      meaning,
+      grammarConflicts(meaning, grammar, forms),
+    ]),
   );
   const dictionaries = [
     ...new Set(displayed.map((meaning) => meaning.dictionaryId)),

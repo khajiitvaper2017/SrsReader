@@ -107,7 +107,14 @@ export function CardDefinitions({
         onToggleDictionary={visibility.toggleDictionary}
         onToggleHiddenDictionary={visibility.toggleHiddenDictionary}
         renderExample={(meaning) => {
-          if (meaningsMatchPartOfSpeech([meaning], result.grammar)) return null;
+          if (
+            meaningsMatchPartOfSpeech(
+              [meaning],
+              result.grammar,
+              result.word.forms,
+            )
+          )
+            return null;
           const example = examples.find(
             (example) =>
               example.grammar &&

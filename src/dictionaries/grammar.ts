@@ -76,7 +76,10 @@ export function dictionaryPartsOfSpeech(meanings: Meaning[]): string[] {
     .filter(Boolean);
 }
 
-function partsOfSpeechForMatching(token: AnalysisToken): string[] {
+function partsOfSpeechForMatching(
+  token: AnalysisToken,
+  forms: string[] = [],
+): string[] {
   // Dictionaries can classify an adverbial negator as an adverb.
   if (
     token.upos === "PART" &&
@@ -84,12 +87,24 @@ function partsOfSpeechForMatching(token: AnalysisToken): string[] {
     token.deprel.split(":")[0] === "advmod"
   )
     return ["PART", "ADV"];
+  // Participles can modify nouns or verbs while dictionaries define their base verb.
+  if (
+    /^(ADJ|ADV)$/u.test(token.upos) &&
+    (token.feats.VerbForm === "Part" ||
+      forms.some((form) =>
+        /(?:^Partizip |^(?:present|past).*participle|Deklination|\b(?:strong|weak|mixed)\b)/iu.test(
+          form,
+        ),
+      ))
+  )
+    return [token.upos, "VERB", "AUX"];
   return [token.upos];
 }
 
 export function grammarConflicts(
   meaning: Meaning,
   grammar?: OccurrenceGrammar,
+  forms: string[] = [],
 ): Record<string, string> {
   if (!grammar || meaning.dictionaryId === "personal") return {};
   const tokens = grammar.sentence.tokens.filter((token) =>
@@ -100,7 +115,7 @@ export function grammarConflicts(
     : tokens.map((token) => ({ ...token.feats, UPOS: token.upos }));
   const partsOfSpeech = grammar.group
     ? ["VERB"]
-    : tokens.flatMap(partsOfSpeechForMatching);
+    : tokens.flatMap((token) => partsOfSpeechForMatching(token, forms));
   const rules = meaningTags(meaning).flatMap((tag) => {
     const explicit = tag.match(/^([A-Z][\w[\]]*)=(.+)$/u);
     const rule = explicit
@@ -280,7 +295,7 @@ export function wordMatchesGrammar(
     word.meanings.some(
       (meaning) =>
         expandedDictionaries.includes(meaning.dictionaryId) ||
-        !Object.keys(grammarConflicts(meaning, grammar)).length,
+        !Object.keys(grammarConflicts(meaning, grammar, word.forms)).length,
     )
   );
 }
@@ -288,6 +303,7 @@ export function wordMatchesGrammar(
 export function meaningsMatchPartOfSpeech(
   meanings: Meaning[],
   grammar?: OccurrenceGrammar,
+  forms: string[] = [],
 ) {
   const expected = new Set(
     meanings.flatMap((meaning) =>
@@ -305,7 +321,7 @@ export function meaningsMatchPartOfSpeech(
     ? ["VERB"]
     : grammar.sentence.tokens
         .filter((token) => grammar.tokenIds.includes(token.id))
-        .flatMap(partsOfSpeechForMatching);
+        .flatMap((token) => partsOfSpeechForMatching(token, forms));
   return (
     !parsed.length ||
     parsed.some((pos) => !pos || pos === "_" || expected.has(pos))

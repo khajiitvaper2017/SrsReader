@@ -107,6 +107,7 @@ export function EditableMeanings({
   ) : (
     <Meanings
       meanings={word.meanings}
+      forms={word.forms}
       language={word.language}
       settings={settings}
       grammar={grammar}

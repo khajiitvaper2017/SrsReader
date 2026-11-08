@@ -71,8 +71,14 @@ export function displayedWords(
   for (const word of words) {
     const existing = merged.get(word.id);
     if (!existing)
-      merged.set(word.id, { ...word, meanings: [...word.meanings] });
-    else
+      merged.set(word.id, {
+        ...word,
+        forms: [...word.forms],
+        meanings: [...word.meanings],
+      });
+    else {
+      for (const form of word.forms)
+        if (!existing.forms.includes(form)) existing.forms.push(form);
       for (const meaning of word.meanings)
         if (
           !existing.meanings.some(
@@ -80,6 +86,7 @@ export function displayedWords(
           )
         )
           existing.meanings.push(meaning);
+    }
   }
   words = [...merged.values()];
   const visible = displayedMeanings(

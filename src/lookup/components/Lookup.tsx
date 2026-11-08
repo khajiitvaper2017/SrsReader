@@ -142,6 +142,10 @@ function LookupEntry({
   } = useLookupWord({ page, onLookup, onBack });
   const compound = page.compound;
   const surface = result?.grammar?.group?.form || term;
+  // Dictionary paths list possible inflections; the parser describes this occurrence.
+  const dictionaryForms = result?.grammar
+    ? []
+    : word?.forms.filter((form) => !form.startsWith("redirected from ")) || [];
   const numeral = result?.numeral;
   const writtenNumeral =
     word &&
@@ -458,18 +462,10 @@ function LookupEntry({
             ))}
           {word && (
             <>
-              {(word.forms.filter(
-                (form) => !form.startsWith("redirected from "),
-              ).length > 0 ||
+              {(dictionaryForms.length > 0 ||
                 word.meanings.some((meaning) => meaning.grammar?.length)) && (
                 <Text variant="supporting">
-                  {[
-                    ...new Set(
-                      word.forms.filter(
-                        (form) => !form.startsWith("redirected from "),
-                      ),
-                    ),
-                  ]
+                  {[...new Set(dictionaryForms)]
                     .map((form) =>
                       form === "z-"
                         ? t("czech_z_prefix_form")
@@ -478,7 +474,7 @@ function LookupEntry({
                           : form,
                     )
                     .join(" · ")}
-                  {word.forms.length > 0 &&
+                  {dictionaryForms.length > 0 &&
                     word.meanings.some((meaning) => meaning.grammar?.length) &&
                     " · "}
                   {word.meanings
