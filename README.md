@@ -27,6 +27,14 @@ Connect Playwright with `chromium.connectOverCDP("http://127.0.0.1:9223")`. The 
 
 Stop the command with Ctrl+C. After `pnpm build`, restart it to load the new extension code. Settings, dictionaries, and learning data survive restarts. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an existing Chromium executable; otherwise the command uses Playwright's installed Chromium.
 
+### Phone update
+
+Run `pnpm phone:update` with an authorized phone connected through ADB. For Wi-Fi pairing, run `npx adb-qr` first and scan its code in Android's Wireless debugging settings. `adb` must be on your PATH.
+
+The command builds the Chromium extension, verifies the transfer, and replaces `/sdcard/Download/Telegram/chrome-mv3/chrome-mv3`. Each run keeps the previous folder beside it as a backup. Dictionaries and browser data are not cleared.
+
+If several ADB devices are connected, set `ANDROID_SERIAL` to the device listed by `adb devices`. Reload SrsReader in the phone browser after updating.
+
 ### Common-action benchmarks
 
 After `pnpm build`, run `pnpm test:browser` in another terminal with the saved German/Czech dictionaries, then `pnpm benchmark`. The saved reader must be unpaused, study both languages, allow `127.0.0.1`, and use automatic scanning with word colors and a mouse/key/hover lookup binding. Close active lookup popups first: cold measurements restart the extension worker (not the browser or its profile).
