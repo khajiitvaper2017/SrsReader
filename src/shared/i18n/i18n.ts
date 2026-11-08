@@ -5,9 +5,6 @@ import { z } from "zod";
 import enErrors from "zod/v4/locales/en.js";
 import ukErrors from "zod/v4/locales/uk.js";
 
-// Extension CSP forbids Zod's generated parsers and Function probe.
-z.config({ jitless: true });
-
 export const interfaceLanguages = ["en", "uk"] as const;
 export const i18n = i18next.createInstance();
 void i18n.init({

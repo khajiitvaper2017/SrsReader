@@ -15,6 +15,14 @@ export default defineConfig({
   modules: ["@wxt-dev/module-react"],
   zip: { excludeSources: ["dicts/**", "graft/**"] },
   vite: () => ({
+    resolve: {
+      alias: [
+        {
+          find: /^zod$/,
+          replacement: resolve("src/platform/validation.ts"),
+        },
+      ],
+    },
     plugins: [
       {
         name: "block-page-paint-until-settings",
