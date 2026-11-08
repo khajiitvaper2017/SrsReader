@@ -9,11 +9,17 @@ import { Languages } from "lucide-react";
 import {
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 type Translation = NonNullable<ReadingContext["translation"]>;
+type TranslationOperation =
+  | { kind: "idle" }
+  | { kind: "translating"; status: string }
+  | { kind: "error"; message: string };
 export function TextTranslation({
   text,
   language,
@@ -48,70 +54,96 @@ export function TextTranslation({
   const [translation, setTranslation] = useState<
     (Translation & { parts?: string[] }) | undefined
   >(initialTranslation);
+  const translationRef = useRef(translation);
   const inputKey = JSON.stringify(text);
   const [shown, setShown] = useState(autoTranslate && !collapsed);
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState<TranslationOperation>({
+    kind: "idle",
+  });
+  const activeRequest = useRef<object | null>(null);
+  const inputGeneration = useRef(0);
+  const busy = operation.kind === "translating";
   const Control = compact ? ActionIcon : Button;
-  useEffect(() => {
+  useLayoutEffect(() => {
+    inputGeneration.current++;
+    activeRequest.current = null;
+    translationRef.current = initialTranslation;
     setTranslation(initialTranslation);
-    setError("");
-  }, [inputKey, initialTranslation]);
+    setOperation({ kind: "idle" });
+    return () => {
+      inputGeneration.current++;
+      activeRequest.current = null;
+    };
+  }, [inputKey, language, settings.nativeLanguage, initialTranslation]);
   useEffect(() => {
     setShown(autoTranslate && !collapsed);
   }, [inputKey, autoTranslate, collapsed]);
   async function translate() {
     setShown(true);
-    if (translation?.language === settings.nativeLanguage) {
+    const cached = translationRef.current;
+    if (cached?.language === settings.nativeLanguage) {
       console.info("[translation] text cache hit", {
         text,
         sourceLanguage: language,
         targetLanguage: settings.nativeLanguage,
-        response: translation.text,
+        response: cached.text,
       });
       return;
     }
-    setBusy(true);
-    setError("");
+    if (activeRequest.current) return;
+    const request = {};
+    activeRequest.current = request;
+    const ownsRequest = () => activeRequest.current === request;
+    setOperation({ kind: "translating", status: "" });
     try {
       const parts: string[] = [];
       for (const part of typeof text === "string" ? [text] : text) {
-        parts.push(
-          await translateSentence(
-            part,
-            language,
-            settings.nativeLanguage,
-            setStatus,
-          ),
+        const translatedPart = await translateSentence(
+          part,
+          language,
+          settings.nativeLanguage,
+          (status) => {
+            if (ownsRequest()) setOperation({ kind: "translating", status });
+          },
         );
+        if (!ownsRequest()) return;
+        parts.push(translatedPart);
       }
       const value = {
         text: parts.join("\n"),
         parts,
         language: settings.nativeLanguage,
       };
+      if (!ownsRequest()) return;
+      translationRef.current = value;
       setTranslation(value);
       await onTranslated?.({ text: value.text, language: value.language });
     } catch (error) {
-      setError((error as Error).message);
+      if (ownsRequest())
+        setOperation({ kind: "error", message: (error as Error).message });
     } finally {
-      setBusy(false);
-      setStatus("");
+      if (ownsRequest()) {
+        activeRequest.current = null;
+        setOperation((current) =>
+          current.kind === "translating" ? { kind: "idle" } : current,
+        );
+      }
     }
   }
   const translateAutomatically = useEffectEvent(() => {
-    if (!busy) void translate();
+    if (!activeRequest.current) void translate();
   });
   useEffect(() => {
     if (!autoTranslate) return;
+    const generation = inputGeneration.current;
     let cancelled = false;
     void (async () => {
       if (
         initialTranslation?.language === settings.nativeLanguage ||
         (await canAutoTranslate(language, settings.nativeLanguage))
       ) {
-        if (!cancelled) translateAutomatically();
+        if (!cancelled && inputGeneration.current === generation)
+          translateAutomatically();
       }
     })();
     return () => {
@@ -147,16 +179,18 @@ export function TextTranslation({
         {translation.text}
       </Text>
     ));
-  const buttonLabel = busy
-    ? status || t("translating")
-    : showingTranslation
-      ? t("show_original")
-      : label;
+  const buttonLabel =
+    operation.kind === "translating"
+      ? operation.status || t("translating")
+      : showingTranslation
+        ? t("show_original")
+        : label;
   const button = (
     <Control
       title={buttonLabel}
       aria-label={buttonLabel}
       aria-pressed={showingTranslation}
+      aria-busy={busy}
       disabled={busy}
       onClick={() => (showingTranslation ? setShown(false) : void translate())}
       variant="subtle"
@@ -172,9 +206,9 @@ export function TextTranslation({
       {!compact && buttonLabel}
     </Control>
   );
-  const failure = error && (
+  const failure = operation.kind === "error" && (
     <Text data-srs-reader="" role="alert" c="red">
-      {error}
+      {operation.message}
     </Text>
   );
   if (children) return children(button, translated, failure);

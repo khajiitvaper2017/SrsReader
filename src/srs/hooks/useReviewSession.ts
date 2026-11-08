@@ -114,9 +114,7 @@ export function useReviewSession({
   const loadQueue = useCallback(
     (preserveCurrent: boolean) => {
       if (busyRef.current) return;
-      const revision = preserveCurrent
-        ? queueRevision.current
-        : ++queueRevision.current;
+      const revision = ++queueRevision.current;
       void fetchQueue()
         .then(async (value) => {
           const pinned = preserveCurrent

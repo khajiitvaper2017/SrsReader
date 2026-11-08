@@ -304,7 +304,14 @@ export function useLookupWord({
       alive = false;
     };
   }, [page, settings.studyLanguage, joined]);
+  const definitionRefresh = useRef(0);
+  useEffect(() => {
+    return () => {
+      definitionRefresh.current++;
+    };
+  }, [page, term, occurrence, settings.studyLanguage]);
   const refreshDefinitions = useCallback(() => {
+    const request = ++definitionRefresh.current;
     void dictionariesClient({
       action: "lookup",
       language: settings.studyLanguage,
@@ -312,11 +319,14 @@ export function useLookupWord({
       occurrence,
     })
       .then((value) => {
+        if (request !== definitionRefresh.current) return;
         setResult(value);
         setError(value.warning || "");
       })
-      .catch((error) => setError(error.message));
-  }, [settings.studyLanguage, term, occurrence]);
+      .catch((error) => {
+        if (request === definitionRefresh.current) setError(error.message);
+      });
+  }, [page, settings.studyLanguage, term, occurrence]);
   useChanges(refreshDefinitions, ["dictionaries", "settings", "vocabulary"]);
   const pending = useRef(0);
   const reload = useCallback(() => {

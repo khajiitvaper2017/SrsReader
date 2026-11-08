@@ -22,6 +22,7 @@ export function startReader(
   const excluded = excludedSelector;
   let settings: Settings = defaults;
   let active = false;
+  let configurationRevision = 0;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   const highlights = createHighlights(settings);
   const scanner = createScanner(
@@ -49,16 +50,20 @@ export function startReader(
       : () => {};
   ctx.onInvalidated(removeInputPrevention);
   async function configure(preservePopup = false, refreshDictionaries = false) {
+    if (ctx.isInvalid) return;
+    const revision = ++configurationRevision;
     const previous = settings;
-    settings =
+    const nextSettings =
       !preservePopup && options.settings
         ? options.settings
         : await settingsClient({ action: "settings" });
+    if (ctx.isInvalid || revision !== configurationRevision) return;
     await setInterfaceLanguage(
-      settings.interfaceLanguage,
-      settings.nativeLanguage,
+      nextSettings.interfaceLanguage,
+      nextSettings.nativeLanguage,
     );
-    if (ctx.isInvalid) return;
+    if (ctx.isInvalid || revision !== configurationRevision) return;
+    settings = nextSettings;
     highlights.configure(settings);
     const parsingKeys = [
       "setupComplete",
