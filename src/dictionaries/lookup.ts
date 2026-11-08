@@ -32,6 +32,27 @@ import { applyDefinitionOverrides, meaningKey } from "@/vocabulary/definitions";
 
 type LookupEntry = Omit<Entry, "sequence"> & { defined: boolean };
 
+function isLookupReference(
+  entry: LookupEntry,
+  definition: Entry["definitions"][number],
+  rows: LookupEntry[],
+): definition is [string, string[]] {
+  if (!Array.isArray(definition) || !definition[0]) return false;
+  // A defined single-word headword must not expand into unrelated phrase variants.
+  return !(
+    /\s/u.test(definition[0]) &&
+    definition[1].includes("variant") &&
+    !/\s/u.test(entry.key) &&
+    rows.some(
+      (candidate) =>
+        candidate.defined &&
+        candidate.revisionId === entry.revisionId &&
+        candidate.key === entry.key &&
+        candidate.reading === entry.reading,
+    )
+  );
+}
+
 const lookupCache = new Map<string, LookupResult>();
 // Prefix probes should not evict ordinary word lookups.
 const compoundCache = new Map<string, LookupResult>();
@@ -202,7 +223,7 @@ async function dictionaryLookup(
       }
       for (const entry of rows) {
         for (const definition of entry.definitions)
-          if (Array.isArray(definition) && definition[0]) {
+          if (isLookupReference(entry, definition, rows)) {
             const target = normalize(definition[0]);
             if (!graph.has(target)) refs.add(target);
           }
@@ -261,7 +282,7 @@ async function dictionaryLookup(
         const definitions = entry.definitions.flatMap((definition) =>
           !Array.isArray(definition)
             ? [definition]
-            : definition[0] &&
+            : isLookupReference(entry, definition, rows) &&
                 !rows.some(
                   (candidate) =>
                     candidate.defined &&
@@ -305,7 +326,7 @@ async function dictionaryLookup(
           resolved.set(id, word);
         }
         for (const definition of entry.definitions)
-          if (Array.isArray(definition) && definition[0]) {
+          if (isLookupReference(entry, definition, rows)) {
             const target = normalize(definition[0]);
             todo.push({
               term: target,
