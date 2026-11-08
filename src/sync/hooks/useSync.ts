@@ -97,17 +97,20 @@ export function useSync({ refreshStorageOnMount = false } = {}) {
         if (mounted.current && current === command.current) {
           revision.current += 1;
           setStatus(next);
+          setRefreshError(null);
         }
         return !next.error;
       } catch (failure) {
-        if (mounted.current && current === command.current)
-          setError(
-            failure instanceof RpcError
-              ? failure.code || failure.message
-              : failure instanceof Error
-                ? failure.message
-                : "sync_error",
-          );
+        if (mounted.current && current === command.current) {
+          if (failure instanceof RpcError)
+            setError(failure.code || failure.message);
+          else {
+            setRefreshError(
+              failure instanceof Error ? failure.message : "sync_error",
+            );
+            void refresh();
+          }
+        }
         return false;
       } finally {
         if (current === command.current) {
@@ -116,7 +119,7 @@ export function useSync({ refreshStorageOnMount = false } = {}) {
         }
       }
     },
-    [],
+    [refresh],
   );
   const account = status?.account?.id ?? null;
   useEffect(() => {
@@ -143,10 +146,19 @@ export function useSync({ refreshStorageOnMount = false } = {}) {
       if (mounted.current) {
         setStatus(next);
         setOperation(null);
+        setRefreshError(null);
       }
     } catch (failure) {
-      if (mounted.current)
-        setError(failure instanceof Error ? failure.message : "sync_error");
+      if (mounted.current) {
+        if (failure instanceof RpcError)
+          setError(failure.code || failure.message);
+        else {
+          setRefreshError(
+            failure instanceof Error ? failure.message : "sync_error",
+          );
+          void refresh();
+        }
+      }
     } finally {
       if (mounted.current) setCanceling(false);
     }

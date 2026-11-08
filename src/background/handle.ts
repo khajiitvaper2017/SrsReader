@@ -15,7 +15,6 @@ import { handleImports } from "@/imports/commands";
 import { handleSync } from "@/sync/commands";
 
 export async function handle(request: Request, warn?: ScanWarning) {
-  const settings = await getSettings();
   switch (request.action) {
     case "syncStatus":
     case "syncStorage":
@@ -28,6 +27,9 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "syncOnline":
     case "syncEdited":
       return handleSync(request);
+  }
+  const settings = await getSettings();
+  switch (request.action) {
     case "runImport":
     case "closeImportHost":
       return handleImports(request.action);

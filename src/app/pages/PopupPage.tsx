@@ -1,4 +1,12 @@
-import { Stack, ActionIcon, Button, Group, Switch, Text } from "@mantine/core";
+import {
+  Stack,
+  ActionIcon,
+  Button,
+  Group,
+  Loader,
+  Switch,
+  Text,
+} from "@mantine/core";
 import { dictionariesClient } from "@/dictionaries/client";
 import { isWebsiteEnabled } from "@/reader/preferences";
 import { settingsClient } from "@/settings/client";
@@ -17,7 +25,7 @@ import {
   SlidersHorizontal,
   Upload,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
 
 async function loadPopupData() {
@@ -34,17 +42,6 @@ async function loadPopupData() {
   };
 }
 
-const initial = await loadPopupData()
-  .then((data) => ({ data, error: "" }))
-  .catch((error: Error) => ({
-    data: {
-      stats: { total: 0, due: 0, known: 0, today: 0 },
-      dictionaryCount: 0,
-      host: "",
-    },
-    error: error.message,
-  }));
-
 export function Popup() {
   const [settings, setSettings] = useSettings();
   const sync = useSync();
@@ -57,13 +54,17 @@ export function Popup() {
       ? t(syncErrorKey)
       : t("sync_error_detail", { detail: sync.error })
     : "";
-  const [{ host, stats, dictionaryCount }, setData] = useState(initial.data);
-  const [error, setError] = useState(initial.error);
+  const [data, setData] = useState<Awaited<ReturnType<typeof loadPopupData>>>();
+  const host = data?.host ?? "";
+  const stats = data?.stats;
+  const dictionaryCount = data?.dictionaryCount;
+  const [error, setError] = useState("");
   const load = useCallback(() => {
     void loadPopupData()
       .then(setData)
       .catch((error) => setError(error.message));
   }, []);
+  useEffect(load, [load]);
   useChanges(load, [
     "vocabulary",
     "srs",
@@ -118,11 +119,20 @@ export function Popup() {
         </ActionIcon>
       </Group>
       <ErrorBox error={error || syncError} />
+      {syncBusy && (
+        <Text variant="supporting" role="status" aria-live="polite">
+          {t(
+            sync.status?.progress
+              ? `sync_progress_${sync.status.progress.phase}`
+              : "sync_in_progress",
+          )}
+        </Text>
+      )}
       {!settings.setupComplete ? (
         <Button onClick={() => open("setup")} variant="filled">
           <SlidersHorizontal aria-hidden="true" size={16} /> {t("setup")}{" "}
         </Button>
-      ) : !dictionaryCount ? (
+      ) : dictionaryCount === 0 ? (
         <Group align="center">
           <Text>{t("no_dictionary_installed")}</Text>
           <Button onClick={() => open("settings")} variant="filled">
@@ -131,9 +141,19 @@ export function Popup() {
           </Button>
         </Group>
       ) : (
-        <Button onClick={() => open("review")} variant="filled">
+        <Button
+          onClick={() => open("review")}
+          variant="filled"
+          aria-busy={!data && !error}
+        >
           <BookOpen aria-hidden="true" size={16} /> {t("review")}{" "}
-          <span>{stats.due}</span>
+          {stats ? (
+            <span>{stats.due}</span>
+          ) : (
+            !error && (
+              <Loader size="xs" color="currentColor" aria-hidden="true" />
+            )
+          )}
         </Button>
       )}
       <Group align="center">

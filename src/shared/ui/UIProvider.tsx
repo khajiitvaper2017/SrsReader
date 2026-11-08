@@ -1,6 +1,6 @@
 import type { ChangeMessage } from "@/platform/messaging/events";
 import { installInputPrevention } from "@/reader/input-prevention";
-import { settingsClient } from "@/settings/client";
+import { getUISettings } from "@/settings/client";
 import type { Settings } from "@/settings/model";
 import { i18n, setInterfaceLanguage, t } from "@/shared/i18n/i18n";
 import {
@@ -30,11 +30,7 @@ const colorSchemeManager = {
   clear: () => {},
 };
 
-const initialSettings = await settingsClient({ action: "settings" });
-await setInterfaceLanguage(
-  initialSettings.interfaceLanguage,
-  initialSettings.nativeLanguage,
-);
+const initialSettings = await getUISettings();
 const initialScheme =
   initialSettings.theme === "system"
     ? matchMedia("(prefers-color-scheme: dark)").matches
@@ -58,15 +54,7 @@ export function UIProvider({
   const [settings, setSettings] = useState<Settings>(initialSettings);
   useEffect(() => {
     const load = () => {
-      void settingsClient({ action: "settings" })
-        .then(async (value) => {
-          await setInterfaceLanguage(
-            value.interfaceLanguage,
-            value.nativeLanguage,
-          );
-          setSettings(value);
-        })
-        .catch(console.error);
+      void getUISettings().then(setSettings).catch(console.error);
     };
     const changed = (message: ChangeMessage) => {
       if (

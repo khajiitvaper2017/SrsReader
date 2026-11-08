@@ -5,9 +5,10 @@ import type { ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
 
-/** Floating feedback for page actions. Keep field errors and help beside their controls. */
+/** Floating action feedback. Use busyLabel for non-import work; keep field errors beside controls. */
 export function TaskAlerts({
   busy = false,
+  busyLabel,
   progress,
   error,
   notice,
@@ -15,6 +16,7 @@ export function TaskAlerts({
   onDismissNotice,
 }: {
   busy?: boolean;
+  busyLabel?: string;
   progress?: ImportProgress;
   error: string;
   notice: string;
@@ -45,7 +47,11 @@ export function TaskAlerts({
       <Stack gap="xs">
         {showProgress && (
           <Notification loading withCloseButton={false} role="status">
-            {progress ? <TaskProgress progress={progress} /> : t("working")}
+            {progress ? (
+              <TaskProgress progress={progress} />
+            ) : (
+              busyLabel || t("working")
+            )}
           </Notification>
         )}
         {error && (

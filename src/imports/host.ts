@@ -2,6 +2,8 @@ import ImportWorker from "@/dictionaries/import.worker?worker";
 import LanguageDataWorker from "@/languages/language-data.worker?worker";
 import AnkiImportWorker from "@/anki/import.worker?worker";
 import ExamplesWorker from "@/examples/query.worker?worker";
+import SyncWorker from "@/sync/processing.worker?worker";
+import { syncWorkError, type SyncWorkMessage } from "@/sync/processing";
 import { importInputSchema, type ImportTask } from "@/imports/model";
 import { db } from "@/platform/database/db";
 import { rpc } from "@/platform/messaging/send";
@@ -148,10 +150,58 @@ export function startImportHost() {
   let closing = false;
   let examplesWorker: Worker | undefined;
   const exampleQueries = new Set<string>();
+  const syncWorkers = new Map<string, Worker>();
+  const keepalive = setInterval(() => {
+    connection.postMessage({ type: "keepalive" });
+  }, 20000);
   const connect = () => {
     connection = browser.runtime.connect({ name: "import-host" });
     connection.onMessage.addListener((message) => {
       if (message?.type === "run") void run().catch(console.error);
+      if (message?.type === "sync-cancel") {
+        syncWorkers.get(message.id)?.terminate();
+        syncWorkers.delete(message.id);
+        connection.postMessage({
+          type: "sync-result",
+          id: message.id,
+          cancelled: true,
+        });
+        return;
+      }
+      if (message?.type === "sync-media") {
+        syncWorkers.get(message.id)?.postMessage(message);
+        return;
+      }
+      if (message?.type === "sync") {
+        try {
+          const worker = new SyncWorker();
+          syncWorkers.set(message.id, worker);
+          worker.onmessage = (event: MessageEvent<SyncWorkMessage>) => {
+            connection.postMessage({ type: "sync-result", ...event.data });
+            if (event.data.done || event.data.error) {
+              worker.terminate();
+              syncWorkers.delete(message.id);
+            }
+          };
+          worker.onerror = (event) => {
+            worker.terminate();
+            syncWorkers.delete(message.id);
+            connection.postMessage({
+              type: "sync-result",
+              id: message.id,
+              error: { message: event.message || t("background_host_failed") },
+            });
+          };
+          worker.postMessage({ id: message.id, request: message.request });
+        } catch (error) {
+          connection.postMessage({
+            type: "sync-result",
+            id: message.id,
+            error: syncWorkError(error),
+          });
+        }
+        return;
+      }
       if (message?.type !== "examples") return;
       try {
         if (!examplesWorker) {
@@ -187,6 +237,8 @@ export function startImportHost() {
       }
     });
     connection.onDisconnect.addListener(() => {
+      for (const worker of syncWorkers.values()) worker.terminate();
+      syncWorkers.clear();
       if (!closing) connect();
     });
     connection.postMessage({ type: "ready" });
@@ -196,6 +248,8 @@ export function startImportHost() {
     () => {
       closing = true;
       connection.disconnect();
+      clearInterval(keepalive);
+      for (const worker of syncWorkers.values()) worker.terminate();
       examplesWorker?.terminate();
     },
     { once: true },

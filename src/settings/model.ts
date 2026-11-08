@@ -6,6 +6,8 @@ import { srsPreferencesSchema } from "@/srs/preferences";
 import { translationPreferencesSchema } from "@/translation/preferences";
 import { z } from "zod";
 
+export const uiSettingsCacheKey = "uiSettingsSnapshot";
+
 export const settingsSchema = z
   .object({
     ...srsPreferencesSchema.shape,

@@ -112,8 +112,8 @@ function stateFor(trans: DBCoreTransaction): TransactionState {
         if (!state!.changed) return;
         notify();
         editChannel()?.postMessage(null);
-        void browser.runtime
-          .sendMessage({ action: "syncEdited" })
+        void browser?.runtime
+          ?.sendMessage({ action: "syncEdited" })
           .catch(() => {});
       },
       { once: true },

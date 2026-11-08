@@ -4,13 +4,14 @@ import { handle } from "@/background/handle";
 import { t } from "@/shared/i18n/i18n";
 import { browser } from "wxt/browser";
 import { udpipePermission } from "@/languages/udpipe-permission";
-import { getSettings, saveSettings } from "@/settings/store";
+import { getSettings, refreshUISettings, saveSettings } from "@/settings/store";
 import { notify } from "@/background/events";
 import { srsWrite } from "@/platform/locks";
 import { connectImportHost, handleImports } from "@/imports/commands";
 import { startSync } from "@/sync/service";
 
 export function startBackground() {
+  void refreshUISettings().catch(console.warn);
   startSync();
   browser.runtime.onConnect.addListener(connectImportHost);
   if (import.meta.env.BROWSER === "firefox") {

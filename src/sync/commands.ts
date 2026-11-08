@@ -14,7 +14,7 @@ import {
 export async function handleSync(request: Request) {
   switch (request.action) {
     case "syncConnect":
-      await connectSync(request.replaceAccount);
+      void connectSync(request.replaceAccount).catch(console.warn);
       break;
     case "syncCancel":
       await cancelSync();
@@ -23,7 +23,7 @@ export async function handleSync(request: Request) {
       await disconnectSync();
       break;
     case "syncNow":
-      await syncNow();
+      void syncNow().catch(console.warn);
       break;
     case "syncAutomatic":
       await setAutomaticSync(request.enabled);
@@ -36,7 +36,7 @@ export async function handleSync(request: Request) {
       await scheduleEdits();
       break;
     case "syncStorage":
-      await refreshSyncStorage();
+      void refreshSyncStorage().catch(console.warn);
       break;
     case "syncStatus":
       break;

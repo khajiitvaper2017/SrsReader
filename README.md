@@ -39,6 +39,8 @@ Console output gives median/p95; raw samples, scan phase timings, signed RPC ove
 
 Optional sync stores learning data in Google Drive's hidden application-data folder. Dictionaries, models, and caches are not synced.
 
+The theme in **Settings → Appearance** stays on each device. Choose **System**, **Light**, **Dark**, or **OLED** (pure black). **System** follows the browser's color scheme.
+
 Enable the Drive API and register both OAuth clients under one Google Cloud project. Set these build-time variables in an untracked `.env.local`:
 
 - `WXT_GOOGLE_CLIENT_ID`: a Chrome Extension OAuth client registered for extension ID `nlmfchmfabficodmhaioejabcbdaekjh`.

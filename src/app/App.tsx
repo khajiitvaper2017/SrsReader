@@ -17,7 +17,7 @@ import { t } from "@/shared/i18n/i18n";
 import { Logo } from "@/shared/ui/Logo";
 import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { srsClient } from "@/srs/client";
-import { useSyncLifecycle } from "@/sync/hooks/useSync";
+import { useSync, useSyncLifecycle } from "@/sync/hooks/useSync";
 import {
   BookMarked,
   BookOpen,
@@ -58,6 +58,7 @@ const SearchPage = React.lazy(() =>
 );
 export function App() {
   useSyncLifecycle();
+  const sync = useSync();
   const [hash, setHash] = useState(location.hash.slice(1) || "review");
   const [page = "review", query] = hash.split("?");
   const params = new URLSearchParams(query);
@@ -228,8 +229,17 @@ export function App() {
         </Container>
       </AppShell.Main>
       <TaskAlerts
-        busy={tasks.busy}
-        progress={tasks.progress}
+        busy={tasks.busy || sync.status?.running}
+        busyLabel={
+          !tasks.busy && sync.status?.running
+            ? t(
+                sync.status.progress
+                  ? `sync_progress_${sync.status.progress.phase}`
+                  : "sync_in_progress",
+              )
+            : undefined
+        }
+        progress={tasks.busy ? tasks.progress : undefined}
         error={tasks.error}
         notice={tasks.notice}
         onDismissError={() => {

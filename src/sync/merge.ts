@@ -121,7 +121,8 @@ function validateRecord(record: SyncRecord) {
       value.id !== "main" ||
       typeof value.field !== "string" ||
       !Object.hasOwn(value, "value") ||
-      !Object.hasOwn(portableSettings(defaults), value.field)
+      (value.field !== "theme" &&
+        !Object.hasOwn(portableSettings(defaults), value.field))
     )
       throw invalid();
     settingsSchema.parse({ ...defaults, [value.field]: value.value });
@@ -190,7 +191,10 @@ function validateRecord(record: SyncRecord) {
   }
 }
 
-export async function mergeSnapshots(snapshots: SyncSnapshot[]): Promise<void> {
+export async function mergeSnapshots(
+  snapshots: SyncSnapshot[],
+  report: (done: number, total: number) => void,
+): Promise<void> {
   let incoming: SyncSnapshot[];
   try {
     incoming = snapshots.map((snapshot) => snapshotSchema.parse(snapshot));
@@ -224,6 +228,7 @@ export async function mergeSnapshots(snapshots: SyncSnapshot[]): Promise<void> {
   } catch {
     throw invalid();
   }
+  report(1, 5);
   await srsWrite(() =>
     db.transaction(
       "rw",
@@ -309,6 +314,7 @@ export async function mergeSnapshots(snapshots: SyncSnapshot[]): Promise<void> {
             const old = winners.get(record.key);
             if (!old || order(record, old) > 0) winners.set(record.key, record);
           }
+          report(2, 5);
           const alive = (kind: SyncRecord["kind"]) =>
             [...winners.values()].filter(
               (record) => record.kind === kind && !record.deleted,
@@ -605,6 +611,7 @@ export async function mergeSnapshots(snapshots: SyncSnapshot[]): Promise<void> {
             }
             return card;
           });
+          report(3, 5);
           const mergedNotes = [...notes.values()].map((record) => {
             const note = noteSchema.parse({
               ...record.value!,
@@ -710,6 +717,7 @@ export async function mergeSnapshots(snapshots: SyncSnapshot[]): Promise<void> {
             );
           }
           // Every schema/reference check above completes before the first database mutation.
+          report(4, 5);
           await db.cards.clear();
           await db.cards.bulkPut(mergedCards);
           await db.notes.clear();
@@ -754,6 +762,7 @@ export async function mergeSnapshots(snapshots: SyncSnapshot[]): Promise<void> {
             retained: retainedFrontiers,
           });
           await db.syncMeta.put({ ...identity, observed });
+          report(5, 5);
         }),
     ),
   ).catch((error: unknown) => {

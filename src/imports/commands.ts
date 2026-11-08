@@ -3,6 +3,12 @@ import { t } from "@/shared/i18n/i18n";
 import { browser, type Browser } from "wxt/browser";
 import type { Request as ExampleRequest } from "@/examples/contracts";
 import type { ExamplesResult } from "@/examples/model";
+import {
+  syncWorkError,
+  type SyncWork,
+  type SyncWorkMessage,
+} from "@/sync/processing";
+import type { SyncProgress, SyncRecord } from "@/sync/model";
 
 let firefoxHost: HTMLIFrameElement | undefined;
 const hosts = new Set<Browser.runtime.Port>();
@@ -12,11 +18,134 @@ const exampleQueries = new Map<
   { resolve: (value: ExamplesResult) => void; reject: (error: Error) => void }
 >();
 let exampleIdleTimer: ReturnType<typeof setTimeout> | undefined;
+const syncJobs = new Map<
+  string,
+  {
+    promise: Promise<void>;
+    host?: Browser.runtime.Port;
+    cancelled?: boolean;
+    resolve: () => void;
+    reject: (error: Error) => void;
+    report: (progress: SyncProgress) => void;
+    loadMedia?: (hash: string, record: SyncRecord) => Promise<Blob>;
+  }
+>();
+let syncUsers = 0;
+
+export async function retainSyncHost() {
+  syncUsers++;
+  try {
+    await handleImports("runImport");
+  } catch (error) {
+    syncUsers--;
+    throw error;
+  }
+  return () => {
+    syncUsers--;
+    void handleImports("closeImportHost").catch(console.error);
+  };
+}
+
+export async function processSync(
+  request: SyncWork,
+  report: (progress: SyncProgress) => void = () => {},
+  loadMedia?: (hash: string, record: SyncRecord) => Promise<Blob>,
+) {
+  const id = crypto.randomUUID();
+  const pending = Promise.withResolvers<void>();
+  syncJobs.set(id, { ...pending, report, loadMedia });
+  try {
+    void handleImports("runImport")
+      .then(() => {
+        const job = syncJobs.get(id);
+        if (!job || job.cancelled) return;
+        job.host = hosts.values().next().value!;
+        job.host.postMessage({ type: "sync", id, request });
+      })
+      .catch(pending.reject);
+    await pending.promise;
+  } finally {
+    syncJobs.delete(id);
+    await db.syncMeta.where("id").startsWith(`sync-worker-${id}-`).delete();
+    void handleImports("closeImportHost").catch(console.error);
+  }
+}
+
+export async function cancelSyncProcessing() {
+  const pending: Promise<void>[] = [];
+  for (const [id, job] of syncJobs) {
+    pending.push(job.promise);
+    if (job.cancelled) continue;
+    job.cancelled = true;
+    if (job.host) {
+      try {
+        job.host.postMessage({ type: "sync-cancel", id });
+      } catch (error) {
+        job.reject(error instanceof Error ? error : new Error(String(error)));
+      }
+    } else {
+      job.reject(
+        Object.assign(new Error("sync_cancelled"), {
+          code: "SYNC_AUTH_CANCELLED",
+        }),
+      );
+    }
+  }
+  await Promise.allSettled(pending);
+}
 
 export function connectImportHost(port: Browser.runtime.Port) {
   if (port.name !== "import-host") return;
   if (port.sender?.url !== browser.runtime.getURL("/imports.html")) return;
   port.onMessage.addListener((message) => {
+    if (message?.type === "sync-result") {
+      const result = message as SyncWorkMessage;
+      const job = syncJobs.get(result.id);
+      if (!job) return;
+      if (job.cancelled) {
+        if (result.cancelled)
+          job.reject(
+            Object.assign(new Error("sync_cancelled"), {
+              code: "SYNC_AUTH_CANCELLED",
+            }),
+          );
+        return;
+      }
+      if (result.progress) job.report(result.progress);
+      if (result.media) {
+        const { hash, record } = result.media;
+        void (async () => {
+          try {
+            if (!job.loadMedia) throw new Error("sync_invalid_media");
+            const blob = await job.loadMedia(hash, record);
+            if (syncJobs.get(result.id) !== job || job.cancelled) return;
+            await db.syncMeta.put({
+              id: `sync-worker-${result.id}-${hash}`,
+              blob,
+            });
+            port.postMessage({
+              type: "sync-media",
+              id: result.id,
+              media: hash,
+            });
+          } catch (error) {
+            if (syncJobs.has(result.id))
+              port.postMessage({
+                type: "sync-media",
+                id: result.id,
+                media: hash,
+                error: syncWorkError(error),
+              });
+          }
+        })();
+      }
+      if (result.error)
+        job.reject(
+          Object.assign(new Error(result.error.message), result.error),
+        );
+      else if (result.done) job.resolve();
+      return;
+    }
     if (message?.type === "examples-result") {
       const pending = exampleQueries.get(message.id);
       if (message.error) pending?.reject(new Error(message.error));
@@ -29,9 +158,11 @@ export function connectImportHost(port: Browser.runtime.Port) {
   });
   port.onDisconnect.addListener(() => {
     hosts.delete(port);
-    if (!hosts.size)
-      for (const pending of exampleQueries.values())
-        pending.reject(new Error(t("background_host_failed")));
+    if (!hosts.size) {
+      const error = new Error(t("background_host_failed"));
+      for (const pending of exampleQueries.values()) pending.reject(error);
+      for (const pending of syncJobs.values()) pending.reject(error);
+    }
   });
 }
 
@@ -71,7 +202,11 @@ export function handleImports(action: "runImport" | "closeImportHost") {
     const task = await db.importTasks.get("current");
     const running = task?.status === "running";
     const needed =
-      running || exampleQueries.size > 0 || exampleIdleTimer !== undefined;
+      running ||
+      exampleQueries.size > 0 ||
+      exampleIdleTimer !== undefined ||
+      syncJobs.size > 0 ||
+      syncUsers > 0;
     if (action === "closeImportHost" && needed) return;
     const url = browser.runtime.getURL("/imports.html");
     try {

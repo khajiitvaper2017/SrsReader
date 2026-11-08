@@ -7,7 +7,7 @@ import type {
   ChangeScope,
   RuntimeEvent,
 } from "@/platform/messaging/events";
-import { getSettings } from "@/settings/store";
+import { getSettings, refreshUISettings } from "@/settings/store";
 import { stateOf } from "@/vocabulary/model";
 import { browser } from "wxt/browser";
 
@@ -24,6 +24,12 @@ export async function notify(
   clearWordLists();
   if (scope !== "sync") scanCache.results = new Map();
   if (!wordId) clearLookupCache();
+  if (
+    scope === "settings" ||
+    scope === "collection" ||
+    scope === "dictionaries"
+  )
+    await refreshUISettings().catch(console.warn);
   const word = wordId ? await getWord(wordId) : undefined;
   const message: ChangeMessage = {
     scope,

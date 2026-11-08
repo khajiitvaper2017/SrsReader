@@ -1,10 +1,11 @@
 import { browser } from "wxt/browser";
 import { broadcast, notify } from "@/background/events";
+import {
+  cancelSyncProcessing,
+  processSync,
+  retainSyncHost,
+} from "@/imports/commands";
 import { db } from "@/platform/database/db";
-import { srsWrite } from "@/platform/locks";
-import { getSettings } from "@/settings/store";
-import { rwkvStatus } from "@/srs/engines/rwkv/cache";
-import { replayBatch } from "@/srs/engines/rwkv/replay";
 import { t } from "@/shared/i18n/i18n";
 import {
   accessToken,
@@ -24,24 +25,15 @@ import {
 } from "@/sync/drive";
 import { readDriveFiles, saveDriveFiles } from "@/sync/drive-index";
 import { findLocalMedia } from "@/sync/media";
-import { mergeSnapshots } from "@/sync/merge";
 import {
   type SyncIdentity,
   type SyncProgress,
   type SyncRecord,
-  type SyncSnapshot,
   type SyncStatus,
   type SyncTransferState,
 } from "@/sync/model";
-import {
-  captureSnapshot,
-  initializeTracking,
-  markPublished,
-  onSyncEdit,
-  pendingCount,
-  prepareAccountSync,
-} from "@/sync/tracking";
-import { packSnapshot, unpackSnapshot } from "@/sync/transfer";
+import type { PackedSync } from "@/sync/processing";
+import { markPublished, onSyncEdit, pendingCount } from "@/sync/tracking";
 
 const storageKey = "syncTransfer";
 const periodicAlarm = "srs-reader-sync";
@@ -68,6 +60,39 @@ let cancelled = false;
 let progress: SyncProgress | null = null;
 let started = false;
 let stateWrites = Promise.resolve();
+let trackingReady: Promise<void> | undefined;
+let pending = 0;
+let pendingRequest: Promise<void> | undefined;
+let pendingDirty = false;
+
+function refreshPending() {
+  if (!trackingReady) return Promise.resolve();
+  pendingDirty = true;
+  pendingRequest ??= (async () => {
+    while (pendingDirty) {
+      pendingDirty = false;
+      const count = await pendingCount();
+      if (pending !== count) {
+        pending = count;
+        await changed();
+      }
+    }
+  })().finally(() => {
+    pendingRequest = undefined;
+    if (pendingDirty) void refreshPending().catch(console.warn);
+  });
+  return pendingRequest;
+}
+
+function prepareTracking() {
+  trackingReady ??= processSync({ action: "initialize" })
+    .then(() => refreshPending())
+    .catch((error) => {
+      trackingReady = undefined;
+      throw error;
+    });
+  return trackingReady;
+}
 
 async function changed() {
   await broadcast({ event: "changed", scope: "sync" });
@@ -85,7 +110,6 @@ async function initialize() {
     const stored = (await browser.storage.local.get(storageKey))[storageKey] as
       Partial<SyncTransferState> | undefined;
     transfer = { ...emptyTransfer(), ...stored };
-    await initializeTracking();
     initializeAuth();
   })();
   await initialized;
@@ -104,19 +128,20 @@ async function report(
   progress = { phase, done, total };
   await changed();
 }
-async function rebuildHistoryCache() {
-  let settings = await getSettings();
-  if (settings.algorithm !== "rwkv") return;
-  let status = await rwkvStatus(settings);
-  // Sync transfers neither models nor model-download consent.
-  if (!status.downloaded) return;
-  while (!status.ready) {
-    checkCancelled();
-    settings = await getSettings();
-    if (settings.algorithm !== "rwkv") return;
-    status = await srsWrite(() => replayBatch(settings));
-    await report("merge", status.processed, status.total);
-  }
+async function processWork(
+  request: Parameters<typeof processSync>[0],
+  loadMedia?: Parameters<typeof processSync>[2],
+) {
+  checkCancelled();
+  await processSync(
+    request,
+    (value) => {
+      progress = value;
+      void changed().catch(console.warn);
+    },
+    loadMedia,
+  );
+  checkCancelled();
 }
 function errorCode(error: unknown) {
   if (
@@ -168,7 +193,10 @@ function latestSnapshots(files: DriveFile[]) {
 }
 async function bindAccount(account: string) {
   if (transfer.account === account) return;
-  await prepareAccountSync(transfer.account !== null);
+  await processWork({
+    action: "prepare",
+    replaceAccount: transfer.account !== null,
+  });
   await db.syncMeta.delete("outgoing");
   await clearDriveUploads();
   transfer = { ...emptyTransfer(), account, automatic: transfer.automatic };
@@ -186,22 +214,10 @@ async function assertAccount() {
     });
   return auth.account;
 }
-async function outgoingSnapshot(account: string): Promise<SyncSnapshot> {
-  const outgoing = await db.syncMeta.get("outgoing");
-  if (
-    outgoing &&
-    "account" in outgoing &&
-    outgoing.account === account &&
-    "snapshot" in outgoing
-  )
-    return outgoing.snapshot as SyncSnapshot;
-  const snapshot = await captureSnapshot();
-  await db.syncMeta.put({ id: "outgoing", account, snapshot });
-  return snapshot;
-}
 async function synchronize() {
   const account = await assertAccount();
   await report("check", 0, 0);
+  await prepareTracking();
   await accessToken();
   checkCancelled();
   const files = await readDriveFiles(account.id);
@@ -226,7 +242,7 @@ async function synchronize() {
     }
     return loaded;
   };
-  const incoming: SyncSnapshot[] = [];
+  const incoming: string[] = [];
   const received = { ...transfer.received };
   const localIdentity = (await db.syncMeta.get("identity")) as SyncIdentity;
   const downloads = [...latest.entries()].filter(
@@ -239,27 +255,32 @@ async function synchronize() {
   if (downloads.length) await report("download", 0, downloads.length);
   for (const [index, [device, file]] of downloads.entries()) {
     checkCancelled();
-    const snapshot = await unpackSnapshot(
-      await downloadFile(file.id),
+    const key = `sync-work-${crypto.randomUUID()}`;
+    await db.syncMeta.put({ id: key, blob: await downloadFile(file.id) });
+    await processWork(
+      {
+        action: "unpack",
+        key,
+        device,
+        revision: revision(file),
+      },
       loadMedia,
     );
-    if (snapshot.device !== device || snapshot.revision !== revision(file))
-      throw new Error(t("sync_invalid_snapshot"));
-    incoming.push(snapshot);
-    received[device] = snapshot.revision;
+    incoming.push(key);
+    received[device] = revision(file);
     await report("download", index + 1, downloads.length);
   }
   checkCancelled();
   if (incoming.length) {
-    await report("merge", 0, incoming.length);
-    await mergeSnapshots(incoming);
+    await report("merge", 0, 5);
+    await processWork({ action: "merge", keys: incoming });
     transfer.received = received;
     await persist();
     await notify();
     await notify(undefined, "settings");
-    await report("merge", incoming.length, incoming.length);
+    await report("merge", 5, 5);
   }
-  await rebuildHistoryCache();
+  await processWork({ action: "rebuild" });
   checkCancelled();
   const identity = (await db.syncMeta.get("identity")) as SyncIdentity;
   const outgoing = await db.syncMeta.get("outgoing");
@@ -269,8 +290,11 @@ async function synchronize() {
     identity.published === 0 ||
     !latest.has(identity.device)
   ) {
-    const snapshot = await outgoingSnapshot(account.id);
-    const packed = await packSnapshot(snapshot);
+    await report("upload", 0, 0);
+    const key = `sync-work-${crypto.randomUUID()}`;
+    await processWork({ action: "pack", key, account: account.id });
+    const packed = (await db.syncMeta.get(key)) as PackedSync;
+    const snapshot = packed;
     await report("media", 0, packed.media.size);
     let done = 0;
     for (const [hash, blob] of packed.media) {
@@ -401,7 +425,7 @@ export async function syncStatus(): Promise<SyncStatus> {
     account: auth.account,
     automatic: transfer.automatic,
     lastSuccess: transfer.lastSuccess,
-    pending: await pendingCount(),
+    pending,
     progress,
     error: transfer.error,
     authorizationRequired:
@@ -433,7 +457,7 @@ export async function refreshSyncStorage() {
         }
         await persist();
       } catch (error) {
-        await recordFailure(error, false);
+        await recordFailure(error);
         throw error;
       }
     },
@@ -456,12 +480,19 @@ export async function syncNow() {
     try {
       transfer.error = null;
       await changed();
-      await synchronize();
+      const release = await retainSyncHost();
+      try {
+        await synchronize();
+      } finally {
+        release();
+      }
     } catch (error) {
       await recordFailure(error);
       throw error;
     } finally {
       progress = null;
+      await db.syncMeta.where("id").startsWith("sync-work-").delete();
+      await refreshPending();
     }
   });
   try {
@@ -504,6 +535,7 @@ export async function connectSync(replaceAccount = false) {
 export async function cancelSync() {
   cancelled = true;
   cancelDriveTransfers();
+  await cancelSyncProcessing();
   await cancelGoogle();
   if (active) await active.catch(() => {});
   if (storageRequest) await storageRequest.catch(() => {});
@@ -534,7 +566,7 @@ export async function setAutomaticSync(enabled: boolean) {
   await initialize();
   transfer.automatic = enabled;
   await persist();
-  if (enabled) await automaticSync();
+  if (enabled) void automaticSync().catch(console.warn);
   else {
     await browser.alarms.clear(editAlarm);
     await browser.alarms.clear(retryAlarm);
@@ -558,6 +590,7 @@ export async function automaticSync() {
 export async function scheduleEdits() {
   await initialize();
   await changed();
+  void prepareTracking().then(refreshPending).catch(console.warn);
   if (
     transfer.automatic &&
     !transfer.authorizationRequired &&
@@ -580,6 +613,7 @@ export function startSync() {
   });
   void initialize()
     .then(async () => {
+      void prepareTracking().catch(recordFailure).catch(console.warn);
       if (!(await browser.alarms.get(periodicAlarm)))
         await browser.alarms.create(periodicAlarm, { periodInMinutes: 5 });
       if (transfer.retryAt > Date.now())
