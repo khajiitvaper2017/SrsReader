@@ -31,6 +31,8 @@ Stop the command with Ctrl+C. After `pnpm build`, restart it to load the new ext
 
 Run `pnpm phone:update` with an authorized phone connected through ADB. For Wi-Fi pairing, run `npx adb-qr` first and scan its code in Android's Wireless debugging settings. `adb` must be on your PATH.
 
+The command waits until an authorized ADB device is available. Press Ctrl+C to cancel.
+
 The command builds the Chromium extension, verifies the transfer, and replaces `/sdcard/Download/Telegram/chrome-mv3/chrome-mv3`. Each run keeps the previous folder beside it as a backup. Dictionaries and browser data are not cleared.
 
 If several ADB devices are connected, set `ANDROID_SERIAL` to the device listed by `adb devices`. Reload SrsReader in the phone browser after updating.

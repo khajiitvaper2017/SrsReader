@@ -17,6 +17,8 @@ async function checksum(path: string) {
 }
 
 try {
+  console.log("Waiting for an authorized ADB device; press Ctrl+C to cancel...");
+  execFileSync("adb", ["wait-for-device"], { stdio: "inherit" });
   const serial = execFileSync("adb", ["get-serialno"], {
     encoding: "utf8",
   }).trim();
