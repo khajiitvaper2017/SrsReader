@@ -43,6 +43,12 @@ The headless suite measures initial viewport/full-page and incremental scroll sc
 
 Console output gives median/p95; raw samples, scan phase timings, signed RPC overhead residuals, action outcomes, and errors go to `test-results/action-benchmarks.json`. `BENCH_SAMPLES=7` changes repetitions (3–100, default 5); `BENCH_REPORT=/path/report.json` changes the report path. Failures exit nonzero; unmeasured actions are not passed or timed as skips. There are no timing thresholds. Content-paint metrics use browser event, iframe-session, or navigation timestamps. `totalMs` retains the automation-inclusive elapsed time, and `automationResidualMs` reports its difference from browser paint latency. Deliberate hover/search debounce delay is reported separately. “Cold” restarts the extension worker; the idle-prepared popup UI and OS/disk caches remain unchanged.
 
+## Word colors
+
+Open **Settings → Reading → Word colors**. Choose **Tint** or **Off** for each study state. Tint adds a background without changing the page's text or link colors.
+
+Set **Tint strength** from 0% (transparent) to 100% (solid). The default is 15%. **Reset colors** restores the default palette and strength.
+
 ## Google Drive build configuration
 
 Optional sync stores learning data in Google Drive's hidden application-data folder. Dictionaries, models, and caches are not synced.

@@ -5,16 +5,19 @@ import {
   Group,
   Paper,
   Select,
+  Slider,
   Stack,
   Switch,
   Text,
   Title,
 } from "@mantine/core";
 import { defaults, type Settings } from "@/settings/model";
+import { wordTintColor } from "@/reader/highlight-style";
 import { wordStyleStates } from "@/settings/word-styles";
 import { t } from "@/shared/i18n/i18n";
 import { wordStateLabels } from "@/vocabulary/state";
 import { RotateCcw } from "lucide-react";
+import { useEffect, useState } from "react";
 export function WordColors({
   settings,
   onChange,
@@ -22,6 +25,11 @@ export function WordColors({
   settings: Settings;
   onChange: (patch: Partial<Settings>) => void;
 }) {
+  const [opacity, setOpacity] = useState(settings.wordColorOpacity);
+  useEffect(
+    () => setOpacity(settings.wordColorOpacity),
+    [settings.wordColorOpacity],
+  );
   return (
     <Paper>
       <Stack>
@@ -33,6 +41,24 @@ export function WordColors({
             onChange({ wordColorsEnabled: event.target.checked })
           }
         />
+        <Stack gap="xs">
+          <Group justify="space-between">
+            <Text>{t("word_tint_opacity")}</Text>
+            <Text variant="supporting">{opacity}%</Text>
+          </Group>
+          <Slider
+            value={opacity}
+            onChange={setOpacity}
+            onChangeEnd={(value) => onChange({ wordColorOpacity: value })}
+            min={0}
+            max={100}
+            label={(value) => `${value}%`}
+            thumbLabel={t("word_tint_opacity")}
+            thumbValueText={(value) => `${value}%`}
+            disabled={!settings.wordColorsEnabled}
+          />
+          <Text variant="supporting">{t("word_tint_help")}</Text>
+        </Stack>
         <Stack>
           {wordStyleStates.map((state) => {
             const style = settings.wordStyles[state];
@@ -48,14 +74,10 @@ export function WordColors({
               <Grid key={state} align="center">
                 <Grid.Col span={{ base: 12, xs: 4 }}>
                   <Text
-                    c={
-                      settings.wordColorsEnabled && style.mode === "text"
-                        ? style.color
-                        : undefined
-                    }
+                    component="span"
                     bg={
                       settings.wordColorsEnabled && style.mode === "background"
-                        ? style.color + "30"
+                        ? wordTintColor(style.color, opacity)
                         : undefined
                     }
                   >
@@ -72,8 +94,7 @@ export function WordColors({
                     }
                     data={[
                       { value: "none", label: t("off") },
-                      { value: "text", label: t("text") },
-                      { value: "background", label: t("background") },
+                      { value: "background", label: t("word_tint") },
                     ]}
                   />
                 </Grid.Col>
@@ -94,7 +115,12 @@ export function WordColors({
         <Group>
           <Button
             leftSection={<RotateCcw size={16} />}
-            onClick={() => onChange({ wordStyles: defaults.wordStyles })}
+            onClick={() =>
+              onChange({
+                wordStyles: defaults.wordStyles,
+                wordColorOpacity: defaults.wordColorOpacity,
+              })
+            }
             variant="subtle"
           >
             {t("reset_colors")}
