@@ -38,6 +38,14 @@ export function installReaderInput(
   let lastTapPoint: Pointer | undefined;
   let lastTouch = 0;
   let pendingTap: ReturnType<typeof setTimeout> | undefined;
+  let touchClick:
+    | {
+        point: Pointer;
+        until: number;
+        target?: Element;
+        event?: MouseEvent;
+      }
+    | undefined;
   const wordAtPointer = () => scanner.wordAtPointer(pointer);
   function relayKeys(event?: KeyboardEvent, pressed = false) {
     if (event)
@@ -106,9 +114,23 @@ export function installReaderInput(
     event.preventDefault();
     event.stopImmediatePropagation();
   }
+  function suppressTouchClick() {
+    if (pointer)
+      touchClick = {
+        point: pointer,
+        until: Date.now() + 800,
+      };
+  }
+  function releaseTouchClick() {
+    const click = touchClick;
+    touchClick = undefined;
+    if (click?.event && click.target?.isConnected)
+      click.target.dispatchEvent(click.event);
+  }
   function cancelTouch() {
     clearTimeout(touchTimer);
     clearTimeout(pendingTap);
+    if (touchClick) touchClick.event = undefined;
     touchId = undefined;
     touchPoint = undefined;
     touchStart = 0;
@@ -275,7 +297,6 @@ export function installReaderInput(
       clearTimeout(timer);
       suppressedButtons.clear();
       clearTimeout(touchTimer);
-      clearTimeout(pendingTap);
       touchHeld = false;
       touchId = undefined;
       touchPoint = undefined;
@@ -284,6 +305,7 @@ export function installReaderInput(
         cancelTouch();
         return;
       }
+      if (!touchClick?.event) touchClick = undefined;
       if ((event.target as Element)?.closest("[data-srs-reader]")) {
         cancelTouch();
         return;
@@ -311,8 +333,11 @@ export function installReaderInput(
           touch.clientX - lastTapPoint.clientX,
           touch.clientY - lastTapPoint.clientY,
         ) > 24
-      )
+      ) {
+        clearTimeout(pendingTap);
         lastTap = 0;
+        lastTapPoint = undefined;
+      }
       if (
         getSettings().lookupBindings.some(
           (binding) => binding.type === "touch" && binding.gesture === "hold",
@@ -323,6 +348,8 @@ export function installReaderInput(
           pointer = touchPoint;
           touchHeld = activate();
           if (touchHeld) {
+            clearTimeout(pendingTap);
+            suppressTouchClick();
             lastTap = 0;
             lastTapPoint = undefined;
           }
@@ -373,6 +400,7 @@ export function installReaderInput(
       touchPoint = undefined;
       if (touchHeld) {
         touchHeld = false;
+        suppressTouchClick();
         consume(event);
         return;
       }
@@ -384,28 +412,70 @@ export function installReaderInput(
         cancelTouch();
         return;
       }
+      if (
+        touchClick?.event &&
+        Math.hypot(
+          pointer.clientX - touchClick.point.clientX,
+          pointer.clientY - touchClick.point.clientY,
+        ) > 24
+      )
+        releaseTouchClick();
       const bindings = getSettings().lookupBindings;
       const doubleTap = bindings.some(
         (binding) =>
           binding.type === "touch" && binding.gesture === "doubleTap",
       );
       if (doubleTap && lastTap && Date.now() - lastTap < 320) {
+        clearTimeout(pendingTap);
         lastTap = 0;
         lastTapPoint = undefined;
-        if (activate()) consume(event);
+        if (activate()) {
+          suppressTouchClick();
+          consume(event);
+        } else releaseTouchClick();
       } else if (doubleTap) {
         lastTap = Date.now();
         lastTapPoint = pointer;
         const tapPoint = pointer;
+        if (
+          pointer?.target instanceof Element &&
+          pointer.target.closest("a[href]") &&
+          wordAtPointer()
+        ) {
+          touchClick = {
+            point: pointer,
+            until: Date.now() + 800,
+            target: pointer.target,
+            event: new PointerEvent("click", {
+              bubbles: true,
+              cancelable: true,
+              composed: true,
+              view: window,
+              detail: 1,
+              pointerType: "touch",
+              isPrimary: true,
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+              screenX: touch.screenX,
+              screenY: touch.screenY,
+              ctrlKey: touchEvent.ctrlKey,
+              altKey: touchEvent.altKey,
+              shiftKey: touchEvent.shiftKey,
+              metaKey: touchEvent.metaKey,
+            }),
+          };
+          // Cancel navigation before page capture handlers receive a native click.
+          consume(event);
+        }
         pendingTap = setTimeout(() => {
           pointer = tapPoint;
-          if (
+          const tapped =
             getSettings().lookupBindings.some(
               (binding) =>
                 binding.type === "touch" && binding.gesture === "tap",
-            )
-          )
-            activate();
+            ) && activate();
+          if (tapped) suppressTouchClick();
+          else releaseTouchClick();
           lastTap = 0;
           lastTapPoint = undefined;
         }, 320);
@@ -414,8 +484,10 @@ export function installReaderInput(
           (binding) => binding.type === "touch" && binding.gesture === "tap",
         ) &&
         activate()
-      )
+      ) {
+        suppressTouchClick();
         consume(event);
+      }
     },
     { capture: true, passive: false },
   );
@@ -465,6 +537,38 @@ export function installReaderInput(
       document,
       eventName,
       (event) => {
+        if (
+          eventName === "click" &&
+          event.isTrusted &&
+          event.button === 0 &&
+          event.detail > 0 &&
+          touchClick &&
+          event.target instanceof Element &&
+          root.contains(event.target) &&
+          !event.target.closest(excluded) &&
+          !event.target.closest("[data-srs-reader]") &&
+          Date.now() < touchClick.until &&
+          Math.hypot(
+            event.clientX - touchClick.point.clientX,
+            event.clientY - touchClick.point.clientY,
+          ) <= 24
+        ) {
+          const capabilities = (
+            event as MouseEvent & {
+              sourceCapabilities?: { firesTouchEvents: boolean } | null;
+            }
+          ).sourceCapabilities;
+          const fromTouch =
+            event instanceof PointerEvent && event.pointerType
+              ? event.pointerType === "touch"
+              : capabilities
+                ? capabilities.firesTouchEvents
+                : Date.now() - lastTouch < 800;
+          if (fromTouch) {
+            consume(event);
+            return;
+          }
+        }
         if (eventName === "contextmenu" && touchHeld) {
           consume(event);
           return;
