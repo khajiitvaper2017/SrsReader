@@ -14,16 +14,51 @@
 - Reuse `.test-browser/profile/` and its installed German and Czech dictionaries. Do not reset the profile, repeat setup, or reimport dictionaries for routine checks.
 - The launcher uses the existing Chromium build. After rebuilding extension code, stop and restart the launcher to load it without losing data.
 - Keep `pnpm test:e2e` isolated from this saved profile. Run only the checks needed for the change, not the full suite each time.
+- If no browser executable is available, run `pnpm exec playwright install chromium` or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable.
+
+## Phone updates
+
+- Run `pnpm phone:update` when asked to update the phone. ADB must be on `PATH`, and the phone must authorize debugging.
+- For Wi-Fi pairing, run `npx adb-qr` and scan its code in Android's Wireless debugging settings.
+- The script waits for an authorized device. If several devices are connected, set `ANDROID_SERIAL` to a serial listed by `adb devices`.
+- The script builds and verifies the archive, then replaces `/sdcard/Download/Telegram/chrome-mv3/chrome-mv3`. It keeps the previous folder as a backup and preserves dictionaries and browser data.
+- Reload SrsReader in the phone browser to activate the update.
+
+## Benchmarks
+
+- Build Chromium, start the saved test browser, then run `pnpm benchmark`.
+- Keep the saved reader unpaused with German and Czech enabled, `127.0.0.1` allowed, automatic scanning, word colors, and a mouse/key/hover lookup binding. Close active lookup popups first.
+- Reader and dictionary measurements use the saved profile. Vocabulary and study measurements use a disposable profile with 60+ local cards. Do not reimport dictionaries or change saved learning progress.
+- Results include median/p95, raw samples, scan timings, RPC overhead, action outcomes, and errors. The default report is `test-results/action-benchmarks.json`. `BENCH_SAMPLES` accepts 3–100 repetitions (default 5); `BENCH_REPORT` sets another report path.
+- “Cold” restarts only the extension worker, not the browser or profile. The prepared popup UI and OS/disk caches stay warm. Content-paint timings use browser event, iframe-session, or navigation timestamps; `totalMs` includes automation, and `automationResidualMs` reports its difference from browser paint latency. Hover/search debounce delay is separate.
+- There are no timing thresholds. Failures exit nonzero; unmeasured actions must not be reported as passed or silently skipped.
 
 ## Linting and fixes
 
 - Run `pnpm typecheck` to check TypeScript and `pnpm exec eslint .` to lint. There is no `lint` script.
 - Run `pnpm format:check` to check Prettier formatting.
+- Run `pnpm check:unused` to find unused code and dependencies.
 - Run `pnpm fix` to apply ESLint fixes and Prettier formatting across the repo. `pnpm format` only applies formatting.
 - For a small change, use `pnpm exec eslint <files> --fix` and `pnpm exec prettier --write <files>` to avoid unrelated edits.
 - Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
 - Do not add tests unless asked. If asked, add only end-to-end tests that check app behavior.
 - Run checks that fit the change. Do not repeat checks the user already completed. Report any checks you did not run.
+
+## Documentation
+
+- Change `README.md` only when the user explicitly requests README or documentation work. A feature, bug fix, refactor, or script change does not require a README update.
+- Keep `README.md` limited to the project overview and build/install instructions. Do not add sections for individual features, settings, implementation details, or bug fixes.
+- Do not create user guides or documentation pages before version 1.0.0.
+- Keep agent-only workflows in this file. Read and reuse existing instructions instead of duplicating them in README or adding another guide.
+
+## Google Drive build configuration
+
+- For Drive-enabled builds, enable the Drive API and register both OAuth clients in one Google Cloud project. Keep these build-time values in an untracked `.env.local`:
+  - `WXT_GOOGLE_CLIENT_ID`: Chrome Extension OAuth client for extension ID `nlmfchmfabficodmhaioejabcbdaekjh`.
+  - `WXT_GOOGLE_FIREFOX_CLIENT_ID`: Web application OAuth client for Firefox.
+  - `WXT_GOOGLE_REDIRECT_URI`: Exact HTTPS callback registered for Firefox on an authorized, verified domain.
+- Both clients request `drive.appdata`, `openid`, and `email`. Do not include a client secret. Without client configuration, sync connection is disabled.
+- Chromium uses native identity. Firefox uses Google's legacy token-response flow without an OAuth backend. Live sign-in, cross-browser sync, and Android support need verification with registered clients and target devices.
 
 ## Project structure
 
@@ -34,7 +69,6 @@
 - Follow each feature's existing `client.ts`, `contracts.ts`, and `commands.ts` pattern for background requests. `src/background/` routes requests and broadcasts changes.
 - `src/platform/` contains browser messaging, database storage, migrations, and write locks. Reuse these services.
 - `src/shared/` contains shared UI, the Mantine theme, styles, and translations. Update both `src/shared/i18n/locales/en.json` and `uk.json` for UI text.
-- Do not create user guides or documentation pages before version 1.0.0.
 - `wxt.config.ts` defines extension permissions, browser settings, and bundled assets. `public/` contains static assets.
 
 ## UI standards
