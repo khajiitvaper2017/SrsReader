@@ -73,6 +73,10 @@ export function createScanner(
   const website = !options.onLookup && options.scope !== "extensionPages";
   const visible = new Set<Element>();
   const observed = new Set<Element>();
+  const textVisibility = new Map<
+    Element,
+    { block: Element; visible: boolean }
+  >();
   const encoder = new TextEncoder();
   let viewport: IntersectionObserver | undefined;
   let starting = website;
@@ -366,6 +370,15 @@ export function createScanner(
     }
     return true;
   }
+  function trackVisibility(parent: Element, block: Element) {
+    if (textVisibility.get(parent)?.block !== block)
+      textVisibility.set(parent, {
+        block,
+        visible:
+          !parent.matches("details:not([open])") &&
+          parent.checkVisibility({ checkVisibilityCSS: true }),
+      });
+  }
   function collectBlocks(element: Element, candidates: Set<Element>) {
     if (
       !isActive() ||
@@ -385,7 +398,10 @@ export function createScanner(
       )
         continue;
       const block = parent.closest(blockSelector);
-      if (block) candidates.add(block);
+      if (block) {
+        trackVisibility(parent, block);
+        candidates.add(block);
+      }
     }
   }
   function collect(element: Element) {
@@ -1266,6 +1282,7 @@ export function createScanner(
     viewport = undefined;
     observed.clear();
     visible.clear();
+    textVisibility.clear();
     starting = website;
     firstVisibleBatch = true;
     firstVisible = true;
@@ -1284,6 +1301,7 @@ export function createScanner(
         for (const entry of entries)
           if (entry.isIntersecting) {
             visible.add(entry.target);
+            if (!blocks.has(entry.target)) queueBlock(entry.target);
             scanVisible ||= queued.has(entry.target);
           } else visible.delete(entry.target);
         if (starting || scanVisible) {
@@ -1295,6 +1313,7 @@ export function createScanner(
     observer = new MutationObserver((records) => {
       const candidates = new Set<Element>();
       const subtrees = new Set<Element>();
+      const visibilitySubtrees = new Set<Element>();
       const rebuildRanges = new Set<Element>();
       let removed = false;
       for (const record of records) {
@@ -1304,6 +1323,14 @@ export function createScanner(
             : record.target.parentElement;
         if (element?.closest("[data-srs-reader]")) continue;
         if (element && record.type === "attributes") {
+          if (
+            record.attributeName === "class" ||
+            record.attributeName === "style" ||
+            record.attributeName === "open"
+          ) {
+            visibilitySubtrees.add(element);
+            continue;
+          }
           for (const block of blocks.keys())
             if (element === block || element.contains(block)) {
               if (
@@ -1319,6 +1346,8 @@ export function createScanner(
         if (element) {
           const block = element.closest(blockSelector);
           if (block && (blocks.has(block) || record.type === "characterData")) {
+            if (record.type === "characterData")
+              trackVisibility(element, block);
             candidates.add(block);
             if (record.type === "characterData") rebuildRanges.add(block);
           }
@@ -1326,16 +1355,49 @@ export function createScanner(
         for (const added of record.addedNodes)
           if (added instanceof Element) subtrees.add(added);
           else {
-            const block = added.parentElement?.closest(blockSelector);
-            if (block) candidates.add(block);
+            const parent = added.parentElement;
+            const block = parent?.closest(blockSelector);
+            if (parent && block) {
+              trackVisibility(parent, block);
+              candidates.add(block);
+            }
           }
         removed ||= record.removedNodes.length > 0;
       }
       for (const element of subtrees) collectBlocks(element, candidates);
+      for (const element of visibilitySubtrees) {
+        let ancestor = element.parentElement;
+        while (ancestor && !visibilitySubtrees.has(ancestor))
+          ancestor = ancestor.parentElement;
+        if (ancestor) continue;
+        const walker = document.createTreeWalker(
+          element,
+          NodeFilter.SHOW_ELEMENT,
+          {
+            acceptNode: (node) =>
+              (node as Element).hasAttribute("data-srs-reader")
+                ? NodeFilter.FILTER_REJECT
+                : NodeFilter.FILTER_ACCEPT,
+          },
+        );
+        let parent: Element | null = element;
+        do {
+          const previous = textVisibility.get(parent);
+          if (!previous) continue;
+          const visible =
+            !parent.matches("details:not([open])") &&
+            parent.checkVisibility({ checkVisibilityCSS: true });
+          if (visible === previous.visible) continue;
+          previous.visible = visible;
+          candidates.add(previous.block);
+        } while ((parent = walker.nextNode() as Element | null));
+      }
       for (const block of candidates)
         if (root.contains(block)) queueBlock(block, rebuildRanges.has(block));
       if (queued.size) schedule();
       if (removed) {
+        for (const element of textVisibility.keys())
+          if (!root.contains(element)) textVisibility.delete(element);
         for (const element of blocks.keys())
           if (!element.isConnected) deleteBlock(element);
         for (const element of observed)
@@ -1357,12 +1419,15 @@ export function createScanner(
         "data-reading-language",
         "hidden",
         "aria-hidden",
+        "class",
+        "style",
+        "open",
       ],
     });
     if (root === document.body)
       observer.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ["lang"],
+        attributeFilter: ["lang", "class", "style", "hidden", "aria-hidden"],
       });
     collect(root);
     if (!queued.size) starting = false;

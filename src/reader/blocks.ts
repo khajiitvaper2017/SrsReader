@@ -71,7 +71,11 @@ export function createBlockReader(
       )
         continue;
       const textNode = node as Text;
-      if (!parent.checkVisibility({ checkVisibilityCSS: true })) continue;
+      if (
+        parent.matches("details:not([open])") ||
+        !parent.checkVisibility({ checkVisibilityCSS: true })
+      )
+        continue;
       const container = layoutContainer(parent);
       if (
         previousContainer &&
