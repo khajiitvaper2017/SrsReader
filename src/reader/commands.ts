@@ -109,6 +109,7 @@ async function execute(
         warn,
         dictionary,
         async (index, spans) => {
+          if (cache !== scanCache.results) return;
           await broadcast({
             event: "scanResult",
             session: request.session,
@@ -119,6 +120,7 @@ async function execute(
               retryAt: analyses[index]?.retryAt,
             },
           });
+          if (cache !== scanCache.results) return;
           await cacheScannedTexts(
             [request.texts[index]!],
             [spans],
@@ -126,6 +128,7 @@ async function execute(
           );
         },
         (completed) => {
+          if (cache !== scanCache.results) return;
           if (cache.size >= 64) cache.delete(cache.keys().next().value!);
           cache.set(
             key,

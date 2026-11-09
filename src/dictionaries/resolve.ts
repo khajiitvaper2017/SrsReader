@@ -49,8 +49,10 @@ export async function lookup(
         .filter((lemma) => lemma !== "_"),
     ]),
   ];
-  const matches = await lookupMany(terms, settings.studyLanguage);
-  const dictionaries = await listDictionaries(settings);
+  const [matches, dictionaries] = await Promise.all([
+    lookupMany(terms, settings.studyLanguage),
+    listDictionaries(settings),
+  ]);
   const online = dictionaries.find(
     (dictionary) =>
       isOnlineDictionary(dictionary.id) &&

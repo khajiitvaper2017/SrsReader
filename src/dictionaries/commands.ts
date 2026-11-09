@@ -62,21 +62,24 @@ async function execute(request: Request, settings: Settings) {
           word.meanings.length && wordMatchesGrammar(word, result.grammar),
       );
       if (words.length) {
-        const saved = await getWords(words.map((word) => word.id));
-        await broadcast({
-          ...(request.occurrence
-            ? ({
-                event: "parsedOccurrence",
-                occurrence: request.occurrence,
-              } as const)
-            : ({ event: "parsed", term: request.term } as const)),
-          language: settings.studyLanguage,
-          candidates: words.map((word, index) => ({
-            id: word.id,
-            tags: word.meanings.flatMap(meaningTags),
-            state: stateOf(saved[index], settings.matureIntervalDays),
-          })),
-        });
+        void getWords(words.map((word) => word.id))
+          .then((saved) =>
+            broadcast({
+              ...(request.occurrence
+                ? ({
+                    event: "parsedOccurrence",
+                    occurrence: request.occurrence,
+                  } as const)
+                : ({ event: "parsed", term: request.term } as const)),
+              language: settings.studyLanguage,
+              candidates: words.map((word, index) => ({
+                id: word.id,
+                tags: word.meanings.flatMap(meaningTags),
+                state: stateOf(saved[index], settings.matureIntervalDays),
+              })),
+            }),
+          )
+          .catch(console.warn);
       }
       return result;
     }

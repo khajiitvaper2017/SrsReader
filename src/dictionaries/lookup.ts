@@ -53,15 +53,15 @@ function isLookupReference(
   );
 }
 
-const lookupCache = new Map<string, LookupResult>();
+let lookupCache = new Map<string, LookupResult>();
 // Prefix probes should not evict ordinary word lookups.
-const compoundCache = new Map<string, LookupResult>();
+let compoundCache = new Map<string, LookupResult>();
 let phraseCache = { size: 0, rowsByKey: new Map<string, Phrase[]>() };
 const phraseCacheLimit = 50_000;
 
 export function clearLookupCache() {
-  lookupCache.clear();
-  compoundCache.clear();
+  lookupCache = new Map();
+  compoundCache = new Map();
   phraseCache = { size: 0, rowsByKey: new Map() };
 }
 export async function activeDictionaries(language: string) {
@@ -171,7 +171,6 @@ async function dictionaryLookup(
   timing: DictionaryLookupTiming | undefined,
   cache: Map<string, LookupResult>,
 ): Promise<Map<string, LookupResult>> {
-  const dictionaries = await activeDictionaries(language);
   const results = new Map<string, LookupResult>();
   const missing = [...new Set(terms.map(normalize))].filter((term) => {
     const hit = cache.get(
@@ -183,7 +182,9 @@ async function dictionaryLookup(
     }
     return true;
   });
-  if (!missing.length || !dictionaries.length) return results;
+  if (!missing.length) return results;
+  const dictionaries = await activeDictionaries(language);
+  if (!dictionaries.length) return results;
   async function readEntries(terms: string[]) {
     const started = performance.now();
     const entries = await fetchTerms(
@@ -386,15 +387,17 @@ export async function lookupMany(
   if (joined.size)
     terms = [...new Set([...terms.map(normalize), ...joined.values()])];
   const settings = await getSettings();
-  const ordered = await listDictionaries(settings);
-  const results = await dictionaryLookup(
-    terms,
-    language,
-    localAnalysis,
-    withDefinitions,
-    timing,
-    cache,
-  );
+  const [ordered, results] = await Promise.all([
+    listDictionaries(settings),
+    dictionaryLookup(
+      terms,
+      language,
+      localAnalysis,
+      withDefinitions,
+      timing,
+      cache,
+    ),
+  ]);
   const lemmas = [
     ...new Set([
       ...terms.flatMap((term) => [normalize(term), folded(term, language)]),
