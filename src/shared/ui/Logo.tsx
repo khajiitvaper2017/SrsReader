@@ -1,10 +1,17 @@
-import { Group, Text, ThemeIcon } from "@mantine/core";
-import { BookOpen } from "lucide-react";
+import { Box, Group, Text, ThemeIcon } from "@mantine/core";
+import bookBrain from "./book-brain.svg";
 export function Logo({ small = false }: { small?: boolean }) {
   return (
     <Group wrap="nowrap">
-      <ThemeIcon size={small ? 26 : 32} variant="light">
-        <BookOpen size={18} />
+      <ThemeIcon size={small ? 26 : 32} variant="transparent">
+        <Box
+          component="span"
+          aria-hidden="true"
+          w={small ? 24 : 28}
+          h={small ? 24 : 28}
+          bg="currentColor"
+          style={{ mask: `url("${bookBrain}") center / contain no-repeat` }}
+        />
       </ThemeIcon>
       <Text fw={700}>
         Srs
