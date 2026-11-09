@@ -38,6 +38,14 @@ export default defineConfig({
     ],
   }),
   hooks: {
+    "entrypoints:grouped"(_wxt, groups) {
+      // Shared chunks make every page wait on many slow Android file-picker reads.
+      for (let index = groups.length - 1; index >= 0; index--) {
+        const group = groups[index];
+        if (Array.isArray(group))
+          groups.splice(index, 1, ...group.map((entry) => [entry]));
+      }
+    },
     async "build:publicAssets"(_wxt, files) {
       for (const [locale, messages] of Object.entries({ en, uk })) {
         const folder = resolve(".wxt/locales", locale);
