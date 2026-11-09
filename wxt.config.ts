@@ -28,11 +28,22 @@ export default defineConfig({
         name: "block-page-paint-until-settings",
         transformIndexHtml: {
           order: "post",
-          handler: (html) =>
-            html.replaceAll(
+          handler: (html, { bundle }) => {
+            html = html.replaceAll(
               '<script type="module"',
               '<script type="module" blocking="render"',
-            ),
+            );
+            // Inline CSS to avoid another Android file-picker read.
+            return html.replace(
+              /<link rel="stylesheet"[^>]* href="([^"]+)"[^>]*>/g,
+              (link, href: string) => {
+                const asset = bundle?.[href.slice(1)];
+                return asset?.type === "asset" && typeof asset.source === "string"
+                  ? `<style>${asset.source.replace(/<\/style/gi, "<\\/style")}</style>`
+                  : link;
+              },
+            );
+          },
         },
       },
     ],
