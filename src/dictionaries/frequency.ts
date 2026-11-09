@@ -41,15 +41,22 @@ async function frequencyData(
     (dictionary) => dictionary.enabled && dictionary.language === language,
   );
   const keys = [...new Set(words.map((word) => folded(word.lemma, language)))];
+  // Exact ranges use bulk reads instead of a cursor callback for every matching row.
   const rows = dictionaries.length
-    ? await db.frequencies
-        .where("[revisionId+folded]")
-        .anyOf(
-          dictionaries.flatMap((dictionary) =>
-            keys.map((key) => [dictionary.revisionId, key]),
-          ),
-        )
-        .toArray()
+    ? await db.transaction("r", db.frequencies, async () =>
+        (
+          await Promise.all(
+            dictionaries.flatMap((dictionary) =>
+              keys.map((key) =>
+                db.frequencies
+                  .where("[revisionId+folded]")
+                  .equals([dictionary.revisionId, key])
+                  .toArray(),
+              ),
+            ),
+          )
+        ).flat(),
+      )
     : [];
   const byKey = new Map<string, Frequency[]>();
   for (const row of rows) {
