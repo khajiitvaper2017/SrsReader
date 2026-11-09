@@ -779,40 +779,23 @@ async function fixtureActions() {
   const metadata = await isolated.newPage();
   await metadata.goto(`${base}/manifest.json`);
   const settings = await rpc(metadata, { action: "settings" });
-  await metadata.evaluate(async (settings) => {
-    const opened = Promise.withResolvers<IDBDatabase>();
-    const request = indexedDB.open("srs-reader");
-    request.onsuccess = () => opened.resolve(request.result);
-    request.onerror = () => opened.reject(request.error);
-    const db = await opened.promise;
-    try {
-      const completed = Promise.withResolvers<void>();
-      const transaction = db.transaction("settings", "readwrite");
-      transaction.oncomplete = () => completed.resolve();
-      transaction.onabort = () => completed.reject(transaction.error);
-      transaction.onerror = () => completed.reject(transaction.error);
-      transaction.objectStore("settings").put({
-        id: "main",
-        value: {
-          ...settings,
-          setupComplete: true,
-          studyLanguages: ["de"],
-          nativeLanguages: ["en"],
-          interfaceLanguage: "en",
-          autoplay: false,
-          audioSources: [],
-          udpipe: false,
-          scanPopups: false,
-          newLimit: 200,
-          reviewLimit: null,
-          timedReview: { ...settings.timedReview, enabled: false },
-        },
-      });
-      await completed.promise;
-    } finally {
-      db.close();
-    }
-  }, settings);
+  await rpc(metadata, {
+    action: "setSettings",
+    value: {
+      ...settings,
+      setupComplete: true,
+      studyLanguages: ["de"],
+      nativeLanguages: ["en"],
+      interfaceLanguage: "en",
+      autoplay: false,
+      audioSources: [],
+      udpipe: false,
+      scanPopups: false,
+      newLimit: 200,
+      reviewLimit: null,
+      timedReview: { ...settings.timedReview, enabled: false },
+    },
+  });
   const count = Math.max(60, samples + 2);
   for (let index = 0; index < count; index++) {
     const term = `Benchwort${String(index).padStart(3, "0")}`;
