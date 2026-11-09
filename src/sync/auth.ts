@@ -591,12 +591,14 @@ export async function disconnectGoogle(): Promise<void> {
   // invalidate the user's other devices and OAuth clients.
 }
 
-export async function accessToken(): Promise<string> {
+export async function accessToken(expectedAccount: string): Promise<string> {
   await ready();
   const credentials = await storedCredentials();
   const config = configuration();
   if (!config) throw new GoogleAuthError("SYNC_NOT_CONFIGURED");
   if (!credentials) throw new GoogleAuthError("SYNC_AUTH_REQUIRED");
+  if (credentials.account.id !== expectedAccount)
+    throw new GoogleAuthError("SYNC_ACCOUNT_CHANGED");
   if (!(await dataConsent(false)))
     throw new GoogleAuthError("SYNC_PERMISSION_REQUIRED");
   if (

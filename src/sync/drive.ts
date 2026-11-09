@@ -54,17 +54,22 @@ type Upload = {
   properties: Record<string, string>;
   blob: Blob;
   session?: string;
+  fileId?: string;
   offset: number;
   updated: number;
 };
 const FIELDS = "id,name,appProperties,createdTime,size,quotaBytesUsed,trashed";
 const CHUNK = 8 * 1024 * 1024;
+const SMALL_UPLOAD = 1024 * 1024;
+let fileIds:
+  { account: string; ids: string[]; pending?: Promise<void> } | undefined;
 let controller = new AbortController();
 let database: Promise<IDBDatabase> | undefined;
 
 export function cancelDriveTransfers(): void {
   controller.abort();
   controller = new AbortController();
+  fileIds = undefined;
 }
 
 export function driveTransferSignal(): AbortSignal {
@@ -124,19 +129,6 @@ async function persistUpload(upload: Upload, remove = false): Promise<void> {
   transaction.onerror = () => reject(transaction.error);
   transaction.onabort = () => reject(transaction.error);
   await promise;
-  // Small persisted progress record also makes interrupted transfer inspection
-  // possible without reading the upload blob. Never stores a bearer credential.
-  if (remove) await browser.storage.local.remove("syncDriveUploadProgress");
-  else
-    await browser.storage.local.set({
-      syncDriveUploadProgress: {
-        account: upload.account,
-        name: upload.name,
-        done: upload.offset,
-        total: upload.blob.size,
-        updated: upload.updated,
-      },
-    });
 }
 
 async function accountId(): Promise<string> {
@@ -171,9 +163,7 @@ async function request(
   let renewed = false;
   for (let attempt = 0; ; attempt += 1) {
     if (signal.aborted) throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
-    if ((await accountId()) !== account)
-      throw new GoogleAuthError("SYNC_ACCOUNT_CHANGED");
-    const token = await accessToken();
+    const token = await accessToken(account);
     if (signal.aborted) throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
     const headers = new Headers(init.headers);
     headers.set("Authorization", `Bearer ${token}`);
@@ -241,6 +231,34 @@ async function request(
     }
     throw error;
   }
+}
+async function nextFileId(account: string, signal: AbortSignal) {
+  if (fileIds?.account !== account) fileIds = { account, ids: [] };
+  const pool = fileIds;
+  while (!pool.ids.length) {
+    pool.pending ??= request(
+      "https://www.googleapis.com/drive/v3/files/generateIds?count=100&space=appDataFolder&type=files",
+      {},
+      account,
+      signal,
+    )
+      .then(async (response) => {
+        const data = (await response.json()) as { ids?: unknown };
+        if (
+          !Array.isArray(data.ids) ||
+          !data.ids.length ||
+          data.ids.some((id) => typeof id !== "string" || !id)
+        )
+          throw new DriveError(502);
+        pool.ids.push(...data.ids);
+      })
+      .finally(() => {
+        pool.pending = undefined;
+      });
+    await pool.pending;
+  }
+  if (signal.aborted) throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
+  return pool.ids.pop()!;
 }
 
 export async function listFiles(
@@ -368,6 +386,15 @@ async function completed(
     throw new DriveError(0, 0, "SYNC_NETWORK");
   }
   if (!file.id || file.name !== upload.name) throw new DriveError(502);
+  if (
+    upload.fileId &&
+    (file.id !== upload.fileId ||
+      file.size !== String(upload.blob.size) ||
+      Object.entries(upload.properties).some(
+        ([key, value]) => file.appProperties?.[key] !== value,
+      ))
+  )
+    throw new DriveError(409);
   await persistUpload(upload, true);
   return file;
 }
@@ -411,12 +438,14 @@ export async function uploadFile(
 ): Promise<DriveFile> {
   const signal = controller.signal;
   const account = await accountId();
-  const digest = new Uint8Array(
-    await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()),
-  );
-  const hash = Array.from(digest, (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
+  const hash =
+    properties.hash ??
+    Array.from(
+      new Uint8Array(
+        await crypto.subtle.digest("SHA-256", await blob.arrayBuffer()),
+      ),
+      (byte) => byte.toString(16).padStart(2, "0"),
+    ).join("");
   const key = JSON.stringify([account, name]);
   let upload = await readUpload(key);
   if (
@@ -438,11 +467,54 @@ export async function uploadFile(
     offset: 0,
     updated: Date.now(),
   };
-  await persistUpload(upload);
   if (upload.session) {
     const file = await probe(upload, signal);
     if (file) return file;
   }
+  // Small files avoid session setup; the persisted ID makes retries idempotent.
+  if (!upload.session && blob.size <= SMALL_UPLOAD) {
+    if (!upload.fileId) {
+      upload.fileId = await nextFileId(account, signal);
+      await persistUpload(upload);
+    }
+    const boundary = `srs-${crypto.randomUUID()}`;
+    const params = new URLSearchParams({
+      uploadType: "multipart",
+      fields: FIELDS,
+    });
+    let response = await request(
+      `https://www.googleapis.com/upload/drive/v3/files?${params}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+        body: new Blob([
+          `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`,
+          JSON.stringify({
+            id: upload.fileId,
+            name,
+            parents: ["appDataFolder"],
+            appProperties: properties,
+          }),
+          `\r\n--${boundary}\r\nContent-Type: ${blob.type || "application/octet-stream"}\r\n\r\n`,
+          blob,
+          `\r\n--${boundary}--\r\n`,
+        ]),
+      },
+      account,
+      signal,
+      [409],
+    );
+    if (response.status === 409) {
+      response = await request(
+        `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(upload.fileId)}?fields=${FIELDS}`,
+        {},
+        account,
+        signal,
+      );
+    }
+    return completed(response, upload);
+  }
+  await persistUpload(upload);
   for (;;) {
     if (!upload.session) {
       const params = new URLSearchParams({

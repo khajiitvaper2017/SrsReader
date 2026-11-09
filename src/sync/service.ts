@@ -25,6 +25,7 @@ import {
 } from "@/sync/drive";
 import { readDriveFiles, saveDriveFiles } from "@/sync/drive-index";
 import { findLocalMedia } from "@/sync/media";
+import { transferConcurrently } from "@/sync/concurrency";
 import {
   type SyncIdentity,
   type SyncProgress,
@@ -58,6 +59,7 @@ let connecting = false;
 let disconnecting = false;
 let cancelled = false;
 let progress: SyncProgress | null = null;
+let lastProgressReport = 0;
 let started = false;
 let stateWrites = Promise.resolve();
 let trackingReady: Promise<void> | undefined;
@@ -125,8 +127,16 @@ async function report(
   done: number,
   total: number,
 ) {
+  const now = performance.now();
+  const announce =
+    progress?.phase !== phase ||
+    done === total ||
+    now - lastProgressReport >= 100;
   progress = { phase, done, total };
-  await changed();
+  if (announce) {
+    lastProgressReport = now;
+    await changed();
+  }
 }
 async function processWork(
   request: Parameters<typeof processSync>[0],
@@ -136,8 +146,7 @@ async function processWork(
   await processSync(
     request,
     (value) => {
-      progress = value;
-      void changed().catch(console.warn);
+      void report(value.phase, value.done, value.total).catch(console.warn);
     },
     loadMedia,
   );
@@ -218,7 +227,7 @@ async function synchronize() {
   const account = await assertAccount();
   await report("check", 0, 0);
   await prepareTracking();
-  await accessToken();
+  await accessToken(account.id);
   checkCancelled();
   const files = await readDriveFiles(account.id);
   updateStorageUsage(files);
@@ -295,20 +304,21 @@ async function synchronize() {
     await processWork({ action: "pack", key, account: account.id });
     const packed = (await db.syncMeta.get(key)) as PackedSync;
     const snapshot = packed;
-    await report("media", 0, packed.media.size);
+    const missingMedia = [...packed.media].filter(
+      ([hash]) => !mediaFiles.has(hash),
+    );
+    await report("media", 0, missingMedia.length);
     let done = 0;
-    for (const [hash, blob] of packed.media) {
+    await transferConcurrently(missingMedia, async ([hash, blob]) => {
       checkCancelled();
-      if (!mediaFiles.has(hash)) {
-        const file = await uploadFile(`media.${hash}`, blob, {
-          srsKind: "media",
-          hash,
-        });
-        mediaFiles.set(hash, file);
-        files.push(file);
-      }
-      await report("media", ++done, packed.media.size);
-    }
+      const file = await uploadFile(`media.${hash}`, blob, {
+        srsKind: "media",
+        hash,
+      });
+      mediaFiles.set(hash, file);
+      files.push(file);
+      await report("media", ++done, missingMedia.length);
+    });
     checkCancelled();
     await assertAccount();
     await report("upload", 0, 1);
@@ -446,7 +456,7 @@ export async function refreshSyncStorage() {
       try {
         const account = await assertAccount();
         await report("storage", 0, 0);
-        await accessToken();
+        await accessToken(account.id);
         const files = await readDriveFiles(account.id);
         checkCancelled();
         await assertAccount();
