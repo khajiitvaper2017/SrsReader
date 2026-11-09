@@ -119,7 +119,6 @@ export default defineConfig({
     permissions: [
       "storage",
       "unlimitedStorage",
-      "tabs",
       "alarms",
       ...(browser === "chrome"
         ? ["identity" as const, "offscreen" as const]
