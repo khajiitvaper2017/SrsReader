@@ -1,6 +1,6 @@
 import { Box, Stack, Text } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDocument } from "@/cards/model";
 import { renderCard, templateWarnings } from "@/cards/template";
 import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
@@ -67,9 +67,16 @@ export function CardViewer({
   const callbacks = useRef({ onError, onLookup, onReady, requestAsset });
   callbacks.current = { onError, onLookup, onReady, requestAsset };
   const [ready, setReady] = useState(false);
-  const [displayedCard, setDisplayedCard] = useState("");
+  const [displayed, setDisplayed] = useState<{
+    cardId: string;
+    revealed: boolean;
+  }>();
   const [height, setHeight] = useState(180);
   const [message, setMessage] = useState<CardFrameMessage>();
+  const renderId = useRef(0);
+  const activeRender = useRef<{ id: number; revealed: boolean } | undefined>(
+    undefined,
+  );
   const [error, setError] = useState("");
   const system = useColorScheme();
   const dark =
@@ -79,7 +86,7 @@ export function CardViewer({
   const { card, note, noteType } = cardDocument;
   const activeCard = useRef({ id: card.id, namespace: note.mediaNamespace });
   activeCard.current = { id: card.id, namespace: note.mediaNamespace };
-  const warnings = templateWarnings(noteType);
+  const warnings = useMemo(() => templateWarnings(noteType), [noteType]);
   const [deck, setDeck] = useState<{ id: string | null; name: string }>({
     id: null,
     name: "",
@@ -87,6 +94,7 @@ export function CardViewer({
   const deckName =
     previewDeckName ?? (deck.id === card.deckId ? deck.name : "");
   useEffect(() => {
+    if (previewDeckName !== undefined) return;
     let cancelled = false;
     void (
       card.deckId ? db.decks.get(card.deckId) : Promise.resolve(undefined)
@@ -96,21 +104,33 @@ export function CardViewer({
     return () => {
       cancelled = true;
     };
-  }, [card.deckId]);
-  let html = "";
-  let templateError = "";
-  try {
-    html = renderCard(cardDocument, revealed, {
-      deckName,
-      front: settings.front,
-      showPartOfSpeech: settings.showPartOfSpeech,
-    });
-  } catch (error) {
-    templateError = (error as Error).message;
-  }
+  }, [card.deckId, previewDeckName]);
+  const { html, templateError } = useMemo(() => {
+    try {
+      return {
+        html: renderCard(cardDocument, revealed, {
+          deckName,
+          front: settings.front,
+          showPartOfSpeech: settings.showPartOfSpeech,
+        }),
+        templateError: "",
+      };
+    } catch (error) {
+      return { html: "", templateError: (error as Error).message };
+    }
+  }, [
+    cardDocument,
+    revealed,
+    deckName,
+    settings.front,
+    settings.showPartOfSpeech,
+  ]);
   const scan = settings.scanPopups && !!onLookup;
   useEffect(() => {
-    if (loading || deck.id !== card.deckId) return;
+    activeRender.current = undefined;
+    const id = ++renderId.current;
+    if (loading || (previewDeckName === undefined && deck.id !== card.deckId))
+      return;
     let cancelled = false;
     setError("");
     try {
@@ -121,6 +141,7 @@ export function CardViewer({
             setMessage({
               channel: "srs-card-render",
               cardId: card.id,
+              renderId: id,
               ordinal: card.templateOrdinal,
               html,
               css: noteType.css,
@@ -167,6 +188,7 @@ export function CardViewer({
     revealed,
     deckName,
     deck.id,
+    previewDeckName,
     card.deckId,
     settings.front,
     settings.showPartOfSpeech,
@@ -190,6 +212,13 @@ export function CardViewer({
         return;
       const { type, value } = event.data;
       if (
+        type !== "ready" &&
+        (!activeRender.current ||
+          event.data.cardId !== activeCard.current.id ||
+          event.data.renderId !== activeRender.current.id)
+      )
+        return;
+      if (
         type === "asset" &&
         value?.cardId === activeCard.current.id &&
         typeof value.requestId === "string" &&
@@ -199,11 +228,13 @@ export function CardViewer({
         !/^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(value.name)
       ) {
         const active = activeCard.current;
+        const render = activeRender.current;
         const source = event.source as Window;
         void callbacks.current
           .requestAsset(active.namespace, value.name)
           .then((blob) => {
             if (
+              activeRender.current !== render ||
               activeCard.current.id !== active.id ||
               activeCard.current.namespace !== active.namespace ||
               frame.current?.contentWindow !== source
@@ -224,6 +255,7 @@ export function CardViewer({
           })
           .catch(() => {
             if (
+              activeRender.current === render &&
               activeCard.current.id === active.id &&
               frame.current?.contentWindow === source
             )
@@ -246,8 +278,16 @@ export function CardViewer({
               : new KeyboardEvent("keydown", { ...input.data, bubbles: true }),
           );
       } else if (type === "ready") setReady(true);
-      else if (type === "rendered" && value?.cardId === activeCard.current.id) {
-        setDisplayedCard(value.cardId);
+      else if (
+        type === "rendered" &&
+        value?.cardId === activeCard.current.id &&
+        activeRender.current &&
+        value?.renderId === activeRender.current.id
+      ) {
+        setDisplayed({
+          cardId: value.cardId,
+          revealed: activeRender.current.revealed,
+        });
         callbacks.current.onReady?.(value.cardId);
       } else if (
         type === "storage" &&
@@ -302,9 +342,17 @@ export function CardViewer({
     };
   }, []);
   useEffect(() => {
-    if (ready && message)
+    if (
+      ready &&
+      message &&
+      !loading &&
+      message.cardId === card.id &&
+      message.renderId === renderId.current
+    ) {
+      activeRender.current = { id: message.renderId, revealed };
       frame.current?.contentWindow?.postMessage(message, "*");
-  }, [ready, message]);
+    }
+  }, [ready, message, loading, card.id, revealed]);
   return (
     <Stack gap="xs" data-srs-reader>
       <ErrorBox error={error} />
@@ -313,7 +361,15 @@ export function CardViewer({
           {t("card_template_unsupported", { filters: warnings.join(", ") })}
         </Text>
       )}
-      <Box pos="relative" mih={height} aria-busy={displayedCard !== card.id}>
+      <Box
+        pos="relative"
+        mih={height}
+        aria-busy={
+          loading ||
+          displayed?.cardId !== card.id ||
+          displayed?.revealed !== revealed
+        }
+      >
         <Box
           component="iframe"
           ref={frame}
@@ -327,7 +383,10 @@ export function CardViewer({
           style={{
             border: 0,
             display: "block",
-            visibility: displayedCard ? "visible" : "hidden",
+            visibility:
+              displayed?.cardId === card.id && (!displayed.revealed || revealed)
+                ? "visible"
+                : "hidden",
           }}
         />
       </Box>

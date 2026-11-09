@@ -43,6 +43,7 @@ export function createReviewPreload(settings: Settings) {
   const visuals = new Map<string, Promise<void>>();
   const assets = new Map<string, ReturnType<typeof loadCardAssets>>();
   let queue: ReviewWordSummary[] = [];
+  let retained: ReviewWordSummary[] = [];
   let running: Promise<void> | undefined;
 
   function loadAssets(namespace: string, html: string, css: string) {
@@ -109,8 +110,18 @@ export function createReviewPreload(settings: Settings) {
     );
   }
   function invalidate(id?: string) {
-    visuals.clear();
-    assets.clear();
+    if (id) {
+      for (const word of retained)
+        if (word.id === id || word.wordId === id) {
+          visuals.delete(word.id);
+          prepared.delete(word.id);
+        }
+      for (const key of assets.keys())
+        if (JSON.parse(key)[0] === id) assets.delete(key);
+    } else {
+      visuals.clear();
+      assets.clear();
+    }
     if (id) {
       sentences.delete(id);
       definitions.delete(id);
@@ -123,6 +134,7 @@ export function createReviewPreload(settings: Settings) {
     }
   }
   function retain(words: ReviewWordSummary[]) {
+    retained = words;
     const ids = new Set(
       words.flatMap((word) =>
         word.wordId ? [word.id, word.wordId] : [word.id],
@@ -169,8 +181,14 @@ export function createReviewPreload(settings: Settings) {
     retain(upcoming);
     queue = upcoming;
     if (document.hidden) return;
-    // Visual preparation must not wait for a previous card's audio download.
-    for (const word of upcoming) void prepareVisual(word.id).catch(() => {});
+    // Text and visuals must not wait for a previous card's audio download.
+    for (const word of upcoming) {
+      void prepareVisual(word.id).catch(() => {});
+      if (word.wordId && word.language === settings.studyLanguage) {
+        void loadSentences(word.wordId).catch(() => {});
+        void loadFrequencies(word).catch(() => {});
+      }
+    }
     run();
   }
   function stop() {

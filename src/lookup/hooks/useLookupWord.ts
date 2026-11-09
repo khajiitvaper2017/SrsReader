@@ -94,10 +94,13 @@ export function useLookupWord({
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [editing, setEditing] = useState<DefinitionEditing>(null);
-  const [saved, setSaved] = useState<WordWithCards>();
-  const [times, setTimes] = useState<number[]>([]);
+  const [loadedSaved, setSaved] = useState<WordWithCards>();
+  const saved = loadedSaved?.id === selected ? loadedSaved : undefined;
+  const [preview, setPreview] = useState<{ id: string; times: number[] }>();
+  const times = preview?.id === selected ? preview.times : [];
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const visibility = useDictionaryVisibility(
     selected,
     saved?.id === selected ? saved : undefined,
@@ -339,7 +342,7 @@ export function useLookupWord({
       .then(([word, times]) => {
         if (request !== pending.current) return;
         setSaved(word);
-        setTimes(times);
+        setPreview({ id: selected, times });
       })
       .catch((error) => {
         if (request === pending.current) setError(error.message);
@@ -352,6 +355,11 @@ export function useLookupWord({
     };
   }, [reload]);
   useChanges(reload, ["vocabulary", "srs", "settings", "dictionaries"]);
+  useEffect(() => {
+    setReviewed(false);
+    setLastReview("");
+    setNotice("");
+  }, [selected]);
   useEffect(() => {
     function key(event: KeyboardEvent) {
       if (
@@ -370,6 +378,7 @@ export function useLookupWord({
   });
   const canGrade =
     !!word &&
+    preview?.id === selected &&
     !candidateOpen &&
     !unparsed &&
     !busy &&
@@ -386,6 +395,8 @@ export function useLookupWord({
       lastReview && !candidateOpen && !busy ? () => void undo() : undefined,
   });
   async function undo() {
+    if (busyRef.current || !lastReview) return;
+    busyRef.current = true;
     setBusy(true);
     try {
       await srsClient({ action: "undo", id: lastReview });
@@ -397,6 +408,7 @@ export function useLookupWord({
       setError((error as Error).message);
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   }
   async function ignoreTag(tag: string) {
@@ -413,7 +425,14 @@ export function useLookupWord({
     }
   }
   async function act(rating?: number) {
-    if (!word || (rating && reviewed)) return;
+    if (
+      !word ||
+      busyRef.current ||
+      preview?.id !== selected ||
+      (rating && reviewed)
+    )
+      return;
+    busyRef.current = true;
     setBusy(true);
     setError("");
     try {
@@ -457,10 +476,12 @@ export function useLookupWord({
       reload();
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   }
   async function toggleMastery() {
-    if (!word) return;
+    if (!word || busyRef.current || preview?.id !== selected) return;
+    busyRef.current = true;
     setBusy(true);
     setError("");
     try {
@@ -479,6 +500,7 @@ export function useLookupWord({
       setError((error as Error).message);
     } finally {
       setBusy(false);
+      busyRef.current = false;
     }
   }
   async function definitionSaved(saved?: Vocabulary) {
@@ -534,7 +556,7 @@ export function useLookupWord({
     times,
     error,
     setError,
-    busy,
+    busy: busy || preview?.id !== selected,
     notice,
     setNotice,
     lastReview,

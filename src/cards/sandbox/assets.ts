@@ -57,35 +57,44 @@ export async function loadCardAssets(
         ),
       );
     sharedAssets.set(namespace, shared);
+    void shared.catch(() => {
+      if (sharedAssets.get(namespace) === shared)
+        sharedAssets.delete(namespace);
+    });
   }
-  const pending = [...(await shared), ...references(html), ...references(css)];
+  let pending = [...(await shared), ...references(html), ...references(css)];
   const seen = new Set<string>();
   const loaded = new Set<string>();
   const assets: CardAsset[] = [];
   while (pending.length) {
-    const name = pending.pop()!.replace(/^\.\//, "");
-    if (/^(?:https?:|blob:|data:|#)/i.test(name)) continue;
-    if (seen.has(name)) continue;
-    seen.add(name);
-    let asset = await get(name);
-    if (!asset && fieldText(name) !== name) asset = await get(fieldText(name));
-    let decoded = name;
-    if (!asset) {
-      try {
-        decoded = decodeURIComponent(name);
-      } catch {
-        /* Keep literal percent characters. */
-      }
-      if (decoded !== name) asset = await get(decoded);
-    }
-    if (!asset && /[?#]/.test(name))
-      asset = await get(decoded.split(/[?#]/)[0]!);
-    if (!asset) continue;
-    if (loaded.has(asset.id)) continue;
-    loaded.add(asset.id);
-    assets.push(asset);
-    if (/\.(?:css|js)$/i.test(asset.name))
-      pending.push(...references(await asset.blob.text()));
+    const batch = pending;
+    pending = [];
+    await Promise.all(
+      batch.map(async (reference) => {
+        const name = reference.replace(/^\.\//, "");
+        if (/^(?:https?:|blob:|data:|#)/i.test(name) || seen.has(name)) return;
+        seen.add(name);
+        let asset = await get(name);
+        if (!asset && fieldText(name) !== name)
+          asset = await get(fieldText(name));
+        let decoded = name;
+        if (!asset) {
+          try {
+            decoded = decodeURIComponent(name);
+          } catch {
+            /* Keep literal percent characters. */
+          }
+          if (decoded !== name) asset = await get(decoded);
+        }
+        if (!asset && /[?#]/.test(name))
+          asset = await get(decoded.split(/[?#]/)[0]!);
+        if (!asset || loaded.has(asset.id)) return;
+        loaded.add(asset.id);
+        assets.push(asset);
+        if (/\.(?:css|js)$/i.test(asset.name))
+          pending.push(...references(await asset.blob.text()));
+      }),
+    );
   }
   return assets;
 }

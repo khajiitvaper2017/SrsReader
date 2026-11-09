@@ -9,6 +9,7 @@ export type CardStorageState = {
 export type CardFrameMessage = {
   channel: "srs-card-render";
   cardId: string;
+  renderId: number;
   ordinal: number;
   html: string;
   css: string;

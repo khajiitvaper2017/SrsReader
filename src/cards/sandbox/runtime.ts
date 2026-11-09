@@ -481,6 +481,9 @@ export function cardRuntime(config: RuntimeConfig) {
     height();
     send("rendered", null);
   };
-  if (document.readyState === "complete") void rendered();
-  else window.addEventListener("load", () => void rendered(), { once: true });
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", () => void rendered(), {
+      once: true,
+    });
+  else void rendered();
 }

@@ -11,7 +11,13 @@ export function useReviewPreload(
 ) {
   const preload = useMemo(() => createReviewPreload(settings), [settings]);
   useChanges(
-    useCallback((message) => preload.invalidate(message.word?.id), [preload]),
+    useCallback(
+      (message) => {
+        preload.invalidate(message.word?.id);
+        if (!document.hidden) preload.start(queue?.words || []);
+      },
+      [preload, queue],
+    ),
     ["vocabulary", "dictionaries", "dictionaryVisibility", "collection"],
   );
   useEffect(() => {

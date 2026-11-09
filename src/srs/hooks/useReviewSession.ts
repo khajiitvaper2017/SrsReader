@@ -34,7 +34,11 @@ export function useReviewSession({
   const limits =
     useRef<Extract<Request, { action: "queue" }>["limits"]>(undefined);
   const [revealed, setRevealed] = useState(false);
-  const [times, setTimes] = useState<number[]>([]);
+  const [preview, setPreview] = useState<{
+    id: string;
+    version: number;
+    times: number[];
+  }>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -43,6 +47,10 @@ export function useReviewSession({
   const [example, setExample] = useState(0);
   const readingRef = useRef<HTMLDivElement>(null);
   const word = queue?.words[0];
+  const times =
+    preview?.id === word?.id && preview?.version === word?.srsVersion
+      ? preview?.times || []
+      : [];
   const activeCardId = useRef<string | undefined>(undefined);
   activeCardId.current = word?.id;
   useEffect(() => {
@@ -81,7 +89,11 @@ export function useReviewSession({
   useChanges(sentencesChanged, ["vocabulary"]);
   useEffect(() => {
     let alive = true;
-    setSentences({ id: word?.id || "", contexts: [], loading: !!word?.wordId });
+    setSentences((current) =>
+      current.id === word?.id
+        ? current
+        : { id: word?.id || "", contexts: [], loading: !!word?.wordId },
+    );
     if (word?.wordId)
       void preload
         .loadSentences(word.wordId)
@@ -92,7 +104,7 @@ export function useReviewSession({
         })
         .catch((error) => {
           if (alive) {
-            setSentences({ id: word.id, contexts: [], loading: false });
+            setSentences((current) => ({ ...current, loading: false }));
             setError(error.message);
           }
         });
@@ -171,7 +183,6 @@ export function useReviewSession({
   useEffect(() => {
     if (!word) return;
     let alive = true;
-    setTimes([]);
     void srsClient({
       action: "preview",
       id: word.id,
@@ -179,7 +190,8 @@ export function useReviewSession({
       durationMs: duration(),
     })
       .then((value) => {
-        if (alive) setTimes(value);
+        if (alive)
+          setPreview({ id: word.id, version: word.srsVersion, times: value });
       })
       .catch((error) => {
         if (alive) setError(error.message);

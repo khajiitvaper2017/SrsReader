@@ -19,7 +19,16 @@ let inputPort: MessagePort | undefined;
 let inputReceiver: MessagePort | undefined;
 let removeInput: (() => void) | undefined;
 const send = (type: string, value: unknown) =>
-  parent.postMessage({ channel: "srs-card-frame", type, value }, "*");
+  parent.postMessage(
+    {
+      channel: "srs-card-frame",
+      type,
+      value,
+      cardId: current?.cardId,
+      renderId: current?.renderId,
+    },
+    "*",
+  );
 
 window.addEventListener("message", (event: MessageEvent) => {
   if (
@@ -56,7 +65,7 @@ window.addEventListener("message", (event: MessageEvent) => {
       frame!.style.position = "";
       frame!.style.visibility = "visible";
       send("height", frameHeight);
-      send("rendered", { cardId: current.cardId });
+      send("rendered", { cardId: current.cardId, renderId: current.renderId });
     } else if (["error", "audioStarted"].includes(type)) send(type, value);
     else if (type === "asset" && current && value && typeof value === "object")
       send("asset", { ...value, cardId: current.cardId });
