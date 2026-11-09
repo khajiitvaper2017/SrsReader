@@ -158,23 +158,24 @@ export async function reviewCards(cards: Card[]): Promise<ReviewWord[]> {
     const noteType = note && types.get(note.noteTypeId);
     if (!note || !noteType) return [];
     const document = { card, note, noteType };
-    const saved = note.wordId ? words.get(note.wordId) : undefined;
-    const fallback = freshWord({
-      id: card.id,
-      language: note.language,
-      lemma:
-        fieldText(note.fields[noteType.bindings.word ?? 0] || "") ||
-        noteType.name,
-      reading:
-        noteType.bindings.reading === undefined
-          ? ""
-          : fieldText(note.fields[noteType.bindings.reading] || ""),
-      meanings: [],
-      forms: [],
-    });
+    const saved =
+      (note.wordId ? words.get(note.wordId) : undefined) ||
+      freshWord({
+        id: card.id,
+        language: note.language,
+        lemma:
+          fieldText(note.fields[noteType.bindings.word ?? 0] || "") ||
+          noteType.name,
+        reading:
+          noteType.bindings.reading === undefined
+            ? ""
+            : fieldText(note.fields[noteType.bindings.reading] || ""),
+        meanings: [],
+        forms: [],
+      });
     return [
       {
-        ...(saved || fallback),
+        ...saved,
         id: card.id,
         wordId: note.wordId,
         noteId: note.id,

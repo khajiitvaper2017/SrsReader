@@ -32,6 +32,9 @@ type RankedFrequency = {
   rank: number;
 };
 
+// Activated revisions are immutable, so a new revision cannot reuse stale rows.
+const frequencyCache = new Map<string, Frequency[]>();
+
 async function frequencyData(
   words: Pick<LookupWord, "lemma" | "reading" | "language">[],
   settings: Settings,
@@ -47,12 +50,22 @@ async function frequencyData(
         (
           await Promise.all(
             dictionaries.flatMap((dictionary) =>
-              keys.map((key) =>
-                db.frequencies
+              keys.map((key) => {
+                const indexKey = [dictionary.revisionId, key];
+                const cacheKey = JSON.stringify(indexKey);
+                const cached = frequencyCache.get(cacheKey);
+                if (cached) return cached;
+                return db.frequencies
                   .where("[revisionId+folded]")
-                  .equals([dictionary.revisionId, key])
-                  .toArray(),
-              ),
+                  .equals(indexKey)
+                  .toArray()
+                  .then((rows) => {
+                    frequencyCache.set(cacheKey, rows);
+                    if (frequencyCache.size > 50_000)
+                      frequencyCache.delete(frequencyCache.keys().next().value!);
+                    return rows;
+                  });
+              }),
             ),
           )
         ).flat(),
