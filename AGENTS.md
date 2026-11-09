@@ -21,8 +21,10 @@
 - Run `pnpm phone:update` when asked to update the phone. ADB must be on `PATH`, and the phone must authorize debugging.
 - For Wi-Fi pairing, run `npx adb-qr` and scan its code in Android's Wireless debugging settings.
 - The script waits for an authorized device. If several devices are connected, set `ANDROID_SERIAL` to a serial listed by `adb devices`.
-- The script builds and verifies the archive, then replaces `/sdcard/Download/Telegram/chrome-mv3/chrome-mv3`. It keeps the previous folder as a backup and preserves dictionaries and browser data.
+- The script stages and verifies the archive, then updates the contents of `/sdcard/Download/Telegram/chrome-mv3/chrome-mv3` in place. Never move, delete, or replace that directory: Thorium's Android file-picker access depends on it. Dictionaries and browser data stay intact.
+- Keep rollback copies inside the temporary staging folder, not in permanent backup directories. Delete them after a successful update or rollback. Retain a copy only if automatic rollback fails.
 - Reload SrsReader in the phone browser to activate the update.
+- If an earlier update broke the saved Android file-picker reference, use **Load unpacked** to select that same folder again. Do not uninstall the extension or clear its data.
 
 ## Benchmarks
 

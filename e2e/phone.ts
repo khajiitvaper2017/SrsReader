@@ -54,7 +54,16 @@ try {
     throw new Error("ADB returned an unexpected staging directory.");
   const uploaded = `${work}/extension.zip`;
   const staged = `${work}/extension`;
-  const backup = `${target}.backup-${Date.now()}`;
+  const backup = `${work}/previous`;
+  const replaceContents = (source: string) => {
+    // Keep the SAF-selected directory and manifest file in place.
+    adb(
+      "shell",
+      `find '${target}' -mindepth 1 -maxdepth 1 ! -name manifest.json -exec rm -rf {} +`,
+    );
+    adb("shell", "cp", "-R", `${source}/.`, target);
+  };
+  let rollbackFailed = false;
   try {
     process.stdout.write(adb("push", archive, uploaded));
     if (
@@ -69,11 +78,9 @@ try {
       manifestHash
     )
       throw new Error("The extracted manifest checksum does not match.");
-    adb("shell", "mv", target, backup);
-    let installed = false;
+    adb("shell", "cp", "-R", target, backup);
     try {
-      adb("shell", "mv", staged, target);
-      installed = true;
+      replaceContents(staged);
       if (
         adb("shell", "sha256sum", `${target}/manifest.json`).split(/\s+/)[0] !==
         manifestHash
@@ -81,18 +88,26 @@ try {
         throw new Error("The installed manifest checksum does not match.");
     } catch (error) {
       console.error(`Restoring the original extension from ${backup}`);
-      if (installed) adb("shell", "mv", target, staged);
-      adb("shell", "mv", backup, target);
+      try {
+        replaceContents(backup);
+      } catch (restoreError) {
+        rollbackFailed = true;
+        throw new AggregateError(
+          [error, restoreError],
+          `Update and rollback failed. The original extension backup remains at ${backup}.`,
+        );
+      }
       throw error;
     }
     console.log(`Updated ${manifest.name} ${manifest.version}: ${target}`);
-    console.log(`Backup: ${backup}`);
     console.log("Reload the extension in the phone browser to activate it.");
   } finally {
-    try {
-      adb("shell", "rm", "-rf", work);
-    } catch (error) {
-      console.warn(`Could not remove temporary folder ${work}:`, error);
+    if (!rollbackFailed) {
+      try {
+        adb("shell", "rm", "-rf", work);
+      } catch (error) {
+        console.warn(`Could not remove temporary folder ${work}:`, error);
+      }
     }
   }
 } catch (error) {
