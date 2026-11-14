@@ -1,9 +1,11 @@
 import {
   Accordion,
+  ActionIcon,
   Alert,
   Button,
   FileButton,
   Group,
+  Menu,
   Modal,
   MultiSelect,
   Paper,
@@ -17,7 +19,7 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, MoreHorizontal } from "lucide-react";
 import type { Settings } from "@/settings/model";
 import type { FieldBindings } from "@/cards/model";
 import type { AnkiImportOptions, AnkiPreview } from "@/anki/model";
@@ -181,34 +183,45 @@ export function AnkiTransfer({
           ))));
   return (
     <>
-      <Group>
-        <FileButton
-          resetRef={resetFile}
-          accept=".apkg"
-          onChange={(value) => void inspect(value)}
-        >
-          {(props) => (
-            <Button
-              {...props}
-              disabled={busy}
-              leftSection={<ArrowDownToLine aria-hidden size={16} />}
-            >
-              {t("anki_import")}
-            </Button>
-          )}
-        </FileButton>
-        <Button
-          disabled={busy}
-          onClick={() => {
-            setOpened("export");
-            setError("");
-            setExportDeck("");
-          }}
-          leftSection={<ArrowUpFromLine aria-hidden size={16} />}
-        >
-          {t("anki_export")}
-        </Button>
-      </Group>
+      <FileButton
+        resetRef={resetFile}
+        accept=".apkg"
+        onChange={(value) => void inspect(value)}
+      >
+        {(props) => (
+          <Menu>
+            <Menu.Target>
+              <ActionIcon
+                variant="subtle"
+                aria-label={t("actions")}
+                disabled={busy}
+              >
+                <MoreHorizontal aria-hidden size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                {...props}
+                disabled={busy}
+                leftSection={<ArrowDownToLine aria-hidden size={16} />}
+              >
+                {t("anki_import")}
+              </Menu.Item>
+              <Menu.Item
+                disabled={busy}
+                onClick={() => {
+                  setOpened("export");
+                  setError("");
+                  setExportDeck("");
+                }}
+                leftSection={<ArrowUpFromLine aria-hidden size={16} />}
+              >
+                {t("anki_export")}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        )}
+      </FileButton>
       {notice && (
         <Alert withCloseButton onClose={() => setNotice("")}>
           {notice}

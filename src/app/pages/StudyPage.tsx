@@ -7,17 +7,15 @@ import {
   Menu,
   Modal,
   NumberInput,
-  Paper,
+  NavLink,
   Select,
-  SimpleGrid,
   Stack,
   Table,
   Text,
   TextInput,
   Title,
-  useMantineTheme,
+  VisuallyHidden,
 } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { Dictionary } from "@/dictionaries/model";
 import { languageLabel, languageName } from "@/languages/codes";
@@ -62,8 +60,6 @@ export function StudyPage({
   settings: Settings;
   setSettings: (settings: Settings) => void;
 }) {
-  const theme = useMantineTheme();
-  const narrow = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
   const [languages, setLanguages] = useState<Responses["studyOverview"]>();
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");
@@ -195,7 +191,6 @@ export function StudyPage({
     <StudyRows
       key={row.language}
       row={row}
-      narrow={narrow}
       busy={busy}
       start={start}
       edit={(id, parentId) =>
@@ -211,46 +206,52 @@ export function StudyPage({
     <Stack>
       <Group justify="space-between" align="center" wrap="nowrap">
         <Title order={1}>{t("study_languages")}</Title>
-        <Menu>
-          <Menu.Target>
-            <Button leftSection={<Plus size={16} />} disabled={busy}>
-              {t("add")}
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item
-              onClick={() => {
-                setLanguage(settings.studyLanguage);
-                setModal("language");
-              }}
-            >
-              {t("study_add_language")}
-            </Menu.Item>
-            <Menu.Item
-              leftSection={<FolderPlus size={16} />}
-              onClick={() => {
-                setError("");
-                setDeckEditor({
-                  language: settings.studyLanguage,
-                  parentId: null,
-                });
-              }}
-            >
-              {t("study_add_deck")}
-            </Menu.Item>
-            <Menu.Item
-              onClick={() => {
-                setLanguage(settings.studyLanguage);
-                setName("");
-                setModal("deck");
-              }}
-            >
-              {t("frequency_deck_add")}
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
+        <Group gap="xs" wrap="nowrap">
+          <Menu>
+            <Menu.Target>
+              <ActionIcon
+                variant="subtle"
+                aria-label={t("add")}
+                disabled={busy}
+              >
+                <Plus aria-hidden size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                onClick={() => {
+                  setLanguage(settings.studyLanguage);
+                  setModal("language");
+                }}
+              >
+                {t("study_add_language")}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<FolderPlus size={16} />}
+                onClick={() => {
+                  setError("");
+                  setDeckEditor({
+                    language: settings.studyLanguage,
+                    parentId: null,
+                  });
+                }}
+              >
+                {t("study_add_deck")}
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => {
+                  setLanguage(settings.studyLanguage);
+                  setName("");
+                  setModal("deck");
+                }}
+              >
+                {t("frequency_deck_add")}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+          <AnkiTransfer settings={settings} onComplete={load} />
+        </Group>
       </Group>
-      <AnkiTransfer settings={settings} onComplete={load} />
       <TaskAlerts
         busy={busy}
         error={modal || confirmation ? "" : error}
@@ -259,29 +260,41 @@ export function StudyPage({
         onDismissNotice={() => setNotice("")}
       />
       {languages && (
-        <Paper>
-          {narrow ? (
-            <Stack>{rows}</Stack>
-          ) : (
-            <Table.ScrollContainer minWidth={480}>
-              <Table verticalSpacing="sm" highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t("study_language_deck")}</Table.Th>
-                    <Table.Th ta="right">{t("new")}</Table.Th>
-                    <Table.Th ta="right">{t("srs_queue_learning")}</Table.Th>
-                    <Table.Th ta="right">{t("due")}</Table.Th>
-                    <Table.Th aria-label={t("study_deck_actions")} />
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>{rows}</Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
-          )}
-          <Text variant="supporting" mt="md">
+        <Box>
+          <Table
+            aria-label={t("study_language_deck")}
+            layout="fixed"
+            horizontalSpacing="xs"
+            verticalSpacing="xs"
+            tabularNums
+            withRowBorders={false}
+            highlightOnHover
+          >
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th p={0}>
+                  <VisuallyHidden>{t("study_language_deck")}</VisuallyHidden>
+                </Table.Th>
+                <Table.Th p={0} w={40}>
+                  <VisuallyHidden>{t("new")}</VisuallyHidden>
+                </Table.Th>
+                <Table.Th p={0} w={40}>
+                  <VisuallyHidden>{t("srs_queue_learning")}</VisuallyHidden>
+                </Table.Th>
+                <Table.Th p={0} w={40}>
+                  <VisuallyHidden>{t("due")}</VisuallyHidden>
+                </Table.Th>
+                <Table.Th p={0} w={36}>
+                  <VisuallyHidden>{t("study_deck_actions")}</VisuallyHidden>
+                </Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>{rows}</Table.Tbody>
+          </Table>
+          <Text variant="supporting" mt="xs">
             {t("study_overview_help")}
           </Text>
-        </Paper>
+        </Box>
       )}
       <ReviewStatistics />
       {deckEditor && languages && (
@@ -446,14 +459,12 @@ export function StudyPage({
 
 function StudyRows({
   row,
-  narrow,
   busy,
   start,
   manage,
   edit,
 }: {
   row: Responses["studyOverview"][number];
-  narrow: boolean | undefined;
   busy: boolean;
   start: (language: string, deckId?: string) => Promise<void>;
   manage: (action: DeckAction) => void;
@@ -480,15 +491,19 @@ function StudyRows({
           depth: -1,
           parentId: null,
         },
-        {
-          ...row.mined,
-          id: "mined",
-          name: t("study_mined_words"),
-          label: t("study_mined_words"),
-          depth: 0,
-          parentId: null,
-        },
-        ...visible,
+        ...(collapsed.has(row.language)
+          ? []
+          : [
+              {
+                ...row.mined,
+                id: "mined",
+                name: t("study_mined_words"),
+                label: t("study_mined_words"),
+                depth: 0,
+                parentId: null,
+              },
+              ...visible,
+            ]),
       ].map((deck) => {
         const actions = deck.id && (
           <Menu position="bottom-end" withinPortal>
@@ -594,44 +609,48 @@ function StudyRows({
           </Menu>
         );
         const labelButton = (
-          <Button
-            variant="transparent"
-            disabled={busy || !deck.total}
+          <NavLink
+            component="button"
+            label={deck.label}
+            title={deck.label}
+            flex={1}
             miw={0}
+            noWrap
+            p={0}
+            fw={deck.id ? undefined : 600}
+            disabled={busy || !deck.total}
             onClick={(event) => {
               event.stopPropagation();
               void start(row.language, deck.id);
             }}
-          >
-            {deck.label}
-          </Button>
+          />
         );
-        const hasChildren = row.decks.some(
-          (child) => child.parentId === deck.id,
-        );
+        const key = deck.id ?? row.language;
+        const hasChildren =
+          !deck.id || row.decks.some((child) => child.parentId === deck.id);
         const name = (
           <Group gap="xs" wrap="nowrap" miw={0}>
             {hasChildren ? (
               <ActionIcon
                 aria-label={t(
-                  collapsed.has(deck.id!)
+                  collapsed.has(key)
                     ? "study_expand_deck"
                     : "study_collapse_deck",
                   { name: deck.label },
                 )}
-                aria-expanded={!collapsed.has(deck.id!)}
+                aria-expanded={!collapsed.has(key)}
                 disabled={busy}
                 onClick={(event) => {
                   event.stopPropagation();
                   setCollapsed((previous) => {
                     const next = new Set(previous);
-                    if (next.has(deck.id!)) next.delete(deck.id!);
-                    else next.add(deck.id!);
+                    if (next.has(key)) next.delete(key);
+                    else next.add(key);
                     return next;
                   });
                 }}
               >
-                {collapsed.has(deck.id!) ? (
+                {collapsed.has(key) ? (
                   <ChevronRight size={16} />
                 ) : (
                   <ChevronDown size={16} />
@@ -643,39 +662,6 @@ function StudyRows({
             {labelButton}
           </Group>
         );
-        if (narrow)
-          return (
-            <Paper
-              key={deck.id || row.language}
-              p="sm"
-              ml={
-                deck.depth > 0
-                  ? `calc(var(--mantine-spacing-lg) * ${deck.depth})`
-                  : undefined
-              }
-            >
-              <Stack gap="xs">
-                <Group wrap="nowrap" justify="space-between">
-                  {name}
-                  {actions}
-                </Group>
-                <SimpleGrid cols={3} spacing="xs">
-                  {(
-                    [
-                      ["new", deck.fresh],
-                      ["srs_queue_learning", deck.learning],
-                      ["due", deck.due],
-                    ] as const
-                  ).map(([label, count]) => (
-                    <Stack key={label} gap={0} align="center">
-                      <Text variant="supporting">{t(label)}</Text>
-                      <Text>{number(count)}</Text>
-                    </Stack>
-                  ))}
-                </SimpleGrid>
-              </Stack>
-            </Paper>
-          );
         return (
           <Table.Tr
             key={deck.id || row.language}
@@ -687,15 +673,30 @@ function StudyRows({
             <Table.Td
               pl={
                 deck.id
-                  ? `calc(var(--mantine-spacing-xl) * ${deck.depth + 1})`
+                  ? `calc(var(--mantine-spacing-md) * ${deck.depth + 1})`
                   : undefined
               }
             >
               {name}
             </Table.Td>
-            <Table.Td ta="right">{number(deck.fresh)}</Table.Td>
-            <Table.Td ta="right">{number(deck.learning)}</Table.Td>
-            <Table.Td ta="right">{number(deck.due)}</Table.Td>
+            {(
+              [
+                ["new", deck.fresh, "blue"],
+                ["srs_queue_learning", deck.learning, "orange"],
+                ["due", deck.due, "green"],
+              ] as const
+            ).map(([label, count, color]) => (
+              <Table.Td key={label} ta="right">
+                <Text
+                  component="span"
+                  c={count ? color : "var(--mantine-color-dimmed)"}
+                  title={t(label)}
+                  aria-label={`${t(label)}: ${number(count)}`}
+                >
+                  {number(count)}
+                </Text>
+              </Table.Td>
+            ))}
             <Table.Td ta="right">{actions}</Table.Td>
           </Table.Tr>
         );
