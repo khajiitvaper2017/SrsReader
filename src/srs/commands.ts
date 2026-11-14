@@ -1,4 +1,5 @@
-import { ensureReaderCard, readingCard } from "@/cards/storage";
+import { readingCard } from "@/cards/storage";
+import { resolveCardEncounter } from "@/cards/encounter";
 import { cacheAudio } from "@/audio/cache";
 import { notify } from "@/background/events";
 import { resolved } from "@/dictionaries/resolve";
@@ -89,27 +90,34 @@ async function execute(request: Request, settings: Settings) {
       return word ? sentenceExamples(word) : [];
     }
     case "grade": {
-      let cardId =
-        request.cardId ||
-        (request.source === "review"
-          ? request.id
-          : (await readingCard(request.id))?.id);
-      let created = false;
-      if (request.source === "reading" && !cardId) {
-        let saved = await getWord(request.id);
-        if (saved?.linkedCards.length)
-          throw new Error(t("select_reading_card"));
-        if (!saved) {
-          if (!request.term) throw new Error(t("word_not_found"));
-          saved = await mine(
+      let cardId = request.cardId || request.id;
+      if (request.source === "reading") {
+        const encounter = await resolveCardEncounter(
+          request.context,
+          request.occurrence,
+        );
+        const selected = await readingCard(request.id, undefined, encounter);
+        if (
+          (request.cardId && request.cardId !== selected?.id) ||
+          (!selected && request.version !== 0)
+        )
+          throw new Error(t("this_word_changed_in_another_tab_reopen_it"));
+        if (selected) cardId = selected.id;
+        else {
+          const saved = await getWord(request.id);
+          if (!encounter && saved?.linkedCards.length)
+            throw new Error(t("select_reading_card"));
+          const term =
+            request.term ?? encounter?.context.surface ?? saved?.lemma;
+          if (!term) throw new Error(t("word_not_found"));
+          const mined = await mine(
             await snapshot(
-              await resolved(request.term, request.id, request.occurrence),
+              await resolved(term, request.id, request.occurrence),
             ),
-            request.context,
+            encounter,
           );
-          created = true;
+          cardId = mined.cardId!;
         }
-        cardId = (await ensureReaderCard(saved, request.context)).id;
       }
       const word = cardId ? await reviewCard(cardId) : undefined;
       if (!word || (request.source === "reading" && word.wordId !== request.id))
@@ -118,7 +126,7 @@ async function execute(request: Request, settings: Settings) {
         word,
         request.rating as Grade,
         request.source,
-        created ? word.srsVersion : request.version,
+        request.version,
         request.context,
         request.durationMs,
         request.time,
@@ -136,12 +144,26 @@ async function execute(request: Request, settings: Settings) {
     case "queue":
       return reviewQueue(request.language, request.deckId, request.limits);
     case "preview": {
-      const selected =
-        request.cardId || (await readingCard(request.id))?.id || request.id;
-      const card = await reviewCard(selected);
+      const encounter = await resolveCardEncounter(
+        request.context,
+        request.occurrence,
+      );
+      const selected = encounter
+        ? (await readingCard(request.id, undefined, encounter))?.id
+        : request.cardId || (await readingCard(request.id))?.id || request.id;
+      if (encounter && request.cardId && request.cardId !== selected)
+        throw new Error(t("this_word_changed_in_another_tab_reopen_it"));
+      const card = selected ? await reviewCard(selected) : undefined;
+      if (
+        request.version !== undefined &&
+        request.version !== (card?.srsVersion ?? 0)
+      )
+        throw new Error(t("this_word_changed_in_another_tab_reopen_it"));
       if (card) return preview(card, request.durationMs);
-      const word = await getWord(request.id);
-      if (word?.linkedCards.length) throw new Error(t("select_reading_card"));
+      if (request.cardId) throw new Error(t("card_not_found"));
+      const word = await getWord(request.id, encounter);
+      if (!encounter && word?.linkedCards.length)
+        throw new Error(t("select_reading_card"));
       if (word) return preview(word, request.durationMs);
       const [language, lemma, reading] = JSON.parse(request.id) as [
         string,

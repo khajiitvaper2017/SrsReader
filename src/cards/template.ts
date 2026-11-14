@@ -242,6 +242,8 @@ export function renderCard(
   if (noteType.id.startsWith("reader:")) {
     const study = document.study;
     fields.SrsArticle = escapeHtml(study?.article ?? "");
+    fields.SrsSurface = escapeHtml(study?.surface ?? "");
+    fields.SrsGrammar = (study?.grammar ?? []).map(escapeHtml).join(" · ");
     fields.SrsPartOfSpeech = (study?.partsOfSpeech ?? [])
       .map(escapeHtml)
       .join(" · ");

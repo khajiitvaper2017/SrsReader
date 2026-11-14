@@ -45,7 +45,7 @@ export function readerNoteType(customFields: CustomField[] = []): NoteType {
     )
     .join("\n");
   const heading =
-    '<div class="srs-word">{{#SrsArticle}}<span class="srs-article">{{SrsArticle}}</span> {{/SrsArticle}}{{Word}}</div>{{#SrsShowPartOfSpeech}}{{#SrsPartOfSpeech}}<div class="srs-pos">{{SrsPartOfSpeech}}</div>{{/SrsPartOfSpeech}}{{/SrsShowPartOfSpeech}}';
+    '<div class="srs-word">{{#SrsArticle}}<span class="srs-article">{{SrsArticle}}</span> {{/SrsArticle}}{{#SrsSurface}}{{SrsSurface}}{{/SrsSurface}}{{^SrsSurface}}{{Word}}{{/SrsSurface}}</div>{{#SrsShowPartOfSpeech}}{{#SrsPartOfSpeech}}<div class="srs-pos">{{SrsPartOfSpeech}}</div>{{/SrsPartOfSpeech}}{{/SrsShowPartOfSpeech}}{{#SrsGrammar}}<div class="srs-pos" data-srs-grammar>{{SrsGrammar}}</div>{{/SrsGrammar}}';
   return {
     id: `reader:${JSON.stringify(extra)}`,
     name: "SrsReader",

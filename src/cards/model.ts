@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { scheduleSchema } from "@/srs/model";
+import { contextSchema } from "@/vocabulary/model";
 
 const fieldDefinitionSchema = z.object({
   name: z.string().min(1),
@@ -30,6 +31,13 @@ export const noteTypeSchema = z.object({
   sourceId: z.string().optional(),
   source: z.record(z.string(), z.unknown()).optional(),
 });
+const cardEncounterSchema = z.object({
+  context: contextSchema,
+  pos: z.string(),
+  feats: z.record(z.string(), z.string()),
+  article: z.string().optional(),
+});
+export type CardEncounter = z.infer<typeof cardEncounterSchema>;
 export const noteSchema = z.object({
   id: z.string(),
   noteTypeId: z.string(),
@@ -37,6 +45,7 @@ export const noteSchema = z.object({
   fields: z.array(z.string()),
   tags: z.array(z.string()),
   wordId: z.string().optional(),
+  encounter: cardEncounterSchema.optional(),
   mediaNamespace: z.string(),
   version: z.number().int().nonnegative(),
   created: z.number().finite(),
@@ -82,6 +91,8 @@ export type FieldBindings = z.infer<typeof fieldBindingsSchema>;
 export type AnkiReview = z.infer<typeof ankiReviewSchema>;
 export type CardStudyDetails = {
   article?: string;
+  surface?: string;
+  grammar?: string[];
   partsOfSpeech: string[];
   forms: { label: string; value: string }[];
   ipa: string[];

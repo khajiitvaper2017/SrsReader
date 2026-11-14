@@ -1,5 +1,6 @@
 import type { LookupWord, Meaning } from "@/dictionaries/model";
-import type { Card, CardDocument } from "@/cards/model";
+import type { Card, CardDocument, CardEncounter } from "@/cards/model";
+import { cardEncounterKey, resolveCardEncounter } from "@/cards/encounter";
 import {
   deleteCards,
   ensureReaderCard,
@@ -15,12 +16,7 @@ import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
 import { emptySchedule } from "@/srs/model";
 import type { Request } from "@/vocabulary/contracts";
-import type {
-  ReadingContext,
-  ReviewWord,
-  Vocabulary,
-  WordWithCards,
-} from "@/vocabulary/model";
+import type { ReviewWord, Vocabulary, WordWithCards } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { cacheContext } from "@/examples/sentences";
 import { sentenceId } from "@/examples/sentence-model";
@@ -61,6 +57,7 @@ function extraFields(document?: CardDocument) {
 async function projectWords(
   words: (Vocabulary | undefined)[],
   includeContent = false,
+  encounter?: CardEncounter,
 ) {
   const ids = words.flatMap((word) => (word ? [word.id] : []));
   if (!ids.length) return words.map(() => undefined);
@@ -90,9 +87,14 @@ async function projectWords(
   return words.map((word): WordWithCards | undefined => {
     if (!word) return undefined;
     const linkedCards = byWord.get(word.id) || [];
-    const selected =
-      linkedCards.find((card) => card.id === word.readingCardId) ||
-      (linkedCards.length === 1 ? linkedCards[0] : undefined);
+    const encounterKey = encounter && cardEncounterKey(encounter);
+    const selected = encounter
+      ? linkedCards.find((card) => {
+          const saved = byNote.get(card.noteId)?.encounter;
+          return !!saved && cardEncounterKey(saved) === encounterKey;
+        })
+      : linkedCards.find((card) => card.id === word.readingCardId) ||
+        (linkedCards.length === 1 ? linkedCards[0] : undefined);
     const note = selected && byNote.get(selected.noteId);
     const noteType = note && types.get(note.noteTypeId);
     return {
@@ -101,8 +103,9 @@ async function projectWords(
       cardId: selected?.id,
       card: selected?.schedule || null,
       srsVersion: selected?.srsVersion || 0,
-      suspended:
-        linkedCards.length > 0 && linkedCards.every((card) => card.suspended),
+      suspended: encounter
+        ? !!selected?.suspended
+        : linkedCards.length > 0 && linkedCards.every((card) => card.suspended),
       leech: linkedCards.some((card) => card.leech),
       retentionOverride: selected?.retentionOverride ?? null,
       customFields: includeContent
@@ -116,8 +119,10 @@ async function projectWords(
   });
 }
 
-export async function getWord(id: string) {
-  return (await projectWords([await db.vocabulary.get(id)], true))[0];
+export async function getWord(id: string, encounter?: CardEncounter) {
+  return (
+    await projectWords([await db.vocabulary.get(id)], true, encounter)
+  )[0];
 }
 export async function getWords(ids: string[]) {
   return projectWords(await db.vocabulary.bulkGet(ids));
@@ -215,15 +220,23 @@ async function updateSavedFields(id: string) {
     await refreshDictionaryFields(id);
 }
 
-export async function mine(word: LookupWord, context?: ReadingContext) {
+export async function mine(word: LookupWord, encounter?: CardEncounter) {
   return db.transaction("rw", wordWriteTables(), async () => {
-    await cacheContext(word, context);
+    await cacheContext(word, encounter?.context);
     const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
+    saved.meanings = [
+      ...new Map(
+        [...saved.meanings, ...word.meanings].map((meaning) => [
+          meaningKey(meaning),
+          meaning,
+        ]),
+      ).values(),
+    ];
     saved.mined = true;
     saved.updated = Date.now();
     saved.version++;
     await db.vocabulary.put(saved);
-    const card = await ensureReaderCard(saved, context);
+    const card = await ensureReaderCard(saved, encounter);
     if (!card.schedule && !saved.known)
       await db.cards.update(card.id, {
         schedule: emptySchedule(),
@@ -231,7 +244,7 @@ export async function mine(word: LookupWord, context?: ReadingContext) {
         version: card.version + 1,
         updated: Date.now(),
       });
-    return (await getWord(saved.id))!;
+    return (await getWord(saved.id, encounter))!;
   });
 }
 
@@ -240,10 +253,14 @@ export async function definePersonalWord(
   request: Extract<Request, { action: "defineWord" }>,
   tags?: Pick<Meaning, "tags" | "tagDescriptions">,
 ) {
+  const encounter = await resolveCardEncounter(
+    request.context,
+    request.occurrence,
+  );
   return db.transaction("rw", wordWriteTables(), async () => {
     let saved = await db.vocabulary.get(word.id);
     if (!saved) {
-      await mine(word, request.context);
+      await mine(word, encounter);
       saved = (await db.vocabulary.get(word.id))!;
     } else {
       await cacheContext(word, request.context);
@@ -298,7 +315,7 @@ export async function definePersonalWord(
     }
     await db.vocabulary.put(saved);
     await updateSavedFields(saved.id);
-    return (await getWord(saved.id))!;
+    return (await getWord(saved.id, encounter))!;
   });
 }
 

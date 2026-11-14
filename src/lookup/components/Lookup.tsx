@@ -380,7 +380,7 @@ function LookupEntry({
             </Group>
           </Group>
 
-          {saved && (
+          {saved && !context && (
             <ReadingCardSelect
               word={saved}
               disabled={busy}

@@ -17,12 +17,6 @@ export const selection = {
 };
 export const requests = [
   z.object({
-    action: z.literal("createWordCard"),
-    id: z.string().min(1),
-    sourceCardId: z.string().min(1),
-    gender: z.enum(["Masc", "Fem", "Neut"]).optional(),
-  }),
-  z.object({
     action: z.literal("saveCardFields"),
     id: z.string(),
     noteId: z.string().min(1),
@@ -35,7 +29,12 @@ export const requests = [
     language: languageSchema,
     text: z.string().trim().max(30000),
   }),
-  z.object({ action: z.literal("word"), id: z.string() }),
+  z.object({
+    action: z.literal("word"),
+    id: z.string(),
+    context: selection.context,
+    occurrence: selection.occurrence,
+  }),
   z.object({
     action: z.literal("cardDefinitions"),
     id: z.string(),
@@ -125,7 +124,6 @@ export const requests = [
 ] as const;
 export type Request = z.infer<(typeof requests)[number]>;
 export type Responses = {
-  createWordCard: string;
   saveCardFields: void;
   saveCustomTranslation: void;
   saveTranslation: void;

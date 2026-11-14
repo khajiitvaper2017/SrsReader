@@ -1,4 +1,9 @@
-import type { CardDocument, CardStudyDetails } from "@/cards/model";
+import type {
+  CardDocument,
+  CardEncounter,
+  CardStudyDetails,
+} from "@/cards/model";
+import { meaningsForEncounter } from "@/cards/encounter";
 import type { Meaning } from "@/dictionaries/model";
 import {
   dictionaryPartsOfSpeech,
@@ -62,9 +67,20 @@ export function cardStudyDetails(
   language: string,
   meanings: Meaning[],
   inflections: DictionaryInflection[],
+  encounter?: CardEncounter,
 ): CardStudyDetails {
   const study: CardStudyDetails = {
-    partsOfSpeech: dictionaryPartsOfSpeech(meanings),
+    partsOfSpeech: encounter
+      ? encounter.pos
+          .split(",")
+          .filter(Boolean)
+          .map((pos) =>
+            t(`sentence_grammar.pos.${pos}`, {
+              defaultValue: pos,
+              nsSeparator: false,
+            }),
+          )
+      : dictionaryPartsOfSpeech(meanings),
     forms: [],
     ipa: [
       ...new Set(
@@ -76,6 +92,31 @@ export function cardStudyDetails(
       ),
     ],
   };
+  if (encounter) {
+    study.surface = encounter.context.surface;
+    study.article = encounter.article;
+    study.grammar = Object.entries(encounter.feats)
+      .sort(([left], [right]) => left.localeCompare(right, "en"))
+      .map(([feature, value]) => {
+        const translated = value
+          .split(",")
+          .map((part) =>
+            t(`sentence_grammar.values.${feature}.${part}`, {
+              defaultValue: part,
+              nsSeparator: false,
+            }),
+          )
+          .join(" / ");
+        return /^(Animacy|Gender|Number|Case|Tense|VerbForm|Aspect|Voice|Mood|Polarity|Person)$/u.test(
+          feature,
+        )
+          ? translated
+          : `${t(`sentence_grammar.features.${feature}`, {
+              defaultValue: feature,
+              nsSeparator: false,
+            })}: ${translated}`;
+      });
+  }
   if (language !== "de") return study;
   const kind = lexicalClass(meanings);
   if (!kind) return study;
@@ -88,7 +129,7 @@ export function cardStudyDetails(
       ),
       "Gender",
     );
-    if (genders.length === 1) {
+    if (!encounter && genders.length === 1) {
       study.article = articles[genders[0]!];
     }
     if (genders.length > 1) return study;
@@ -155,45 +196,41 @@ export async function prepareStudyDocument(
 ): Promise<CardDocument> {
   if (!document.noteType.id.startsWith("reader:") || !document.note.wordId)
     return document;
+  const encounter = document.note.encounter;
   const word = saved ?? (await db.vocabulary.get(document.note.wordId));
-  if (!word) return document;
-  let meanings = applyDefinitionOverrides(word.meanings, word).filter(
+  if (!word)
+    return encounter
+      ? {
+          ...document,
+          study: cardStudyDetails(document.note.language, [], [], encounter),
+        }
+      : document;
+  let meanings: Vocabulary["meanings"] = applyDefinitionOverrides(
+    word.meanings,
+    word,
+  ).filter(
     (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
-  );
-  const nounMeanings = meanings.filter((meaning) =>
-    dictionaryTagValues([meaning], "UPOS").some(
-      (part) => part === "NOUN" || part === "PROPN",
-    ),
   );
   // Redirect forms have no sense ID, so they cannot distinguish lexical genders.
   const ambiguousGender =
-    dictionaryTagValues(nounMeanings, "Gender").length > 1;
-  const genders = [
-    ...new Set(
-      document.note.tags.flatMap((tag) => {
-        const match = tag.match(/^Gender=(Masc|Fem|Neut)$/u);
-        return match ? [match[1]!] : [];
-      }),
-    ),
-  ];
-  const gender =
-    word.language === "de" && genders.length === 1 ? genders[0] : undefined;
-  if (gender) {
-    meanings = meanings.filter((meaning) => {
-      const parts = dictionaryTagValues([meaning], "UPOS");
-      const genders = dictionaryTagValues([meaning], "Gender");
-      return (
-        parts.some((part) => part === "NOUN" || part === "PROPN") &&
-        (!genders.length || genders.includes(gender))
-      );
-    });
-  }
+    dictionaryTagValues(
+      meanings.filter((meaning) =>
+        dictionaryTagValues([meaning], "UPOS").some(
+          (part) => part === "NOUN" || part === "PROPN",
+        ),
+      ),
+      "Gender",
+    ).length > 1;
+  if (encounter) meanings = meaningsForEncounter(meanings, encounter);
   const inflections =
     word.language === "de" && !ambiguousGender && lexicalClass(meanings)
       ? await dictionaryInflections(word.lemma, meanings)
       : [];
-  const study = cardStudyDetails(word.language, meanings, inflections);
-  if (gender && lexicalClass(meanings) === "noun")
-    study.article = articles[gender];
+  const study = cardStudyDetails(
+    word.language,
+    meanings,
+    inflections,
+    encounter,
+  );
   return { ...document, study };
 }

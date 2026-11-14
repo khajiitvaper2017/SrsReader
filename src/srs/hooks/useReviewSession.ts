@@ -78,10 +78,19 @@ export function useReviewSession({
     contexts: Responses["sentenceExamples"];
     loading: boolean;
   }>({ id: "", contexts: [], loading: false });
-  const contexts = sentences.id === word?.id ? sentences.contexts : [];
+  const encounter = queue?.document?.noteType.id.startsWith("reader:")
+    ? queue.document.note.encounter
+    : undefined;
+  const contexts = encounter
+    ? [encounter.context]
+    : sentences.id === word?.id
+      ? sentences.contexts
+      : [];
   const sentenceLoading =
-    !!word?.wordId && (sentences.id !== word.id || sentences.loading);
-  const context = contexts[example];
+    !encounter &&
+    !!word?.wordId &&
+    (sentences.id !== word.id || sentences.loading);
+  const context = encounter?.context ?? contexts[example];
   const [sentenceRevision, refreshSentences] = useState(0);
   const sentencesChanged = useCallback(
     () => refreshSentences((value) => value + 1),
@@ -89,6 +98,7 @@ export function useReviewSession({
   );
   useChanges(sentencesChanged, ["vocabulary"]);
   useEffect(() => {
+    if (encounter) return;
     let alive = true;
     setSentences((current) =>
       current.id === word?.id
@@ -112,7 +122,7 @@ export function useReviewSession({
     return () => {
       alive = false;
     };
-  }, [word?.id, word?.version, settings, sentenceRevision, preload]);
+  }, [word?.id, word?.version, encounter, settings, sentenceRevision, preload]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const fetchQueue = useCallback(
     () =>

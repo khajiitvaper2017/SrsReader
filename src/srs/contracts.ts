@@ -63,6 +63,9 @@ export const requests = [
   }),
   z.object({
     action: z.literal("preview"),
+    context: selection.context,
+    occurrence: selection.occurrence,
+    version: z.number().int().nonnegative().optional(),
     cardId: z.string().optional(),
     id: z.string(),
     durationMs: z.number().finite().nonnegative().nullable().optional(),

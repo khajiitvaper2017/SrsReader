@@ -93,21 +93,24 @@ export function ReviewPage({
       void lookupClient({
         action: "createSession",
         term,
-        context: {
-          language: word.language,
-          sentence: term,
-          surface: term,
-          start: 0,
-          end: term.length,
-          url: location.href,
-          title: document.title,
-          mined: Date.now(),
-        },
+        context:
+          context?.surface === term
+            ? { ...context, language: word.language }
+            : {
+                language: word.language,
+                sentence: term,
+                surface: term,
+                start: 0,
+                end: term.length,
+                url: location.href,
+                title: document.title,
+                mined: Date.now(),
+              },
       })
         .then(setLookupSession)
         .catch((error: Error) => setError(error.message));
     },
-    [word?.language],
+    [word?.language, context],
   );
   const sentenceAudio = useCardMedia(
     word?.wordId || "",

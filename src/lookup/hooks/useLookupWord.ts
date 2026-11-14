@@ -94,10 +94,15 @@ export function useLookupWord({
   const [selected, setSelected] = useState(page.selected || "");
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [editing, setEditing] = useState<DefinitionEditing>(null);
+  const selectionKey = JSON.stringify([selected, term, context, occurrence]);
   const [loadedSaved, setSaved] = useState<WordWithCards>();
-  const saved = loadedSaved?.id === selected ? loadedSaved : undefined;
+  const [savedKey, setSavedKey] = useState("");
+  const saved =
+    savedKey === selectionKey && loadedSaved?.id === selected
+      ? loadedSaved
+      : undefined;
   const [preview, setPreview] = useState<{ id: string; times: number[] }>();
-  const times = preview?.id === selected ? preview.times : [];
+  const times = preview?.id === selectionKey ? preview.times : [];
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -111,7 +116,7 @@ export function useLookupWord({
   const [notice, setNotice] = useState("");
   const [lastReview, setLastReview] = useState("");
   const [reviewed, setReviewed] = useState(false);
-  const duration = useReviewClock(`${selected}:${saved?.card?.reps}`);
+  const duration = useReviewClock(`${selectionKey}:${saved?.card?.reps}`);
   const noResults = result?.words.length === 0;
   const candidates =
     result?.words.filter(
@@ -334,20 +339,34 @@ export function useLookupWord({
   const pending = useRef(0);
   const reload = useCallback(() => {
     const request = ++pending.current;
+    setPreview(undefined);
     if (!selected || !term) return;
-    void Promise.all([
-      vocabularyClient({ action: "word", id: selected }),
-      srsClient({ action: "preview", id: selected, durationMs: duration() }),
-    ])
-      .then(([word, times]) => {
+    void vocabularyClient({
+      action: "word",
+      id: selected,
+      context,
+      occurrence,
+    })
+      .then(async (word) => {
+        if (request !== pending.current) return;
+        const times = await srsClient({
+          action: "preview",
+          id: selected,
+          context,
+          occurrence,
+          cardId: word?.cardId,
+          version: word?.srsVersion ?? 0,
+          durationMs: duration(),
+        });
         if (request !== pending.current) return;
         setSaved(word);
-        setPreview({ id: selected, times });
+        setSavedKey(selectionKey);
+        setPreview({ id: selectionKey, times });
       })
       .catch((error) => {
         if (request === pending.current) setError(error.message);
       });
-  }, [selected, term, duration, occurrence, settings.studyLanguage]);
+  }, [selected, term, context, occurrence, selectionKey, duration]);
   useEffect(() => {
     reload();
     return () => {
@@ -359,7 +378,7 @@ export function useLookupWord({
     setReviewed(false);
     setLastReview("");
     setNotice("");
-  }, [selected]);
+  }, [selectionKey]);
   useEffect(() => {
     function key(event: KeyboardEvent) {
       if (
@@ -378,14 +397,14 @@ export function useLookupWord({
   });
   const canGrade =
     !!word &&
-    preview?.id === selected &&
+    preview?.id === selectionKey &&
     !candidateOpen &&
     !unparsed &&
     !busy &&
     !saved?.known &&
     !saved?.suspended &&
     !saved?.linkedCards.find((card) => card.id === saved.cardId)?.suspended &&
-    (!saved?.linkedCards.length || !!saved.cardId) &&
+    (!saved?.linkedCards.length || !!saved.cardId || !!context) &&
     !reviewed;
   useReviewControls({
     settings,
@@ -428,7 +447,7 @@ export function useLookupWord({
     if (
       !word ||
       busyRef.current ||
-      preview?.id !== selected ||
+      preview?.id !== selectionKey ||
       (rating && reviewed)
     )
       return;
@@ -450,7 +469,15 @@ export function useLookupWord({
           context,
           occurrence,
         });
-        setSaved(await vocabularyClient({ action: "word", id: word.id }));
+        setSaved(
+          await vocabularyClient({
+            action: "word",
+            id: word.id,
+            context,
+            occurrence,
+          }),
+        );
+        setSavedKey(selectionKey);
         setLastReview(result.reviewId);
         setReviewed(true);
         setNotice(
@@ -468,6 +495,7 @@ export function useLookupWord({
             occurrence,
           }),
         );
+        setSavedKey(selectionKey);
         setNotice("");
       }
       reload();
@@ -480,20 +508,19 @@ export function useLookupWord({
     }
   }
   async function toggleMastery() {
-    if (!word || busyRef.current || preview?.id !== selected) return;
+    if (!word || busyRef.current || preview?.id !== selectionKey) return;
     busyRef.current = true;
     setBusy(true);
     setError("");
     try {
-      setSaved(
-        await vocabularyClient({
-          action: "known",
-          id: word.id,
-          term,
-          occurrence,
-          value: !saved?.known,
-        }),
-      );
+      await vocabularyClient({
+        action: "known",
+        id: word.id,
+        term,
+        occurrence,
+        value: !saved?.known,
+      });
+      reload();
       setLastReview("");
       setNotice("");
     } catch (error) {
@@ -514,7 +541,15 @@ export function useLookupWord({
     );
     if (saved) {
       setSelected(saved.id);
-      setSaved(await vocabularyClient({ action: "word", id: saved.id }));
+      setSaved(
+        await vocabularyClient({
+          action: "word",
+          id: saved.id,
+          context,
+          occurrence,
+        }),
+      );
+      setSavedKey(selectionKey);
     }
     setEditing(null);
     setNotice("");
@@ -556,7 +591,7 @@ export function useLookupWord({
     times,
     error,
     setError,
-    busy: busy || preview?.id !== selected,
+    busy: busy || preview?.id !== selectionKey,
     notice,
     setNotice,
     lastReview,

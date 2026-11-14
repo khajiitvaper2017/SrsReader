@@ -4,12 +4,7 @@ import { srsWrite } from "@/platform/locks";
 import { t } from "@/shared/i18n/i18n";
 import { emptySchedule } from "@/srs/model";
 import { getSettings } from "@/settings/store";
-import {
-  wordId,
-  vocabularySchema,
-  type ReadingContext,
-  type Vocabulary,
-} from "@/vocabulary/model";
+import { wordId, vocabularySchema, type Vocabulary } from "@/vocabulary/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import {
   readerNote,
@@ -17,8 +12,8 @@ import {
   escapeHtml,
   type CustomField,
 } from "@/cards/defaults";
-import { assetId, type Card, type CardDocument } from "@/cards/model";
-import { dictionaryTagValues } from "@/dictionaries/grammar";
+import type { Card, CardDocument, CardEncounter } from "@/cards/model";
+import { cardEncounterKey, meaningsForEncounter } from "@/cards/encounter";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 
@@ -47,7 +42,24 @@ async function getWordCards(id: string) {
   return notes.length ? db.cards.where("noteId").anyOf(notes).toArray() : [];
 }
 
-export async function readingCard(id: string, selectedCardId?: string) {
+export async function readingCard(
+  id: string,
+  selectedCardId?: string,
+  encounter?: CardEncounter,
+) {
+  if (encounter) {
+    const key = cardEncounterKey(encounter);
+    const notes = await db.notes
+      .where("wordId")
+      .equals(id)
+      .filter(
+        (note) => !!note.encounter && cardEncounterKey(note.encounter) === key,
+      )
+      .primaryKeys();
+    return notes.length
+      ? db.cards.where("noteId").anyOf(notes).first()
+      : undefined;
+  }
   const [word, cards] = await Promise.all([
     db.vocabulary.get(id),
     getWordCards(id),
@@ -67,142 +79,69 @@ export async function selectReadingCard(id: string, cardId: string) {
 
 export async function ensureReaderCard(
   word: Vocabulary,
-  context?: ReadingContext,
+  encounter?: CardEncounter,
 ): Promise<Card> {
-  const selected = await readingCard(word.id);
+  const selected = await readingCard(word.id, undefined, encounter);
   if (selected) return selected;
-  if ((await getWordCards(word.id)).length)
+  if (!encounter && (await getWordCards(word.id)).length)
     throw new Error(t("select_reading_card"));
   const prepared = readerNote(
     word,
-    context,
+    encounter?.context,
     [],
     (await getSettings()).nativeLanguage,
   );
+  const now = Date.now();
+  if (encounter) {
+    prepared.note.id = crypto.randomUUID();
+    prepared.note.mediaNamespace = prepared.note.id;
+    prepared.note.encounter = encounter;
+    prepared.note.created = now;
+    prepared.note.updated = now;
+  }
+  const meanings = applyDefinitionOverrides(word.meanings, word);
   const snapshot = await prepareDictionarySnapshot(
-    { ...word, meanings: applyDefinitionOverrides(word.meanings, word) },
+    {
+      ...word,
+      meanings: encounter
+        ? meaningsForEncounter(meanings, encounter)
+        : meanings,
+    },
     { namespace: prepared.note.mediaNamespace },
   );
   prepared.note.fields[prepared.noteType.bindings.definitions!] = snapshot.html;
   const card: Card = {
-    id: word.id,
+    id: prepared.note.id,
     noteId: prepared.note.id,
     templateOrdinal: 0,
     deckId: null,
     language: word.language,
-    schedule: word.known ? null : emptySchedule(),
+    schedule: word.known ? null : emptySchedule(now),
     suspended: false,
     leech: false,
     retentionOverride: null,
     srsVersion: 0,
     version: 0,
-    created: word.created,
-    updated: word.updated,
+    created: prepared.note.created,
+    updated: prepared.note.updated,
   };
-  await db.transaction(
+  return db.transaction(
     "rw",
     [db.vocabulary, db.noteTypes, db.notes, db.cards, db.cardAssets],
     async () => {
-      // Mining can race another tab; keep the card already created for this word.
-      if ((await getWordCards(word.id)).length) return;
+      const existing = await readingCard(word.id, undefined, encounter);
+      if (existing) return existing;
+      if (!encounter && (await getWordCards(word.id)).length)
+        throw new Error(t("select_reading_card"));
       await db.noteTypes.put(prepared.noteType);
-      await db.notes.put(prepared.note);
+      await db.notes.add(prepared.note);
       if (snapshot.assets.length) await db.cardAssets.bulkPut(snapshot.assets);
       await db.cards.add(card);
-      await db.vocabulary.update(word.id, { readingCardId: card.id });
+      const saved = await db.vocabulary.get(word.id);
+      if (!saved?.readingCardId)
+        await db.vocabulary.update(word.id, { readingCardId: card.id });
+      return card;
     },
-  );
-  return (await readingCard(word.id))!;
-}
-
-export function canChooseCardGender(document: CardDocument, word: Vocabulary) {
-  return (
-    word.language === "de" &&
-    document.noteType.id.startsWith("reader:") &&
-    dictionaryTagValues(
-      applyDefinitionOverrides(word.meanings, word),
-      "UPOS",
-    ).some((part) => part === "NOUN" || part === "PROPN")
-  );
-}
-
-export async function createWordCard(
-  id: string,
-  sourceCardId: string,
-  gender?: "Masc" | "Fem" | "Neut",
-) {
-  return srsWrite(() =>
-    db.transaction(
-      "rw",
-      [db.vocabulary, db.cards, db.notes, db.noteTypes, db.cardAssets],
-      async () => {
-        const word = await db.vocabulary.get(id);
-        if (!word) throw new Error(t("word_not_found"));
-        const document = await getCardDocument(sourceCardId);
-        if (!document || document.note.wordId !== id)
-          throw new Error(t("card_not_found"));
-        if (gender && !canChooseCardGender(document, word))
-          throw new Error(t("card_add_gender_unavailable"));
-        const now = Date.now();
-        const noteId = crypto.randomUUID();
-        const cardId = crypto.randomUUID();
-        const namespace = `card:${noteId}`;
-        const assets = await db.cardAssets
-          .where("namespace")
-          .equals(document.note.mediaNamespace)
-          .toArray();
-        if (assets.length)
-          await db.cardAssets.bulkAdd(
-            assets.map((asset) => ({
-              ...asset,
-              id: assetId(namespace, asset.name),
-              namespace,
-            })),
-          );
-        await db.notes.add({
-          id: noteId,
-          noteTypeId: document.note.noteTypeId,
-          language: document.note.language,
-          wordId: id,
-          fields: document.note.fields,
-          tags: gender
-            ? [
-                ...document.note.tags.filter(
-                  (tag) => !tag.startsWith("Gender="),
-                ),
-                `Gender=${gender}`,
-              ]
-            : document.note.tags,
-          mediaNamespace: namespace,
-          version: 0,
-          created: now,
-          updated: now,
-        });
-        await db.cards.add({
-          id: cardId,
-          noteId,
-          templateOrdinal: document.card.templateOrdinal,
-          deckId: document.card.deckId,
-          language: document.card.language,
-          schedule: emptySchedule(now),
-          suspended: false,
-          leech: false,
-          retentionOverride: document.card.retentionOverride,
-          srsVersion: 0,
-          version: 0,
-          created: now,
-          updated: now,
-        });
-        await db.vocabulary.update(id, {
-          known: false,
-          mined: true,
-          readingCardId: cardId,
-          version: word.version + 1,
-          updated: now,
-        });
-        return cardId;
-      },
-    ),
   );
 }
 
@@ -260,8 +199,14 @@ export async function refreshDictionaryFields(id: string, noteId?: string) {
   if (!note || !type) throw new Error(t("select_reading_card"));
   if (type.bindings.definitions === undefined)
     throw new Error(t("card_dictionary_field_missing"));
+  const meanings = applyDefinitionOverrides(word.meanings, word);
   const snapshot = await prepareDictionarySnapshot(
-    { ...word, meanings: applyDefinitionOverrides(word.meanings, word) },
+    {
+      ...word,
+      meanings: note.encounter
+        ? meaningsForEncounter(meanings, note.encounter)
+        : meanings,
+    },
     { namespace: note.mediaNamespace },
   );
   const fields = [...note.fields];

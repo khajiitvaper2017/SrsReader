@@ -33,23 +33,18 @@ export function ReadingCardSelect({
           sentenceIndex === undefined
             ? ""
             : fieldText(document!.note.fields[sentenceIndex] || "");
-        const gender = document?.note.tags.find((tag) =>
-          /^Gender=(Masc|Fem|Neut)$/u.test(tag),
-        );
-        const genderLabel =
-          gender === "Gender=Masc"
-            ? t("card_add_gender_masculine")
-            : gender === "Gender=Fem"
-              ? t("card_add_gender_feminine")
-              : gender === "Gender=Neut"
-                ? t("card_add_gender_neuter")
-                : undefined;
         return {
           value: card.id,
           label: [
             document?.noteType.name,
             template?.name,
-            genderLabel,
+            document?.note.encounter?.context.surface,
+            document?.note.encounter?.pos,
+            document?.note.encounter
+              ? Object.entries(document.note.encounter.feats)
+                  .map(([name, value]) => `${name}=${value}`)
+                  .join(", ")
+              : undefined,
             `#${index + 1}`,
             card.suspended ? t("suspended") : undefined,
             sentence.slice(0, 80),
