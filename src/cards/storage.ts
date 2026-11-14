@@ -4,7 +4,7 @@ import { srsWrite } from "@/platform/locks";
 import { t } from "@/shared/i18n/i18n";
 import { emptySchedule } from "@/srs/model";
 import { getSettings } from "@/settings/store";
-import { wordId, vocabularySchema, type Vocabulary } from "@/vocabulary/model";
+import type { Vocabulary } from "@/vocabulary/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import {
   readerNote,
@@ -147,39 +147,12 @@ export async function ensureReaderCard(
 
 export async function saveNoteFields(noteId: string, fields: string[]) {
   await srsWrite(() =>
-    db.transaction("rw", [db.notes, db.noteTypes, db.vocabulary], async () => {
+    db.transaction("rw", [db.notes, db.noteTypes], async () => {
       const note = await db.notes.get(noteId);
       const noteType = note && (await db.noteTypes.get(note.noteTypeId));
       if (!note || !noteType) throw new Error(t("card_not_found"));
       if (fields.length !== noteType.fields.length)
         throw new Error(t("card_fields_invalid"));
-      const wordIndex = noteType.bindings.word;
-      if (wordIndex !== undefined) {
-        const lemma = fieldText(fields[wordIndex]!);
-        const reading =
-          noteType.bindings.reading === undefined
-            ? ""
-            : fieldText(fields[noteType.bindings.reading]!);
-        if (lemma) {
-          const id = wordId(note.language, lemma, reading);
-          if (!(await db.vocabulary.get(id)))
-            await db.vocabulary.put(
-              vocabularySchema.parse({
-                id,
-                language: note.language,
-                lemma,
-                reading,
-                meanings: [],
-                known: false,
-                mined: true,
-                version: 0,
-                created: Date.now(),
-                updated: Date.now(),
-              }),
-            );
-          note.wordId = id;
-        } else delete note.wordId;
-      }
       await db.notes.put({
         ...note,
         fields,
