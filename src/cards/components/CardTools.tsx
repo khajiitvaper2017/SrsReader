@@ -13,6 +13,7 @@ import type { CardDocument } from "@/cards/model";
 import type { Settings } from "@/settings/model";
 import type { ReadingContext } from "@/vocabulary/model";
 import { NoteFieldsEditor } from "@/cards/components/NoteFieldsEditor";
+import { AddCard } from "@/cards/components/AddCard";
 import { refreshNote } from "@/cards/storage";
 import { MediaField } from "@/vocabulary/components/CardEditor";
 import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
@@ -70,6 +71,11 @@ export function CardTools({
             <NoteFieldsEditor noteId={document.note.id} onSaved={onChanged} />
             {document.note.wordId && (
               <>
+                <AddCard
+                  key={document.card.id}
+                  document={document}
+                  onCreated={onChanged}
+                />
                 {document.noteType.bindings.definitions !== undefined && (
                   <Stack gap="xs">
                     <Text variant="supporting">

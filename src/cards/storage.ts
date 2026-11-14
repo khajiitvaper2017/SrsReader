@@ -17,7 +17,8 @@ import {
   escapeHtml,
   type CustomField,
 } from "@/cards/defaults";
-import type { Card, CardDocument } from "@/cards/model";
+import { assetId, type Card, type CardDocument } from "@/cards/model";
+import { dictionaryTagValues } from "@/dictionaries/grammar";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 
@@ -114,6 +115,97 @@ export async function ensureReaderCard(
   return (await readingCard(word.id))!;
 }
 
+export function canChooseCardGender(document: CardDocument, word: Vocabulary) {
+  return (
+    word.language === "de" &&
+    document.noteType.id.startsWith("reader:") &&
+    dictionaryTagValues(
+      applyDefinitionOverrides(word.meanings, word),
+      "UPOS",
+    ).some((part) => part === "NOUN" || part === "PROPN")
+  );
+}
+
+export async function createWordCard(
+  id: string,
+  sourceCardId: string,
+  gender?: "Masc" | "Fem" | "Neut",
+) {
+  return srsWrite(() =>
+    db.transaction(
+      "rw",
+      [db.vocabulary, db.cards, db.notes, db.noteTypes, db.cardAssets],
+      async () => {
+        const word = await db.vocabulary.get(id);
+        if (!word) throw new Error(t("word_not_found"));
+        const document = await getCardDocument(sourceCardId);
+        if (!document || document.note.wordId !== id)
+          throw new Error(t("card_not_found"));
+        if (gender && !canChooseCardGender(document, word))
+          throw new Error(t("card_add_gender_unavailable"));
+        const now = Date.now();
+        const noteId = crypto.randomUUID();
+        const cardId = crypto.randomUUID();
+        const namespace = `card:${noteId}`;
+        const assets = await db.cardAssets
+          .where("namespace")
+          .equals(document.note.mediaNamespace)
+          .toArray();
+        if (assets.length)
+          await db.cardAssets.bulkAdd(
+            assets.map((asset) => ({
+              ...asset,
+              id: assetId(namespace, asset.name),
+              namespace,
+            })),
+          );
+        await db.notes.add({
+          id: noteId,
+          noteTypeId: document.note.noteTypeId,
+          language: document.note.language,
+          wordId: id,
+          fields: document.note.fields,
+          tags: gender
+            ? [
+                ...document.note.tags.filter(
+                  (tag) => !tag.startsWith("Gender="),
+                ),
+                `Gender=${gender}`,
+              ]
+            : document.note.tags,
+          mediaNamespace: namespace,
+          version: 0,
+          created: now,
+          updated: now,
+        });
+        await db.cards.add({
+          id: cardId,
+          noteId,
+          templateOrdinal: document.card.templateOrdinal,
+          deckId: document.card.deckId,
+          language: document.card.language,
+          schedule: emptySchedule(now),
+          suspended: false,
+          leech: false,
+          retentionOverride: document.card.retentionOverride,
+          srsVersion: 0,
+          version: 0,
+          created: now,
+          updated: now,
+        });
+        await db.vocabulary.update(id, {
+          known: false,
+          mined: true,
+          readingCardId: cardId,
+          version: word.version + 1,
+          updated: now,
+        });
+        return cardId;
+      },
+    ),
+  );
+}
+
 export async function saveNoteFields(noteId: string, fields: string[]) {
   await srsWrite(() =>
     db.transaction("rw", [db.notes, db.noteTypes, db.vocabulary], async () => {
@@ -191,10 +283,16 @@ export async function refreshNote(noteId: string) {
   await vocabularyClient({ action: "refreshWord", id: note.wordId, noteId });
 }
 
-export async function saveCustomFields(id: string, fields: CustomField[]) {
-  const card = await readingCard(id);
-  const document = card && (await getCardDocument(card.id));
-  if (!document) throw new Error(t("select_reading_card"));
+export async function saveCustomFields(
+  id: string,
+  noteId: string,
+  fields: CustomField[],
+) {
+  const note = await db.notes.get(noteId);
+  const type = note && (await db.noteTypes.get(note.noteTypeId));
+  if (!note || !type || note.wordId !== id)
+    throw new Error(t("card_not_found"));
+  const document = { note, noteType: type };
   if (!document.noteType.id.startsWith("reader:"))
     throw new Error(t("card_field_schema_fixed"));
   const noteType = readerNoteType(fields);
@@ -235,12 +333,16 @@ export async function deleteCards(ids: string[]) {
         (card) => card !== undefined,
       );
       await db.cards.bulkDelete(ids);
-      await db.vocabulary
+      const selectedWords = await db.vocabulary
         .where("readingCardId")
         .anyOf(ids)
-        .modify((word) => {
-          delete word.readingCardId;
+        .toArray();
+      for (const word of selectedWords) {
+        const remaining = await getWordCards(word.id);
+        await db.vocabulary.update(word.id, {
+          readingCardId: remaining[0]?.id,
         });
+      }
       for (const noteId of new Set(cards.map((card) => card.noteId))) {
         if (await db.cards.where("noteId").equals(noteId).count()) continue;
         const note = await db.notes.get(noteId);

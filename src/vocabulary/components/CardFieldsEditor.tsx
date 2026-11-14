@@ -15,7 +15,13 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { WordWithCards } from "@/vocabulary/model";
 
-export function CardFieldsEditor({ word }: { word: WordWithCards }) {
+export function CardFieldsEditor({
+  word,
+  noteId,
+}: {
+  word: WordWithCards;
+  noteId: string;
+}) {
   const [fields, setFields] = useState(word.customFields || []);
   const [saved, setSaved] = useState(JSON.stringify(fields));
   const [busy, setBusy] = useState(false);
@@ -29,7 +35,12 @@ export function CardFieldsEditor({ word }: { word: WordWithCards }) {
     setBusy(true);
     setError("");
     try {
-      await vocabularyClient({ action: "saveCardFields", id: word.id, fields });
+      await vocabularyClient({
+        action: "saveCardFields",
+        id: word.id,
+        noteId,
+        fields,
+      });
       setSaved(JSON.stringify(fields));
     } catch (error) {
       setError((error as Error).message);

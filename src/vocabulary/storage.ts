@@ -331,7 +331,7 @@ export async function replaceMeanings(
 export async function saveCardFields(
   request: Extract<Request, { action: "saveCardFields" }>,
 ) {
-  await saveCustomFields(request.id, request.fields);
+  await saveCustomFields(request.id, request.noteId, request.fields);
 }
 
 async function saveSentenceTranslationField(

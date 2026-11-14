@@ -15,6 +15,8 @@ import { liveQuery } from "dexie";
 import type { CardDocument } from "@/cards/model";
 import { fieldText, getCardDocument, readingCard } from "@/cards/storage";
 import { NoteFieldsEditor } from "@/cards/components/NoteFieldsEditor";
+import { AddCard } from "@/cards/components/AddCard";
+import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
 import { Images } from "lucide-react";
 import type { ReadingContext, WordWithCards } from "@/vocabulary/model";
 import { CardFieldsEditor } from "@/vocabulary/components/CardFieldsEditor";
@@ -123,6 +125,11 @@ export function CardEditor({
         {opened && (
           <Stack>
             <ErrorBox error={error} />
+            <ReadingCardSelect
+              word={word}
+              onChanged={() => setError("")}
+              onError={setError}
+            />
             {loaded && !document && !error && (
               <Text variant="supporting">
                 {t(
@@ -134,6 +141,8 @@ export function CardEditor({
             )}
             {document && (
               <>
+                <AddCard key={document.card.id} document={document} />
+                <NoteFieldsEditor noteId={document.note.id} />
                 {document.noteType.bindings.image !== undefined && (
                   <MediaField
                     wordId={wordId}
@@ -185,9 +194,10 @@ export function CardEditor({
                     {t("card_media_no_sentence")}
                   </Text>
                 )}
-                {reader ? (
+                {reader && (
                   <CardFieldsEditor
                     key={`${document.note.id}:${document.noteType.id}`}
+                    noteId={document.note.id}
                     word={{
                       ...word,
                       customFields: document.noteType.fields
@@ -201,8 +211,6 @@ export function CardEditor({
                         })),
                     }}
                   />
-                ) : (
-                  <NoteFieldsEditor noteId={document.note.id} />
                 )}
               </>
             )}

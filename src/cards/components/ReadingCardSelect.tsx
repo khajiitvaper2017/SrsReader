@@ -22,7 +22,7 @@ export function ReadingCardSelect({
   useEffect(() => {
     let cancelled = false;
     void Promise.all(
-      word.linkedCards.map(async (card) => {
+      word.linkedCards.map(async (card, index) => {
         const document = await getCardDocument(card.id);
         const template =
           document?.noteType.templates[
@@ -33,11 +33,24 @@ export function ReadingCardSelect({
           sentenceIndex === undefined
             ? ""
             : fieldText(document!.note.fields[sentenceIndex] || "");
+        const gender = document?.note.tags.find((tag) =>
+          /^Gender=(Masc|Fem|Neut)$/u.test(tag),
+        );
+        const genderLabel =
+          gender === "Gender=Masc"
+            ? t("card_add_gender_masculine")
+            : gender === "Gender=Fem"
+              ? t("card_add_gender_feminine")
+              : gender === "Gender=Neut"
+                ? t("card_add_gender_neuter")
+                : undefined;
         return {
           value: card.id,
           label: [
             document?.noteType.name,
             template?.name,
+            genderLabel,
+            `#${index + 1}`,
             card.suspended ? t("suspended") : undefined,
             sentence.slice(0, 80),
           ]
@@ -62,6 +75,7 @@ export function ReadingCardSelect({
         placeholder={t("select_reading_card")}
         data={data}
         value={word.cardId ?? null}
+        allowDeselect={false}
         disabled={disabled}
         onChange={(cardId) => {
           if (cardId)

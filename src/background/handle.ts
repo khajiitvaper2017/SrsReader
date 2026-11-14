@@ -58,6 +58,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "compoundGrammar":
       return handleLookup(request);
     case "selectReadingCard":
+    case "createWordCard":
     case "word":
     case "cardDefinitions":
     case "saveCardFields":

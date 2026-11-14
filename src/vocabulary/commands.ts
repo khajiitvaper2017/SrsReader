@@ -1,4 +1,4 @@
-import { selectReadingCard } from "@/cards/storage";
+import { createWordCard, selectReadingCard } from "@/cards/storage";
 import { cacheAudio } from "@/audio/cache";
 import { notify } from "@/background/events";
 import { clearLookupCache } from "@/dictionaries/lookup";
@@ -53,6 +53,15 @@ export function handleVocabulary(request: Request, settings: Settings) {
 }
 async function execute(request: Request, settings: Settings) {
   switch (request.action) {
+    case "createWordCard": {
+      const cardId = await createWordCard(
+        request.id,
+        request.sourceCardId,
+        request.gender,
+      );
+      await notify(request.id);
+      return cardId;
+    }
     case "selectReadingCard":
       await selectReadingCard(request.id, request.cardId);
       await notify(request.id);
