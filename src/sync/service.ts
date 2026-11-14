@@ -20,12 +20,20 @@ import {
   clearDriveUploads,
   deleteFile,
   downloadFile,
+  driveTransferSignal,
   uploadFile,
   type DriveFile,
 } from "@/sync/drive";
 import { readDriveFiles, saveDriveFiles } from "@/sync/drive-index";
 import { findLocalMedia } from "@/sync/media";
 import { transferConcurrently } from "@/sync/concurrency";
+import {
+  batchMedia,
+  createMediaDownloader,
+  mediaBundleName,
+  mediaHashes,
+  packMediaBundle,
+} from "@/sync/media-bundles";
 import {
   type SyncIdentity,
   type SyncProgress,
@@ -225,6 +233,7 @@ async function assertAccount() {
 }
 async function synchronize() {
   const account = await assertAccount();
+  const signal = driveTransferSignal();
   await report("check", 0, 0);
   await prepareTracking();
   await accessToken(account.id);
@@ -234,22 +243,16 @@ async function synchronize() {
   const latest = latestSnapshots(files);
   const mediaFiles = new Map<string, DriveFile>();
   for (const file of files) {
-    if (file.appProperties?.srsKind === "media" && file.appProperties.hash)
-      mediaFiles.set(file.appProperties.hash, file);
+    for (const hash of mediaHashes(file)) mediaFiles.set(hash, file);
   }
-  const loadedMedia = new Map<string, Promise<Blob>>();
+  const downloadMedia = createMediaDownloader(account.id, signal);
   const loadMedia = async (hash: string, record: SyncRecord) => {
     const local = await findLocalMedia(record);
     if (local) return local;
     checkCancelled();
-    let loaded = loadedMedia.get(hash);
-    if (!loaded) {
-      const file = mediaFiles.get(hash);
-      if (!file) throw new Error(t("sync_invalid_media"));
-      loaded = downloadFile(file.id);
-      loadedMedia.set(hash, loaded);
-    }
-    return loaded;
+    const file = mediaFiles.get(hash);
+    if (!file) throw new Error(t("sync_invalid_media"));
+    return downloadMedia(file, hash);
   };
   const incoming: string[] = [];
   const received = { ...transfer.received };
@@ -265,7 +268,10 @@ async function synchronize() {
   for (const [index, [device, file]] of downloads.entries()) {
     checkCancelled();
     const key = `sync-work-${crypto.randomUUID()}`;
-    await db.syncMeta.put({ id: key, blob: await downloadFile(file.id) });
+    await db.syncMeta.put({
+      id: key,
+      blob: await downloadFile(file.id, account.id),
+    });
     await processWork(
       {
         action: "unpack",
@@ -309,15 +315,34 @@ async function synchronize() {
     );
     await report("media", 0, missingMedia.length);
     let done = 0;
-    await transferConcurrently(missingMedia, async ([hash, blob]) => {
+    await transferConcurrently(batchMedia(missingMedia), async (batch) => {
       checkCancelled();
-      const file = await uploadFile(`media.${hash}`, blob, {
-        srsKind: "media",
-        hash,
-      });
-      mediaFiles.set(hash, file);
+      let file: DriveFile;
+      if (batch.length === 1) {
+        const [hash, blob] = batch[0]!;
+        file = await uploadFile(
+          `media.${hash}`,
+          blob,
+          { srsKind: "media", hash },
+          account.id,
+        );
+      } else {
+        const blob = await packMediaBundle(batch, signal);
+        checkCancelled();
+        file = await uploadFile(
+          await mediaBundleName(batch),
+          blob,
+          {
+            srsKind: "media-bundle",
+            ...Object.fromEntries(batch.map(([hash]) => [`m${hash}`, "1"])),
+          },
+          account.id,
+        );
+      }
+      for (const [hash] of batch) mediaFiles.set(hash, file);
       files.push(file);
-      await report("media", ++done, missingMedia.length);
+      done += batch.length;
+      await report("media", done, missingMedia.length);
     });
     checkCancelled();
     await assertAccount();
@@ -339,6 +364,7 @@ async function synchronize() {
           revision: String(snapshot.revision),
           format: "1",
         },
+        account.id,
       ));
     // Acknowledge only the durable captured revision, never edits made during upload.
     await markPublished(snapshot.revision);
@@ -369,7 +395,7 @@ async function synchronize() {
   }
   for (const old of own.filter((file) => !retainedFiles.has(file.id))) {
     checkCancelled();
-    await deleteFile(old.id);
+    await deleteFile(old.id, account.id);
     files.splice(files.indexOf(old), 1);
   }
   await saveDriveFiles(account.id, files);

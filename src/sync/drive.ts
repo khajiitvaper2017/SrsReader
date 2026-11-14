@@ -1,10 +1,5 @@
 import { browser } from "wxt/browser";
-import {
-  accessToken,
-  authStatus,
-  GoogleAuthError,
-  invalidateAccessToken,
-} from "./auth";
+import { accessToken, GoogleAuthError, invalidateAccessToken } from "./auth";
 
 export type DriveFile = {
   id: string;
@@ -129,12 +124,6 @@ async function persistUpload(upload: Upload, remove = false): Promise<void> {
   transaction.onerror = () => reject(transaction.error);
   transaction.onabort = () => reject(transaction.error);
   await promise;
-}
-
-async function accountId(): Promise<string> {
-  const account = (await authStatus()).account;
-  if (!account) throw new GoogleAuthError("SYNC_AUTH_REQUIRED");
-  return account.id;
 }
 
 async function delay(milliseconds: number, signal: AbortSignal) {
@@ -262,10 +251,9 @@ async function nextFileId(account: string, signal: AbortSignal) {
 }
 
 export async function listFiles(
-  account?: string,
+  account: string,
   signal = controller.signal,
 ): Promise<DriveFile[]> {
-  const expectedAccount = account ?? (await accountId());
   const files: DriveFile[] = [];
   let pageToken: string | undefined;
   do {
@@ -279,7 +267,7 @@ export async function listFiles(
     const response = await request(
       `https://www.googleapis.com/drive/v3/files?${params}`,
       {},
-      expectedAccount,
+      account,
       signal,
     );
     let page: { files?: DriveFile[]; nextPageToken?: string };
@@ -343,9 +331,8 @@ export async function listChanges(
   }
 }
 
-export async function downloadFile(id: string): Promise<Blob> {
+export async function downloadFile(id: string, account: string): Promise<Blob> {
   const signal = controller.signal;
-  const account = await accountId();
   const response = await request(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`,
     {},
@@ -435,9 +422,9 @@ export async function uploadFile(
   name: string,
   blob: Blob,
   properties: Record<string, string>,
+  account: string,
 ): Promise<DriveFile> {
   const signal = controller.signal;
-  const account = await accountId();
   const hash =
     properties.hash ??
     Array.from(
@@ -594,9 +581,8 @@ export async function uploadFile(
 }
 
 /** Only the coordinator decides retention; uploads never delete older files. */
-export async function deleteFile(id: string): Promise<void> {
+export async function deleteFile(id: string, account: string): Promise<void> {
   const signal = controller.signal;
-  const account = await accountId();
   await request(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}`,
     { method: "DELETE" },
