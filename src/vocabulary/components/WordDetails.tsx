@@ -1,7 +1,6 @@
 import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
 import {
   ActionIcon,
-  Button,
   Group,
   Menu,
   Flex,
@@ -16,14 +15,17 @@ import { CardFields } from "@/vocabulary/components/CardFields";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
 import { ContextSentence } from "@/vocabulary/components/ContextSentence";
+import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { WordExamples } from "@/examples/components/WordExamples";
+import { useState } from "react";
 import type { Settings } from "@/settings/model";
 import { i18n, number, t } from "@/shared/i18n/i18n";
 import { useWords } from "@/vocabulary/hooks/useWords";
 import {
   Check,
   Pause,
+  Plus,
   Play,
   RefreshCw,
   Trash2,
@@ -49,20 +51,14 @@ export function WordDetails({
     toggleSuspension,
     deleteWord,
   } = controller;
+  const [exampleIndex, setExampleIndex] = useState(0);
+  const [editing, setEditing] = useState<DefinitionEditing>(null);
+  const contextIndex = exampleIndex % (contexts.length || 1);
+  const context = contexts[contextIndex];
   if (!word) return null;
   return (
     <Paper ref={detailRef} mb="md">
       <Stack>
-        <Group align="center" justify="space-between">
-          <ActionIcon
-            title={t("close_word_details")}
-            aria-label={t("close_word_details")}
-            onClick={() => setSelected("")}
-            variant="default"
-          >
-            <X aria-hidden="true" size={16} />
-          </ActionIcon>
-        </Group>
         <Group align="center" justify="space-between">
           <Title lang={word.language} order={2}>
             {word.lemma}
@@ -73,9 +69,72 @@ export function WordDetails({
               word={word}
               contexts={contexts}
               nativeLanguage={settings.nativeLanguage}
+              currentSentence={context?.sentence}
+              iconOnly
             />
             <FrequencyBadge word={{ ...word, forms: [] }} />
             <AudioButton word={word} settings={settings} onError={setError} />
+            <ActionIcon
+              title={t("add_custom_definition")}
+              aria-label={t("add_custom_definition")}
+              variant="subtle"
+              onClick={() => setEditing("add")}
+            >
+              <Plus aria-hidden size={16} />
+            </ActionIcon>
+            <ActionIcon
+              title={t("refresh_from_dictionary")}
+              aria-label={t("refresh_from_dictionary")}
+              onClick={() => refreshWord()}
+              variant="subtle"
+            >
+              <RefreshCw aria-hidden size={16} />
+            </ActionIcon>
+            <ActionIcon
+              title={t("close_word_details")}
+              aria-label={t("close_word_details")}
+              onClick={() => setSelected("")}
+              variant="subtle"
+            >
+              <X aria-hidden size={16} />
+            </ActionIcon>
+            <Menu position="bottom-end">
+              <Menu.Target>
+                <ActionIcon
+                  title={t("actions")}
+                  aria-label={t("actions")}
+                  variant="subtle"
+                >
+                  <MoreHorizontal aria-hidden size={16} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<Check size={16} />}
+                  onClick={() => toggleMastery()}
+                >
+                  {word.known ? t("unmaster") : t("master")}
+                </Menu.Item>
+                {!word.known && (
+                  <Menu.Item
+                    leftSection={
+                      word.suspended ? <Play size={16} /> : <Pause size={16} />
+                    }
+                    onClick={() => toggleSuspension()}
+                  >
+                    {word.suspended ? t("resume") : t("suspend")}
+                  </Menu.Item>
+                )}
+                <Menu.Divider />
+                <Menu.Item
+                  color="red"
+                  leftSection={<Trash2 size={16} />}
+                  onClick={() => deleteWord()}
+                >
+                  {t("delete_word")}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
         </Group>
         <ReadingCardSelect
@@ -87,23 +146,30 @@ export function WordDetails({
         <CardDefinitions
           key={word.id}
           id={word.id}
-          context={contexts[0]}
+          context={context}
           examples={contexts}
           settings={settings}
           onError={setError}
+          editing={editing}
+          onEditingChange={setEditing}
         />
         {!contexts.length && (
           <WordExamples key={word.id} word={word} settings={settings} />
         )}
-        {contexts.map((context, i) => (
+        {context && (
           <ContextSentence
-            key={`${word.id}:${i}`}
+            key={`${word.id}:${contextIndex}`}
             word={word}
             context={context}
             settings={settings}
             onError={setError}
+            onNext={
+              contexts.length > 1
+                ? () => setExampleIndex((contextIndex + 1) % contexts.length)
+                : undefined
+            }
           />
-        ))}
+        )}
         <Flex
           direction={{ base: "column", xs: "row" }}
           gap="sm"
@@ -155,48 +221,6 @@ export function WordDetails({
             </span>
           </Stack>
         )}
-        <Group justify="space-between" wrap="nowrap">
-          <ActionIcon
-            title={t("refresh_from_dictionary")}
-            aria-label={t("refresh_from_dictionary")}
-            onClick={() => refreshWord()}
-          >
-            <RefreshCw aria-hidden="true" size={16} />
-          </ActionIcon>
-          <Menu>
-            <Menu.Target>
-              <Button leftSection={<MoreHorizontal size={16} />}>
-                {t("actions")}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<Check size={16} />}
-                onClick={() => toggleMastery()}
-              >
-                {word.known ? t("unmaster") : t("master")}
-              </Menu.Item>
-              {!word.known && (
-                <Menu.Item
-                  leftSection={
-                    word.suspended ? <Play size={16} /> : <Pause size={16} />
-                  }
-                  onClick={() => toggleSuspension()}
-                >
-                  {word.suspended ? t("resume") : t("suspend")}
-                </Menu.Item>
-              )}
-              <Menu.Divider />
-              <Menu.Item
-                color="red"
-                leftSection={<Trash2 size={16} />}
-                onClick={() => deleteWord()}
-              >
-                {t("delete_word")}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
       </Stack>
     </Paper>
   );

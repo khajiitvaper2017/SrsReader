@@ -135,7 +135,11 @@ export function WordsPage({
             </Grid.Col>
             {word && (
               <Grid.Col span={{ base: 12, md: 7 }}>
-                <WordDetails settings={settings} controller={controller} />
+                <WordDetails
+                  key={word.id}
+                  settings={settings}
+                  controller={controller}
+                />
               </Grid.Col>
             )}
           </Grid>

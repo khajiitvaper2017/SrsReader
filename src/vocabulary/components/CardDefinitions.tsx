@@ -1,7 +1,6 @@
-import { ActionIcon, Box, Group, Stack } from "@mantine/core";
+import { Box } from "@mantine/core";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
-import { t } from "@/shared/i18n/i18n";
 import { vocabularyClient } from "@/vocabulary/client";
 import type { Responses } from "@/vocabulary/contracts";
 import {
@@ -10,7 +9,6 @@ import {
 } from "@/vocabulary/components/EditableMeanings";
 import { useDictionaryVisibility } from "@/vocabulary/hooks/useDictionaryVisibility";
 import type { ReadingContext } from "@/vocabulary/model";
-import { Plus } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { meaningsMatchPartOfSpeech } from "@/dictionaries/grammar";
 import type { SentenceExample } from "@/examples/model";
@@ -25,6 +23,8 @@ export function CardDefinitions({
   loadDefinitions,
   saveTranslation = true,
   onError,
+  editing,
+  onEditingChange,
 }: {
   id: string;
   settings: Settings;
@@ -42,12 +42,13 @@ export function CardDefinitions({
     refresh?: boolean,
   ) => Promise<Responses["cardDefinitions"]>;
   onError: (message: string) => void;
+  editing: DefinitionEditing;
+  onEditingChange: (editing: DefinitionEditing) => void;
 }) {
   const [loaded, setLoaded] = useState<{
     context?: ReadingContext;
     result: Responses["cardDefinitions"];
   }>();
-  const [editing, setEditing] = useState<DefinitionEditing>(null);
   const pending = useRef(0);
   const reload = useCallback(
     async (refresh = false) => {
@@ -78,59 +79,45 @@ export function CardDefinitions({
   if (!loaded) return <Box aria-busy data-review-timer-pause />;
   const { result, context: definitionContext } = loaded;
   return (
-    <Stack gap="xs">
-      <Group justify="flex-end" data-srs-reader>
-        <ActionIcon
-          title={t("add_custom_definition")}
-          aria-label={t("add_custom_definition")}
-          variant="subtle"
-          onClick={() => setEditing("add")}
-        >
-          <Plus aria-hidden size={16} />
-        </ActionIcon>
-      </Group>
-      <EditableMeanings
-        word={result.word}
-        term={
-          result.occurrence ? definitionContext!.surface : result.word.lemma
-        }
-        settings={settings}
-        context={definitionContext}
-        occurrence={result.occurrence}
-        grammar={result.grammar}
-        editing={editing}
-        onEditingChange={setEditing}
-        onSaved={() => reload(true)}
-        onError={onError}
-        expandedDictionaries={visibility.expandedDictionaries}
-        hiddenDictionaries={visibility.hiddenDictionaries}
-        onToggleDictionary={visibility.toggleDictionary}
-        onToggleHiddenDictionary={visibility.toggleHiddenDictionary}
-        renderExample={(meaning) => {
-          if (
-            meaningsMatchPartOfSpeech(
-              [meaning],
-              result.grammar,
-              result.word.forms,
-            )
+    <EditableMeanings
+      word={result.word}
+      term={result.occurrence ? definitionContext!.surface : result.word.lemma}
+      settings={settings}
+      context={definitionContext}
+      occurrence={result.occurrence}
+      grammar={result.grammar}
+      editing={editing}
+      onEditingChange={onEditingChange}
+      onSaved={() => reload(true)}
+      onError={onError}
+      expandedDictionaries={visibility.expandedDictionaries}
+      hiddenDictionaries={visibility.hiddenDictionaries}
+      onToggleDictionary={visibility.toggleDictionary}
+      onToggleHiddenDictionary={visibility.toggleHiddenDictionary}
+      renderExample={(meaning) => {
+        if (
+          meaningsMatchPartOfSpeech(
+            [meaning],
+            result.grammar,
+            result.word.forms,
           )
-            return null;
-          const example = examples.find(
-            (example) =>
-              example.grammar &&
-              meaningsMatchPartOfSpeech([meaning], example.grammar),
-          );
-          return example ? (
-            <ContextSentence
-              saveTranslation={saveTranslation}
-              word={result.word}
-              context={example}
-              settings={settings}
-              onError={onError}
-            />
-          ) : null;
-        }}
-      />
-    </Stack>
+        )
+          return null;
+        const example = examples.find(
+          (example) =>
+            example.grammar &&
+            meaningsMatchPartOfSpeech([meaning], example.grammar),
+        );
+        return example ? (
+          <ContextSentence
+            saveTranslation={saveTranslation}
+            word={result.word}
+            context={example}
+            settings={settings}
+            onError={onError}
+          />
+        ) : null;
+      }}
+    />
   );
 }

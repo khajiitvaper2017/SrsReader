@@ -7,7 +7,7 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { FilePenLine, RefreshCw } from "lucide-react";
+import { FilePenLine, Plus, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import type { CardDocument } from "@/cards/model";
 import type { Settings } from "@/settings/model";
@@ -16,6 +16,7 @@ import { NoteFieldsEditor } from "@/cards/components/NoteFieldsEditor";
 import { refreshNote } from "@/cards/storage";
 import { MediaField } from "@/vocabulary/components/CardEditor";
 import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
+import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { t } from "@/shared/i18n/i18n";
 
@@ -33,6 +34,8 @@ export function CardTools({
   const [opened, setOpened] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [definitionEditing, setDefinitionEditing] =
+    useState<DefinitionEditing>(null);
   async function refresh() {
     setBusy(true);
     setError("");
@@ -59,6 +62,7 @@ export function CardTools({
         opened={opened}
         onClose={() => {
           setOpened(false);
+          setDefinitionEditing(null);
           onChanged();
         }}
         title={t("card_edit")}
@@ -117,11 +121,23 @@ export function CardTools({
                       sentence={context.sentence}
                     />
                   )}
+                <Group justify="flex-end">
+                  <ActionIcon
+                    title={t("add_custom_definition")}
+                    aria-label={t("add_custom_definition")}
+                    variant="subtle"
+                    onClick={() => setDefinitionEditing("add")}
+                  >
+                    <Plus aria-hidden size={16} />
+                  </ActionIcon>
+                </Group>
                 <CardDefinitions
                   id={document.note.wordId}
                   context={context}
                   settings={settings}
                   onError={setError}
+                  editing={definitionEditing}
+                  onEditingChange={setDefinitionEditing}
                 />
               </>
             )}
