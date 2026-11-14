@@ -239,6 +239,46 @@ export function renderCard(
       ]),
     ),
   };
+  if (noteType.id.startsWith("reader:")) {
+    const study = document.study;
+    fields.SrsArticle = escapeHtml(study?.article ?? "");
+    fields.SrsPartOfSpeech = (study?.partsOfSpeech ?? [])
+      .map(escapeHtml)
+      .join(" · ");
+    fields.SrsForms = study?.forms.length
+      ? `<dl class="srs-forms">${study.forms.map(({ label, value }) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`
+      : "";
+    fields.SrsIpa = (study?.ipa ?? []).map(escapeHtml).join(" · ");
+    fields.SrsFormsLabel = t("study_forms");
+    fields.SrsIpaLabel = t("study_ipa");
+    fields.SrsExamplesLabel = t("examples");
+    if (noteType.bindings.definitions !== undefined) {
+      const name = noteType.fields[noteType.bindings.definitions]!.name;
+      if (fields.SrsPartOfSpeech)
+        fields[name] = fields[name]!.replace(
+          /<div\b[^>]*\bdata-srs-pos(?:="[^"]*")?[^>]*>[\s\S]*?<\/div>/gi,
+          "",
+        );
+      if (fields.SrsIpa) {
+        const { document } = parseHTML(
+          `<html><body>${fields[name]}</body></html>`,
+        );
+        for (const element of document.querySelectorAll(
+          "[data-sc-content],[data-sc-type]",
+        ))
+          if (
+            /(?:^|[\s_-])ipa(?:$|[\s_-])/iu.test(
+              [
+                element.getAttribute("data-sc-content"),
+                element.getAttribute("data-sc-type"),
+              ].join(" "),
+            )
+          )
+            element.remove();
+        fields[name] = document.body.innerHTML;
+      }
+    }
+  }
   const context = { ordinal: card.templateOrdinal, revealed: false };
   const front = renderTemplate(template.front, fields, context);
   return revealed

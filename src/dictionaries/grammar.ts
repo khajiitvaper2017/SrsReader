@@ -9,7 +9,7 @@ import { t } from "@/shared/i18n/i18n";
 
 const tagFeatures = new Map<string, [string, string[]]>(
   [
-    ["UPOS", "NOUN,PROPN", "n noun"],
+    ["UPOS", "NOUN,PROPN", "n noun s substantiv"],
     ["UPOS", "PROPN", "propn proper-noun"],
     ["UPOS", "VERB,AUX", "v verb"],
     ["UPOS", "ADJ", "adj adjective"],
@@ -52,6 +52,28 @@ const tagFeatures = new Map<string, [string, string[]]>(
     aliases!.split(" ").map((alias) => [alias, [feature!, values!.split(",")]]),
   ),
 );
+
+export function dictionaryTagValues(
+  meanings: Meaning[],
+  feature: string,
+): string[] {
+  return [
+    ...new Set(
+      meanings.flatMap((meaning) =>
+        meaningTags(meaning).flatMap((tag) => {
+          const explicit = tag.match(/^([A-Z][\w[\]]*)=(.+)$/u);
+          if (explicit)
+            return explicit[1] === feature ? explicit[2]!.split(",") : [];
+          const rule = tagFeatures.get(tag.toLowerCase());
+          if (rule?.[0] === feature) return rule[1];
+          return feature === "UPOS" && tag.toLowerCase() === "vr"
+            ? ["VERB", "AUX"]
+            : [];
+        }),
+      ),
+    ),
+  ];
+}
 
 export function dictionaryPartsOfSpeech(meanings: Meaning[]): string[] {
   const parts = meanings.flatMap((meaning) =>

@@ -80,7 +80,18 @@ export type Card = z.infer<typeof cardSchema>;
 export type CardAsset = z.infer<typeof cardAssetSchema>;
 export type FieldBindings = z.infer<typeof fieldBindingsSchema>;
 export type AnkiReview = z.infer<typeof ankiReviewSchema>;
-export type CardDocument = { card: Card; note: Note; noteType: NoteType };
+export type CardStudyDetails = {
+  article?: string;
+  partsOfSpeech: string[];
+  forms: { label: string; value: string }[];
+  ipa: string[];
+};
+export type CardDocument = {
+  card: Card;
+  note: Note;
+  noteType: NoteType;
+  study?: CardStudyDetails;
+};
 
 export const assetId = (namespace: string, name: string) =>
   JSON.stringify([namespace, name]);

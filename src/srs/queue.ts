@@ -9,6 +9,7 @@ import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
 import type { ReviewWord } from "@/vocabulary/model";
 import type { SchedulingPreferences } from "@/srs/preferences";
+import { prepareStudyDocument } from "@/cards/study";
 
 export async function reviewQueue(
   language: string,
@@ -67,7 +68,9 @@ export async function reviewQueue(
   return {
     ...queue,
     words: queue.words.map(({ document: _document, ...word }) => word),
-    document: queue.words[0]?.document,
+    document: queue.words[0]
+      ? await prepareStudyDocument(queue.words[0].document, queue.words[0])
+      : undefined,
     today: counts.today,
     total: saved.length,
     limits: {

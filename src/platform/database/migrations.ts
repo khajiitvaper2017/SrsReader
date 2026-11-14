@@ -1,4 +1,9 @@
-import { entryMatch, type Entry } from "@/dictionaries/model";
+import {
+  entryLemmaReferences,
+  entryMatch,
+  type Entry,
+  type EntryMatch,
+} from "@/dictionaries/model";
 import { settingsSchema, type Settings } from "@/settings/model";
 import type { Deck } from "@/srs/deck-model";
 import { reviewSchema } from "@/srs/history";
@@ -8,12 +13,13 @@ import { mergeSentence, sentenceFromContext } from "@/examples/sentence-model";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import {
   readerNote,
+  readerNoteType,
   readerLayoutCss,
   escapeHtml,
   type CustomField,
 } from "@/cards/defaults";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
-import { assetId, type Card } from "@/cards/model";
+import { assetId, type Card, type NoteType } from "@/cards/model";
 import { scheduleSchema, type Schedule } from "@/srs/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
@@ -312,6 +318,49 @@ export function installMigrations(database: Dexie) {
     syncDependencies: "[device+counter], key",
     syncMeta: "id",
   });
+  database
+    .version(25)
+    .stores({
+      entryMatches: "id, [revisionId+folded], *lemmaReferences",
+    })
+    .upgrade(async (tx) => {
+      // Read compact matches once; never deserialize or rewrite raw definitions.
+      const matches = tx.table<EntryMatch, string>("entryMatches");
+      let lastKey: string | undefined;
+      for (;;) {
+        const batch = await (
+          lastKey === undefined
+            ? matches.toCollection()
+            : matches.where(":id").above(lastKey)
+        )
+          .limit(10_000)
+          .toArray();
+        if (!batch.length) break;
+        const indexed: EntryMatch[] = [];
+        for (const entry of batch) {
+          const lemmaReferences = entryLemmaReferences(entry);
+          if (!lemmaReferences.length) continue;
+          entry.lemmaReferences = lemmaReferences;
+          indexed.push(entry);
+        }
+        if (indexed.length) await matches.bulkPut(indexed);
+        lastKey = batch[batch.length - 1]!.id;
+      }
+      await tx
+        .table<NoteType, string>("noteTypes")
+        .where("id")
+        .startsWith("reader:")
+        .modify((type) => {
+          const { templates, css } = readerNoteType(
+            type.fields.slice(10).map((field) => ({
+              name: field.label ?? field.name,
+              value: "",
+            })),
+          );
+          type.templates = templates;
+          type.css = css;
+        });
+    });
 }
 
 async function migrateCards(tx: Transaction, hasLegacyMedia: boolean) {

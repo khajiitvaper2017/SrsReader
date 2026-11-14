@@ -9,6 +9,7 @@ import { vocabularyClient } from "@/vocabulary/client";
 import type { Responses as VocabularyResponses } from "@/vocabulary/contracts";
 import type { ReadingContext, ReviewWordSummary } from "@/vocabulary/model";
 import { getCardDocument } from "@/cards/storage";
+import { prepareStudyDocument } from "@/cards/study";
 import { cardAssetKey, loadCardAssets } from "@/cards/sandbox/assets";
 import { renderCard } from "@/cards/template";
 import { db } from "@/platform/database/db";
@@ -55,8 +56,9 @@ export function createReviewPreload(settings: Settings) {
   }
   function prepareVisual(id: string) {
     return cached(visuals, id, async () => {
-      const document = await getCardDocument(id);
-      if (!document) return;
+      const stored = await getCardDocument(id);
+      if (!stored) return;
+      const document = await prepareStudyDocument(stored);
       const deck = document.card.deckId
         ? await db.decks.get(document.card.deckId)
         : undefined;

@@ -44,6 +44,8 @@ export function readerNoteType(customFields: CustomField[] = []): NoteType {
         `{{#${field.name}}}<section class="srs-extra"><h3>${escapeHtml(field.label ?? field.name)}</h3>{{${field.name}}}</section>{{/${field.name}}}`,
     )
     .join("\n");
+  const heading =
+    '<div class="srs-word">{{#SrsArticle}}<span class="srs-article">{{SrsArticle}}</span> {{/SrsArticle}}{{Word}}</div>{{#SrsShowPartOfSpeech}}{{#SrsPartOfSpeech}}<div class="srs-pos">{{SrsPartOfSpeech}}</div>{{/SrsPartOfSpeech}}{{/SrsShowPartOfSpeech}}';
   return {
     id: `reader:${JSON.stringify(extra)}`,
     name: "SrsReader",
@@ -63,13 +65,12 @@ export function readerNoteType(customFields: CustomField[] = []): NoteType {
     templates: [
       {
         name: "Recognition",
-        front:
-          '{{#SrsSentenceFront}}{{#Sentence}}<div class="srs-prompt">{{Sentence}}</div>{{/Sentence}}{{^Sentence}}<div class="srs-word">{{Word}}</div>{{/Sentence}}{{/SrsSentenceFront}}{{^SrsSentenceFront}}<div class="srs-word">{{Word}}</div>{{/SrsSentenceFront}}{{#Image}}<div class="srs-image">{{Image}}</div>{{/Image}}',
-        back: `{{FrontSide}}<hr id="answer">{{#SrsSentenceFront}}<div class="srs-word">{{Word}}</div>{{/SrsSentenceFront}}{{#Reading}}<div class="srs-reading">{{Reading}}</div>{{/Reading}}{{^SrsSentenceFront}}{{#Sentence}}<div class="srs-sentence">{{Sentence}}</div>{{/Sentence}}{{/SrsSentenceFront}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}<div>{{WordAudio}}{{SentenceAudio}}</div><div class="srs-definitions">{{Definitions}}</div>${extraTemplate}`,
+        front: `{{#SrsSentenceFront}}{{#Sentence}}<div class="srs-prompt">{{Sentence}}</div>{{/Sentence}}{{^Sentence}}${heading}{{/Sentence}}{{/SrsSentenceFront}}{{^SrsSentenceFront}}${heading}{{/SrsSentenceFront}}{{#Image}}<div class="srs-image">{{Image}}</div>{{/Image}}`,
+        back: `{{FrontSide}}{{#SrsSentenceFront}}${heading}{{/SrsSentenceFront}}{{#Reading}}<div class="srs-reading">{{Reading}}</div>{{/Reading}}<hr id="answer"><div class="srs-answer"><div class="srs-definitions">{{Definitions}}</div>{{#SrsForms}}<section class="srs-study-section"><h3>{{SrsFormsLabel}}</h3>{{SrsForms}}</section>{{/SrsForms}}{{#SrsIpa}}<section class="srs-study-section"><h3>{{SrsIpaLabel}}</h3><div>{{SrsIpa}}</div></section>{{/SrsIpa}}{{#Sentence}}<section class="srs-study-section">{{^SrsSentenceFront}}<h3>{{SrsExamplesLabel}}</h3><div class="srs-sentence">{{Sentence}}</div>{{/SrsSentenceFront}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}</section>{{/Sentence}}{{^Sentence}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}{{/Sentence}}<div>{{WordAudio}}{{SentenceAudio}}</div>${extraTemplate}</div>`,
       },
     ],
     css:
-      ".card{position:relative;isolation:isolate;min-height:12rem;font-family:var(--mantine-font-family, sans-serif);overflow-wrap:anywhere;text-align:start;line-height:1.5}.srs-word,.srs-prompt{text-align:center;font-size:1.5em;font-weight:600}.srs-reading,.srs-translation{text-align:center;color:var(--mantine-color-dimmed)}.srs-sentence,.srs-definitions,.srs-extra{margin-block:var(--mantine-spacing-sm, .75rem)}.srs-image{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;mask-image:linear-gradient(to bottom,black 28%,transparent 100%);opacity:.3}.srs-image img,.srs-image video{display:block;width:100%;height:auto}img,video{max-width:100%}audio{max-width:100%}hr{border:0;border-top:1px solid var(--mantine-color-default-border)}" +
+      ".card{position:relative;isolation:isolate;min-height:12rem;font-family:var(--mantine-font-family,sans-serif);overflow-wrap:anywhere;text-align:start;line-height:1.5}.srs-word,.srs-prompt{text-align:center;font-size:clamp(1.75rem,6vw,2.5rem);font-weight:600}.srs-article{font-weight:400;color:var(--mantine-color-dimmed)}.srs-pos,.srs-reading,.srs-translation{text-align:center;color:var(--mantine-color-dimmed)}.srs-pos,.srs-study-section h3{font-size:var(--mantine-font-size-xs,.75rem);font-weight:500}.srs-pos{margin-top:var(--mantine-spacing-xs,.5rem)}.srs-answer{display:grid;gap:var(--mantine-spacing-md,1rem)}.srs-definitions{min-width:0}.srs-study-section{text-align:center}.srs-study-section h3{margin:0 0 var(--mantine-spacing-xs,.5rem);color:var(--mantine-color-dimmed)}.srs-forms{display:flex;justify-content:center;flex-wrap:wrap;gap:var(--mantine-spacing-xs,.5rem) var(--mantine-spacing-md,1rem);margin:0}.srs-forms>div{display:flex;flex-wrap:wrap;justify-content:center;gap:.35em}.srs-forms dt{color:var(--mantine-color-dimmed)}.srs-forms dd{margin:0}.srs-sentence,.srs-extra{margin-block:var(--mantine-spacing-xs,.5rem)}.srs-image{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;mask-image:linear-gradient(to bottom,black 28%,transparent 100%);opacity:.3}.srs-image img,.srs-image video{display:block;width:100%;height:auto}img,video{max-width:100%}audio{max-width:100%}hr{margin-block:var(--mantine-spacing-md,1rem);border:0;border-top:1px solid var(--mantine-color-default-border)}" +
       readerLayoutCss,
     created: 0,
   };

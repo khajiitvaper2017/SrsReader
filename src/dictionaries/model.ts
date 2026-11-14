@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { OccurrenceGrammar } from "@/languages/analysis";
 import type { NumeralLookup } from "@/languages/numerals";
+import { normalize } from "@/languages/text";
 
 export const dictionaryId = (title: string, language: string, target: string) =>
   JSON.stringify([title, language, target]);
@@ -70,7 +71,32 @@ export type Entry = {
 export type EntryMatch = Omit<Entry, "sequence" | "definitions"> & {
   definitions: [string, string[]][];
   defined: boolean;
+  lemmaReferences: string[];
 };
+
+const aliasLabel =
+  /\b(?:alternativ\w*|variant\w*|redirect\w*|alias\w*|misspell\w*|spelling|abbreviat\w*|synonym\w*)\b/iu;
+
+export function isInflectionReference(definition: [string, string[]]) {
+  const [target, labels] = definition;
+  return (
+    !!target &&
+    labels.length > 0 &&
+    !labels.some((label) => aliasLabel.test(label))
+  );
+}
+
+export function entryLemmaReferences(
+  entry: Pick<Entry, "revisionId" | "definitions">,
+) {
+  const references = new Set<string>();
+  for (const definition of entry.definitions)
+    if (Array.isArray(definition) && isInflectionReference(definition))
+      references.add(
+        JSON.stringify([entry.revisionId, normalize(definition[0])]),
+      );
+  return [...references];
+}
 
 export function entryMatch(entry: Entry): EntryMatch {
   return {
@@ -85,6 +111,7 @@ export function entryMatch(entry: Entry): EntryMatch {
         Array.isArray(definition),
     ),
     defined: entry.definitions.some((definition) => !Array.isArray(definition)),
+    lemmaReferences: entryLemmaReferences(entry),
   };
 }
 

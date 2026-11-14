@@ -1,4 +1,5 @@
 import { getCardDocument } from "@/cards/storage";
+import { prepareStudyDocument } from "@/cards/study";
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import { stopAudio } from "@/audio/playback";
 import type { Settings } from "@/settings/model";
@@ -132,10 +133,11 @@ export function useReviewSession({
           const pinned = preserveCurrent
             ? value.words.find((entry) => entry.id === activeCardId.current)
             : undefined;
-          const document =
-            pinned && pinned.id !== value.words[0]?.id
-              ? await getCardDocument(pinned.id)
-              : value.document;
+          let document = value.document;
+          if (pinned && pinned.id !== value.words[0]?.id) {
+            const stored = await getCardDocument(pinned.id);
+            document = stored ? await prepareStudyDocument(stored) : undefined;
+          }
           if (revision !== queueRevision.current) return;
           if (!pinned && value.words[0]?.id !== activeCardId.current) {
             setRevealed(false);
