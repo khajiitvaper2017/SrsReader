@@ -16,7 +16,6 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { liveQuery } from "dexie";
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import type { Settings } from "@/settings/model";
@@ -30,6 +29,7 @@ import { rpc } from "@/platform/messaging/send";
 import { saveBlob, type ImportProgress } from "@/shared/download";
 import { i18n, number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
+import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { AnkiCardPreview } from "@/anki/components/AnkiCardPreview";
 import { deckPathLabel, deckTree } from "@/srs/deck-tree";
 
@@ -97,6 +97,7 @@ export function AnkiTransfer({
     setNotice("");
     setBusy(true);
     setOpened("import");
+    setProgress({ phase: t("anki_reading"), done: 0, total: 0 });
     try {
       const result = await inspectPackage(value);
       setPreview(result);
@@ -114,6 +115,7 @@ export function AnkiTransfer({
       setError((error as Error).message);
     } finally {
       setBusy(false);
+      setProgress(undefined);
       resetFile.current?.();
     }
   }
@@ -122,11 +124,9 @@ export function AnkiTransfer({
     setBusy(true);
     setError("");
     setNotice("");
-    const subscription = liveQuery(() =>
-      db.importTasks.get("current"),
-    ).subscribe((task) => setProgress(task?.progress));
     try {
       if (opened === "import" && file) {
+        setOpened(null);
         await startImport({
           type: "anki",
           language: options.language,
@@ -152,8 +152,8 @@ export function AnkiTransfer({
       setFile(undefined);
     } catch (error) {
       setError((error as Error).message);
+      if (opened === "import") setOpened("import");
     } finally {
-      subscription.unsubscribe();
       setBusy(false);
       setProgress(undefined);
     }
@@ -225,27 +225,20 @@ export function AnkiTransfer({
           }
         }}
         title={t(opened === "export" ? "anki_export" : "anki_import")}
-        size={opened === "import" ? "80rem" : "md"}
-        fullScreen={narrow}
+        size={opened === "import" && preview ? "80rem" : "md"}
+        fullScreen={narrow && !!preview}
         closeOnClickOutside={!busy}
         closeOnEscape={!busy}
         withCloseButton={!busy}
       >
         <Stack>
           <ErrorBox error={error} />
-          {progress && (
-            <Text role="status" variant="supporting">
-              {progress.phase}{" "}
-              {progress.total
-                ? `${number(progress.done)} / ${number(progress.total)}`
-                : ""}
+          {busy && file && (
+            <Text variant="supporting" style={{ overflowWrap: "anywhere" }}>
+              {file.name}
             </Text>
           )}
-          {busy && !progress && (
-            <Text role="status" variant="supporting">
-              {t("loading")}
-            </Text>
-          )}
+          {progress && <TaskProgress progress={progress} />}
           {opened === "export" ? (
             <Stack>
               <LanguageSelect
@@ -507,16 +500,17 @@ export function AnkiTransfer({
               </>
             )
           )}
-          <Group justify="flex-end">
-            <Button
-              disabled={busy || invalid}
-              loading={busy}
-              onClick={() => void submit()}
-              variant="filled"
-            >
-              {t(opened === "export" ? "anki_export" : "anki_import")}
-            </Button>
-          </Group>
+          {!busy && (
+            <Group justify="flex-end">
+              <Button
+                disabled={invalid}
+                onClick={() => void submit()}
+                variant="filled"
+              >
+                {t(opened === "export" ? "anki_export" : "anki_import")}
+              </Button>
+            </Group>
+          )}
         </Stack>
       </Modal>
     </>

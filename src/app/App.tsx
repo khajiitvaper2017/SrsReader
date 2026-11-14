@@ -229,7 +229,7 @@ export function App() {
         </Container>
       </AppShell.Main>
       <TaskAlerts
-        busy={tasks.busy || sync.status?.running}
+        busy={tasks.busy || (page !== "settings/sync" && sync.status?.running)}
         busyLabel={
           !tasks.busy && sync.status?.running
             ? t(

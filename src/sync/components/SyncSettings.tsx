@@ -6,14 +6,14 @@ import {
   Group,
   Modal,
   Paper,
-  Progress,
   Stack,
   Switch,
   Text,
   Title,
 } from "@mantine/core";
-import { downloadSize, i18n, number, t } from "@/shared/i18n/i18n";
+import { downloadSize, i18n, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
+import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { useSync } from "@/sync/hooks/useSync";
 import { RefreshCw } from "lucide-react";
 
@@ -154,24 +154,13 @@ export function SyncSettings() {
               operation === "connect" ||
               operation === "sync" ||
               operation === "storage") && (
-              <Stack gap={4}>
-                <Text variant="supporting" role="status" aria-live="polite">
-                  {progressLabel}
-                  {progress && progress.total > 0
-                    ? ` · ${number(progress.done)} / ${number(progress.total)}`
-                    : ""}
-                </Text>
-                {progress && progress.total > 0 && (
-                  <Progress
-                    aria-label={progressLabel}
-                    value={Math.min(
-                      100,
-                      Math.max(0, (progress.done / progress.total) * 100),
-                    )}
-                    animated
-                  />
-                )}
-              </Stack>
+              <TaskProgress
+                progress={{
+                  phase: progressLabel,
+                  done: progress?.done ?? 0,
+                  total: progress?.total ?? 0,
+                }}
+              />
             )}
           </>
         )}
@@ -204,10 +193,6 @@ export function SyncSettings() {
             variant="default"
             disabled={
               !status?.connected || !status.configured || busy || loading
-            }
-            loading={
-              operation === "sync" ||
-              (!!status?.running && progress?.phase !== "storage")
             }
             onClick={() => void sync.syncNow()}
           >

@@ -39,7 +39,7 @@ export function TaskAlerts({
         bottom: "var(--mantine-spacing-md)",
         right: "var(--mantine-spacing-md)",
       }}
-      zIndex={getDefaultZIndex("overlay")}
+      zIndex={getDefaultZIndex("modal") - 1}
       w={400}
       maw="calc(100vw - 2 * var(--mantine-spacing-md))"
       data-srs-reader=""
