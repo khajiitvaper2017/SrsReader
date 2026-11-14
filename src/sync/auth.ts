@@ -195,10 +195,7 @@ export async function authStatus(): Promise<{
     configured,
     account: credentials?.account ?? null,
     authorizationRequired: Boolean(
-      credentials &&
-      (!configured ||
-        credentials.expires <= Date.now() + 60_000 ||
-        !(await dataConsent(false))),
+      credentials && (!configured || !(await dataConsent(false))),
     ),
   };
 }
@@ -458,43 +455,71 @@ async function obtain(
     throw new GoogleAuthError("SYNC_PERMISSION_REQUIRED");
   assertCurrent(epoch);
   let token: string;
-  if (firefox) {
-    token = await tabToken(config.client, config.redirect, interactive, epoch);
-  } else {
-    const native = nativeIdentity();
-    const previous = await binding();
-    if (replace) await native.clearAllCachedAuthTokens();
+  let verified: { account: SyncAccount; expires: number };
+  for (let attempt = 0; ; attempt++) {
+    if (firefox) {
+      token = await tabToken(
+        config.client,
+        config.redirect,
+        interactive,
+        epoch,
+      );
+    } else {
+      const native = nativeIdentity();
+      const previous = await binding();
+      if (replace && attempt === 0) await native.clearAllCachedAuthTokens();
+      assertCurrent(epoch);
+      try {
+        const result = await native.getAuthToken({
+          interactive,
+          enableGranularPermissions: true,
+          scopes: SCOPES,
+          ...(!replace && previous ? { account: { id: previous.id } } : {}),
+        });
+        token = typeof result === "string" ? result : (result.token ?? "");
+        if (!token) throw new GoogleAuthError("SYNC_AUTH_REQUIRED");
+        if (generation !== epoch) {
+          await native.removeCachedAuthToken({ token }).catch(() => {});
+          throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
+        }
+      } catch (error) {
+        assertCurrent(epoch);
+        if (error instanceof GoogleAuthError) throw error;
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          /invalid.*client|bad client|not (?:supported|available)|not configured/i.test(
+            message,
+          )
+        )
+          throw new GoogleAuthError("SYNC_NOT_CONFIGURED");
+        if (
+          interactive &&
+          /cancel|did not approve|denied|closed/i.test(message)
+        )
+          throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
+        throw new GoogleAuthError("SYNC_AUTH_REQUIRED");
+      }
+    }
     assertCurrent(epoch);
     try {
-      const result = await native.getAuthToken({
-        interactive,
-        enableGranularPermissions: true,
-        scopes: SCOPES,
-        ...(!replace && previous ? { account: { id: previous.id } } : {}),
-      });
-      token = typeof result === "string" ? result : (result.token ?? "");
-      if (!token) throw new GoogleAuthError("SYNC_AUTH_REQUIRED");
-      if (generation !== epoch) {
-        await native.removeCachedAuthToken({ token }).catch(() => {});
-        throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
-      }
+      verified = await identify(token, config.client, signal);
+      break;
     } catch (error) {
-      assertCurrent(epoch);
-      if (error instanceof GoogleAuthError) throw error;
-      const message = error instanceof Error ? error.message : String(error);
       if (
-        /invalid.*client|bad client|not (?:supported|available)|not configured/i.test(
-          message,
-        )
+        firefox ||
+        attempt > 0 ||
+        !(error instanceof GoogleAuthError) ||
+        error.code !== "SYNC_AUTH_REQUIRED" ||
+        (error.status !== undefined &&
+          error.status !== 400 &&
+          error.status !== 401)
       )
-        throw new GoogleAuthError("SYNC_NOT_CONFIGURED");
-      if (interactive && /cancel|did not approve|denied|closed/i.test(message))
-        throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
-      throw new GoogleAuthError("SYNC_AUTH_REQUIRED");
+        throw error;
+      // Chrome can return a stale cached token; evict it before renewing once.
+      await nativeIdentity().removeCachedAuthToken({ token });
+      assertCurrent(epoch);
     }
   }
-  assertCurrent(epoch);
-  const verified = await identify(token, config.client, signal);
   assertCurrent(epoch);
   const previous = await binding();
   if (previous && previous.id !== verified.account.id && !replace) {
