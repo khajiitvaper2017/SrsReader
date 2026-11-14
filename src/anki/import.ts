@@ -243,7 +243,9 @@ export async function importPackage(
   let committed = false;
   try {
     report({ phase: t("anki_reading"), done: 0, total: 0 });
-    const source = await reader.open();
+    const source = await reader.open((done, total) =>
+      report({ phase: t("anki_reading"), done, total }),
+    );
     const settings = {
       ...(await getSettings()),
       studyLanguage: options.language,

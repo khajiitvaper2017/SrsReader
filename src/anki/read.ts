@@ -4,6 +4,7 @@ import {
   ZipReader,
   type Entry,
 } from "@zip.js/zip.js";
+import type { SqlValue } from "@sqlite.org/sqlite-wasm";
 import { decompress } from "fzstd";
 import { Proto } from "@/anki/protobuf";
 import { parseJson } from "@/anki/json";
@@ -210,11 +211,44 @@ function modernDeck(row: Record<string, unknown>) {
   };
 }
 
-async function collectionFromBytes(bytes: Uint8Array): Promise<AnkiCollection> {
+async function collectionFromBytes(
+  bytes: Uint8Array,
+  report?: (done: number, total: number) => void,
+): Promise<AnkiCollection> {
   const database = await openCollection(bytes);
   try {
     const rows = (name: string) =>
       database.selectObjects(`SELECT * FROM ${name} NOT INDEXED`);
+    const total = report
+      ? ["notes", "cards", "revlog"].reduce(
+          (sum, name) =>
+            sum + number(database.selectValue(`SELECT count(*) FROM ${name}`)),
+          0,
+        )
+      : 0;
+    let done = 0;
+    report?.(done, total);
+    const mapRows = <T>(name: string, convert: (row: RawObject) => T): T[] => {
+      const statement = database.prepare(`SELECT * FROM ${name} NOT INDEXED`);
+      try {
+        const columns = statement.getColumnNames();
+        const values: SqlValue[] = [];
+        const row: RawObject = Object.create(null);
+        const result: T[] = [];
+        // Reuse the raw row instead of retaining a second copy of every table.
+        while (statement.step()) {
+          statement.get(values);
+          for (let index = 0; index < columns.length; index++)
+            row[columns[index]!] = values[index];
+          result.push(convert(row));
+          if (report && ++done % 2048 === 0) report(done, total);
+        }
+        report?.(done, total);
+        return result;
+      } finally {
+        statement.finalize();
+      }
+    };
     const [col] = rows("col");
     if (!col) throw invalid();
     const modern = number(col.ver) >= 15;
@@ -232,7 +266,7 @@ async function collectionFromBytes(bytes: Uint8Array): Promise<AnkiCollection> {
             name: text(object(value).name),
           }),
         );
-    const notes = rows("notes").map((row): AnkiNote => ({
+    const notes = mapRows("notes", (row): AnkiNote => ({
       id: integer(row.id),
       guid: text(row.guid),
       mid: integer(row.mid),
@@ -245,7 +279,7 @@ async function collectionFromBytes(bytes: Uint8Array): Promise<AnkiCollection> {
       flags: number(row.flags),
       data: text(row.data),
     }));
-    const cards = rows("cards").map((row): AnkiCard => ({
+    const cards = mapRows("cards", (row): AnkiCard => ({
       id: integer(row.id),
       nid: integer(row.nid),
       did: integer(row.did),
@@ -265,7 +299,7 @@ async function collectionFromBytes(bytes: Uint8Array): Promise<AnkiCollection> {
       flags: number(row.flags),
       data: text(row.data),
     }));
-    const reviews = rows("revlog").map((row): AnkiRevlog => ({
+    const reviews = mapRows("revlog", (row): AnkiRevlog => ({
       id: integer(row.id),
       cid: integer(row.cid),
       usn: number(row.usn),
@@ -308,7 +342,7 @@ export class PackageReader {
   constructor(file: Blob) {
     this.archive = new ZipReader(new BlobReader(file));
   }
-  async open() {
+  async open(report?: (done: number, total: number) => void) {
     for (const entry of await this.archive.getEntries()) {
       if (this.entries.has(entry.filename)) throw invalid();
       this.entries.set(entry.filename, entry);
@@ -326,6 +360,7 @@ export class PackageReader {
     ][version]!;
     const collection = await collectionFromBytes(
       await this.bytes(databaseName, this.compressed),
+      report,
     );
     if (this.entries.has("media")) {
       const bytes = await this.bytes("media", this.compressed);

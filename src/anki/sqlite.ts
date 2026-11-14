@@ -39,9 +39,6 @@ export async function openCollection(bytes: Uint8Array) {
     throw new Error(t("anki_invalid_package"));
   const api = await sqlite();
   const database = new api.oo1.DB();
-  const copy = new Uint8Array(bytes.byteLength + 20);
-  copy.set(bytes);
-  copy[18] = copy[19] = 1;
   try {
     // shortcut: import only scans tables; implement Anki case folding before name-index queries.
     database.checkRc(
@@ -61,14 +58,19 @@ export async function openCollection(bytes: Uint8Array) {
         0,
       ),
     );
-    const pointer = api.wasm.allocFromTypedArray(copy);
+    const capacity = bytes.byteLength + 20;
+    const pointer = api.wasm.alloc(capacity);
+    const heap = api.wasm.heap8u();
+    heap.set(bytes, pointer);
+    heap.fill(0, pointer + bytes.byteLength, pointer + capacity);
+    heap[pointer + 18] = heap[pointer + 19] = 1;
     database.checkRc(
       api.capi.sqlite3_deserialize(
         database,
         "main",
         pointer,
         bytes.byteLength,
-        copy.byteLength,
+        capacity,
         api.capi.SQLITE_DESERIALIZE_READONLY |
           api.capi.SQLITE_DESERIALIZE_FREEONCLOSE,
       ),
