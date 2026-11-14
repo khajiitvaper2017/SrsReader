@@ -59,20 +59,6 @@ export async function resolveCardEncounter(
       }
     }
   }
-  const noun = tokens.find((token) => /^(NOUN|PROPN)$/u.test(token.upos));
-  const determiner =
-    noun &&
-    sentence.tokens.find(
-      (token) =>
-        token.head === noun.id &&
-        token.upos === "DET" &&
-        /^det(?::|$)/u.test(token.deprel) &&
-        token.start !== undefined &&
-        token.end !== undefined &&
-        token.start >= offset &&
-        token.end <= offset + encounter.context.sentence.length,
-    );
-  if (determiner) encounter.article = determiner.form;
   return encounter;
 }
 

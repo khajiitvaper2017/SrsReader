@@ -93,8 +93,6 @@ export function cardStudyDetails(
     ],
   };
   if (encounter) {
-    study.surface = encounter.context.surface;
-    study.article = encounter.article;
     study.grammar = Object.entries(encounter.feats)
       .sort(([left], [right]) => left.localeCompare(right, "en"))
       .map(([feature, value]) => {
@@ -129,7 +127,7 @@ export function cardStudyDetails(
       ),
       "Gender",
     );
-    if (!encounter && genders.length === 1) {
+    if (genders.length === 1) {
       study.article = articles[genders[0]!];
     }
     if (genders.length > 1) return study;

@@ -346,6 +346,11 @@ export function installMigrations(database: Dexie) {
         if (indexed.length) await matches.bulkPut(indexed);
         lastKey = batch[batch.length - 1]!.id;
       }
+    });
+  database
+    .version(26)
+    .stores({})
+    .upgrade(async (tx) => {
       await tx
         .table<NoteType, string>("noteTypes")
         .where("id")

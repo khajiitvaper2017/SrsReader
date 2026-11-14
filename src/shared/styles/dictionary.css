@@ -1,4 +1,12 @@
 .dictionary-content {
+  --text-color: var(--mantine-color-text);
+  --text-color-light3: var(--mantine-color-dimmed);
+  --text-color-light4: var(--mantine-color-dimmed);
+  --link-color: var(--mantine-color-anchor);
+  --checkbox-disabled-color: var(--mantine-color-dimmed);
+  --notification-background-color-lighter: var(
+    --mantine-primary-color-light-hover
+  );
   line-height: 1.6;
   overflow-wrap: anywhere;
   overflow-x: auto;
@@ -27,11 +35,11 @@
   padding-inline-start: 24px;
 }
 .dictionary-content li::marker {
-  color: var(--mantine-color-violet-text);
+  color: var(--mantine-color-anchor);
 }
 .dictionary-content [data-sc-content="tags"] span {
-  color: var(--mantine-color-violet-text);
-  background: var(--mantine-color-violet-light);
+  color: var(--mantine-primary-color-light-color);
+  background: var(--mantine-primary-color-light);
 }
 .dictionary-content details {
   font-size: var(--mantine-font-size-xs);
@@ -68,4 +76,16 @@
 }
 .dictionary-content[data-hide-sources] [data-sc-content="backlink"] {
   display: none !important;
+}
+.dictionary-content .srs-dictionary-title {
+  display: inline;
+  margin-inline-end: var(--mantine-spacing-xs);
+}
+.dictionary-content .srs-tags {
+  display: inline-block;
+  text-transform: lowercase;
+  padding: 0.1em 0.55em;
+  border-radius: var(--mantine-radius-default);
+  color: var(--mantine-primary-color-light-color);
+  background: var(--mantine-primary-color-light);
 }

@@ -35,7 +35,6 @@ const cardEncounterSchema = z.object({
   context: contextSchema,
   pos: z.string(),
   feats: z.record(z.string(), z.string()),
-  article: z.string().optional(),
 });
 export type CardEncounter = z.infer<typeof cardEncounterSchema>;
 export const noteSchema = z.object({
@@ -91,7 +90,6 @@ export type FieldBindings = z.infer<typeof fieldBindingsSchema>;
 export type AnkiReview = z.infer<typeof ankiReviewSchema>;
 export type CardStudyDetails = {
   article?: string;
-  surface?: string;
   grammar?: string[];
   partsOfSpeech: string[];
   forms: { label: string; value: string }[];

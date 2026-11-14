@@ -45,7 +45,7 @@ export function readerNoteType(customFields: CustomField[] = []): NoteType {
     )
     .join("\n");
   const heading =
-    '<div class="srs-word">{{#SrsArticle}}<span class="srs-article">{{SrsArticle}}</span> {{/SrsArticle}}{{#SrsSurface}}{{SrsSurface}}{{/SrsSurface}}{{^SrsSurface}}{{Word}}{{/SrsSurface}}</div>{{#SrsShowPartOfSpeech}}{{#SrsPartOfSpeech}}<div class="srs-pos">{{SrsPartOfSpeech}}</div>{{/SrsPartOfSpeech}}{{/SrsShowPartOfSpeech}}{{#SrsGrammar}}<div class="srs-pos" data-srs-grammar>{{SrsGrammar}}</div>{{/SrsGrammar}}';
+    '<div class="srs-word">{{#SrsArticle}}<span class="srs-article">{{SrsArticle}}</span> {{/SrsArticle}}{{Word}}</div>{{#SrsShowPartOfSpeech}}{{#SrsPartOfSpeech}}<div class="srs-pos">{{SrsPartOfSpeech}}</div>{{/SrsPartOfSpeech}}{{/SrsShowPartOfSpeech}}';
   return {
     id: `reader:${JSON.stringify(extra)}`,
     name: "SrsReader",
@@ -66,7 +66,7 @@ export function readerNoteType(customFields: CustomField[] = []): NoteType {
       {
         name: "Recognition",
         front: `{{#SrsSentenceFront}}{{#Sentence}}<div class="srs-prompt">{{Sentence}}</div>{{/Sentence}}{{^Sentence}}${heading}{{/Sentence}}{{/SrsSentenceFront}}{{^SrsSentenceFront}}${heading}{{/SrsSentenceFront}}{{#Image}}<div class="srs-image">{{Image}}</div>{{/Image}}`,
-        back: `{{FrontSide}}{{#SrsSentenceFront}}${heading}{{/SrsSentenceFront}}{{#Reading}}<div class="srs-reading">{{Reading}}</div>{{/Reading}}<hr id="answer"><div class="srs-answer"><div class="srs-definitions">{{Definitions}}</div>{{#SrsForms}}<section class="srs-study-section"><h3>{{SrsFormsLabel}}</h3>{{SrsForms}}</section>{{/SrsForms}}{{#SrsIpa}}<section class="srs-study-section"><h3>{{SrsIpaLabel}}</h3><div>{{SrsIpa}}</div></section>{{/SrsIpa}}{{#Sentence}}<section class="srs-study-section">{{^SrsSentenceFront}}<h3>{{SrsExamplesLabel}}</h3><div class="srs-sentence">{{Sentence}}</div>{{/SrsSentenceFront}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}</section>{{/Sentence}}{{^Sentence}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}{{/Sentence}}<div>{{WordAudio}}{{SentenceAudio}}</div>${extraTemplate}</div>`,
+        back: `{{FrontSide}}{{#SrsSentenceFront}}{{#Sentence}}${heading}{{/Sentence}}{{/SrsSentenceFront}}{{#Reading}}<div class="srs-reading">{{Reading}}</div>{{/Reading}}<hr id="answer"><div class="srs-answer">{{#SrsForms}}<section class="srs-study-section"><h3>{{SrsFormsLabel}}</h3>{{SrsForms}}</section>{{/SrsForms}}{{#SrsIpa}}<section class="srs-study-section"><h3>{{SrsIpaLabel}}</h3><div>{{SrsIpa}}</div></section>{{/SrsIpa}}{{#Sentence}}<section class="srs-study-section">{{^SrsSentenceFront}}<h3>{{SrsExamplesLabel}}</h3><div class="srs-sentence">{{Sentence}}</div>{{/SrsSentenceFront}}{{#SrsGrammar}}<div class="srs-pos" data-srs-grammar>{{SrsGrammar}}</div>{{/SrsGrammar}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}</section>{{/Sentence}}{{^Sentence}}{{#Translation}}<div class="srs-translation">{{Translation}}</div>{{/Translation}}{{/Sentence}}<div class="srs-definitions">{{Definitions}}</div><div>{{WordAudio}}{{SentenceAudio}}</div>${extraTemplate}</div>`,
       },
     ],
     css:
