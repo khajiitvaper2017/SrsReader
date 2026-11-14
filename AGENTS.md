@@ -38,7 +38,7 @@
 ## Linting and fixes
 
 - Run `pnpm typecheck` to check TypeScript and `pnpm exec eslint .` to lint. There is no `lint` script.
-- Run `pnpm format:check` to check Prettier formatting.
+- Format changed files once with `pnpm exec prettier --write <files>`. Do not run `--check` before or after it. Reserve `pnpm format:check` for explicitly read-only formatting audits.
 - Run `pnpm check:unused` to find unused code and dependencies.
 - Run `pnpm fix` to apply ESLint fixes and Prettier formatting across the repo. `pnpm format` only applies formatting.
 - For a small change, use `pnpm exec eslint <files> --fix` and `pnpm exec prettier --write <files>` to avoid unrelated edits.
