@@ -5,7 +5,7 @@
 - Run `pnpm build` for Chromium or `pnpm build:firefox` for Firefox. WXT writes builds to `.output/`.
 - Run `pnpm zip` or `pnpm zip:firefox` to create installable archives.
 - Treat `.wxt/` and `.output/` as generated files. Do not edit them. Run `pnpm exec wxt prepare` if generated WXT types are missing.
-- Always rebuild for chrome after finishing the work.
+- Rebuild Chromium once after code or build-configuration changes. Skip application builds for instruction-only and documentation-only changes.
 
 ## Browser testing
 
@@ -44,7 +44,9 @@
 - For a small change, use `pnpm exec eslint <files> --fix` and `pnpm exec prettier --write <files>` to avoid unrelated edits.
 - Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
 - Do not add tests unless asked. If asked, add only end-to-end tests that check app behavior.
-- Run checks that fit the change. Do not repeat checks the user already completed. Report any checks you did not run.
+- Choose the narrowest existing check that covers the changed behavior. Run it once after editing, together with applicable typecheck, changed-file lint, and the final Chromium build.
+- Repeat only failed checks or checks affected by a later edit. Do not repeat checks the user completed, successful browser setup, or successful fixture imports.
+- Do not run the full suite, repo-wide formatting, unused-code scans, or benchmarks unless the task requires them. Report checks not run.
 
 ## Documentation
 
@@ -108,41 +110,13 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 
 ## Trail — repo context graph
 
-This repo is indexed in `.trail/cache/`: small linked markdown nodes that explain each
-system and carry exact file:line spans, kept in sync with the code through git.
+Use the local `.trail/cache/` graph before opening unfamiliar source files:
 
-For ANY task here — understanding how something works, finding where code lives,
-or scoping a change — get context from the graph before grepping or opening
-source files. Re-ask freely (it's cheap) and reuse literal identifiers you
-already have (symbol, error string, file name) as the query. New to this repo?
-Run `trail map` first — a token-budgeted orientation (dir clusters, hubs,
-hotspots), no LLM, no key.
+- `trail ask "<question>" --source` finds relevant code with exact spans. Reuse its answer; do not repeat the same query or read code already returned.
+- `trail grep "<pattern>"` finds every indexed occurrence. Use raw grep only for unindexed files.
+- `trail skeleton <file>` lists signatures. `trail callers <symbol>` finds callers; `--direction out` finds callees.
+- Use `trail map` only when unfamiliar with the repository, not on every task.
+- Open only missing details at returned file spans. If required code is truncated, read that range before editing.
+- Run `trail build` after large code changes, not instruction-only changes.
 
-- Run `trail ask "<your question>" --source` → ranked nodes with the relevant
-  code spans inlined (each hit's ≤8-line crux by default; `--full` for whole
-  definitions when the crux isn't enough). Match the tool to the task shape:
-  for understanding or editing, the top node IS the answer — cite its
-  `covers:` file:line spans and edit straight from `--source`. For
-  exhaustive tasks ("every occurrence / every caller of this pattern"), ranked
-  results are top-N, not complete — run `trail grep "<literal>"` instead
-  (exhaustive over indexed files, grouped by enclosing symbol), falling back
-  to raw `grep -rn` only for unindexed files.
-- `trail skeleton <file>` → every definition's signature + span, ~10× cheaper
-  than reading the file; use it to skim an API surface.
-- `trail callers <symbol>` gives precomputed, exact edges — who calls this.
-  Add `--direction out` for what it calls, or `--depth N` to walk
-  transitively for the full blast radius. For structural questions, skip
-  ranking and use this directly.
-- Or browse: `.trail/cache/INDEX.md` lists every node; follow the links.
-- Monorepos and folders of multiple repos rank fairly across sub-projects —
-  hits carry `[scope/]` labels naming which one they're from. Narrow with
-  `trail ask "<task>" --in <scope>/` once you know where you're working.
-
-If a returned span is truncated ("+N more lines"), open the file at that exact
-range before finalizing. Only open source files when a node genuinely lacks a
-needed detail, and then at the exact file:line the node points to — never
-re-read whole files.
-
-After big code changes, refresh the graph with `trail build` (deterministic,
-no API key, $0).
 <!-- trail:end -->
