@@ -80,6 +80,14 @@ export function WordColors({
                         ? wordTintColor(style.color, opacity)
                         : undefined
                     }
+                    style={{
+                      textDecoration:
+                        settings.wordColorsEnabled &&
+                        (style.mode === "underline" ||
+                          style.mode === "dotted-underline")
+                          ? `underline ${style.mode === "dotted-underline" ? "dotted" : "solid"} ${style.color}`
+                          : undefined,
+                    }}
                   >
                     {label}
                   </Text>
@@ -95,6 +103,11 @@ export function WordColors({
                     data={[
                       { value: "none", label: t("off") },
                       { value: "background", label: t("word_tint") },
+                      { value: "underline", label: t("word_underline") },
+                      {
+                        value: "dotted-underline",
+                        label: t("word_dotted_underline"),
+                      },
                     ]}
                   />
                 </Grid.Col>

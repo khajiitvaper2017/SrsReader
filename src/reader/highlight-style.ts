@@ -11,7 +11,9 @@ export function wordHighlightCss(settings: Settings) {
       .map((state) => {
         const { mode, color } = settings.wordStyles[state];
         const enabled = settings.wordColorsEnabled;
-        return `::highlight(srs-${state}){background-color:${enabled && mode === "background" ? wordTintColor(color, settings.wordColorOpacity) : "transparent"}}\n[data-srs-reader-no-color]::highlight(srs-${state}){background-color:transparent}`;
+        const underline =
+          enabled && (mode === "underline" || mode === "dotted-underline");
+        return `::highlight(srs-${state}){background-color:${enabled && mode === "background" ? wordTintColor(color, settings.wordColorOpacity) : "transparent"};text-decoration:${underline ? `underline ${mode === "dotted-underline" ? "dotted" : "solid"} ${color}` : "none"}}\n[data-srs-reader-no-color]::highlight(srs-${state}){background-color:transparent;text-decoration:none}`;
       })
       .join("\n") + "\n::highlight(srs-focus){background-color:#a78bfa60}"
   );
