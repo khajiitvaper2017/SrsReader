@@ -116,13 +116,10 @@ export function App() {
       ) : undefined,
   }));
   return (
-    <AppShell
-      header={{ height: 58, collapsed: reviewing }}
-      padding={{ base: "xs", sm: "md" }}
-    >
+    <AppShell header={{ height: 58, collapsed: reviewing }} padding={0}>
       {!reviewing && (
         <AppShell.Header>
-          <Container size="lg" h="100%" px={{ base: "xs", sm: "md" }}>
+          <Container size="lg" h="100%" px="md">
             <Group h="100%" justify="space-between" wrap="nowrap" gap="xs">
               <Anchor href="#review" underline="never" c="inherit">
                 <Logo small />
@@ -156,11 +153,7 @@ export function App() {
               </Group>
               <Menu>
                 <Menu.Target>
-                  <ActionIcon
-                    hiddenFrom="md"
-                    size="input-md"
-                    aria-label={t("pages")}
-                  >
+                  <ActionIcon hiddenFrom="md" aria-label={t("pages")}>
                     <MenuIcon aria-hidden size={20} />
                   </ActionIcon>
                 </Menu.Target>
@@ -184,7 +177,7 @@ export function App() {
         </AppShell.Header>
       )}
       <AppShell.Main>
-        <Container size={reviewing ? "sm" : "lg"} px={0}>
+        <Container size={reviewing ? "sm" : "lg"} p="md">
           <React.Suspense fallback={null}>
             {setup ? (
               <SettingsPage

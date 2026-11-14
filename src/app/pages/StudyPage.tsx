@@ -214,7 +214,7 @@ export function StudyPage({
                 aria-label={t("add")}
                 disabled={busy}
               >
-                <Plus aria-hidden size={18} />
+                <Plus aria-hidden size={20} />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
@@ -264,8 +264,8 @@ export function StudyPage({
           <Table
             aria-label={t("study_language_deck")}
             layout="fixed"
-            horizontalSpacing="xs"
-            verticalSpacing="xs"
+            horizontalSpacing={0}
+            verticalSpacing={0}
             tabularNums
             withRowBorders={false}
             highlightOnHover
@@ -275,16 +275,16 @@ export function StudyPage({
                 <Table.Th p={0}>
                   <VisuallyHidden>{t("study_language_deck")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w={40}>
+                <Table.Th p={0} w="3.5rem">
                   <VisuallyHidden>{t("new")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w={40}>
+                <Table.Th p={0} w="3.5rem">
                   <VisuallyHidden>{t("srs_queue_learning")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w={40}>
+                <Table.Th p={0} w="3.5rem">
                   <VisuallyHidden>{t("due")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w={36}>
+                <Table.Th p={0} w="2.75rem">
                   <VisuallyHidden>{t("study_deck_actions")}</VisuallyHidden>
                 </Table.Th>
               </Table.Tr>
@@ -517,7 +517,7 @@ function StudyRows({
                 onClick={(event) => event.stopPropagation()}
                 disabled={busy}
               >
-                <MoreHorizontal size={16} />
+                <MoreHorizontal aria-hidden size={20} />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
@@ -629,7 +629,7 @@ function StudyRows({
         const hasChildren =
           !deck.id || row.decks.some((child) => child.parentId === deck.id);
         const name = (
-          <Group gap="xs" wrap="nowrap" miw={0}>
+          <Group gap={0} wrap="nowrap" miw={0}>
             {hasChildren ? (
               <ActionIcon
                 aria-label={t(
@@ -651,13 +651,13 @@ function StudyRows({
                 }}
               >
                 {collapsed.has(key) ? (
-                  <ChevronRight size={16} />
+                  <ChevronRight size={20} />
                 ) : (
-                  <ChevronDown size={16} />
+                  <ChevronDown size={20} />
                 )}
               </ActionIcon>
             ) : deck.id ? (
-              <Box w="var(--mantine-spacing-xl)" flex="0 0 auto" />
+              <Box w="2.75rem" flex="0 0 auto" />
             ) : null}
             {labelButton}
           </Group>
@@ -672,9 +672,9 @@ function StudyRows({
           >
             <Table.Td
               pl={
-                deck.id
-                  ? `calc(var(--mantine-spacing-md) * ${deck.depth + 1})`
-                  : undefined
+                deck.depth > 0
+                  ? `calc(var(--mantine-spacing-md) * ${deck.depth})`
+                  : 0
               }
             >
               {name}

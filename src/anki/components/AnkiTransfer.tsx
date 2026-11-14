@@ -196,7 +196,7 @@ export function AnkiTransfer({
                 aria-label={t("actions")}
                 disabled={busy}
               >
-                <MoreHorizontal aria-hidden size={18} />
+                <MoreHorizontal aria-hidden size={20} />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>

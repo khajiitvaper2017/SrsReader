@@ -77,7 +77,7 @@ export function createUITheme(
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontSizes: popup
       ? { xs: "0.6875rem", sm: "0.8125rem", md: "0.875rem" }
-      : { md: "0.875rem" },
+      : { xs: "0.875rem", md: "1rem" },
     defaultRadius: "sm",
     radius: { xs: "0.1875rem", sm: "0.3125rem", md: "0.5rem" },
     ...(popup
@@ -136,7 +136,7 @@ export function createUITheme(
           },
         },
         defaultProps: {
-          ...(popup ? { size: "sm" } : {}),
+          size: popup ? "sm" : "xl",
           variant: "subtle",
           color: "gray",
           "data-srs-reader": true,
