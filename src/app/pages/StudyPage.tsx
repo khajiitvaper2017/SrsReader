@@ -43,6 +43,8 @@ import {
   Plus,
   RefreshCw,
   Trash2,
+  Languages,
+  ListOrdered,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -220,6 +222,7 @@ export function StudyPage({
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item
+                  leftSection={<Languages aria-hidden size={16} />}
                   onClick={() => {
                     setLanguage(settings.studyLanguage);
                     setModal("language");
@@ -240,6 +243,7 @@ export function StudyPage({
                   {t("study_add_deck")}
                 </Menu.Item>
                 <Menu.Item
+                  leftSection={<ListOrdered aria-hidden size={16} />}
                   onClick={() => {
                     setLanguage(settings.studyLanguage);
                     setName("");
