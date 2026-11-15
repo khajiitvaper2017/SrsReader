@@ -180,9 +180,21 @@ function LookupEntry({
           style={{ zIndex: 2 }}
           data-srs-reader
         >
-          <Group align="center" justify="space-between">
-            <Stack miw={0} maw="100%">
-              <Group gap={4} wrap="nowrap">
+          <Group align="flex-start" gap="xs" wrap="nowrap">
+            {onBack && (
+              <ActionIcon
+                onClick={onBack}
+                disabled={busy}
+                title={t("back_to_previous_word")}
+                aria-label={t("back_to_previous_word")}
+                variant="subtle"
+                style={{ flexShrink: 0 }}
+              >
+                <ArrowLeft aria-hidden size={16} />
+              </ActionIcon>
+            )}
+            <Stack miw={0} flex={1} gap="xs">
+              <Group gap={4} wrap="nowrap" align="flex-start">
                 <HoverCard
                   disabled={
                     !result?.grammar &&
@@ -350,13 +362,32 @@ function LookupEntry({
                   </Menu>
                 )}
               </Group>
-              {word.reading && (
-                <Text variant="supporting" component="span" inherit>
-                  {word.reading}
-                </Text>
+              {(word.reading || saved) && (
+                <Group gap="xs">
+                  {word.reading && (
+                    <Text variant="supporting" component="span" inherit>
+                      {word.reading}
+                    </Text>
+                  )}
+                  {saved && (
+                    <Badge w="fit-content">
+                      {t(
+                        wordStateLabels[
+                          stateOf(saved, settings.matureIntervalDays)
+                        ],
+                      )}
+                    </Badge>
+                  )}
+                </Group>
               )}
             </Stack>
-            <Group gap={4} align="center">
+            <Group
+              gap={4}
+              align="center"
+              justify="flex-end"
+              maw="45%"
+              style={{ flexShrink: 0 }}
+            >
               <FrequencyBadge word={word} />
               <ActionIcon
                 title={t("add_custom_definition")}
@@ -388,11 +419,6 @@ function LookupEntry({
               onError={setError}
             />
           )}
-          {saved && (
-            <Badge w="fit-content">
-              {t(wordStateLabels[stateOf(saved, settings.matureIntervalDays)])}
-            </Badge>
-          )}
         </Stack>
         {translation}
         {failure}
@@ -411,21 +437,28 @@ function LookupEntry({
           scrollbarGutter: "stable",
         }}
       >
-        <Stack p="sm">
-          {onBack && (
-            <ActionIcon
-              onClick={onBack}
-              disabled={busy}
-              title={t("back_to_previous_word")}
-              aria-label={t("back_to_previous_word")}
-              variant="subtle"
-            >
-              <ArrowLeft aria-hidden="true" size={16} />
-            </ActionIcon>
+        <Stack p="sm" gap="xs">
+          {onBack && !word && (
+            <Group gap="xs">
+              <ActionIcon
+                onClick={onBack}
+                disabled={busy}
+                title={t("back_to_previous_word")}
+                aria-label={t("back_to_previous_word")}
+                variant="subtle"
+              >
+                <ArrowLeft aria-hidden size={16} />
+              </ActionIcon>
+              <Title order={1} style={{ overflowWrap: "anywhere" }}>
+                {term}
+              </Title>
+            </Group>
           )}
           <ErrorBox error={error} />
           <SrsProgress />
-          {!word && !!result?.words.length && <Title order={1}>{term}</Title>}
+          {!onBack && !word && !!result?.words.length && (
+            <Title order={1}>{term}</Title>
+          )}
           {!word && !!result?.words.length && (
             <Stack>
               <Meanings
@@ -563,7 +596,7 @@ function LookupEntry({
       </Stack>
       {word && !unparsed && (
         <Stack
-          p="xs"
+          p="sm"
           data-srs-reader
           style={{
             borderTop: "1px solid var(--mantine-color-default-border)",

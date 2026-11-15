@@ -3,7 +3,6 @@ import {
   ActionIcon,
   Group,
   Loader,
-  Paper,
   Stack,
   Text,
 } from "@mantine/core";
@@ -54,34 +53,32 @@ export function WikipediaBrowser({
               }}
             />
             {entry ? (
-              <Paper withBorder p="sm">
-                <Group align="center" wrap="nowrap">
-                  <Stack gap={0} miw={0} flex={1}>
-                    <strong>{languageLabel(entry.code)}</strong>
-                    <Text variant="supporting">
-                      {t("wikipedia_article_summaries")} ·{" "}
-                      {downloadSize(entry.size)}
-                    </Text>
-                  </Stack>
-                  <ActionIcon
-                    disabled={busy}
-                    onClick={() => void install(entry)}
-                    title={t("import_dictionary_named", {
-                      title: `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
-                    })}
-                    aria-label={t("import_dictionary_named", {
-                      title: `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
-                    })}
-                    variant="default"
-                  >
-                    {installing ? (
-                      <Loader size={14} aria-hidden="true" />
-                    ) : (
-                      <Download aria-hidden="true" size={16} />
-                    )}
-                  </ActionIcon>
-                </Group>
-              </Paper>
+              <Group py="xs" align="center" wrap="nowrap">
+                <Stack gap={0} miw={0} flex={1}>
+                  <strong>{languageLabel(entry.code)}</strong>
+                  <Text variant="supporting">
+                    {t("wikipedia_article_summaries")} ·{" "}
+                    {downloadSize(entry.size)}
+                  </Text>
+                </Stack>
+                <ActionIcon
+                  disabled={busy}
+                  onClick={() => void install(entry)}
+                  title={t("import_dictionary_named", {
+                    title: `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
+                  })}
+                  aria-label={t("import_dictionary_named", {
+                    title: `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
+                  })}
+                  variant="default"
+                >
+                  {installing ? (
+                    <Loader size={14} aria-hidden="true" />
+                  ) : (
+                    <Download aria-hidden="true" size={16} />
+                  )}
+                </ActionIcon>
+              </Group>
             ) : (
               <Text>{t("no_matching_dictionaries")}</Text>
             )}

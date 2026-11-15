@@ -1,7 +1,6 @@
 import {
   CheckIcon,
   Group,
-  Paper,
   MultiSelect,
   Select,
   SimpleGrid,
@@ -57,89 +56,87 @@ export function LanguageSettings({
     );
 
   return (
-    <Paper>
-      <Stack>
-        <Title order={2}>{t("languages")}</Title>
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
-          <MultiSelect
-            label={t("studied_languages")}
-            searchable
-            value={settings.studyLanguages}
-            data={languages}
-            renderOption={({ option, checked }) => {
-              const { features } = languages.find(
-                (language) => language.value === option.value,
-              )!;
-              return (
-                <Group gap="sm" wrap="nowrap" flex={1} miw={0}>
-                  {checked && <CheckIcon size={12} aria-hidden="true" />}
-                  <Stack gap={0} flex={1} miw={0}>
-                    <Text>{option.label}</Text>
-                    {features.length > 0 && (
-                      <Text variant="supporting">{features.join(" · ")}</Text>
-                    )}
-                  </Stack>
-                </Group>
-              );
-            }}
-            nothingFoundMessage={t("settings_no_languages")}
-            onChange={(studyLanguages) => void update({ studyLanguages })}
-          />
-          <MultiSelect
-            label={t("native_languages")}
-            description={[
-              t("native_languages_help"),
-              setup &&
-                t("detected_language", {
-                  language: languageName(systemLanguage()),
-                }),
-            ]
-              .filter(Boolean)
-              .join(" ")}
-            searchable
-            required
-            withPillsReorder
-            data={[...supportedLanguages]
-              .filter((language) => languageName(language) !== language)
-              .sort((a, b) =>
-                languageName(a).localeCompare(
-                  languageName(b),
-                  i18n.resolvedLanguage,
-                ),
-              )
-              .map((language) => ({
-                value: language,
-                label: languageLabel(language),
-              }))}
-            nothingFoundMessage={t("settings_no_languages")}
-            value={settings.nativeLanguages}
-            onChange={(nativeLanguages) => {
-              if (nativeLanguages.length) void update({ nativeLanguages });
-            }}
-          />
-          <Select
-            label={t("interface_language_setting")}
-            value={settings.interfaceLanguage}
-            onChange={(value) =>
-              void update({
-                interfaceLanguage: value as Settings["interfaceLanguage"],
-              })
-            }
-            data={[
-              { value: "auto", label: t("same_as_native_language") },
-              ...interfaceLanguages.map((language) => ({
-                value: language,
-                label: `${languageFlag(language)} ${new Intl.DisplayNames(
-                  [language],
-                  {
-                    type: "language",
-                  },
-                ).of(language)!}`,
-              })),
-            ]}
-          />
-        </SimpleGrid>
-      </Stack>
-    </Paper>
+    <Stack>
+      <Title order={2}>{t("languages")}</Title>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+        <MultiSelect
+          label={t("studied_languages")}
+          searchable
+          value={settings.studyLanguages}
+          data={languages}
+          renderOption={({ option, checked }) => {
+            const { features } = languages.find(
+              (language) => language.value === option.value,
+            )!;
+            return (
+              <Group gap="sm" wrap="nowrap" flex={1} miw={0}>
+                {checked && <CheckIcon size={12} aria-hidden="true" />}
+                <Stack gap={0} flex={1} miw={0}>
+                  <Text>{option.label}</Text>
+                  {features.length > 0 && (
+                    <Text variant="supporting">{features.join(" · ")}</Text>
+                  )}
+                </Stack>
+              </Group>
+            );
+          }}
+          nothingFoundMessage={t("settings_no_languages")}
+          onChange={(studyLanguages) => void update({ studyLanguages })}
+        />
+        <MultiSelect
+          label={t("native_languages")}
+          description={[
+            t("native_languages_help"),
+            setup &&
+              t("detected_language", {
+                language: languageName(systemLanguage()),
+              }),
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          searchable
+          required
+          withPillsReorder
+          data={[...supportedLanguages]
+            .filter((language) => languageName(language) !== language)
+            .sort((a, b) =>
+              languageName(a).localeCompare(
+                languageName(b),
+                i18n.resolvedLanguage,
+              ),
+            )
+            .map((language) => ({
+              value: language,
+              label: languageLabel(language),
+            }))}
+          nothingFoundMessage={t("settings_no_languages")}
+          value={settings.nativeLanguages}
+          onChange={(nativeLanguages) => {
+            if (nativeLanguages.length) void update({ nativeLanguages });
+          }}
+        />
+        <Select
+          label={t("interface_language_setting")}
+          value={settings.interfaceLanguage}
+          onChange={(value) =>
+            void update({
+              interfaceLanguage: value as Settings["interfaceLanguage"],
+            })
+          }
+          data={[
+            { value: "auto", label: t("same_as_native_language") },
+            ...interfaceLanguages.map((language) => ({
+              value: language,
+              label: `${languageFlag(language)} ${new Intl.DisplayNames(
+                [language],
+                {
+                  type: "language",
+                },
+              ).of(language)!}`,
+            })),
+          ]}
+        />
+      </SimpleGrid>
+    </Stack>
   );
 }

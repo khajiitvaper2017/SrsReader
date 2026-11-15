@@ -4,10 +4,10 @@ import {
   Group,
   Modal,
   Stack,
+  Tabs,
   Text,
-  Title,
 } from "@mantine/core";
-import { FilePenLine, Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import type { CardDocument } from "@/cards/model";
 import type { Settings } from "@/settings/model";
@@ -21,17 +21,20 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { t } from "@/shared/i18n/i18n";
 
 export function CardTools({
+  opened,
+  onClose,
   document,
   settings,
   context,
   onChanged,
 }: {
+  opened: boolean;
+  onClose: () => void;
   document: CardDocument;
   settings: Settings;
   context?: ReadingContext;
   onChanged: () => void;
 }) {
-  const [opened, setOpened] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [definitionEditing, setDefinitionEditing] =
@@ -49,101 +52,113 @@ export function CardTools({
     }
   }
   return (
-    <>
-      <ActionIcon
-        onClick={() => setOpened(true)}
-        title={t("card_edit")}
-        aria-label={t("card_edit")}
-      >
-        <FilePenLine aria-hidden size={16} />
-      </ActionIcon>
-      <Modal
-        closeButtonProps={{ "aria-label": t("close") }}
-        opened={opened}
-        onClose={() => {
-          setOpened(false);
-          setDefinitionEditing(null);
-          onChanged();
-        }}
-        title={t("card_edit")}
-        size="lg"
-      >
-        {opened && (
-          <Stack>
-            <ErrorBox error={error} />
-            <NoteFieldsEditor noteId={document.note.id} onSaved={onChanged} />
+    <Modal
+      closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
+      opened={opened}
+      onClose={() => {
+        onClose();
+        setDefinitionEditing(null);
+        onChanged();
+      }}
+      title={t("card_edit")}
+      size="lg"
+    >
+      {opened && (
+        <Stack>
+          <ErrorBox error={error} />
+          <Tabs
+            defaultValue="fields"
+            keepMounted
+            keepMountedMode="display-none"
+          >
+            <Tabs.List>
+              <Tabs.Tab value="fields">{t("card_fields_tab")}</Tabs.Tab>
+              {document.note.wordId && (
+                <>
+                  <Tabs.Tab value="media">{t("card_media_tab")}</Tabs.Tab>
+                  <Tabs.Tab value="dictionary">
+                    {t("card_dictionary_tab")}
+                  </Tabs.Tab>
+                </>
+              )}
+            </Tabs.List>
+            <Tabs.Panel value="fields" pt="md">
+              <NoteFieldsEditor noteId={document.note.id} onSaved={onChanged} />
+            </Tabs.Panel>
             {document.note.wordId && (
               <>
-                {document.noteType.bindings.definitions !== undefined && (
-                  <Stack gap="xs">
-                    <Text variant="supporting">
-                      {t("card_dictionary_refresh_help")}
-                    </Text>
-                    <Group>
-                      <Button
-                        disabled={busy}
-                        loading={busy}
-                        leftSection={<RefreshCw aria-hidden size={16} />}
-                        onClick={() => void refresh()}
-                      >
-                        {t("refresh_from_dictionary")}
-                      </Button>
-                    </Group>
+                <Tabs.Panel value="media" pt="md">
+                  <Stack>
+                    {document.noteType.bindings.image !== undefined && (
+                      <MediaField
+                        wordId={document.note.wordId}
+                        noteId={document.note.id}
+                        kind="background"
+                        sentence=""
+                      />
+                    )}
+                    {document.noteType.bindings.wordAudio !== undefined && (
+                      <MediaField
+                        wordId={document.note.wordId}
+                        noteId={document.note.id}
+                        kind="wordAudio"
+                        sentence=""
+                      />
+                    )}
+                    {context &&
+                      document.noteType.bindings.sentenceAudio !==
+                        undefined && (
+                        <MediaField
+                          wordId={document.note.wordId}
+                          noteId={document.note.id}
+                          kind="audio"
+                          sentence={context.sentence}
+                        />
+                      )}
                   </Stack>
-                )}
-                {(document.noteType.bindings.image !== undefined ||
-                  document.noteType.bindings.wordAudio !== undefined ||
-                  document.noteType.bindings.sentenceAudio !== undefined) && (
-                  <Title order={3}>{t("card_media")}</Title>
-                )}
-                {document.noteType.bindings.image !== undefined && (
-                  <MediaField
-                    wordId={document.note.wordId}
-                    noteId={document.note.id}
-                    kind="background"
-                    sentence=""
-                  />
-                )}
-                {document.noteType.bindings.wordAudio !== undefined && (
-                  <MediaField
-                    wordId={document.note.wordId}
-                    noteId={document.note.id}
-                    kind="wordAudio"
-                    sentence=""
-                  />
-                )}
-                {context &&
-                  document.noteType.bindings.sentenceAudio !== undefined && (
-                    <MediaField
-                      wordId={document.note.wordId}
-                      noteId={document.note.id}
-                      kind="audio"
-                      sentence={context.sentence}
-                    />
+                </Tabs.Panel>
+                <Tabs.Panel value="dictionary" pt="md">
+                  {document.noteType.bindings.definitions !== undefined && (
+                    <Stack gap="xs">
+                      <Text variant="supporting">
+                        {t("card_dictionary_refresh_help")}
+                      </Text>
+                      <Group>
+                        <Button
+                          disabled={busy}
+                          loading={busy}
+                          leftSection={<RefreshCw aria-hidden size={16} />}
+                          onClick={() => void refresh()}
+                        >
+                          {t("refresh_from_dictionary")}
+                        </Button>
+                      </Group>
+                    </Stack>
                   )}
-                <Group justify="flex-end">
-                  <ActionIcon
-                    title={t("add_custom_definition")}
-                    aria-label={t("add_custom_definition")}
-                    variant="subtle"
-                    onClick={() => setDefinitionEditing("add")}
-                  >
-                    <Plus aria-hidden size={16} />
-                  </ActionIcon>
-                </Group>
-                <CardDefinitions
-                  id={document.note.wordId}
-                  context={context}
-                  settings={settings}
-                  onError={setError}
-                  editing={definitionEditing}
-                  onEditingChange={setDefinitionEditing}
-                />
+                  <Group justify="flex-end">
+                    <ActionIcon
+                      title={t("add_custom_definition")}
+                      aria-label={t("add_custom_definition")}
+                      variant="subtle"
+                      onClick={() => setDefinitionEditing("add")}
+                    >
+                      <Plus aria-hidden size={16} />
+                    </ActionIcon>
+                  </Group>
+                  <CardDefinitions
+                    id={document.note.wordId}
+                    context={context}
+                    settings={settings}
+                    onError={setError}
+                    editing={definitionEditing}
+                    onEditingChange={setDefinitionEditing}
+                  />
+                </Tabs.Panel>
               </>
             )}
-          </Stack>
-        )}
-      </Modal>
-    </>
+          </Tabs>
+        </Stack>
+      )}
+    </Modal>
   );
 }

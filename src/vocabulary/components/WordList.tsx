@@ -3,7 +3,7 @@ import {
   Group,
   NavLink,
   Pagination,
-  Paper,
+  Box,
   Stack,
   Text,
 } from "@mantine/core";
@@ -23,11 +23,12 @@ export function WordList({
   const { selected, setSelected, pageWords, page, pages, setPage } = controller;
   return (
     <Stack>
-      <Paper p={0}>
+      <Box>
         {pageWords.map((w) => (
           <NavLink
             component="button"
             key={w.id}
+            data-word-id={w.id}
             active={selected === w.id}
             label={w.lemma}
             lang={w.language}
@@ -47,7 +48,7 @@ export function WordList({
             }}
           />
         ))}
-      </Paper>
+      </Box>
       {pages > 1 && (
         <Group justify="center">
           <Pagination

@@ -2,7 +2,6 @@ import {
   Button,
   Divider,
   Group,
-  Paper,
   Radio,
   Select,
   Stack,
@@ -49,97 +48,125 @@ export function ReadingSettings({
   }
   return (
     <>
-      <Paper>
-        <Stack>
-          <Title order={2}>{t("settings_page_reading")}</Title>
+      <Stack>
+        <Title order={2}>{t("settings_page_reading")}</Title>
+        <Switch
+          labelPosition="left"
+          w="100%"
+          styles={{
+            body: { width: "100%", minHeight: 44, alignItems: "center" },
+            labelWrapper: { flex: 1 },
+            track: { flexShrink: 0 },
+          }}
+          label={t("parse_websites_automatically")}
+          description={t("parse_websites_automatically_help")}
+          checked={!settings.paused}
+          onChange={(event) =>
+            void update({ paused: !event.currentTarget.checked })
+          }
+        />
+        <Text variant="supporting">{t("studied_reading_help")}</Text>
+        <Select
+          label={t("word_loading")}
+          description={t("word_loading_help")}
+          value={settings.wordLoading[settings.studyLanguage] ?? "automatic"}
+          allowDeselect={false}
+          data={[
+            { value: "automatic", label: t("automatic") },
+            { value: "onLookup", label: t("word_loading_on_lookup") },
+          ]}
+          onChange={(value) =>
+            void update({
+              wordLoading: {
+                ...settings.wordLoading,
+                [settings.studyLanguage]: value as "automatic" | "onLookup",
+              },
+            })
+          }
+        />
+        {settings.studyLanguage === "de" && (
           <Switch
-            label={t("parse_websites_automatically")}
-            description={t("parse_websites_automatically_help")}
-            checked={!settings.paused}
+            labelPosition="left"
+            w="100%"
+            styles={{
+              body: { width: "100%", minHeight: 44, alignItems: "center" },
+              labelWrapper: { flex: 1 },
+              track: { flexShrink: 0 },
+            }}
+            label={t("split_german_compounds")}
+            description={t("split_german_compounds_help")}
+            checked={settings.splitGermanCompounds}
             onChange={(event) =>
-              void update({ paused: !event.currentTarget.checked })
-            }
-          />
-          <Text variant="supporting">{t("studied_reading_help")}</Text>
-          <Select
-            label={t("word_loading")}
-            description={t("word_loading_help")}
-            value={settings.wordLoading[settings.studyLanguage] ?? "automatic"}
-            allowDeselect={false}
-            data={[
-              { value: "automatic", label: t("automatic") },
-              { value: "onLookup", label: t("word_loading_on_lookup") },
-            ]}
-            onChange={(value) =>
               void update({
-                wordLoading: {
-                  ...settings.wordLoading,
-                  [settings.studyLanguage]: value as "automatic" | "onLookup",
-                },
+                splitGermanCompounds: event.currentTarget.checked,
               })
             }
           />
-          {settings.studyLanguage === "de" && (
-            <Switch
-              label={t("split_german_compounds")}
-              description={t("split_german_compounds_help")}
-              checked={settings.splitGermanCompounds}
-              onChange={(event) =>
-                void update({
-                  splitGermanCompounds: event.currentTarget.checked,
-                })
-              }
-            />
-          )}
-          <Switch
-            label={t("use_udpipe")}
-            description={t("udpipe_help")}
-            checked={settings.udpipe}
-            disabled={
-              !settings.studyLanguages.some((language) =>
-                udpipeModel(language),
-              ) || parserBusy
+        )}
+        <Switch
+          labelPosition="left"
+          w="100%"
+          styles={{
+            body: { width: "100%", minHeight: 44, alignItems: "center" },
+            labelWrapper: { flex: 1 },
+            track: { flexShrink: 0 },
+          }}
+          label={t("use_udpipe")}
+          description={t("udpipe_help")}
+          checked={settings.udpipe}
+          disabled={
+            !settings.studyLanguages.some((language) =>
+              udpipeModel(language),
+            ) || parserBusy
+          }
+          onChange={(event) => void changeParser(event.currentTarget.checked)}
+        />
+        <ErrorBox error={parserError} />
+        {settings.udpipe && models.length > 1 && (
+          <Radio.Group
+            label={t("udpipe_model")}
+            description={t("udpipe_model_help")}
+            value={udpipeModel(
+              settings.studyLanguage,
+              settings.udpipeModels[settings.studyLanguage],
+            )}
+            onChange={(value) =>
+              void update({
+                udpipeModels: {
+                  ...settings.udpipeModels,
+                  [settings.studyLanguage]: value,
+                },
+              })
             }
-            onChange={(event) => void changeParser(event.currentTarget.checked)}
-          />
-          <ErrorBox error={parserError} />
-          {models.length > 1 && (
-            <Radio.Group
-              label={t("udpipe_model")}
-              description={t("udpipe_model_help")}
-              value={udpipeModel(
-                settings.studyLanguage,
-                settings.udpipeModels[settings.studyLanguage],
-              )}
-              onChange={(value) =>
-                void update({
-                  udpipeModels: {
-                    ...settings.udpipeModels,
-                    [settings.studyLanguage]: value,
-                  },
-                })
-              }
-            >
-              <Stack mt="xs">
-                {models.map((model, index) => {
-                  const corpus = model.split("-ud-")[0]!;
-                  const name = t(`udpipe_model_${corpus}`);
-                  return (
-                    <Radio
-                      key={model}
-                      value={model}
-                      label={
-                        index === 0 ? t("udpipe_model_default", { name }) : name
-                      }
-                      description={t(`udpipe_corpus_${corpus}`)}
-                      disabled={!settings.udpipe || parserBusy}
-                    />
-                  );
-                })}
-              </Stack>
-            </Radio.Group>
-          )}
+          >
+            <Stack mt="xs">
+              {models.map((model, index) => {
+                const corpus = model.split("-ud-")[0]!;
+                const name = t(`udpipe_model_${corpus}`);
+                return (
+                  <Radio
+                    key={model}
+                    value={model}
+                    label={
+                      index === 0 ? t("udpipe_model_default", { name }) : name
+                    }
+                    description={t(`udpipe_corpus_${corpus}`)}
+                    disabled={!settings.udpipe || parserBusy}
+                  />
+                );
+              })}
+            </Stack>
+          </Radio.Group>
+        )}
+        {settings.udpipe && (
           <Switch
+            labelPosition="left"
+            w="100%"
+            styles={{
+              body: { width: "100%", minHeight: 44, alignItems: "center" },
+              labelWrapper: { flex: 1 },
+              track: { flexShrink: 0 },
+            }}
             label={t("automatically_ignore_proper_names")}
             description={t("ignore_proper_names_help")}
             checked={settings.ignoreProperNames}
@@ -148,90 +175,100 @@ export function ReadingSettings({
               void update({ ignoreProperNames: event.currentTarget.checked })
             }
           />
-          <SourceAttribution
-            i18nKey="parser_acknowledgement"
-            links={{
-              udpipe: "https://ufal.mff.cuni.cz/udpipe/2",
-              lindat: "https://lindat.mff.cuni.cz/services/udpipe/",
-              models: "https://ufal.mff.cuni.cz/udpipe/2/models",
-              license: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-              terms:
-                "https://lindat.mff.cuni.cz/services/udpipe/api-reference.php",
-            }}
-          />
-          {!!settings.disabledHosts.length && (
-            <>
-              <Divider />
-              <Stack>
-                <Text fw={500}>{t("disabled_websites")}</Text>
-                {settings.disabledHosts.map((host) => (
-                  <Group key={host} justify="space-between">
-                    <Text style={{ minWidth: 0 }}>{host}</Text>
-                    <Button
-                      variant="subtle"
-                      onClick={() =>
-                        void update({
-                          enabledHosts: [...settings.enabledHosts, host],
-                          disabledHosts: settings.disabledHosts.filter(
-                            (h) => h !== host,
-                          ),
-                        })
-                      }
-                    >
-                      {t("enable")}
-                    </Button>
-                  </Group>
-                ))}
-              </Stack>
-            </>
-          )}
-          <Text variant="supporting">
-            {t("disable_individual_sites_from_the_toolbar")}
-          </Text>
-        </Stack>
-      </Paper>
-      <Paper>
-        <Stack>
-          <Title order={2}>{t("lookup_popups")}</Title>
-          <Select
-            label={t("popup_position")}
-            description={t("popup_position_help")}
-            value={settings.popupPlacement}
-            onChange={(value) =>
-              void update({
-                popupPlacement: value as Settings["popupPlacement"],
-              })
-            }
-            data={[
-              { value: "auto", label: t("automatic") },
-              { value: "below", label: t("popup_position_below") },
-              { value: "beside", label: t("popup_position_beside") },
-            ]}
-          />
-          <Switch
-            label={t("scan_dictionary_popups")}
-            checked={settings.scanPopups}
-            onChange={(event) =>
-              void update({ scanPopups: event.currentTarget.checked })
-            }
-          />
-          <Switch
-            label={t("hide_dictionary_source_links")}
-            description={t("in_lookups_and_cards")}
-            checked={settings.hideDictionarySources}
-            onChange={(event) =>
-              void update({
-                hideDictionarySources: event.currentTarget.checked,
-              })
-            }
-          />
-          <DictionaryTags
-            dictionaries={dictionaries}
-            settings={settings}
-            onChange={(patch) => void update(patch)}
-          />
-        </Stack>
-      </Paper>
+        )}
+        <SourceAttribution
+          i18nKey="parser_acknowledgement"
+          links={{
+            udpipe: "https://ufal.mff.cuni.cz/udpipe/2",
+            lindat: "https://lindat.mff.cuni.cz/services/udpipe/",
+            models: "https://ufal.mff.cuni.cz/udpipe/2/models",
+            license: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+            terms:
+              "https://lindat.mff.cuni.cz/services/udpipe/api-reference.php",
+          }}
+        />
+        {!!settings.disabledHosts.length && (
+          <>
+            <Divider />
+            <Stack>
+              <Text fw={500}>{t("disabled_websites")}</Text>
+              {settings.disabledHosts.map((host) => (
+                <Group key={host} justify="space-between">
+                  <Text style={{ minWidth: 0 }}>{host}</Text>
+                  <Button
+                    variant="subtle"
+                    onClick={() =>
+                      void update({
+                        enabledHosts: [...settings.enabledHosts, host],
+                        disabledHosts: settings.disabledHosts.filter(
+                          (h) => h !== host,
+                        ),
+                      })
+                    }
+                  >
+                    {t("enable")}
+                  </Button>
+                </Group>
+              ))}
+            </Stack>
+          </>
+        )}
+      </Stack>
+
+      <Stack>
+        <Title order={2}>{t("lookup_popups")}</Title>
+        <Select
+          label={t("popup_position")}
+          description={t("popup_position_help")}
+          value={settings.popupPlacement}
+          onChange={(value) =>
+            void update({
+              popupPlacement: value as Settings["popupPlacement"],
+            })
+          }
+          data={[
+            { value: "auto", label: t("automatic") },
+            { value: "below", label: t("popup_position_below") },
+            { value: "beside", label: t("popup_position_beside") },
+          ]}
+        />
+        <Switch
+          labelPosition="left"
+          w="100%"
+          styles={{
+            body: { width: "100%", minHeight: 44, alignItems: "center" },
+            labelWrapper: { flex: 1 },
+            track: { flexShrink: 0 },
+          }}
+          label={t("scan_dictionary_popups")}
+          checked={settings.scanPopups}
+          onChange={(event) =>
+            void update({ scanPopups: event.currentTarget.checked })
+          }
+        />
+        <Switch
+          labelPosition="left"
+          w="100%"
+          styles={{
+            body: { width: "100%", minHeight: 44, alignItems: "center" },
+            labelWrapper: { flex: 1 },
+            track: { flexShrink: 0 },
+          }}
+          label={t("hide_dictionary_source_links")}
+          description={t("in_lookups_and_cards")}
+          checked={settings.hideDictionarySources}
+          onChange={(event) =>
+            void update({
+              hideDictionarySources: event.currentTarget.checked,
+            })
+          }
+        />
+        <DictionaryTags
+          dictionaries={dictionaries}
+          settings={settings}
+          onChange={(patch) => void update(patch)}
+        />
+      </Stack>
     </>
   );
 }

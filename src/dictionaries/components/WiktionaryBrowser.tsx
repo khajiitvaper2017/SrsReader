@@ -3,7 +3,6 @@ import {
   Accordion,
   ActionIcon,
   Group,
-  Paper,
   ScrollArea,
   Select,
   SimpleGrid,
@@ -201,37 +200,40 @@ export function WiktionaryBrowser({
                 aria-label={t("available_wiktionary_dictionaries")}
               >
                 {entries.map((entry) => (
-                  <Paper key={wiktionaryName(entry)} withBorder p="sm">
-                    <Group align="center" wrap="nowrap">
-                      <Stack gap={0} miw={0} flex={1}>
-                        <strong>
-                          {languageLabel(languageCode(entry.source))} →{" "}
-                          {languageLabel(languageCode(entry.target))}
-                        </strong>
-                        <Text variant="supporting">
-                          {t(typeLabels[entry.type])} ·{" "}
-                          {downloadSize(entry.size)} · {wiktionaryName(entry)}
-                        </Text>
-                      </Stack>
-                      <ActionIcon
-                        disabled={busy}
-                        onClick={() => void install(entry)}
-                        title={t("import_dictionary_named", {
-                          title: wiktionaryName(entry),
-                        })}
-                        aria-label={t("import_dictionary_named", {
-                          title: wiktionaryName(entry),
-                        })}
-                        variant="default"
-                      >
-                        {installing === wiktionaryName(entry) ? (
-                          <Loader size={14} aria-hidden="true" />
-                        ) : (
-                          <Download aria-hidden="true" size={16} />
-                        )}
-                      </ActionIcon>
-                    </Group>
-                  </Paper>
+                  <Group
+                    key={wiktionaryName(entry)}
+                    py="xs"
+                    align="center"
+                    wrap="nowrap"
+                  >
+                    <Stack gap={0} miw={0} flex={1}>
+                      <strong>
+                        {languageLabel(languageCode(entry.source))} →{" "}
+                        {languageLabel(languageCode(entry.target))}
+                      </strong>
+                      <Text variant="supporting">
+                        {t(typeLabels[entry.type])} · {downloadSize(entry.size)}{" "}
+                        · {wiktionaryName(entry)}
+                      </Text>
+                    </Stack>
+                    <ActionIcon
+                      disabled={busy}
+                      onClick={() => void install(entry)}
+                      title={t("import_dictionary_named", {
+                        title: wiktionaryName(entry),
+                      })}
+                      aria-label={t("import_dictionary_named", {
+                        title: wiktionaryName(entry),
+                      })}
+                      variant="default"
+                    >
+                      {installing === wiktionaryName(entry) ? (
+                        <Loader size={14} aria-hidden="true" />
+                      ) : (
+                        <Download aria-hidden="true" size={16} />
+                      )}
+                    </ActionIcon>
+                  </Group>
                 ))}
                 {!entries.length && (
                   <Text>{t("no_matching_dictionaries")}</Text>

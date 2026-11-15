@@ -3,7 +3,6 @@ import {
   Accordion,
   ActionIcon,
   Group,
-  Paper,
   ScrollArea,
   Select,
   SimpleGrid,
@@ -150,40 +149,38 @@ export function FrequencyBrowser({
                 aria-label={t("available_frequency_dictionaries")}
               >
                 {entries.map((entry) => (
-                  <Paper key={entry.file} withBorder p="sm">
-                    <Group align="center" wrap="nowrap">
-                      <Stack gap={0} miw={0} flex={1}>
-                        <strong>
-                          {languageLabel(entry.code)} · {entry.source}
-                        </strong>
-                        <Text variant="supporting">
-                          {entry.region && `${entry.region} · `}
-                          {downloadSize(entry.size)}
-                        </Text>
-                      </Stack>
-                      <ActionIcon
-                        disabled={busy}
-                        onClick={() => void install(entry)}
-                        title={t("import_2", {
-                          language: languageName(entry.code),
-                          region: entry.region,
-                          source: entry.source,
-                        }).replace(/\s+/g, " ")}
-                        aria-label={t("import_2", {
-                          language: languageName(entry.code),
-                          region: entry.region,
-                          source: entry.source,
-                        }).replace(/\s+/g, " ")}
-                        variant="default"
-                      >
-                        {installing === entry.file ? (
-                          <Loader size={14} aria-hidden="true" />
-                        ) : (
-                          <Download aria-hidden="true" size={16} />
-                        )}
-                      </ActionIcon>
-                    </Group>
-                  </Paper>
+                  <Group key={entry.file} py="xs" align="center" wrap="nowrap">
+                    <Stack gap={0} miw={0} flex={1}>
+                      <strong>
+                        {languageLabel(entry.code)} · {entry.source}
+                      </strong>
+                      <Text variant="supporting">
+                        {entry.region && `${entry.region} · `}
+                        {downloadSize(entry.size)}
+                      </Text>
+                    </Stack>
+                    <ActionIcon
+                      disabled={busy}
+                      onClick={() => void install(entry)}
+                      title={t("import_2", {
+                        language: languageName(entry.code),
+                        region: entry.region,
+                        source: entry.source,
+                      }).replace(/\s+/g, " ")}
+                      aria-label={t("import_2", {
+                        language: languageName(entry.code),
+                        region: entry.region,
+                        source: entry.source,
+                      }).replace(/\s+/g, " ")}
+                      variant="default"
+                    >
+                      {installing === entry.file ? (
+                        <Loader size={14} aria-hidden="true" />
+                      ) : (
+                        <Download aria-hidden="true" size={16} />
+                      )}
+                    </ActionIcon>
+                  </Group>
                 ))}
                 {!entries.length && (
                   <Text>{t("no_matching_dictionaries")}</Text>

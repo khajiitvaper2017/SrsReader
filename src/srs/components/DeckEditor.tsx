@@ -65,7 +65,7 @@ export function DeckEditor({
         if (!busy) onClose();
       }}
       title={t(selection.id ? "study_edit_deck" : "study_add_deck")}
-      closeButtonProps={{ "aria-label": t("close") }}
+      closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
       closeOnClickOutside={!busy}
       closeOnEscape={!busy}
       withCloseButton={!busy}

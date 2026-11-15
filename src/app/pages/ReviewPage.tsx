@@ -9,7 +9,7 @@ import { SentenceTranslation } from "@/translation/components/SentenceTranslatio
 import type { ReadingContext } from "@/vocabulary/model";
 import { CardTools } from "@/cards/components/CardTools";
 import { setCardSuspended } from "@/cards/storage";
-import { ChevronRight, RefreshCw } from "lucide-react";
+import { ChevronRight, FilePenLine, RefreshCw } from "lucide-react";
 import { refreshNote } from "@/cards/storage";
 import {
   Badge,
@@ -80,6 +80,7 @@ export function ReviewPage({
     undo,
   } = useReviewSession({ settings, deckId });
   const [lookupSession, setLookupSession] = useState("");
+  const [toolsNote, setToolsNote] = useState("");
   const viewport = useRef<HTMLDivElement>(null);
   const displayedCard = useRef("");
   const cardReady = useCallback((id: string) => {
@@ -193,10 +194,10 @@ export function ReviewPage({
   return (
     <Stack
       data-srs-reader-review
-      mih="calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
+      mih="calc(100dvh - var(--app-shell-header-offset, 0px) - 2 * var(--mantine-spacing-md))"
       h={
         word
-          ? "calc(100dvh - var(--app-shell-header-offset) - 2 * var(--app-shell-padding))"
+          ? "calc(100dvh - var(--app-shell-header-offset, 0px) - 2 * var(--mantine-spacing-md))"
           : undefined
       }
       gap="xs"
@@ -220,36 +221,6 @@ export function ReviewPage({
             >
               <Timer aria-hidden size={16} />
             </ActionIcon>
-            {timer.enabled && timer.phase && (
-              <ActionIcon
-                variant="subtle"
-                disabled={busy}
-                title={t(
-                  timer.manualPaused
-                    ? "timed_review_resume"
-                    : "timed_review_pause",
-                )}
-                aria-label={t(
-                  timer.manualPaused
-                    ? "timed_review_resume"
-                    : "timed_review_pause",
-                )}
-                aria-pressed={timer.manualPaused}
-                onClick={timer.togglePause}
-              >
-                {timer.manualPaused ? (
-                  <Play aria-hidden size={16} />
-                ) : (
-                  <Pause aria-hidden size={16} />
-                )}
-              </ActionIcon>
-            )}
-            <CardTools
-              document={queue!.document!}
-              settings={settings}
-              context={context}
-              onChanged={load}
-            />
             <Menu>
               <Menu.Target>
                 <ActionIcon
@@ -261,6 +232,44 @@ export function ReviewPage({
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<FilePenLine aria-hidden size={16} />}
+                  onClick={() => setToolsNote(queue.document!.note.id)}
+                >
+                  {t("card_edit")}
+                </Menu.Item>
+                {timer.enabled && timer.phase && (
+                  <Menu.Item
+                    leftSection={
+                      timer.manualPaused ? (
+                        <Play aria-hidden size={16} />
+                      ) : (
+                        <Pause aria-hidden size={16} />
+                      )
+                    }
+                    onClick={timer.togglePause}
+                  >
+                    {t(
+                      timer.manualPaused
+                        ? "timed_review_resume"
+                        : "timed_review_pause",
+                    )}
+                  </Menu.Item>
+                )}
+                {queue.document!.note.wordId &&
+                  queue.document!.noteType.bindings.definitions !==
+                    undefined && (
+                    <Menu.Item
+                      leftSection={<RefreshCw aria-hidden size={16} />}
+                      onClick={() =>
+                        void refreshNote(word.noteId)
+                          .then(load)
+                          .catch((error: Error) => setError(error.message))
+                      }
+                    >
+                      {t("refresh_from_dictionary")}
+                    </Menu.Item>
+                  )}
                 <Menu.Item
                   leftSection={<Check aria-hidden="true" size={16} />}
                   disabled={busy || !word.wordId}
@@ -292,6 +301,17 @@ export function ReviewPage({
             </Menu>
           </Group>
         </SessionProgress>
+      )}
+      {word && queue?.document && (
+        <CardTools
+          key={queue.document.note.id}
+          opened={toolsNote === queue.document.note.id}
+          onClose={() => setToolsNote("")}
+          document={queue.document}
+          settings={settings}
+          context={context}
+          onChanged={load}
+        />
       )}
       {word && timer.enabled && settings.timedReview.showBar && (
         <HoverCard
@@ -350,7 +370,7 @@ export function ReviewPage({
         </HoverCard>
       )}
       <Modal
-        closeButtonProps={{ "aria-label": t("close") }}
+        closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
         opened={!!lookupSession}
         onClose={() => setLookupSession("")}
         title={t("dictionary_lookup")}
@@ -390,11 +410,13 @@ export function ReviewPage({
               viewportProps={{ tabIndex: 0 }}
               styles={{ content: { minHeight: "100%" } }}
             >
-              <Stack gap="xs" p="md">
+              <Stack gap="xs">
                 <Box
                   data-review-card-header
                   display="grid"
                   data-srs-reader
+                  px="md"
+                  pt="md"
                   style={{
                     gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
                     alignItems: "center",
@@ -467,21 +489,6 @@ export function ReviewPage({
                         <ChevronRight aria-hidden size={16} />
                       </ActionIcon>
                     )}
-                    {queue!.document!.note.wordId &&
-                      queue!.document!.noteType.bindings.definitions !==
-                        undefined && (
-                        <ActionIcon
-                          title={t("refresh_from_dictionary")}
-                          aria-label={t("refresh_from_dictionary")}
-                          onClick={() =>
-                            void refreshNote(word.noteId)
-                              .then(load)
-                              .catch((error: Error) => setError(error.message))
-                          }
-                        >
-                          <RefreshCw aria-hidden size={16} />
-                        </ActionIcon>
-                      )}
                   </Group>
                 </Box>
                 <CardViewer

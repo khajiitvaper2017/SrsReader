@@ -118,6 +118,7 @@ export function SrsSettings({
   return (
     <Stack>
       <Modal
+        closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
         opened={pendingModel !== null}
         onClose={() => setPendingModel(null)}
         title={t("srs_switch_model")}

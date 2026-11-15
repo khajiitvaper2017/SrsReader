@@ -6,8 +6,9 @@ import {
   Badge,
   Button,
   Divider,
+  Flex,
   Group,
-  Paper,
+  Menu,
   Stack,
   Select,
   Text,
@@ -39,7 +40,13 @@ import {
   type DictionaryDisplay,
   type DictionaryRole,
 } from "@/dictionaries/display";
-import { Download, RefreshCw, Trash2, Upload } from "lucide-react";
+import {
+  Download,
+  MoreHorizontal,
+  RefreshCw,
+  Trash2,
+  Upload,
+} from "lucide-react";
 export function DictionarySettings({
   settings,
   dictionaries,
@@ -48,6 +55,7 @@ export function DictionarySettings({
   children,
   role,
   onRoleChange,
+  withTitle,
 }: {
   settings: Settings;
   dictionaries: Dictionary[];
@@ -56,6 +64,7 @@ export function DictionarySettings({
   children?: ReactNode;
   role: DictionaryRole;
   onRoleChange: (role: DictionaryRole) => void;
+  withTitle: boolean;
 }) {
   const {
     busy,
@@ -99,51 +108,50 @@ export function DictionarySettings({
         disabled={busy}
       >
         {(dictionary, controls) => (
-          <Paper p="sm">
-            <Group gap="sm" align="center" wrap="wrap">
-              <Group gap="sm" wrap="nowrap" flex="1 1 16rem" miw={0}>
-                {controls}
-                <Stack gap={0} miw={0} flex={1}>
-                  <strong>{dictionary.index.title}</strong>
-                  <Text variant="supporting">
-                    {isOnlineDictionary(dictionary.id) ? (
-                      t(`${dictionary.id}_online_help`)
-                    ) : (
-                      <>
-                        {dictionary.count > 0
-                          ? t("dictionary_entries", {
-                              language: languageLabel(dictionary.language),
-                              target: dictionary.target
-                                ? languageLabel(dictionary.target)
-                                : t("unspecified"),
-                              count: dictionary.count,
-                            })
-                          : languageLabel(dictionary.language)}
-                        {dictionary.frequencyCount > 0 &&
-                          t("frequency_count", {
-                            count: dictionary.frequencyCount,
-                          })}
-                        {" · "}
-                        {t("dictionary_revision", {
-                          revision: dictionary.index.revision,
+          <Group gap="xs" align="center" wrap="nowrap">
+            {controls}
+            <Flex
+              direction={{ base: "column", sm: "row" }}
+              align={{ base: "stretch", sm: "center" }}
+              gap="xs"
+              flex={1}
+              miw={0}
+            >
+              <Stack gap={0} miw={0} flex={1}>
+                <strong
+                  title={t("dictionary_revision", {
+                    revision: dictionary.index.revision,
+                  })}
+                >
+                  {dictionary.index.title}
+                </strong>
+                <Text variant="supporting">
+                  {isOnlineDictionary(dictionary.id) ? (
+                    t(`${dictionary.id}_online_help`)
+                  ) : (
+                    <>
+                      {dictionary.count > 0
+                        ? t("dictionary_entries", {
+                            target: dictionary.target
+                              ? languageLabel(dictionary.target)
+                              : t("unspecified"),
+                            count: dictionary.count,
+                          })
+                        : languageLabel(dictionary.language)}
+                      {dictionary.frequencyCount > 0 &&
+                        t("frequency_count", {
+                          count: dictionary.frequencyCount,
                         })}
-                      </>
-                    )}
-                  </Text>
-                </Stack>
-              </Group>
-              <Group gap="xs" justify="flex-end" flex="1 1 auto">
-                {dictionary.index.isUpdatable && (
-                  <ActionIcon
-                    title={t("check_updates")}
-                    aria-label={t("check_updates")}
-                    disabled={busy}
-                    onClick={() => checkForUpdate(dictionary)}
-                    variant="subtle"
-                  >
-                    <RefreshCw aria-hidden="true" size={16} />
-                  </ActionIcon>
-                )}
+                    </>
+                  )}
+                </Text>
+              </Stack>
+              <Group
+                gap={4}
+                justify="space-between"
+                wrap="nowrap"
+                w={{ base: "100%", sm: "auto" }}
+              >
                 {updates[dictionary.id] && (
                   <Button
                     disabled={busy}
@@ -156,31 +164,10 @@ export function DictionarySettings({
                     })}
                   </Button>
                 )}
-                {!isOnlineDictionary(dictionary.id) && (
-                  <>
-                    <ActionIcon
-                      title={t("export_zip")}
-                      aria-label={t("export_zip")}
-                      disabled={busy}
-                      onClick={() => exportDictionary(dictionary)}
-                      variant="subtle"
-                    >
-                      <Download aria-hidden="true" size={16} />
-                    </ActionIcon>
-                    <ActionIcon
-                      title={t("remove")}
-                      aria-label={t("remove")}
-                      disabled={busy}
-                      onClick={() => removeDictionary(dictionary)}
-                      variant="subtle"
-                      color="red"
-                    >
-                      <Trash2 aria-hidden="true" size={16} />
-                    </ActionIcon>
-                  </>
-                )}
                 <Select
-                  w={160}
+                  w={{ base: 0, sm: 160 }}
+                  flex={{ base: 1, sm: "0 0 auto" }}
+                  miw={0}
                   aria-label={t("dictionary_display", {
                     title: dictionary.index.title,
                   })}
@@ -214,9 +201,59 @@ export function DictionarySettings({
                         ]
                   }
                 />
+                {(dictionary.index.isUpdatable ||
+                  !isOnlineDictionary(dictionary.id)) && (
+                  <Menu>
+                    <Menu.Target>
+                      <ActionIcon
+                        variant="subtle"
+                        aria-label={t("actions")}
+                        disabled={busy}
+                      >
+                        <MoreHorizontal aria-hidden="true" size={20} />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      {dictionary.index.isUpdatable && (
+                        <Menu.Item
+                          disabled={busy}
+                          onClick={() => checkForUpdate(dictionary)}
+                          leftSection={
+                            <RefreshCw aria-hidden="true" size={16} />
+                          }
+                        >
+                          {t("check_updates")}
+                        </Menu.Item>
+                      )}
+                      {!isOnlineDictionary(dictionary.id) && (
+                        <>
+                          <Menu.Item
+                            disabled={busy}
+                            onClick={() => exportDictionary(dictionary)}
+                            leftSection={
+                              <Download aria-hidden="true" size={16} />
+                            }
+                          >
+                            {t("export_zip")}
+                          </Menu.Item>
+                          <Menu.Item
+                            color="red"
+                            disabled={busy}
+                            onClick={() => removeDictionary(dictionary)}
+                            leftSection={
+                              <Trash2 aria-hidden="true" size={16} />
+                            }
+                          >
+                            {t("remove")}
+                          </Menu.Item>
+                        </>
+                      )}
+                    </Menu.Dropdown>
+                  </Menu>
+                )}
               </Group>
-            </Group>
-          </Paper>
+            </Flex>
+          </Group>
         )}
       </SortableList>
       <Divider />
@@ -227,18 +264,38 @@ export function DictionarySettings({
             : "dictionary_display_help",
         )}
       </Text>
+      <Stack>
+        <Anchor
+          href="https://yomitan.wiki/dictionaries/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t("find_dictionaries")}{" "}
+        </Anchor>
+      </Stack>
+    </Stack>
+  );
+  return (
+    <Stack>
       <Stack
         aria-busy={busy && progressTarget === "dictionary"}
-        onDragOver={(event) => {
-          event.preventDefault();
-        }}
+        onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
           void fileImport(event.dataTransfer.files[0]);
         }}
       >
-        <Text>{t("drop_a_yomitan_format_3_zip")}</Text>
-        <Group>
+        <Group justify="space-between">
+          <Group gap="xs">
+            {withTitle && <Title order={2}>{t("dictionaries")}</Title>}
+            <Badge>
+              {t("dictionaries_installed", {
+                count: visible.filter(
+                  (dictionary) => !isOnlineDictionary(dictionary.id),
+                ).length,
+              })}
+            </Badge>
+          </Group>
           <Button
             disabled={busy}
             onClick={() => fileInput.current?.click()}
@@ -258,95 +315,68 @@ export function DictionarySettings({
             event.target.value = "";
           }}
         />
-      </Stack>
-      <Stack>
-        <Anchor
-          href="https://yomitan.wiki/dictionaries/"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Tabs
+          value={role}
+          onChange={(value) => onRoleChange(value as DictionaryRole)}
+          keepMounted={false}
         >
-          {t("find_dictionaries")}{" "}
-        </Anchor>
+          <Tabs.List mb="sm" aria-label={t("dictionary_types")}>
+            <Tabs.Tab value="vocabulary">
+              {t("vocabulary_dictionaries")}
+            </Tabs.Tab>
+            <Tabs.Tab value="frequency">
+              {t("frequency_dictionary_type")}
+            </Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel value="vocabulary">
+            <Stack>
+              {dictionaryControls}
+              <WiktionaryBrowser
+                key={`${settings.studyLanguage}:${JSON.stringify(settings.nativeLanguages)}`}
+                language={settings.studyLanguage}
+                nativeLanguages={settings.nativeLanguages}
+                busy={busy}
+                onImport={(entry) =>
+                  downloadDictionary(
+                    wiktionaryDownloadUrl(entry),
+                    entry.source,
+                    wiktionaryName(entry),
+                  )
+                }
+              />
+              <WikipediaBrowser
+                key={settings.studyLanguage}
+                language={settings.studyLanguage}
+                busy={busy}
+                onImport={(entry) =>
+                  downloadDictionary(
+                    wikipediaDownloadUrl(entry.file),
+                    entry.code,
+                    `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
+                  )
+                }
+              />
+            </Stack>
+          </Tabs.Panel>
+          <Tabs.Panel value="frequency">
+            <Stack>
+              {dictionaryControls}
+              <FrequencyBrowser
+                key={settings.studyLanguage}
+                language={settings.studyLanguage}
+                busy={busy}
+                onImport={(entry) =>
+                  downloadDictionary(
+                    frequencyDownloadUrl(entry.file),
+                    entry.code,
+                    `${languageName(entry.code)} ${entry.source}`,
+                  )
+                }
+              />
+            </Stack>
+          </Tabs.Panel>
+        </Tabs>
       </Stack>
-    </Stack>
-  );
-  return (
-    <Stack>
-      <Paper>
-        <Stack>
-          <Group justify="space-between">
-            <Title order={2}>{t("dictionaries")}</Title>
-            <Badge>
-              {t("dictionaries_installed", {
-                count: visible.filter(
-                  (dictionary) => !isOnlineDictionary(dictionary.id),
-                ).length,
-              })}
-            </Badge>
-          </Group>
-          <Tabs
-            value={role}
-            onChange={(value) => onRoleChange(value as DictionaryRole)}
-            keepMounted={false}
-          >
-            <Tabs.List mb="sm" aria-label={t("dictionary_types")}>
-              <Tabs.Tab value="vocabulary">
-                {t("vocabulary_dictionaries")}
-              </Tabs.Tab>
-              <Tabs.Tab value="frequency">
-                {t("frequency_dictionaries")}
-              </Tabs.Tab>
-            </Tabs.List>
-            <Tabs.Panel value="vocabulary">
-              <Stack>
-                {dictionaryControls}
-                <WiktionaryBrowser
-                  key={`${settings.studyLanguage}:${JSON.stringify(settings.nativeLanguages)}`}
-                  language={settings.studyLanguage}
-                  nativeLanguages={settings.nativeLanguages}
-                  busy={busy}
-                  onImport={(entry) =>
-                    downloadDictionary(
-                      wiktionaryDownloadUrl(entry),
-                      entry.source,
-                      wiktionaryName(entry),
-                    )
-                  }
-                />
-                <WikipediaBrowser
-                  key={settings.studyLanguage}
-                  language={settings.studyLanguage}
-                  busy={busy}
-                  onImport={(entry) =>
-                    downloadDictionary(
-                      wikipediaDownloadUrl(entry.file),
-                      entry.code,
-                      `${t("corpus_wikipedia")} · ${languageName(entry.code)}`,
-                    )
-                  }
-                />
-              </Stack>
-            </Tabs.Panel>
-            <Tabs.Panel value="frequency">
-              <Stack>
-                {dictionaryControls}
-                <FrequencyBrowser
-                  key={settings.studyLanguage}
-                  language={settings.studyLanguage}
-                  busy={busy}
-                  onImport={(entry) =>
-                    downloadDictionary(
-                      frequencyDownloadUrl(entry.file),
-                      entry.code,
-                      `${languageName(entry.code)} ${entry.source}`,
-                    )
-                  }
-                />
-              </Stack>
-            </Tabs.Panel>
-          </Tabs>
-        </Stack>
-      </Paper>
       {role === "vocabulary" && children}
     </Stack>
   );

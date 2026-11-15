@@ -47,11 +47,29 @@ export function SessionProgress({
         style={{ fontVariantNumeric: "tabular-nums" }}
       >
         {back}
-        <Group flex={1} miw={0} align="center" gap={4}>
-          <Badge color="blue" size="sm">
+        <Group flex={1} miw={0} align="center" gap={4} wrap="wrap">
+          <Badge
+            color="blue"
+            size="sm"
+            maw="100%"
+            h="auto"
+            py={4}
+            styles={{
+              label: { whiteSpace: "normal", overflowWrap: "anywhere" },
+            }}
+          >
             {t("session_queue_new", { value: number(queue.fresh) })}
           </Badge>
-          <Badge color="green" size="sm">
+          <Badge
+            color="green"
+            size="sm"
+            maw="100%"
+            h="auto"
+            py={4}
+            styles={{
+              label: { whiteSpace: "normal", overflowWrap: "anywhere" },
+            }}
+          >
             {t("session_queue_review", { value: number(reviews) })}
           </Badge>
         </Group>

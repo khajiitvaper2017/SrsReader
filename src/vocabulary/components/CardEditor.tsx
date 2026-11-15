@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Button,
   FileButton,
   Group,
@@ -7,6 +6,7 @@ import {
   Modal,
   Select,
   Stack,
+  Tabs,
   Text,
   Title,
 } from "@mantine/core";
@@ -15,7 +15,6 @@ import { liveQuery } from "dexie";
 import type { CardDocument } from "@/cards/model";
 import { fieldText, getCardDocument, readingCard } from "@/cards/storage";
 import { NoteFieldsEditor } from "@/cards/components/NoteFieldsEditor";
-import { Images } from "lucide-react";
 import type { ReadingContext, WordWithCards } from "@/vocabulary/model";
 import { CardFieldsEditor } from "@/vocabulary/components/CardFieldsEditor";
 import { CustomTranslationEditor } from "@/translation/components/CustomTranslationEditor";
@@ -31,20 +30,20 @@ import { saveCardMedia } from "@/media/storage";
 import { useCardMedia } from "@/media/hooks/useCardMedia";
 
 export function CardEditor({
+  opened,
+  onClose,
   word,
   contexts,
   nativeLanguage,
   currentSentence,
-  iconOnly = false,
 }: {
+  opened: boolean;
+  onClose: () => void;
   word: WordWithCards;
   contexts: ReadingContext[];
   nativeLanguage: string;
   currentSentence?: string;
-  /** Use an icon-only trigger in review toolbars. */
-  iconOnly?: boolean;
 }) {
-  const [opened, setOpened] = useState(false);
   const [sentence, setSentence] = useState(
     currentSentence || contexts[0]?.sentence || "",
   );
@@ -55,6 +54,10 @@ export function CardEditor({
   const [error, setError] = useState("");
   useEffect(() => {
     if (!opened) return;
+    stopAudio();
+    setSentence(currentSentence || contexts[0]?.sentence || "");
+    setLoaded(undefined);
+    setError("");
     const subscription = liveQuery(async () => {
       const card = await readingCard(word.id);
       return {
@@ -88,128 +91,125 @@ export function CardEditor({
     ),
   ];
   const wordId = word.id;
-  const open = () => {
-    stopAudio();
-    setSentence(currentSentence || contexts[0]?.sentence || "");
-    setLoaded(undefined);
-    setError("");
-    setOpened(true);
-  };
   return (
-    <>
-      {iconOnly ? (
-        <ActionIcon
-          title={t("card_media")}
-          aria-label={t("card_media")}
-          onClick={open}
-        >
-          <Images aria-hidden size={16} />
-        </ActionIcon>
-      ) : (
-        <Button
-          variant="subtle"
-          leftSection={<Images aria-hidden size={16} />}
-          onClick={open}
-        >
-          {t("card_media")}
-        </Button>
-      )}
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title={t("card_media")}
-        closeButtonProps={{ "aria-label": t("close") }}
-      >
-        {opened && (
-          <Stack>
-            <ErrorBox error={error} />
-            {loaded && !document && !error && (
-              <Text variant="supporting">
-                {t(
-                  word.linkedCards.length
-                    ? "select_reading_card"
-                    : "card_not_found",
-                )}
-              </Text>
-            )}
-            {document && (
-              <>
-                <NoteFieldsEditor noteId={document.note.id} />
-                {document.noteType.bindings.image !== undefined && (
-                  <MediaField
-                    wordId={wordId}
-                    noteId={document.note.id}
-                    kind="background"
-                    sentence=""
-                  />
-                )}
-                {document.noteType.bindings.wordAudio !== undefined && (
-                  <MediaField
-                    wordId={wordId}
-                    noteId={document.note.id}
-                    kind="wordAudio"
-                    sentence=""
-                  />
-                )}
-                {reader && sentences.length > 1 && (
-                  <Select
-                    label={t("card_media_sentence")}
-                    value={selectedSentence || null}
-                    allowDeselect={false}
-                    onChange={(value) => setSentence(value ?? "")}
-                    data={sentences}
-                  />
-                )}
-                {selectedSentence && (
-                  <Text variant="supporting">{selectedSentence}</Text>
-                )}
-                {reader && selectedContext && (
-                  <CustomTranslationEditor
-                    key={`${selectedSentence}:${nativeLanguage}`}
-                    wordId={wordId}
-                    context={selectedContext}
-                    language={nativeLanguage}
-                  />
-                )}
-                {document.noteType.bindings.sentenceAudio !== undefined &&
-                  (selectedSentence || !reader) && (
-                    <MediaField
-                      key={`${document.note.id}:${selectedSentence}`}
-                      wordId={wordId}
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={t("card_media")}
+      closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
+    >
+      {opened && (
+        <Stack>
+          <ErrorBox error={error} />
+          {loaded && !document && !error && (
+            <Text variant="supporting">
+              {t(
+                word.linkedCards.length
+                  ? "select_reading_card"
+                  : "card_not_found",
+              )}
+            </Text>
+          )}
+          {document && (
+            <Tabs
+              key={document.note.id}
+              defaultValue={
+                document.noteType.bindings.image !== undefined ||
+                document.noteType.bindings.wordAudio !== undefined ||
+                document.noteType.bindings.sentenceAudio !== undefined
+                  ? "media"
+                  : "fields"
+              }
+              keepMounted
+              keepMountedMode="display-none"
+            >
+              <Tabs.List>
+                <Tabs.Tab value="fields">{t("card_fields_tab")}</Tabs.Tab>
+                <Tabs.Tab value="media">{t("card_media_tab")}</Tabs.Tab>
+              </Tabs.List>
+              <Tabs.Panel value="fields" pt="md">
+                <Stack>
+                  <NoteFieldsEditor noteId={document.note.id} />
+                  {reader && (
+                    <CardFieldsEditor
+                      key={`${document.note.id}:${document.noteType.id}`}
                       noteId={document.note.id}
-                      kind="audio"
-                      sentence={selectedSentence}
+                      word={{
+                        ...word,
+                        customFields: document.noteType.fields
+                          .slice(10)
+                          .map((field, index) => ({
+                            name: field.label || field.name,
+                            value: fieldText(
+                              document.note.fields[index + 10] || "",
+                              false,
+                            ),
+                          })),
+                      }}
                     />
                   )}
-                {reader && !selectedSentence && (
-                  <Text variant="supporting">
-                    {t("card_media_no_sentence")}
-                  </Text>
-                )}
-                {reader && (
-                  <CardFieldsEditor
-                    key={`${document.note.id}:${document.noteType.id}`}
-                    noteId={document.note.id}
-                    word={{
-                      ...word,
-                      customFields: document.noteType.fields
-                        .slice(10)
-                        .map((field, index) => ({
-                          name: field.label || field.name,
-                          value: fieldText(
-                            document.note.fields[index + 10] || "",
-                            false,
-                          ),
-                        })),
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </Stack>
-        )}
-      </Modal>
-    </>
+                </Stack>
+              </Tabs.Panel>
+              <Tabs.Panel value="media" pt="md">
+                <Stack>
+                  {document.noteType.bindings.image !== undefined && (
+                    <MediaField
+                      wordId={wordId}
+                      noteId={document.note.id}
+                      kind="background"
+                      sentence=""
+                    />
+                  )}
+                  {document.noteType.bindings.wordAudio !== undefined && (
+                    <MediaField
+                      wordId={wordId}
+                      noteId={document.note.id}
+                      kind="wordAudio"
+                      sentence=""
+                    />
+                  )}
+                  {reader && sentences.length > 1 && (
+                    <Select
+                      label={t("card_media_sentence")}
+                      value={selectedSentence || null}
+                      allowDeselect={false}
+                      onChange={(value) => setSentence(value ?? "")}
+                      data={sentences}
+                    />
+                  )}
+                  {selectedSentence && (
+                    <Text variant="supporting">{selectedSentence}</Text>
+                  )}
+                  {reader && selectedContext && (
+                    <CustomTranslationEditor
+                      key={`${selectedSentence}:${nativeLanguage}`}
+                      wordId={wordId}
+                      context={selectedContext}
+                      language={nativeLanguage}
+                    />
+                  )}
+                  {document.noteType.bindings.sentenceAudio !== undefined &&
+                    (selectedSentence || !reader) && (
+                      <MediaField
+                        key={`${document.note.id}:${selectedSentence}`}
+                        wordId={wordId}
+                        noteId={document.note.id}
+                        kind="audio"
+                        sentence={selectedSentence}
+                      />
+                    )}
+                  {reader && !selectedSentence && (
+                    <Text variant="supporting">
+                      {t("card_media_no_sentence")}
+                    </Text>
+                  )}
+                </Stack>
+              </Tabs.Panel>
+            </Tabs>
+          )}
+        </Stack>
+      )}
+    </Modal>
   );
 }
 

@@ -16,10 +16,14 @@ export function useWords({
   settings,
   language,
   deckId,
+  selected,
+  setSelected,
 }: {
   settings: Settings;
   language: string;
   deckId?: string;
+  selected: string;
+  setSelected: (id: string) => void;
 }) {
   const [contexts, setContexts] = useState<SentenceExample[]>([]);
   const [words, setWords] = useState<WordWithCards[]>([]);
@@ -35,14 +39,8 @@ export function useWords({
     useState<Extract<Request, { action: "words" }>["filter"]>("all");
   const [total, setTotal] = useState(0);
   const [search] = useDebouncedValue(query, 150);
-  const [selected, setSelected] = useState("");
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
-  const detailRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    detailRef.current?.scrollTo(0, 0);
-    detailRef.current?.scrollIntoView({ block: "nearest" });
-  }, [selected]);
   function setQuery(value: string) {
     updateQuery(value);
     setPage(1);
@@ -207,7 +205,6 @@ export function useWords({
     setSelected,
     error,
     setError,
-    detailRef,
     word,
     total,
     overview,

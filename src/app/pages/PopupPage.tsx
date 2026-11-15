@@ -100,7 +100,7 @@ export function Popup() {
     }
   }
   return (
-    <Stack gap="md" p="md">
+    <Stack gap="xs" p="md">
       <Group align="center" justify="space-between" component="header">
         <Logo small />
         <ActionIcon
@@ -135,7 +135,10 @@ export function Popup() {
       ) : dictionaryCount === 0 ? (
         <Group align="center">
           <Text>{t("no_dictionary_installed")}</Text>
-          <Button onClick={() => open("settings")} variant="filled">
+          <Button
+            onClick={() => open("settings/dictionaries")}
+            variant="filled"
+          >
             <Upload aria-hidden="true" size={16} />{" "}
             {t("import_dictionary")}{" "}
           </Button>
@@ -156,8 +159,15 @@ export function Popup() {
           )}
         </Button>
       )}
-      <Group align="center">
+      <Stack gap="xs">
         <Switch
+          labelPosition="left"
+          styles={{
+            root: { width: "100%" },
+            body: { minHeight: 44, justifyContent: "space-between" },
+            labelWrapper: { flex: 1 },
+            label: { paddingInlineStart: 0 },
+          }}
           aria-label={t("parse_websites_automatically")}
           checked={!settings.paused}
           onChange={() => void toggle(false)}
@@ -165,6 +175,13 @@ export function Popup() {
         />
         {host && (
           <Switch
+            labelPosition="left"
+            styles={{
+              root: { width: "100%" },
+              body: { minHeight: 44, justifyContent: "space-between" },
+              labelWrapper: { flex: 1 },
+              label: { paddingInlineStart: 0, overflowWrap: "anywhere" },
+            }}
             aria-label={t("enabled_on_host", { host })}
             checked={isWebsiteEnabled(settings, host)}
             onChange={() => void toggle(true)}
@@ -175,7 +192,7 @@ export function Popup() {
             }
           />
         )}
-      </Group>
+      </Stack>
       <Group align="center" justify="space-between" component="footer">
         <Button onClick={() => open("words")} variant="subtle">
           <BookMarked aria-hidden="true" size={16} /> {t("words")}{" "}

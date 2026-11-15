@@ -8,7 +8,6 @@ import {
   Menu,
   Modal,
   MultiSelect,
-  Paper,
   Select,
   SimpleGrid,
   Stack,
@@ -228,7 +227,7 @@ export function AnkiTransfer({
         </Alert>
       )}
       <Modal
-        closeButtonProps={{ "aria-label": t("close") }}
+        closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
         opened={opened !== null}
         onClose={() => {
           if (!busy) {
@@ -402,112 +401,110 @@ export function AnkiTransfer({
                   const missingWord =
                     options.mode === "convert" && bindings.word === undefined;
                   return (
-                    <Paper withBorder p="md" key={type.id} miw={0}>
-                      <Stack>
-                        <Stack gap="xs">
-                          <Title order={3}>{type.name}</Title>
+                    <Stack key={type.id} miw={0}>
+                      <Stack gap="xs">
+                        <Title order={3}>{type.name}</Title>
+                        <Text variant="supporting">
+                          {t("anki_note_type_summary", {
+                            fields: number(type.fields.length),
+                            templates: number(type.templates),
+                            notes: number(type.notes),
+                          })}
+                        </Text>
+                      </Stack>
+                      <AnkiCardPreview
+                        type={type}
+                        preview={preview}
+                        language={options.language}
+                        settings={settings}
+                      />
+                      {missingWord && (
+                        <Alert color="yellow">
+                          {t("anki_word_field_required", { name: type.name })}
+                        </Alert>
+                      )}
+                      {unmapped.length > 0 &&
+                        (options.mode === "convert" ? (
+                          <Alert color="yellow">
+                            {t("anki_unmapped_convert", {
+                              fields: unmapped.join(", "),
+                            })}
+                          </Alert>
+                        ) : (
                           <Text variant="supporting">
-                            {t("anki_note_type_summary", {
-                              fields: number(type.fields.length),
-                              templates: number(type.templates),
-                              notes: number(type.notes),
+                            {t("anki_unmapped_preserve", {
+                              fields: unmapped.join(", "),
                             })}
                           </Text>
-                        </Stack>
-                        <AnkiCardPreview
-                          type={type}
-                          preview={preview}
-                          language={options.language}
-                          settings={settings}
-                        />
-                        {missingWord && (
-                          <Alert color="yellow">
-                            {t("anki_word_field_required", { name: type.name })}
-                          </Alert>
-                        )}
-                        {unmapped.length > 0 &&
-                          (options.mode === "convert" ? (
-                            <Alert color="yellow">
-                              {t("anki_unmapped_convert", {
-                                fields: unmapped.join(", "),
-                              })}
-                            </Alert>
-                          ) : (
-                            <Text variant="supporting">
-                              {t("anki_unmapped_preserve", {
-                                fields: unmapped.join(", "),
-                              })}
-                            </Text>
-                          ))}
-                        <Accordion
-                          key={options.mode}
-                          defaultValue={
-                            options.mode === "convert" ? "mapping" : null
-                          }
-                        >
-                          <Accordion.Item value="mapping">
-                            <Accordion.Control>
-                              {t(
-                                options.mode === "preserve"
-                                  ? "anki_optional_mapping"
-                                  : "anki_field_mapping",
-                              )}
-                            </Accordion.Control>
-                            <Accordion.Panel>
-                              <Stack gap="xs">
-                                <Text variant="supporting">
-                                  {t(
-                                    options.mode === "preserve"
-                                      ? "anki_optional_mapping_help"
-                                      : "anki_mapping_help",
-                                  )}
-                                </Text>
-                                <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-                                  {roles.map((role) => (
-                                    <Select
-                                      key={role}
-                                      label={t(`card_field_${role}`)}
-                                      value={bindings[role]?.toString() ?? ""}
-                                      data={[
-                                        {
-                                          value: "",
-                                          label: t("anki_not_mapped"),
+                        ))}
+                      <Accordion
+                        key={options.mode}
+                        defaultValue={
+                          options.mode === "convert" ? "mapping" : null
+                        }
+                      >
+                        <Accordion.Item value="mapping">
+                          <Accordion.Control>
+                            {t(
+                              options.mode === "preserve"
+                                ? "anki_optional_mapping"
+                                : "anki_field_mapping",
+                            )}
+                          </Accordion.Control>
+                          <Accordion.Panel>
+                            <Stack gap="xs">
+                              <Text variant="supporting">
+                                {t(
+                                  options.mode === "preserve"
+                                    ? "anki_optional_mapping_help"
+                                    : "anki_mapping_help",
+                                )}
+                              </Text>
+                              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+                                {roles.map((role) => (
+                                  <Select
+                                    key={role}
+                                    label={t(`card_field_${role}`)}
+                                    value={bindings[role]?.toString() ?? ""}
+                                    data={[
+                                      {
+                                        value: "",
+                                        label: t("anki_not_mapped"),
+                                      },
+                                      ...type.fields.map((name, index) => ({
+                                        value: String(index),
+                                        label: name,
+                                      })),
+                                    ]}
+                                    required={
+                                      options.mode === "convert" &&
+                                      role === "word"
+                                    }
+                                    error={
+                                      missingWord && role === "word"
+                                        ? t("anki_select_word_field")
+                                        : undefined
+                                    }
+                                    onChange={(value) => {
+                                      const next = { ...bindings };
+                                      if (!value) delete next[role];
+                                      else next[role] = Number(value);
+                                      setOptions({
+                                        ...options,
+                                        bindings: {
+                                          ...options.bindings,
+                                          [type.id]: next,
                                         },
-                                        ...type.fields.map((name, index) => ({
-                                          value: String(index),
-                                          label: name,
-                                        })),
-                                      ]}
-                                      required={
-                                        options.mode === "convert" &&
-                                        role === "word"
-                                      }
-                                      error={
-                                        missingWord && role === "word"
-                                          ? t("anki_select_word_field")
-                                          : undefined
-                                      }
-                                      onChange={(value) => {
-                                        const next = { ...bindings };
-                                        if (!value) delete next[role];
-                                        else next[role] = Number(value);
-                                        setOptions({
-                                          ...options,
-                                          bindings: {
-                                            ...options.bindings,
-                                            [type.id]: next,
-                                          },
-                                        });
-                                      }}
-                                    />
-                                  ))}
-                                </SimpleGrid>
-                              </Stack>
-                            </Accordion.Panel>
-                          </Accordion.Item>
-                        </Accordion>
-                      </Stack>
-                    </Paper>
+                                      });
+                                    }}
+                                  />
+                                ))}
+                              </SimpleGrid>
+                            </Stack>
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      </Accordion>
+                    </Stack>
                   );
                 })}
               </>

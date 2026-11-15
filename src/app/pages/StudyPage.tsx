@@ -13,7 +13,6 @@ import {
   Table,
   Text,
   TextInput,
-  Title,
   VisuallyHidden,
 } from "@mantine/core";
 import { dictionariesClient } from "@/dictionaries/client";
@@ -23,6 +22,7 @@ import { LanguageSelect } from "@/languages/components/LanguageSelect";
 import { settingsClient } from "@/settings/client";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
+import { PageHeader } from "@/shared/ui/PageHeader";
 import { number, t } from "@/shared/i18n/i18n";
 import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
@@ -204,54 +204,56 @@ export function StudyPage({
   ));
   return (
     <Stack>
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <Title order={1}>{t("study_languages")}</Title>
-        <Group gap="xs" wrap="nowrap">
-          <Menu>
-            <Menu.Target>
-              <ActionIcon
-                variant="subtle"
-                aria-label={t("add")}
-                disabled={busy}
-              >
-                <Plus aria-hidden size={20} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                onClick={() => {
-                  setLanguage(settings.studyLanguage);
-                  setModal("language");
-                }}
-              >
-                {t("study_add_language")}
-              </Menu.Item>
-              <Menu.Item
-                leftSection={<FolderPlus size={16} />}
-                onClick={() => {
-                  setError("");
-                  setDeckEditor({
-                    language: settings.studyLanguage,
-                    parentId: null,
-                  });
-                }}
-              >
-                {t("study_add_deck")}
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => {
-                  setLanguage(settings.studyLanguage);
-                  setName("");
-                  setModal("deck");
-                }}
-              >
-                {t("frequency_deck_add")}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-          <AnkiTransfer settings={settings} onComplete={load} />
-        </Group>
-      </Group>
+      <PageHeader
+        title={t("study_languages")}
+        actions={
+          <>
+            <Menu>
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  aria-label={t("add")}
+                  disabled={busy}
+                >
+                  <Plus aria-hidden size={20} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  onClick={() => {
+                    setLanguage(settings.studyLanguage);
+                    setModal("language");
+                  }}
+                >
+                  {t("study_add_language")}
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<FolderPlus size={16} />}
+                  onClick={() => {
+                    setError("");
+                    setDeckEditor({
+                      language: settings.studyLanguage,
+                      parentId: null,
+                    });
+                  }}
+                >
+                  {t("study_add_deck")}
+                </Menu.Item>
+                <Menu.Item
+                  onClick={() => {
+                    setLanguage(settings.studyLanguage);
+                    setName("");
+                    setModal("deck");
+                  }}
+                >
+                  {t("frequency_deck_add")}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+            <AnkiTransfer settings={settings} onComplete={load} />
+          </>
+        }
+      />
       <TaskAlerts
         busy={busy}
         error={modal || confirmation ? "" : error}
@@ -275,13 +277,13 @@ export function StudyPage({
                 <Table.Th p={0}>
                   <VisuallyHidden>{t("study_language_deck")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w="3.5rem">
+                <Table.Th p={0} w={{ base: "2.75rem", sm: "3.5rem" }}>
                   <VisuallyHidden>{t("new")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w="3.5rem">
+                <Table.Th p={0} w={{ base: "2.75rem", sm: "3.5rem" }}>
                   <VisuallyHidden>{t("srs_queue_learning")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w="3.5rem">
+                <Table.Th p={0} w={{ base: "2.75rem", sm: "3.5rem" }}>
                   <VisuallyHidden>{t("due")}</VisuallyHidden>
                 </Table.Th>
                 <Table.Th p={0} w="2.75rem">
@@ -291,9 +293,6 @@ export function StudyPage({
             </Table.Thead>
             <Table.Tbody>{rows}</Table.Tbody>
           </Table>
-          <Text variant="supporting" mt="xs">
-            {t("study_overview_help")}
-          </Text>
         </Box>
       )}
       <ReviewStatistics />
@@ -309,6 +308,7 @@ export function StudyPage({
         />
       )}
       <Modal
+        closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
         opened={modal !== null}
         onClose={() => {
           if (!busy) setModal(null);
@@ -618,10 +618,11 @@ function StudyRows({
             noWrap
             p={0}
             fw={deck.id ? undefined : 600}
-            disabled={busy || !deck.total}
+            disabled={busy}
+            aria-disabled={!deck.total || busy}
             onClick={(event) => {
               event.stopPropagation();
-              void start(row.language, deck.id);
+              if (deck.total) void start(row.language, deck.id);
             }}
           />
         );

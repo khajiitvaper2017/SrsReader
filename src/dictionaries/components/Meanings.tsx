@@ -286,7 +286,7 @@ export function Meanings({
                   failure?: ReactNode,
                 ) => (
                   <Stack key={index} gap="xs">
-                    <Group wrap="nowrap" align="flex-start" data-srs-reader>
+                    <Group wrap="nowrap" align="center" data-srs-reader>
                       <Group style={{ flex: 1, minWidth: 0 }}>
                         <Text variant="supporting" component="span">
                           {meaning.dictionaryId === "personal"

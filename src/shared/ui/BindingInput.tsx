@@ -41,6 +41,12 @@ export function BindingInput({
       data-binding-input
       label={label}
       error={error}
+      inputWrapperOrder={["label", "input", "description", "error"]}
+      description={
+        recording
+          ? t(hover ? "binding_capture_hover_help" : "binding_capture_help")
+          : undefined
+      }
       readOnly
       value={recording ? "" : value ? bindingLabel(value) : ""}
       placeholder={t(

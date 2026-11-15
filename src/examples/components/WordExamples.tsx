@@ -58,7 +58,7 @@ export function WordExamples({
     return installed ? null : (
       <Anchor
         data-srs-reader=""
-        href={browser.runtime.getURL("/app.html") + "#settings"}
+        href={`${browser.runtime.getURL("/app.html")}#settings/dictionaries?${new URLSearchParams({ language: word.language, dictionary: "vocabulary" })}`}
         target="_blank"
         rel="noopener noreferrer"
       >

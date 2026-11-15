@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Group, Stack, Text } from "@mantine/core";
+import { ActionIcon, Box, Group, Stack, VisuallyHidden } from "@mantine/core";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useId, type ReactNode } from "react";
 import { t } from "@/shared/i18n/i18n";
@@ -21,11 +21,9 @@ export function SortableList<T>({
 }) {
   const help = useId();
   return (
-    <Stack>
-      <Text id={help} variant="supporting">
-        {t("reorder_help")}
-      </Text>
-      <Stack role="list">
+    <Stack gap="xs">
+      <VisuallyHidden id={help}>{t("reorder_help")}</VisuallyHidden>
+      <Stack gap="xs" role="list">
         {items.map((item, index) => {
           const id = getId(item);
           const name = getLabel(item);

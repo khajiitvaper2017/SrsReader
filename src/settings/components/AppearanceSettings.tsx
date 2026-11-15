@@ -1,4 +1,4 @@
-import { ColorInput, Paper, Select, Stack, Title } from "@mantine/core";
+import { ColorInput, SimpleGrid, Select, Stack, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -13,18 +13,17 @@ export function AppearanceSettings({
   const [accentColor, setAccentColor] = useState(settings.accentColor);
   useEffect(() => setAccentColor(settings.accentColor), [settings.accentColor]);
   return (
-    <Paper>
-      <Stack>
-        <Title order={2}>{t("appearance")}</Title>
+    <Stack>
+      <Title order={2}>{t("appearance")}</Title>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
         <Select
-          maw={480}
           value={settings.theme}
           onChange={(theme) =>
             void onChange({
               theme: theme as Settings["theme"],
             })
           }
-          aria-label={t("appearance")}
+          label={t("appearance")}
           data={[
             { value: "system", label: t("system") },
             { value: "light", label: t("light") },
@@ -34,13 +33,12 @@ export function AppearanceSettings({
         />
         <ColorInput
           label={t("accent_color")}
-          maw={480}
           value={accentColor}
           onChange={setAccentColor}
           onChangeEnd={(accentColor) => void onChange({ accentColor })}
           disallowInput={false}
         />
-      </Stack>
-    </Paper>
+      </SimpleGrid>
+    </Stack>
   );
 }

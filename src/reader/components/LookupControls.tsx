@@ -84,7 +84,6 @@ export function LookupControls({
           hover
         />
       </SimpleGrid>
-      <Text variant="supporting">{t("lookup_binding_capture_help")}</Text>
     </Stack>
   );
 }

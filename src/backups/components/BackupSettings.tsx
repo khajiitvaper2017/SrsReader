@@ -1,11 +1,10 @@
 import {
   Alert,
+  ActionIcon,
   Button,
   Divider,
   FileButton,
   Group,
-  Paper,
-  SimpleGrid,
   Stack,
   Text,
   Title,
@@ -31,33 +30,33 @@ export function BackupSettings({
     });
   const resetFullInput = useRef<() => void>(null);
   return (
-    <Paper>
-      <Stack>
-        <Group justify="space-between" align="flex-start">
-          <Title order={2}>{t("import_export")}</Title>
-          <Text fw={500} role="status" aria-live="polite">
-            {storageUsage === undefined
-              ? t("storage_usage_loading")
-              : storageUsage === null
-                ? t("storage_usage_unavailable")
-                : t("browser_storage_used", {
-                    size: downloadSize(storageUsage),
-                  })}
-          </Text>
-        </Group>
-        <SimpleGrid cols={{ base: 1, md: 3 }}>
-          <Stack gap="sm">
+    <Stack>
+      <Group justify="space-between" align="flex-start">
+        <Title order={2}>{t("import_export")}</Title>
+        <Text fw={500} role="status" aria-live="polite">
+          {storageUsage === undefined
+            ? t("storage_usage_loading")
+            : storageUsage === null
+              ? t("storage_usage_unavailable")
+              : t("browser_storage_used", {
+                  size: downloadSize(storageUsage),
+                })}
+        </Text>
+      </Group>
+      <Stack gap="md">
+        <Stack gap="xs">
+          <Group gap="xs" justify="space-between" wrap="nowrap">
             <Title order={3}>{t("full_backup")}</Title>
-            <Text variant="supporting">{t("full_backup_description")}</Text>
-            <Stack gap="xs" mt="auto">
-              <Button
+            <Group gap="xs" wrap="nowrap">
+              <ActionIcon
                 disabled={busy}
                 variant="default"
+                aria-label={t("full_backup_export")}
+                title={t("full_backup_export")}
                 onClick={() => void fullExport()}
               >
-                <Download aria-hidden="true" size={16} />{" "}
-                {t("full_backup_export")}
-              </Button>
+                <Download aria-hidden="true" size={16} />
+              </ActionIcon>
               <FileButton
                 accept=".zip"
                 resetRef={resetFullInput}
@@ -69,26 +68,34 @@ export function BackupSettings({
                 }}
               >
                 {(props) => (
-                  <Button {...props} disabled={busy}>
-                    <Upload aria-hidden="true" size={16} />{" "}
-                    {t("full_backup_import")}
-                  </Button>
+                  <ActionIcon
+                    {...props}
+                    disabled={busy}
+                    variant="default"
+                    aria-label={t("full_backup_import")}
+                    title={t("full_backup_import")}
+                  >
+                    <Upload aria-hidden="true" size={16} />
+                  </ActionIcon>
                 )}
               </FileButton>
-            </Stack>
-          </Stack>
-          <Stack gap="sm">
+            </Group>
+          </Group>
+          <Text variant="supporting">{t("full_backup_description")}</Text>
+        </Stack>
+        <Stack gap="xs">
+          <Group gap="xs" justify="space-between" wrap="nowrap">
             <Title order={3}>{t("settings")}</Title>
-            <Text variant="supporting">{t("settings_backup_description")}</Text>
-            <Stack gap="xs" mt="auto">
-              <Button
+            <Group gap="xs" wrap="nowrap">
+              <ActionIcon
                 disabled={busy}
-                onClick={() => void task(exportSettings)}
                 variant="default"
+                aria-label={t("export_json")}
+                title={t("export_json")}
+                onClick={() => void task(exportSettings)}
               >
-                <Download aria-hidden="true" size={16} />{" "}
-                {t("export_json")}{" "}
-              </Button>
+                <Download aria-hidden="true" size={16} />
+              </ActionIcon>
               <FileButton
                 accept=".json"
                 disabled={busy}
@@ -97,27 +104,34 @@ export function BackupSettings({
                 }}
               >
                 {(props) => (
-                  <Button {...props} disabled={busy}>
-                    <Upload aria-hidden="true" size={16} />{" "}
-                    {t("import_json")}{" "}
-                  </Button>
+                  <ActionIcon
+                    {...props}
+                    disabled={busy}
+                    variant="default"
+                    aria-label={t("import_json")}
+                    title={t("import_json")}
+                  >
+                    <Upload aria-hidden="true" size={16} />
+                  </ActionIcon>
                 )}
               </FileButton>
-            </Stack>
-          </Stack>
-          <Stack gap="sm">
+            </Group>
+          </Group>
+          <Text variant="supporting">{t("settings_backup_description")}</Text>
+        </Stack>
+        <Stack gap="xs">
+          <Group gap="xs" justify="space-between" wrap="nowrap">
             <Title order={3}>{t("words_progress")}</Title>
-            <Text variant="supporting">
-              {t("includes_sentences_review_history_and_saved_audio")}
-            </Text>
-            <Stack gap="xs" mt="auto">
-              <Button
+            <Group gap="xs" wrap="nowrap">
+              <ActionIcon
                 disabled={busy}
-                onClick={() => void task(exportLearning)}
                 variant="default"
+                aria-label={t("export_zip")}
+                title={t("export_zip")}
+                onClick={() => void task(exportLearning)}
               >
-                <Download aria-hidden="true" size={16} /> {t("export_zip")}{" "}
-              </Button>
+                <Download aria-hidden="true" size={16} />
+              </ActionIcon>
               <FileButton
                 accept=".zip"
                 disabled={busy}
@@ -126,34 +140,42 @@ export function BackupSettings({
                 }}
               >
                 {(props) => (
-                  <Button {...props} disabled={busy}>
-                    <Upload aria-hidden="true" size={16} />{" "}
-                    {t("import_zip")}{" "}
-                  </Button>
+                  <ActionIcon
+                    {...props}
+                    disabled={busy}
+                    variant="default"
+                    aria-label={t("import_zip")}
+                    title={t("import_zip")}
+                  >
+                    <Upload aria-hidden="true" size={16} />
+                  </ActionIcon>
                 )}
               </FileButton>
-            </Stack>
-          </Stack>
-        </SimpleGrid>
-        <Text variant="supporting">{t("full_backup_limits")}</Text>
-        <Divider />
-        <Stack gap="sm">
-          <Title order={3}>{t("cleanup_title")}</Title>
-          <Text variant="supporting">{t("cleanup_description")}</Text>
-          <Group>
-            <Button
-              variant="default"
-              disabled={busy}
-              onClick={() => void cleanup()}
-            >
-              <Eraser aria-hidden="true" size={16} /> {t("cleanup_database")}
-            </Button>
+            </Group>
           </Group>
+          <Text variant="supporting">
+            {t("includes_sentences_review_history_and_saved_audio")}
+          </Text>
         </Stack>
-        <Alert color="yellow">
-          {t("imports_replace_the_selected_category_export_your_progress")}
-        </Alert>
       </Stack>
-    </Paper>
+      <Text variant="supporting">{t("full_backup_limits")}</Text>
+      <Divider />
+      <Stack gap="sm">
+        <Group justify="space-between" wrap="nowrap">
+          <Title order={3}>{t("cleanup_title")}</Title>
+          <Button
+            variant="default"
+            disabled={busy}
+            onClick={() => void cleanup()}
+          >
+            <Eraser aria-hidden="true" size={16} /> {t("cleanup_database")}
+          </Button>
+        </Group>
+        <Text variant="supporting">{t("cleanup_description")}</Text>
+      </Stack>
+      <Alert color="yellow">
+        {t("imports_replace_the_selected_category_export_your_progress")}
+      </Alert>
+    </Stack>
   );
 }

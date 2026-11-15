@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import {
+  Accordion,
   ActionIcon,
   Anchor,
   Button,
   Group,
   Modal,
-  Paper,
+  Menu,
   Stack,
   Switch,
   Text,
-  Title,
 } from "@mantine/core";
 import { downloadSize, i18n, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
 import { useSync } from "@/sync/hooks/useSync";
-import { RefreshCw } from "lucide-react";
+import { MoreHorizontal, RefreshCw } from "lucide-react";
 
 export function SyncSettings() {
   const sync = useSync({ refreshStorageOnMount: true });
@@ -47,9 +47,8 @@ export function SyncSettings() {
     : "";
 
   return (
-    <Paper>
+    <>
       <Stack gap="sm">
-        <Title order={2}>{t("sync_title")}</Title>
         <Text variant="supporting">{t("sync_help")}</Text>
         {loading && (
           <Text variant="supporting" role="status" aria-live="polite">
@@ -75,6 +74,12 @@ export function SyncSettings() {
             )}
             <Switch
               label={t("sync_automatic")}
+              labelPosition="left"
+              styles={{
+                body: { width: "100%", minHeight: 44, alignItems: "center" },
+                labelWrapper: { flex: 1 },
+                track: { flexShrink: 0 },
+              }}
               description={t("sync_automatic_help")}
               checked={status.automatic}
               disabled={!status.connected || !status.configured || busy}
@@ -98,57 +103,66 @@ export function SyncSettings() {
               </Text>
             </Stack>
             {status.connected && (
-              <Stack gap="xs">
-                <Group justify="space-between" wrap="nowrap" gap="xs">
-                  <Text fw={500} role="status" aria-live="polite">
-                    {status.storage
-                      ? status.storage.bytes === null
-                        ? t("sync_storage_unavailable")
-                        : t("sync_storage_used", {
-                            size: downloadSize(status.storage.bytes),
-                          })
-                      : t("sync_storage_not_checked")}
-                  </Text>
-                  <ActionIcon
-                    variant="subtle"
-                    aria-label={t("sync_storage_refresh")}
-                    title={t("sync_storage_refresh")}
-                    loading={
-                      operation === "storage" || progress?.phase === "storage"
-                    }
-                    disabled={busy || loading}
-                    onClick={() => void sync.refreshStorage()}
-                  >
-                    <RefreshCw aria-hidden size={16} />
-                  </ActionIcon>
-                </Group>
-                {status.storage && (
-                  <Text variant="supporting">
-                    {t("sync_storage_files", { count: status.storage.files })}
-                    {" · "}
-                    {t("sync_storage_checked", {
-                      time: new Date(status.storage.updated).toLocaleString(
-                        i18n.resolvedLanguage,
-                        {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        },
-                      ),
-                    })}
-                  </Text>
-                )}
-                <Text variant="supporting">{t("sync_storage_help")}</Text>
-                <Text variant="supporting">
-                  {t("sync_storage_hidden_help")}{" "}
-                  <Anchor
-                    href="https://drive.google.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t("sync_open_drive")}
-                  </Anchor>
-                </Text>
-              </Stack>
+              <Accordion>
+                <Accordion.Item value="storage">
+                  <Accordion.Control>{t("sync_storage")}</Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap="xs">
+                      <Group justify="space-between" wrap="nowrap" gap="xs">
+                        <Text fw={500} role="status" aria-live="polite">
+                          {status.storage
+                            ? status.storage.bytes === null
+                              ? t("sync_storage_unavailable")
+                              : t("sync_storage_used", {
+                                  size: downloadSize(status.storage.bytes),
+                                })
+                            : t("sync_storage_not_checked")}
+                        </Text>
+                        <ActionIcon
+                          variant="subtle"
+                          aria-label={t("sync_storage_refresh")}
+                          title={t("sync_storage_refresh")}
+                          loading={
+                            operation === "storage" ||
+                            progress?.phase === "storage"
+                          }
+                          disabled={busy || loading}
+                          onClick={() => void sync.refreshStorage()}
+                        >
+                          <RefreshCw aria-hidden size={16} />
+                        </ActionIcon>
+                      </Group>
+                      {status.storage && (
+                        <Text variant="supporting">
+                          {t("sync_storage_files", {
+                            count: status.storage.files,
+                          })}
+                          {" · "}
+                          {t("sync_storage_checked", {
+                            time: new Date(
+                              status.storage.updated,
+                            ).toLocaleString(i18n.resolvedLanguage, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            }),
+                          })}
+                        </Text>
+                      )}
+                      <Text variant="supporting">{t("sync_storage_help")}</Text>
+                      <Text variant="supporting">
+                        {t("sync_storage_hidden_help")}{" "}
+                        <Anchor
+                          href="https://drive.google.com/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("sync_open_drive")}
+                        </Anchor>
+                      </Text>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
             )}
             {(status.running ||
               operation === "connect" ||
@@ -172,23 +186,19 @@ export function SyncSettings() {
           <ErrorBox error={errorMessage} />
         )}
         <Group gap="xs" wrap="wrap">
-          <Button
-            disabled={!canConnect}
-            loading={operation === "connect"}
-            onClick={() => {
-              if (status?.connected && !status.authorizationRequired)
-                setReplaceAccount(true);
-              else void sync.connect();
-            }}
-          >
-            {t(
-              status?.authorizationRequired
-                ? "sync_reconnect"
-                : status?.connected
-                  ? "sync_change_account"
+          {(!status?.connected || status.authorizationRequired) && (
+            <Button
+              disabled={!canConnect}
+              loading={operation === "connect"}
+              onClick={() => void sync.connect()}
+            >
+              {t(
+                status?.authorizationRequired
+                  ? "sync_reconnect"
                   : "sync_connect",
-            )}
-          </Button>
+              )}
+            </Button>
+          )}
           <Button
             variant="default"
             disabled={
@@ -199,14 +209,32 @@ export function SyncSettings() {
             {t("sync_now")}
           </Button>
           {status?.account && (
-            <Button
-              variant="subtle"
-              disabled={busy || loading}
-              loading={operation === "disconnect"}
-              onClick={() => void sync.disconnect()}
-            >
-              {t("sync_disconnect")}
-            </Button>
+            <Menu>
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  aria-label={t("actions")}
+                  disabled={busy || loading}
+                  loading={operation === "disconnect"}
+                >
+                  <MoreHorizontal aria-hidden size={20} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  disabled={!canConnect}
+                  onClick={() => setReplaceAccount(true)}
+                >
+                  {t("sync_change_account")}
+                </Menu.Item>
+                <Menu.Item
+                  disabled={busy || loading}
+                  onClick={() => void sync.disconnect()}
+                >
+                  {t("sync_disconnect")}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           )}
           {(status?.running ||
             operation === "connect" ||
@@ -234,7 +262,7 @@ export function SyncSettings() {
         opened={replaceAccount}
         onClose={() => setReplaceAccount(false)}
         title={t("sync_change_account_title")}
-        closeButtonProps={{ "aria-label": t("sync_cancel") }}
+        closeButtonProps={{ "aria-label": t("sync_cancel"), size: "xl" }}
         centered
         data-srs-reader
       >
@@ -260,6 +288,6 @@ export function SyncSettings() {
           </Group>
         </Stack>
       </Modal>
-    </Paper>
+    </>
   );
 }

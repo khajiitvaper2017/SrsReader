@@ -1,16 +1,15 @@
 import {
   Accordion,
+  ActionIcon,
   Anchor,
   Button,
   Group,
   Flex,
-  Paper,
   Select,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
-  Title,
 } from "@mantine/core";
 import { Meanings } from "@/dictionaries/components/Meanings";
 import { definitionText } from "@/dictionaries/definitions";
@@ -19,6 +18,7 @@ import { languageLabel } from "@/languages/codes";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
+import { PageHeader } from "@/shared/ui/PageHeader";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
@@ -31,20 +31,64 @@ export function SearchPage({ settings }: { settings: Settings }) {
   const available = dictionaries.some((d) => d.language === language);
   return (
     <Stack>
-      <Title order={1}>{t("dictionary_search")}</Title>
+      <PageHeader title={t("dictionary_search")} />
       <ErrorBox error={error} />
-      <Paper
+      <Stack
         component="form"
+        gap="xs"
         onSubmit={(event) => {
           event.preventDefault();
           if (query.trim() && available && !busy)
             controller.search({ query: query.trim(), language, mode });
         }}
       >
-        <Stack>
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+        <Flex
+          direction={{ base: "column", md: "row" }}
+          gap="xs"
+          align="flex-end"
+        >
+          <Group
+            wrap="nowrap"
+            gap="xs"
+            flex={1}
+            w={{ base: "100%", md: "auto" }}
+            miw={0}
+          >
+            <TextInput
+              flex={1}
+              miw={0}
+              type="search"
+              aria-label={t("dictionary_search_query")}
+              placeholder={t("search")}
+              required
+              maxLength={500}
+              disabled={busy}
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                controller.clear();
+              }}
+            />
+            <ActionIcon
+              type="submit"
+              variant="filled"
+              color="accent"
+              aria-label={t("dictionary_search_action")}
+              title={t("dictionary_search_action")}
+              loading={busy}
+              disabled={!ready || !available || !query.trim()}
+            >
+              <Search aria-hidden size={20} />
+            </ActionIcon>
+          </Group>
+          <SimpleGrid
+            cols={2}
+            spacing="xs"
+            flex={1}
+            w={{ base: "100%", md: "auto" }}
+          >
             <Select
-              label={t("language")}
+              aria-label={t("language")}
               searchable
               disabled={!ready || busy}
               value={language}
@@ -59,7 +103,7 @@ export function SearchPage({ settings }: { settings: Settings }) {
               }}
             />
             <Select
-              label={t("dictionary_search_by")}
+              aria-label={t("dictionary_search_by")}
               disabled={busy}
               value={mode}
               data={[
@@ -77,45 +121,14 @@ export function SearchPage({ settings }: { settings: Settings }) {
               }}
             />
           </SimpleGrid>
-          <Flex
-            align="flex-end"
-            direction={{ base: "column", xs: "row" }}
-            gap="sm"
-          >
-            <TextInput
-              flex={{ base: "auto", xs: 1 }}
-              w={{ base: "100%", xs: "auto" }}
-              miw={0}
-              type="search"
-              label={t("dictionary_search_query")}
-              required
-              maxLength={500}
-              disabled={busy}
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                controller.clear();
-              }}
-            />
-            <Button
-              w={{ base: "100%", xs: "auto" }}
-              type="submit"
-              leftSection={<Search size={16} />}
-              loading={busy}
-              disabled={!ready || !available || !query.trim()}
-            >
-              {t("dictionary_search_action")}
-            </Button>
-          </Flex>
-          <Text variant="supporting">{t("dictionary_search_help")}</Text>
-          {ready && !available && (
-            <Text variant="supporting">
-              {t("dictionary_search_no_dictionaries")}{" "}
-              <Anchor href="#settings/dictionaries">{t("dictionaries")}</Anchor>
-            </Text>
-          )}
-        </Stack>
-      </Paper>
+        </Flex>
+        {ready && !available && (
+          <Text variant="supporting">
+            {t("dictionary_search_no_dictionaries")}{" "}
+            <Anchor href="#settings/dictionaries">{t("dictionaries")}</Anchor>
+          </Text>
+        )}
+      </Stack>
       <Stack aria-live="polite" aria-busy={busy}>
         {result && (
           <Text variant="supporting">
@@ -125,35 +138,35 @@ export function SearchPage({ settings }: { settings: Settings }) {
           </Text>
         )}
         {!!result?.entries.length && (
-          <Paper>
-            <Accordion order={2} multiple keepMounted={false}>
-              {result.entries.map((entry) => (
-                <Accordion.Item key={entry.id} value={entry.id}>
-                  <Accordion.Control
-                    aria-label={`${entry.key} · ${entry.meaning.title}`}
-                  >
-                    <Text fw={600}>
-                      {entry.key}
+          <Accordion order={2} multiple keepMounted={false}>
+            {result.entries.map((entry) => (
+              <Accordion.Item key={entry.id} value={entry.id}>
+                <Accordion.Control
+                  aria-label={`${entry.key} · ${entry.meaning.title}`}
+                >
+                  <Group gap="xs" justify="space-between">
+                    <Text fw={600}>{entry.key}</Text>
+                    <Text variant="supporting">
                       {entry.reading && entry.reading !== entry.key
-                        ? ` · ${entry.reading}`
+                        ? `${entry.reading} · `
                         : ""}
+                      {entry.meaning.title}
                     </Text>
-                    <Text variant="supporting">{entry.meaning.title}</Text>
-                    <Text variant="supporting" lineClamp={2}>
-                      {definitionText(entry.meaning.definitions)}
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Meanings
-                      meanings={[entry.meaning]}
-                      language={language}
-                      settings={settings}
-                    />
-                  </Accordion.Panel>
-                </Accordion.Item>
-              ))}
-            </Accordion>
-          </Paper>
+                  </Group>
+                  <Text variant="supporting" lineClamp={2}>
+                    {definitionText(entry.meaning.definitions)}
+                  </Text>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <Meanings
+                    meanings={[entry.meaning]}
+                    language={language}
+                    settings={settings}
+                  />
+                </Accordion.Panel>
+              </Accordion.Item>
+            ))}
+          </Accordion>
         )}
         {result?.hasMore && (
           <Group justify="center">
