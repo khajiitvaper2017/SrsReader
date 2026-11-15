@@ -24,20 +24,26 @@ export function PageHeader({
     <Group h="100%" gap={0} wrap="nowrap" data-page-header>
       {back ? (
         <ActionIcon
+          size="xl"
+          ml="-sm"
+          mr="xs"
           aria-label={back.label}
           title={back.label}
           onClick={back.onClick}
         >
-          <ArrowLeft aria-hidden size={20} />
+          <ArrowLeft aria-hidden size={24} />
         </ActionIcon>
       ) : openNavigation ? (
         <ActionIcon
+          size="xl"
+          ml="-sm"
+          mr="xs"
           data-navigation-trigger
           hiddenFrom="md"
           aria-label={t("pages")}
           onClick={openNavigation}
         >
-          <Menu aria-hidden size={20} />
+          <Menu aria-hidden size={24} />
         </ActionIcon>
       ) : null}
       <Title
