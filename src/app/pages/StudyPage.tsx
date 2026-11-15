@@ -271,6 +271,7 @@ export function StudyPage({
             tabularNums
             withRowBorders={false}
             highlightOnHover
+            highlightOnHoverColor="color-mix(in srgb, var(--mantine-color-accent-6) 8%, transparent)"
           >
             <Table.Thead>
               <Table.Tr>
@@ -286,7 +287,7 @@ export function StudyPage({
                 <Table.Th p={0} w={{ base: "2.75rem", sm: "3.5rem" }}>
                   <VisuallyHidden>{t("due")}</VisuallyHidden>
                 </Table.Th>
-                <Table.Th p={0} w="2.75rem">
+                <Table.Th p={0} w="calc(2.75rem + var(--mantine-spacing-xs))">
                   <VisuallyHidden>{t("study_deck_actions")}</VisuallyHidden>
                 </Table.Th>
               </Table.Tr>
@@ -617,6 +618,7 @@ function StudyRows({
             miw={0}
             noWrap
             p={0}
+            bg="transparent"
             fw={deck.id ? undefined : 600}
             disabled={busy}
             aria-disabled={!deck.total || busy}
@@ -698,7 +700,9 @@ function StudyRows({
                 </Text>
               </Table.Td>
             ))}
-            <Table.Td ta="right">{actions}</Table.Td>
+            <Table.Td ta="right" pl="xs">
+              {actions}
+            </Table.Td>
           </Table.Tr>
         );
       })}
