@@ -1,15 +1,6 @@
 import type { DictionaryRole } from "@/dictionaries/display";
 import { isOnlineDictionary } from "@/dictionaries/online";
-import {
-  Button,
-  Group,
-  Select,
-  Switch,
-  Box,
-  Text,
-  Stack,
-  Title,
-} from "@mantine/core";
+import { Button, Group, Select, Switch, Box, Text, Stack } from "@mantine/core";
 import { AudioSettings } from "@/audio/components/AudioSettings";
 import { audioClient } from "@/audio/client";
 import { BackupSettings } from "@/backups/components/BackupSettings";
@@ -267,48 +258,47 @@ export function SettingsPage({
       </Box>
       <Box style={{ display: selected === "audio" ? undefined : "none" }}>
         {withLanguagePicker(
-          <Stack>
-            <AudioSettings settings={settings} onChange={update} />
-            <Stack>
-              <Title order={2}>{t("translation")}</Title>
-              <Switch
-                labelPosition="left"
-                w="100%"
-                styles={{
-                  body: { width: "100%", minHeight: 44, alignItems: "center" },
-                  labelWrapper: { flex: 1 },
-                  track: { flexShrink: 0 },
-                }}
-                label={t("auto_translate_sentences")}
-                checked={settings.autoTranslateSentences}
-                onChange={(event) =>
-                  void update({
-                    autoTranslateSentences: event.currentTarget.checked,
-                  })
-                }
-              />
-              <Switch
-                labelPosition="left"
-                w="100%"
-                styles={{
-                  body: { width: "100%", minHeight: 44, alignItems: "center" },
-                  labelWrapper: { flex: 1 },
-                  track: { flexShrink: 0 },
-                }}
-                label={t("auto_translate_definitions")}
-                checked={settings.autoTranslateDefinitions}
-                onChange={(event) =>
-                  void update({
-                    autoTranslateDefinitions: event.currentTarget.checked,
-                  })
-                }
-              />
-              <Text variant="supporting">
-                {t("translation_stays_on_your_device_models_download_on")}
-              </Text>
-            </Stack>
-          </Stack>,
+          <AudioSettings settings={settings} onChange={update} />,
         )}
+      </Box>
+      <Box style={{ display: selected === "translation" ? undefined : "none" }}>
+        <Stack>
+          <Switch
+            labelPosition="left"
+            w="100%"
+            styles={{
+              body: { width: "100%", minHeight: 44, alignItems: "center" },
+              labelWrapper: { flex: 1 },
+              track: { flexShrink: 0 },
+            }}
+            label={t("auto_translate_sentences")}
+            checked={settings.autoTranslateSentences}
+            onChange={(event) =>
+              void update({
+                autoTranslateSentences: event.currentTarget.checked,
+              })
+            }
+          />
+          <Switch
+            labelPosition="left"
+            w="100%"
+            styles={{
+              body: { width: "100%", minHeight: 44, alignItems: "center" },
+              labelWrapper: { flex: 1 },
+              track: { flexShrink: 0 },
+            }}
+            label={t("auto_translate_definitions")}
+            checked={settings.autoTranslateDefinitions}
+            onChange={(event) =>
+              void update({
+                autoTranslateDefinitions: event.currentTarget.checked,
+              })
+            }
+          />
+          <Text variant="supporting">
+            {t("translation_stays_on_your_device_models_download_on")}
+          </Text>
+        </Stack>
       </Box>
       <Box style={{ display: selected === "sync" ? undefined : "none" }}>
         <SyncSettings />

@@ -141,16 +141,15 @@ export function App() {
           />
           {id === "settings" && (
             <Stack gap={0} pl="xl">
-              {settingsSections.map((section) => (
+              {settingsSections.map(({ value, label, icon: Icon }) => (
                 <NavLink
                   component="a"
-                  key={section.value}
-                  href={`#settings/${section.value}${query ? `?${query}` : ""}`}
-                  label={t(section.label)}
-                  active={settingsSection === section.value}
-                  aria-current={
-                    settingsSection === section.value ? "page" : undefined
-                  }
+                  key={value}
+                  href={`#settings/${value}${query ? `?${query}` : ""}`}
+                  label={t(label)}
+                  leftSection={<Icon aria-hidden size={20} />}
+                  active={settingsSection === value}
+                  aria-current={settingsSection === value ? "page" : undefined}
                   onClick={() => setNavigationOpen(false)}
                   mih={44}
                 />
