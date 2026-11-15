@@ -5,14 +5,14 @@
 - Run `pnpm build` for Chromium or `pnpm build:firefox` for Firefox. WXT writes builds to `.output/`.
 - Run `pnpm zip` or `pnpm zip:firefox` to create installable archives.
 - Treat `.wxt/` and `.output/` as generated files. Do not edit them. Run `pnpm exec wxt prepare` if generated WXT types are missing.
-- Rebuild Chromium once after code or build-configuration changes. Skip application builds for instruction-only and documentation-only changes.
+- Rebuild Chromium when needed to load changed UI or verify logic, imports, dependencies, or build configuration. Batch related UI tweaks before building. Do not build for instruction-only or documentation-only changes, or as a routine extra check for trivial presentation edits.
 
 ## Browser testing
 
 - Keep browser checks headless. Do not open visible browser windows.
 - For focused checks, connect Playwright to `http://127.0.0.1:9223`. If it is not running, start it with `pnpm test:browser`.
 - Reuse `.test-browser/profile/` and its installed German and Czech dictionaries. Do not reset the profile, repeat setup, or reimport dictionaries for routine checks.
-- The launcher uses the existing Chromium build. After rebuilding extension code, stop and restart the launcher to load it without losing data.
+- The launcher uses the existing Chromium build. After a necessary rebuild, reload the extension or restart the launcher once after the related edits. Keep saved data intact. Do not restart for every small tweak or screenshot.
 - Keep `pnpm test:e2e` isolated from this saved profile. Run only the checks needed for the change, not the full suite each time.
 - If no browser executable is available, run `pnpm exec playwright install chromium` or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable.
 
@@ -41,10 +41,11 @@
 - Format changed files once with `pnpm exec prettier --write <files>`. Do not run `--check` before or after it. Reserve `pnpm format:check` for explicitly read-only formatting audits.
 - Run `pnpm check:unused` to find unused code and dependencies.
 - Run `pnpm fix` to apply ESLint fixes and Prettier formatting across the repo. `pnpm format` only applies formatting.
-- For a small change, use `pnpm exec eslint <files> --fix` and `pnpm exec prettier --write <files>` to avoid unrelated edits.
+- When linting is relevant, use `pnpm exec eslint <files> --fix` on affected files only. Format only files that need formatting. Do not automatically run either command for an obvious one-line presentation edit.
 - Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
 - Do not add tests unless asked. If asked, add only end-to-end tests that check app behavior.
-- Choose the narrowest existing check that covers the changed behavior. Run it once after editing, together with applicable typecheck, changed-file lint, and the final Chromium build.
+- For trivial presentation-only changes (hover, spacing, labels, icons), do one quick check of the affected UI. Do not automatically run typecheck, ESLint, E2E tests, builds, screenshot collections, or multiple viewport/theme checks.
+- For logic, types, imports, storage, security, dependencies, or build changes, run only the relevant static checks and one focused behavior check. Reuse known APIs and callers; skip repeated documentation searches and temporary harnesses for obvious styling edits.
 - Repeat only failed checks or checks affected by a later edit. Do not repeat checks the user completed, successful browser setup, or successful fixture imports.
 - Do not run the full suite, repo-wide formatting, unused-code scans, or benchmarks unless the task requires them. Report checks not run.
 
