@@ -285,26 +285,7 @@ export function DictionarySettings({
           void fileImport(event.dataTransfer.files[0]);
         }}
       >
-        <Group justify="space-between">
-          <Group gap="xs">
-            {withTitle && <Title order={2}>{t("dictionaries")}</Title>}
-            <Badge>
-              {t("dictionaries_installed", {
-                count: visible.filter(
-                  (dictionary) => !isOnlineDictionary(dictionary.id),
-                ).length,
-              })}
-            </Badge>
-          </Group>
-          <Button
-            disabled={busy}
-            onClick={() => fileInput.current?.click()}
-            variant="filled"
-          >
-            <Upload aria-hidden="true" size={16} />{" "}
-            {busy ? t("working") : t("choose_zip")}
-          </Button>
-        </Group>
+        {withTitle && <Title order={2}>{t("dictionaries")}</Title>}
         <input
           ref={fileInput}
           type="file"
@@ -320,14 +301,33 @@ export function DictionarySettings({
           onChange={(value) => onRoleChange(value as DictionaryRole)}
           keepMounted={false}
         >
-          <Tabs.List mb="sm" aria-label={t("dictionary_types")}>
-            <Tabs.Tab value="vocabulary">
-              {t("vocabulary_dictionaries")}
-            </Tabs.Tab>
-            <Tabs.Tab value="frequency">
-              {t("frequency_dictionary_type")}
-            </Tabs.Tab>
-          </Tabs.List>
+          <Group justify="space-between" mb="sm">
+            <Tabs.List aria-label={t("dictionary_types")}>
+              <Tabs.Tab value="vocabulary">
+                {t("vocabulary_dictionaries")}
+              </Tabs.Tab>
+              <Tabs.Tab value="frequency">
+                {t("frequency_dictionary_type")}
+              </Tabs.Tab>
+            </Tabs.List>
+            <Group gap="xs">
+              <Badge>
+                {t("dictionaries_installed", {
+                  count: visible.filter(
+                    (dictionary) => !isOnlineDictionary(dictionary.id),
+                  ).length,
+                })}
+              </Badge>
+              <Button
+                disabled={busy}
+                onClick={() => fileInput.current?.click()}
+                variant="filled"
+              >
+                <Upload aria-hidden="true" size={16} />{" "}
+                {busy ? t("working") : t("choose_zip")}
+              </Button>
+            </Group>
+          </Group>
           <Tabs.Panel value="vocabulary">
             <Stack>
               {dictionaryControls}
