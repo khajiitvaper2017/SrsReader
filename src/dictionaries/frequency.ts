@@ -62,7 +62,9 @@ async function frequencyData(
                   .then((rows) => {
                     frequencyCache.set(cacheKey, rows);
                     if (frequencyCache.size > 50_000)
-                      frequencyCache.delete(frequencyCache.keys().next().value!);
+                      frequencyCache.delete(
+                        frequencyCache.keys().next().value!,
+                      );
                     return rows;
                   });
               }),

@@ -84,4 +84,3 @@ export type ReviewWord = Omit<WordWithCards, "readingCardId"> & {
 };
 
 export type ReviewWordSummary = Omit<ReviewWord, "document">;
-

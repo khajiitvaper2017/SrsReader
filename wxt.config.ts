@@ -38,7 +38,8 @@ export default defineConfig({
               /<link rel="stylesheet"[^>]* href="([^"]+)"[^>]*>/g,
               (link, href: string) => {
                 const asset = bundle?.[href.slice(1)];
-                return asset?.type === "asset" && typeof asset.source === "string"
+                return asset?.type === "asset" &&
+                  typeof asset.source === "string"
                   ? `<style>${asset.source.replace(/<\/style/gi, "<\\/style")}</style>`
                   : link;
               },

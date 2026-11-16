@@ -21,14 +21,12 @@ import { t } from "@/shared/i18n/i18n";
 import type { Vocabulary } from "@/vocabulary/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
-
 function lexicalClass(meanings: Meaning[]) {
   const parts = dictionaryTagValues(meanings, "UPOS");
   const noun = parts.some((part) => part === "NOUN" || part === "PROPN");
   const verb = parts.some((part) => part === "VERB" || part === "AUX");
   return noun === verb ? undefined : noun ? "noun" : "verb";
 }
-
 
 export function cardStudyDetails(
   language: string,
