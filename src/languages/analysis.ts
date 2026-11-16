@@ -181,6 +181,11 @@ export function normalizeTokens(
   sentence: AnalysisSentence,
   language: string | undefined,
 ): AnalysisSentence {
+  const determiners = new Map<string, AnalysisToken>();
+  if (language === "de")
+    for (const token of sentence.tokens)
+      if (token.upos === "DET" && token.deprel === "det")
+        determiners.set(token.head, token);
   return {
     ...sentence,
     tokens: sentence.tokens.map((token, index) => {
@@ -212,7 +217,25 @@ export function normalizeTokens(
           ? form.slice(0, lemma.length)
           : form;
       }
-      if (!form || (form === token.form && lemma === token.lemma)) return token;
+      let feats = token.feats;
+      const determiner =
+        token.upos === "NOUN" || token.upos === "PROPN"
+          ? determiners.get(token.id)
+          : undefined;
+      // HDT may put noun agreement only on its linked determiner.
+      if (determiner)
+        for (const feature of ["Gender", "Case", "Number"]) {
+          const value = determiner.feats[feature];
+          if (!feats[feature] && value) {
+            if (feats === token.feats) feats = { ...feats };
+            feats[feature] = value;
+          }
+        }
+      if (
+        !form ||
+        (form === token.form && lemma === token.lemma && feats === token.feats)
+      )
+        return token;
       const start =
         token.start === undefined
           ? undefined
@@ -221,6 +244,7 @@ export function normalizeTokens(
         ...token,
         form,
         lemma,
+        feats,
         start,
         end: start === undefined ? undefined : start + form.length,
       };
