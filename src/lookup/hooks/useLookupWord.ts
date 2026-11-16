@@ -507,6 +507,30 @@ export function useLookupWord({
       busyRef.current = false;
     }
   }
+  async function forget() {
+    if (
+      !saved ||
+      busyRef.current ||
+      !confirm(t("delete_word_and_recording_confirm", { lemma: saved.lemma }))
+    )
+      return;
+    busyRef.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await vocabularyClient({ action: "deleteWord", id: saved.id });
+      setSaved(undefined);
+      setLastReview("");
+      setReviewed(false);
+      setNotice("");
+      reload();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+      busyRef.current = false;
+    }
+  }
   async function toggleMastery() {
     if (!word || busyRef.current || preview?.id !== selectionKey) return;
     busyRef.current = true;
@@ -610,6 +634,7 @@ export function useLookupWord({
     reload,
     ignoreTag,
     act,
+    forget,
     undo,
     toggleMastery,
     definitionSaved,

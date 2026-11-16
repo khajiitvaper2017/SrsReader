@@ -5,7 +5,9 @@ import { useSettings } from "@/settings/hooks/useSettings";
 import {
   ActionIcon,
   Anchor,
+  Box,
   Button,
+  Flex,
   Group,
   Badge,
   HoverCard,
@@ -136,6 +138,7 @@ function LookupEntry({
     reload,
     ignoreTag,
     act,
+    forget,
     undo,
     toggleMastery,
     definitionSaved,
@@ -223,6 +226,7 @@ function LookupEntry({
                     <Title
                       lang={word.language}
                       order={1}
+                      size="h3"
                       tabIndex={0}
                       style={{ minWidth: 0, overflowWrap: "anywhere" }}
                     >
@@ -362,24 +366,23 @@ function LookupEntry({
                   </Menu>
                 )}
               </Group>
-              {(word.reading || saved) && (
-                <Group gap="xs">
-                  {word.reading && (
-                    <Text variant="supporting" component="span" inherit>
-                      {word.reading}
-                    </Text>
-                  )}
-                  {saved && (
-                    <Badge w="fit-content">
-                      {t(
-                        wordStateLabels[
-                          stateOf(saved, settings.matureIntervalDays)
-                        ],
-                      )}
-                    </Badge>
-                  )}
-                </Group>
-              )}
+              <Group gap="xs">
+                <FrequencyBadge word={word} />
+                {word.reading && (
+                  <Text variant="supporting" component="span" inherit>
+                    {word.reading}
+                  </Text>
+                )}
+                {saved && (
+                  <Badge w="fit-content">
+                    {t(
+                      wordStateLabels[
+                        stateOf(saved, settings.matureIntervalDays)
+                      ],
+                    )}
+                  </Badge>
+                )}
+              </Group>
             </Stack>
             <Group
               gap={4}
@@ -388,7 +391,6 @@ function LookupEntry({
               maw="45%"
               style={{ flexShrink: 0 }}
             >
-              <FrequencyBadge word={word} />
               <ActionIcon
                 title={t("add_custom_definition")}
                 aria-label={t("add_custom_definition")}
@@ -595,7 +597,9 @@ function LookupEntry({
         </Stack>
       </Stack>
       {word && !unparsed && (
-        <Stack
+        <Flex
+          direction={settings.onlyAgainGood ? "row" : "column"}
+          gap={settings.onlyAgainGood ? 4 : "xs"}
           p="sm"
           data-srs-reader
           style={{
@@ -605,19 +609,17 @@ function LookupEntry({
             overflowY: "auto",
           }}
         >
-          <Group grow wrap="nowrap" align="stretch" gap={4}>
-            {!saved?.card && !saved?.known && (
-              <Button
-                disabled={busy}
-                onClick={() => void act()}
-                variant="light"
-                px={4}
-                miw={0}
-                flex={1}
-              >
-                {t("mine_word")}
-              </Button>
-            )}
+          <Group grow wrap="nowrap" align="stretch" gap={4} flex={1} miw={0}>
+            <Button
+              disabled={busy}
+              onClick={() => void (saved ? forget() : act())}
+              variant="light"
+              px={4}
+              miw={0}
+              flex={1}
+            >
+              {t(saved ? "forget" : "mine_word")}
+            </Button>
             <Button
               aria-pressed={!!saved?.known}
               disabled={busy}
@@ -662,16 +664,18 @@ function LookupEntry({
             )}
           </Group>
           {!saved?.known && !reviewed && !saved?.suspended && (
-            <Ratings
-              compact
-              times={times}
-              disabled={busy}
-              onlyAgainGood={settings.onlyAgainGood}
-              onGrade={(rating) => void act(rating)}
-            />
+            <Box flex={1} miw={0}>
+              <Ratings
+                compact
+                times={times}
+                disabled={busy}
+                onlyAgainGood={settings.onlyAgainGood}
+                onGrade={(rating) => void act(rating)}
+              />
+            </Box>
           )}
           {notice && <VisuallyHidden role="status">{notice}</VisuallyHidden>}
-        </Stack>
+        </Flex>
       )}
     </Stack>
   );
