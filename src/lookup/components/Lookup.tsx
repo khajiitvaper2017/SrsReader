@@ -257,11 +257,14 @@ function LookupEntry({
                     }}
                   >
                     <Stack>
-                      <Text lang={word.language} fw={500}>
-                        {surface}
-                      </Text>
+                      {surface !== heading &&
+                        (!result?.grammar || result.grammar.group) && (
+                          <Text lang={word.language} fw={500}>
+                            {surface}
+                          </Text>
+                        )}
                       {result?.grammar ? (
-                        <Grammar grammar={result.grammar} />
+                        <Grammar grammar={result.grammar} heading={heading} />
                       ) : (
                         compoundAnalysis && (
                           <Stack gap="xs">
@@ -270,7 +273,10 @@ function LookupEntry({
                                 word: compoundSource?.surface,
                               })}
                             </Text>
-                            <Grammar grammar={compoundAnalysis} />
+                            <Grammar
+                              grammar={compoundAnalysis}
+                              heading={heading}
+                            />
                           </Stack>
                         )
                       )}

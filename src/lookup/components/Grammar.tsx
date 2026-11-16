@@ -118,7 +118,13 @@ function Features({ feats }: { feats: Record<string, string> }) {
   );
 }
 
-export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
+export function Grammar({
+  grammar,
+  heading,
+}: {
+  grammar: OccurrenceGrammar;
+  heading: string;
+}) {
   const { sentence, group, tokenIds } = grammar;
   const displayedTokens = sentence.tokens.filter((token) =>
     (group?.tokenIds ?? tokenIds).includes(token.id),
@@ -126,12 +132,19 @@ export function Grammar({ grammar }: { grammar: OccurrenceGrammar }) {
   const wordForms = displayedTokens.map((token) => {
     const head = sentence.tokens.find((part) => part.id === token.head);
     const verb = /^(VERB|AUX)$/u.test(token.upos);
+    const form =
+      token.form === token.lemma
+        ? token.form
+        : `${token.form} → ${token.lemma}`;
+    const summary = [
+      form !== heading && form,
+      !verb && label("pos", token.upos),
+    ]
+      .filter(Boolean)
+      .join(" · ");
     return (
       <Stack key={token.id}>
-        <Text variant="supporting">
-          {token.form} → {token.lemma}
-          {!verb && ` · ${label("pos", token.upos)}`}
-        </Text>
+        {summary && <Text variant="supporting">{summary}</Text>}
         {verb ? (
           <Text variant="supporting">
             {describeVerb(token.feats, token.upos)}
