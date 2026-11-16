@@ -1,6 +1,6 @@
 import type { ScanSpan } from "@/reader/scan";
 import type { Occurrence } from "@/languages/analysis";
-import type { WordState } from "@/vocabulary/state";
+import type { WordStateUpdate } from "@/vocabulary/state";
 import type { ScanResult } from "@/reader/contracts";
 
 export type ChangeScope =
@@ -14,9 +14,8 @@ export type ChangeScope =
 export type ChangeMessage = {
   event: "changed";
   scope: ChangeScope;
-  word?: {
+  word?: WordStateUpdate & {
     id: string;
-    state: WordState;
     hiddenDictionaries?: string[];
     expandedDictionaries?: string[];
   };
@@ -26,6 +25,7 @@ type ParsedMessage = {
   term: string;
   language: string;
   candidates: ScanSpan["candidates"];
+  encounterKey: string;
 };
 type FrameMessage = { event: "closeLookup" };
 type ParsedOccurrenceMessage = {
@@ -33,6 +33,7 @@ type ParsedOccurrenceMessage = {
   language: string;
   occurrence: Occurrence;
   candidates: ScanSpan["candidates"];
+  encounterKey: string;
 };
 export type ScanWarning = (
   message: string,

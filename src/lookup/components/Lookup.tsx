@@ -36,8 +36,8 @@ import { SentenceTranslation } from "@/translation/components/SentenceTranslatio
 import { vocabularyClient } from "@/vocabulary/client";
 import { EditableMeanings } from "@/vocabulary/components/EditableMeanings";
 import { DefinitionEditor } from "@/vocabulary/components/DefinitionEditor";
-import { stateOf, wordId, type ReadingContext } from "@/vocabulary/model";
-import { wordStateLabels } from "@/vocabulary/state";
+import { wordId, type ReadingContext } from "@/vocabulary/model";
+import { stateOf, wordStateLabels } from "@/vocabulary/state";
 import {
   ArrowLeft,
   Check,
@@ -144,6 +144,7 @@ function LookupEntry({
     definitionSaved,
   } = useLookupWord({ page, onLookup, onBack });
   const compound = page.compound;
+  const canForget = !!saved && (!context || !!saved.cardId);
   const surface = result?.grammar?.group?.form || term;
   // Dictionary paths list possible inflections; the parser describes this occurrence.
   const dictionaryForms = result?.grammar
@@ -379,7 +380,11 @@ function LookupEntry({
                   <Badge w="fit-content">
                     {t(
                       wordStateLabels[
-                        stateOf(saved, settings.matureIntervalDays)
+                        stateOf(
+                          saved,
+                          settings.matureIntervalDays,
+                          saved.encounterKey,
+                        )
                       ],
                     )}
                   </Badge>
@@ -614,13 +619,13 @@ function LookupEntry({
           <Group grow wrap="nowrap" align="stretch" gap={4} flex={1} miw={0}>
             <Button
               disabled={busy}
-              onClick={() => void (saved ? forget() : act())}
+              onClick={() => void (canForget ? forget() : act())}
               variant="light"
               px={4}
               miw={0}
               flex={1}
             >
-              {t(saved ? "forget" : "mine_word")}
+              {t(canForget ? "forget" : "mine_word")}
             </Button>
             <Button
               aria-pressed={!!saved?.known}

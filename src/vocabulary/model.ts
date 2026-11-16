@@ -5,7 +5,6 @@ import { t } from "@/shared/i18n/i18n";
 import type { Schedule } from "@/srs/model";
 import type { Card, CardDocument } from "@/cards/model";
 import { translationSchema } from "@/translation/model";
-import type { WordState } from "@/vocabulary/state";
 import { z } from "zod";
 
 export const wordId = (language: string, lemma: string, reading: string) =>
@@ -67,7 +66,8 @@ export const vocabularySchema = z.object({
 export type Vocabulary = z.infer<typeof vocabularySchema>;
 
 export type WordWithCards = Vocabulary & {
-  linkedCards: Card[];
+  linkedCards: (Card & { encounterKey?: string })[];
+  encounterKey?: string;
   cardId?: string;
   card: Schedule | null;
   srsVersion: number;
@@ -85,32 +85,3 @@ export type ReviewWord = Omit<WordWithCards, "readingCardId"> & {
 
 export type ReviewWordSummary = Omit<ReviewWord, "document">;
 
-export function stateOf(
-  word: (Vocabulary & { linkedCards?: Card[] }) | undefined,
-  matureIntervalDays: number,
-): WordState {
-  if (!word) return "unknown";
-  if (word.known) return "known";
-  const cards = word.linkedCards || [];
-  if (!cards.length) return "new";
-  const active = cards.filter((card) => !card.suspended);
-  if (!active.length) return "suspended";
-  if (
-    active.some(
-      (card) =>
-        card.schedule &&
-        card.schedule.state !== 0 &&
-        card.schedule.dueAt <= Date.now(),
-    )
-  )
-    return "due";
-  if (active.some((card) => !card.schedule || card.schedule.state === 0))
-    return "new";
-  return active.some(
-    (card) =>
-      card.schedule!.state !== 2 ||
-      card.schedule!.scheduledDays < matureIntervalDays,
-  )
-    ? "learning"
-    : "review";
-}

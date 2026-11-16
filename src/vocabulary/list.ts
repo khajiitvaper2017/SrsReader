@@ -2,7 +2,7 @@ import { db } from "@/platform/database/db";
 import { languageWords } from "@/vocabulary/storage";
 import { studyGroups, wordsInDeck } from "@/srs/deck-words";
 import { folded } from "@/languages/text";
-import { stateOf } from "@/vocabulary/model";
+import { stateOf } from "@/vocabulary/state";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import type { Request } from "@/vocabulary/contracts";
 import type { Settings } from "@/settings/model";

@@ -119,6 +119,7 @@
   "definition": "Definition",
   "definition_language": "Definition language",
   "delete_word_and_recording_confirm": "Delete “{{lemma}}” and its recording? Review history is kept.",
+  "delete_contextual_card_confirm": "Delete this card for “{{lemma}}”? Other cards and review history will remain.",
   "delete_word": "Delete word",
   "delete_custom_definition": "Delete custom definition",
   "desired_retention": "Retention",

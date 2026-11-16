@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
+import { cardEncounterKey } from "../src/cards/encounter-key";
+import { stateOf, stateForEncounter } from "../src/vocabulary/state";
 import {
+  analysisTerms,
   normalizeTokens,
   occurrenceGrammar,
   type AnalysisToken,
@@ -79,19 +82,48 @@ function article(form: string, Gender: string, Case: string): AnalysisToken {
   };
 }
 
+function bandKey(Gender: string, Case: string) {
+  return cardEncounterKey({
+    context: { surface: "Band", language: "de" },
+    pos: "NOUN",
+    feats: { Gender, Case, Number: "Sing" },
+  });
+}
+
+const volumeKey = bandKey("Masc", "Acc");
+const musicKey = bandKey("Fem", "Nom");
+const ribbonKey = bandKey("Neut", "Nom");
+const savedVolume = {
+  known: false,
+  linkedCards: [
+    {
+      encounterKey: volumeKey,
+      suspended: false,
+      schedule: { state: 0, dueAt: 0, scheduledDays: 0 },
+    },
+  ],
+};
+
 for (const [sentence, form, Gender, Case] of [
   ["Ich lese den ersten Band dieser Buchreihe.", "den", "Masc", "Acc"],
   ["Die Band spielt heute Abend ein Konzert.", "Die", "Fem", "Nom"],
   ["Das rote Band ist sehr schön.", "Das", "Neut", "Nom"],
 ] as const) {
   test(`${sentence} — noun inherits article agreement`, () => {
-    const normalized = normalizeTokens(
-      {
-        metadata: { text: sentence },
-        tokens: [article(form, Gender, Case), band],
-      },
-      "de",
-    );
+    const start = sentence.indexOf("Band");
+    const articleStart = sentence.indexOf(form);
+    const parsed = {
+      metadata: { text: sentence },
+      tokens: [
+        {
+          ...article(form, Gender, Case),
+          start: articleStart,
+          end: articleStart + form.length,
+        },
+        { ...band, start, end: start + band.form.length },
+      ],
+    };
+    const normalized = normalizeTokens(parsed, "de");
     const grammar = occurrenceGrammar(normalized, normalized.tokens[1]!);
     expect(grammar.sentence.tokens[1]!.feats).toEqual({
       Gender,
@@ -99,6 +131,15 @@ for (const [sentence, form, Gender, Case] of [
       Number: "Sing",
     });
     expect(band.feats).toEqual({ Number: "Sing" });
+    const surface = analysisTerms(
+      [parsed],
+      sentence,
+      "0".repeat(64),
+      "de",
+    ).find((surface) => surface.start === start)!;
+    expect(stateOf(savedVolume, 28, surface.encounterKey)).toBe(
+      Gender === "Masc" ? "new" : "unknown",
+    );
   });
 }
 
@@ -118,4 +159,51 @@ test("noun agreement ignores unrelated articles and preserves explicit features"
     "de",
   );
   expect(normalized.tokens[1]!.feats).toEqual(explicit.feats);
+});
+
+test("saving and reviewing another Band form does not merge learning states", () => {
+  const savedMusic = {
+    known: false,
+    linkedCards: [
+      ...savedVolume.linkedCards,
+      {
+        encounterKey: musicKey,
+        suspended: false,
+        schedule: {
+          state: 2,
+          dueAt: Number.MAX_SAFE_INTEGER,
+          scheduledDays: 7,
+        },
+      },
+    ],
+  };
+  expect(stateOf(savedMusic, 28, volumeKey)).toBe("new");
+  expect(stateOf(savedMusic, 28, musicKey)).toBe("learning");
+  expect(stateOf(savedMusic, 28, ribbonKey)).toBe("unknown");
+  expect(stateOf(savedMusic, 28)).toBe("new");
+  const suspended = {
+    ...savedMusic,
+    linkedCards: savedMusic.linkedCards.map((card) => ({
+      ...card,
+      suspended: card.encounterKey === volumeKey,
+    })),
+  };
+  expect(stateOf(suspended, 28, volumeKey)).toBe("suspended");
+  expect(stateOf(suspended, 28, musicKey)).toBe("learning");
+});
+
+test("live color updates and forgetting a Band card remain encounter-specific", () => {
+  const update = {
+    state: "new",
+    encounterStates: { [volumeKey]: "learning", [musicKey]: "new" },
+  } as const;
+  expect(stateForEncounter(update, volumeKey)).toBe("learning");
+  expect(stateForEncounter(update, musicKey)).toBe("new");
+  expect(stateForEncounter(update, ribbonKey)).toBe("unknown");
+  const forgotten = {
+    state: "learning",
+    encounterStates: { [volumeKey]: "learning" },
+  } as const;
+  expect(stateForEncounter(forgotten, musicKey)).toBe("unknown");
+  expect(stateForEncounter(forgotten, volumeKey)).toBe("learning");
 });

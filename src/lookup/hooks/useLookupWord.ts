@@ -510,15 +510,27 @@ export function useLookupWord({
   async function forget() {
     if (
       !saved ||
+      (context && !saved.cardId) ||
       busyRef.current ||
-      !confirm(t("delete_word_and_recording_confirm", { lemma: saved.lemma }))
+      !confirm(
+        t(
+          context
+            ? "delete_contextual_card_confirm"
+            : "delete_word_and_recording_confirm",
+          { lemma: saved.lemma },
+        ),
+      )
     )
       return;
     busyRef.current = true;
     setBusy(true);
     setError("");
     try {
-      await vocabularyClient({ action: "deleteWord", id: saved.id });
+      await vocabularyClient({
+        action: "deleteWord",
+        id: saved.id,
+        ...(context ? { cardId: saved.cardId } : {}),
+      });
       setSaved(undefined);
       setLastReview("");
       setReviewed(false);

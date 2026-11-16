@@ -30,9 +30,10 @@ import {
 } from "@/languages/text";
 import type { Occurrence, SurfaceAnalysis } from "@/languages/analysis";
 import { getWords } from "@/vocabulary/storage";
-import { stateOf } from "@/vocabulary/model";
+import { stateOf } from "@/vocabulary/state";
 import { getSettings } from "@/settings/store";
 import type { WordState } from "@/vocabulary/state";
+import { cardEncounterKey } from "@/cards/encounter-key";
 
 type CompoundPart = {
   before: number;
@@ -59,6 +60,7 @@ export type ScanSpan = {
   candidates: { id: string; tags: string[]; state: WordState }[];
   state: WordState | "ignored" | "unparsed";
   occurrence?: Occurrence;
+  encounterKey?: string;
   related?: SurfaceAnalysis["related"];
   properName?: boolean;
   compoundPart?: CompoundPart;
@@ -513,7 +515,7 @@ export async function scanTexts(
   );
   const buildStarted = performance.now();
   timing.wordStateMs = buildStarted - wordStateStarted;
-  function present(candidates: (typeof blocks)[number]) {
+  function present(candidates: (typeof blocks)[number], text: string) {
     const spans: ScanSpan[] = [];
     let end = -1;
     for (const candidate of candidates.sort(
@@ -543,14 +545,29 @@ export async function scanTexts(
         candidate.analysis?.terms.slice(0, -1),
       );
       if (!words.length && !candidate.analysis) continue;
+      const encounterKey =
+        candidate.analysis?.encounterKey ??
+        cardEncounterKey({
+          context: {
+            surface: text.slice(candidate.start, candidate.end),
+            language,
+          },
+          pos: "",
+          feats: {},
+        });
       const state = words.length
-        ? stateOf(vocabulary.get(words[0]!.id), settings.matureIntervalDays)
+        ? stateOf(
+            vocabulary.get(words[0]!.id),
+            settings.matureIntervalDays,
+            encounterKey,
+          )
         : "unparsed";
       spans.push({
         start: candidate.start,
         end: candidate.end,
         term: candidate.term,
         occurrence: candidate.analysis?.occurrence,
+        encounterKey,
         related: candidate.analysis?.related,
         properName: candidate.analysis?.properName,
         compoundPart: candidate.compoundPart,
@@ -558,7 +575,11 @@ export async function scanTexts(
         candidates: words.map((word) => ({
           id: word.id,
           tags: word.meanings.flatMap(meaningTags),
-          state: stateOf(vocabulary.get(word.id), settings.matureIntervalDays),
+          state: stateOf(
+            vocabulary.get(word.id),
+            settings.matureIntervalDays,
+            encounterKey,
+          ),
         })),
         state,
       });
@@ -566,7 +587,9 @@ export async function scanTexts(
     }
     return spans;
   }
-  const results = blocks.map(present);
+  const results = blocks.map((candidates, index) =>
+    present(candidates, texts[index]!),
+  );
   timing.buildSpansMs = performance.now() - buildStarted;
   if (
     (explicitLookup || settings.wordLoading[language] !== "onLookup") &&
@@ -602,7 +625,7 @@ export async function scanTexts(
         for (const word of await getWords(result.words.map((word) => word.id)))
           if (word) vocabulary.set(word.id, word);
         for (const index of indices) {
-          const spans = present(blocks[index]!);
+          const spans = present(blocks[index]!, texts[index]!);
           const value = JSON.stringify(spans);
           if (emitted[index] === value) continue;
           emitted[index] = value;

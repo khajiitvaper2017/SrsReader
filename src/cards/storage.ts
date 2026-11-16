@@ -13,7 +13,8 @@ import {
   type CustomField,
 } from "@/cards/defaults";
 import type { Card, CardDocument, CardEncounter } from "@/cards/model";
-import { cardEncounterKey, meaningsForEncounter } from "@/cards/encounter";
+import { meaningsForEncounter } from "@/cards/encounter";
+import { cardEncounterKey } from "@/cards/encounter-key";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 

@@ -11,8 +11,7 @@ import { shortDefinition } from "@/dictionaries/definitions";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { useWords } from "@/vocabulary/hooks/useWords";
-import { stateOf } from "@/vocabulary/model";
-import { wordStateLabels } from "@/vocabulary/state";
+import { stateOf, wordStateLabels } from "@/vocabulary/state";
 export function WordList({
   settings,
   controller,

@@ -8,7 +8,7 @@ import type {
   RuntimeEvent,
 } from "@/platform/messaging/events";
 import { getSettings, refreshUISettings } from "@/settings/store";
-import { stateOf } from "@/vocabulary/model";
+import { stateOf, type WordStateUpdate } from "@/vocabulary/state";
 import { browser } from "wxt/browser";
 
 export async function broadcast(message: RuntimeEvent) {
@@ -31,13 +31,28 @@ export async function notify(
   )
     await refreshUISettings().catch(console.warn);
   const word = wordId ? await getWord(wordId) : undefined;
+  const matureIntervalDays = wordId
+    ? (await getSettings()).matureIntervalDays
+    : 0;
+  const encounterStates: WordStateUpdate["encounterStates"] = {};
+  for (const card of word?.linkedCards || [])
+    if (
+      card.encounterKey !== undefined &&
+      encounterStates[card.encounterKey] === undefined
+    )
+      encounterStates[card.encounterKey] = stateOf(
+        word,
+        matureIntervalDays,
+        card.encounterKey,
+      );
   const message: ChangeMessage = {
     scope,
     event: "changed",
     word: wordId
       ? {
           id: wordId,
-          state: stateOf(word, (await getSettings()).matureIntervalDays),
+          state: stateOf(word, matureIntervalDays),
+          encounterStates,
           hiddenDictionaries: word?.hiddenDictionaries,
           expandedDictionaries: word?.expandedDictionaries,
         }

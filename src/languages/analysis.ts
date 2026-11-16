@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cardEncounterKey, grammarFeatures } from "@/cards/encounter-key";
 
 export const occurrenceSchema = z.object({
   key: z.string().length(64),
@@ -31,6 +32,7 @@ export type SurfaceAnalysis = {
   end: number;
   terms: string[];
   partsOfSpeech: string[];
+  encounterKey: string;
   properName: boolean;
   occurrence: Occurrence;
   related?: { start: number; end: number }[];
@@ -259,7 +261,8 @@ export function analysisTerms(
   language: string | undefined,
 ): SurfaceAnalysis[] {
   return sentences.flatMap((sentence) => {
-    const { tokens } = normalizeTokens(sentence, language);
+    const normalized = normalizeTokens(sentence, language);
+    const { tokens } = normalized;
     const multiwords = tokens.filter((token) => token.id.includes("-"));
     const groups = constructionGroups(tokens);
     return tokens.flatMap((token) => {
@@ -280,7 +283,8 @@ export function analysisTerms(
         terms.push(...predicateTerms(predicateOf(part, tokens), tokens));
         if (part.lemma !== "_") terms.push(part.lemma);
       }
-      terms.push(text.slice(token.start, token.end));
+      const surface = text.slice(token.start, token.end);
+      terms.push(surface);
       const related = new Set(
         components
           .flatMap(
@@ -308,6 +312,10 @@ export function analysisTerms(
             predicateOf(part, tokens).upos,
             ...(part.feats.VerbForm === "Part" ? ["VERB", "AUX"] : []),
           ]),
+          encounterKey: cardEncounterKey({
+            context: { surface, language },
+            ...grammarFeatures(occurrenceGrammar(normalized, token)),
+          }),
           properName: components.some(
             (part) =>
               !part.feats.NameType?.split(",").includes("Nat") &&

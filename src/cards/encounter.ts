@@ -2,7 +2,7 @@ import type { CardEncounter } from "@/cards/model";
 import { dictionaryTagValues } from "@/dictionaries/grammar";
 import type { Meaning } from "@/dictionaries/model";
 import type { Occurrence } from "@/languages/analysis";
-import { normalize } from "@/languages/text";
+import { grammarFeatures } from "@/cards/encounter-key";
 import { occurrenceAnalysis } from "@/languages/udpipe";
 import { db } from "@/platform/database/db";
 import { contextSchema, type ReadingContext } from "@/vocabulary/model";
@@ -36,46 +36,8 @@ export async function resolveCardEncounter(
     encounter.context.surface,
   );
   if (!analysis) return encounter;
-  const { sentence, tokenIds, group } = analysis.grammar;
-  const tokens = sentence.tokens.filter((token) => tokenIds.includes(token.id));
-  if (group) {
-    encounter.pos = "VERB";
-    encounter.feats = { ...group.feats };
-  } else {
-    encounter.pos = [...new Set(tokens.map((token) => token.upos))]
-      .sort()
-      .join(",");
-    for (const token of tokens) {
-      for (const [feature, value] of Object.entries(token.feats)) {
-        encounter.feats[feature] = [
-          ...new Set(
-            [encounter.feats[feature], value]
-              .filter(Boolean)
-              .flatMap((part) => part!.split(",")),
-          ),
-        ]
-          .sort()
-          .join(",");
-      }
-    }
-  }
+  Object.assign(encounter, grammarFeatures(analysis.grammar));
   return encounter;
-}
-
-export function cardEncounterKey(encounter: CardEncounter): string {
-  return JSON.stringify([
-    normalize(encounter.context.surface)
-      .trim()
-      .replace(/\s+/gu, " ")
-      .toLocaleLowerCase(encounter.context.language || "und"),
-    encounter.pos,
-    Object.entries(encounter.feats)
-      .sort(([left], [right]) => left.localeCompare(right, "en"))
-      .map(([feature, value]) => [
-        feature,
-        [...new Set(value.split(","))].sort().join(","),
-      ]),
-  ]);
 }
 
 export function meaningsForEncounter(

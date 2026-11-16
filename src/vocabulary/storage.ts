@@ -1,6 +1,7 @@
 import type { LookupWord, Meaning } from "@/dictionaries/model";
 import type { Card, CardDocument, CardEncounter } from "@/cards/model";
-import { cardEncounterKey, resolveCardEncounter } from "@/cards/encounter";
+import { resolveCardEncounter } from "@/cards/encounter";
+import { cardEncounterKey } from "@/cards/encounter-key";
 import {
   deleteCards,
   ensureReaderCard,
@@ -76,23 +77,24 @@ async function projectWords(
   const types = new Map(
     loadedTypes.flatMap((type) => (type ? [[type.id, type] as const] : [])),
   );
-  const byWord = new Map<string, Card[]>();
+  const byWord = new Map<string, WordWithCards["linkedCards"]>();
   const byNote = new Map(notes.map((note) => [note.id, note]));
   for (const card of cards) {
-    const wordId = byNote.get(card.noteId)!.wordId!;
+    const note = byNote.get(card.noteId)!;
+    const wordId = note.wordId!;
     const entries = byWord.get(wordId) || [];
-    entries.push(card);
+    entries.push({
+      ...card,
+      encounterKey: note.encounter && cardEncounterKey(note.encounter),
+    });
     byWord.set(wordId, entries);
   }
+  const encounterKey = encounter && cardEncounterKey(encounter);
   return words.map((word): WordWithCards | undefined => {
     if (!word) return undefined;
     const linkedCards = byWord.get(word.id) || [];
-    const encounterKey = encounter && cardEncounterKey(encounter);
     const selected = encounter
-      ? linkedCards.find((card) => {
-          const saved = byNote.get(card.noteId)?.encounter;
-          return !!saved && cardEncounterKey(saved) === encounterKey;
-        })
+      ? linkedCards.find((card) => card.encounterKey === encounterKey)
       : linkedCards.find((card) => card.id === word.readingCardId) ||
         (linkedCards.length === 1 ? linkedCards[0] : undefined);
     const note = selected && byNote.get(selected.noteId);
@@ -100,6 +102,7 @@ async function projectWords(
     return {
       ...word,
       linkedCards,
+      encounterKey,
       cardId: selected?.id,
       card: selected?.schedule || null,
       srsVersion: selected?.srsVersion || 0,
@@ -491,6 +494,13 @@ export async function setSuspended(
 export async function deleteWord(
   request: Extract<Request, { action: "deleteWord" }>,
 ) {
+  if (request.cardId !== undefined) {
+    const card = await db.cards.get(request.cardId);
+    const note = card && (await db.notes.get(card.noteId));
+    if (!note || note.wordId !== request.id)
+      throw new Error(t("card_not_found"));
+    return deleteCards([request.cardId]);
+  }
   return deleteWords([request.id]);
 }
 async function deleteWords(ids: string[]) {

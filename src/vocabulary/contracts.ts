@@ -86,7 +86,11 @@ export const requests = [
     id: z.string(),
     value: z.boolean(),
   }),
-  z.object({ action: z.literal("deleteWord"), id: z.string() }),
+  z.object({
+    action: z.literal("deleteWord"),
+    id: z.string(),
+    cardId: z.string().optional(),
+  }),
   z.object({
     action: z.literal("refreshWord"),
     id: z.string(),

@@ -28,7 +28,7 @@ import type {
   ReaderConfiguration as Settings,
 } from "@/reader/types";
 import type { ReadingContext } from "@/vocabulary/model";
-import type { WordState } from "@/vocabulary/state";
+import { stateForEncounter, type WordStateUpdate } from "@/vocabulary/state";
 
 function originalCompound(
   context: ReadingContext,
@@ -83,7 +83,7 @@ export function createScanner(
   let starting = website;
   let firstVisibleBatch = true;
   let firstVisible = true;
-  const wordStates = new Map<string, WordState>();
+  const wordStates = new Map<string, WordStateUpdate>();
   const { matchesLanguage, readBlock } = createBlockReader(
     root,
     excluded,
@@ -189,10 +189,13 @@ export function createScanner(
     blocks.delete(element);
   }
   function updateSpanState(span: ScanSpan) {
+    for (const candidate of span.candidates) {
+      const snapshot = wordStates.get(candidate.id);
+      if (snapshot)
+        candidate.state = stateForEncounter(snapshot, span.encounterKey);
+    }
     const candidate = span.candidates[0];
-    const state = candidate
-      ? (wordStates.get(candidate.id) ?? candidate.state)
-      : "unparsed";
+    const state = candidate?.state ?? "unparsed";
     span.state =
       getSettings().ignoreProperNames &&
       span.properName &&
@@ -206,6 +209,7 @@ export function createScanner(
     term: string,
     candidates: ScanSpan["candidates"],
     language: string,
+    encounterKey: string,
   ) {
     const lookupTerm = term.trim();
     const spaces = lookupTerm.match(/\s+/gu) ?? [];
@@ -238,6 +242,7 @@ export function createScanner(
           const matchedTerm = match[0].replace(/\s+/gu, () => spaces[gap++]!);
           if (
             previous?.term === matchedTerm &&
+            previous.encounterKey === encounterKey &&
             JSON.stringify(previous.candidates) === JSON.stringify(candidates)
           )
             continue;
@@ -259,6 +264,7 @@ export function createScanner(
             start,
             end,
             term: matchedTerm,
+            encounterKey,
             ids: candidates.map((candidate) => candidate.id),
             candidates,
             state: candidates[0]!.state,
@@ -274,12 +280,14 @@ export function createScanner(
   function applyParsedOccurrence(
     occurrence: Occurrence,
     candidates: ScanSpan["candidates"],
+    encounterKey: string,
   ) {
     const matches = (span: ScanSpan) =>
       span.occurrence?.key === occurrence.key &&
       span.occurrence.start === occurrence.start &&
       span.occurrence.end === occurrence.end;
     const update = (span: ScanSpan) => {
+      span.encounterKey = encounterKey;
       span.candidates = candidates;
       span.ids = candidates.map((candidate) => candidate.id);
       updateSpanState(span);
@@ -1428,13 +1436,18 @@ export function createScanner(
         highlights.get(span.state).add(span.range);
       }
   }
-  function updateWord(id: string, state: WordState) {
-    wordStates.set(id, state);
+  function updateWord(id: string, snapshot: WordStateUpdate) {
+    wordStates.set(id, snapshot);
+    for (const result of parsed.values())
+      for (const span of result.spans)
+        if (span.ids.includes(id)) updateSpanState(span);
     for (const block of blocks.values())
       for (const span of block.spans) {
-        if (span.ids[0] !== id || span.state === state) continue;
-        highlights.get(span.state).delete(span.range);
+        if (!span.ids.includes(id)) continue;
+        const previous = span.state;
         updateSpanState(span);
+        if (span.state === previous) continue;
+        highlights.get(previous).delete(span.range);
         highlights.get(span.state).add(span.range);
       }
   }

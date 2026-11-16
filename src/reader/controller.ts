@@ -125,12 +125,17 @@ export function startReader(
       message.candidates?.length
     ) {
       if (message.event === "parsedOccurrence")
-        scanner.applyParsedOccurrence(message.occurrence, message.candidates);
+        scanner.applyParsedOccurrence(
+          message.occurrence,
+          message.candidates,
+          message.encounterKey,
+        );
       else if (message.term)
         scanner.applyParsedTerm(
           message.term,
           message.candidates,
           message.language,
+          message.encounterKey,
         );
       return;
     }
@@ -138,7 +143,7 @@ export function startReader(
     if (message.event === "changed") {
       if (message.scope === "sync") return;
       if (message.word) {
-        scanner.updateWord(message.word.id, message.word.state);
+        scanner.updateWord(message.word.id, message.word);
         return;
       }
       clearTimeout(refreshTimer);

@@ -9,7 +9,7 @@ import { scanCache } from "@/reader/cache";
 import type { Settings } from "@/settings/model";
 import { cacheScannedTexts } from "@/examples/sentences";
 import { getWords } from "@/vocabulary/storage";
-import { stateOf } from "@/vocabulary/model";
+import { stateOf } from "@/vocabulary/state";
 
 export const handleReader = execute;
 async function execute(
@@ -56,6 +56,7 @@ async function execute(
               candidate.state = stateOf(
                 words.get(candidate.id),
                 settings.matureIntervalDays,
+                span.encounterKey,
               );
             span.state = span.candidates[0]?.state ?? "unparsed";
           }

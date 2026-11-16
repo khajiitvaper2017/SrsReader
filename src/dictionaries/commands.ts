@@ -15,8 +15,9 @@ import {
 import { srsWrite } from "@/platform/locks";
 import type { Settings } from "@/settings/model";
 import { getSettings } from "@/settings/store";
-import { stateOf } from "@/vocabulary/model";
+import { stateOf } from "@/vocabulary/state";
 import { getWords } from "@/vocabulary/storage";
+import { cardEncounterKey, grammarFeatures } from "@/cards/encounter-key";
 
 export function handleDictionaries(request: Request, settings: Settings) {
   return request.action === "cleanupDictionaries" ||
@@ -62,6 +63,12 @@ async function execute(request: Request, settings: Settings) {
           word.meanings.length && wordMatchesGrammar(word, result.grammar),
       );
       if (words.length) {
+        const encounterKey = cardEncounterKey({
+          context: { surface: request.term, language: request.language },
+          ...(result.grammar
+            ? grammarFeatures(result.grammar)
+            : { pos: "", feats: {} }),
+        });
         void getWords(words.map((word) => word.id))
           .then((saved) =>
             broadcast({
@@ -72,10 +79,15 @@ async function execute(request: Request, settings: Settings) {
                   } as const)
                 : ({ event: "parsed", term: request.term } as const)),
               language: settings.studyLanguage,
+              encounterKey,
               candidates: words.map((word, index) => ({
                 id: word.id,
                 tags: word.meanings.flatMap(meaningTags),
-                state: stateOf(saved[index], settings.matureIntervalDays),
+                state: stateOf(
+                  saved[index],
+                  settings.matureIntervalDays,
+                  encounterKey,
+                ),
               })),
             }),
           )

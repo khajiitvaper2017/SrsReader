@@ -119,6 +119,7 @@
   "definition": "Визначення",
   "definition_language": "Мова визначень",
   "delete_word_and_recording_confirm": "Видалити «{{lemma}}» та аудіозапис? Історія повторень залишиться.",
+  "delete_contextual_card_confirm": "Видалити цю картку для «{{lemma}}»? Інші картки та історія повторень залишаться.",
   "delete_word": "Видалити слово",
   "delete_custom_definition": "Видалити власне визначення",
   "desired_retention": "Рівень запам’ятовування",
