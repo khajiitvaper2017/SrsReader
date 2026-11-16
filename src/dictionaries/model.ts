@@ -164,15 +164,21 @@ export type Ipa = z.infer<typeof ipaDataSchema> & {
 
 export function ipaDefinitions(
   data: z.infer<typeof ipaDataSchema>,
+  descriptions?: Record<string, string>,
 ): Definition[] {
-  return data.transcriptions.map(({ ipa, tags }) => ({
-    type: "structured-content",
-    content: {
-      tag: "div",
-      data: { content: "ipa" },
-      content: ipa + (tags?.length ? ` (${tags.join(", ")})` : ""),
-    },
-  }));
+  return data.transcriptions.map(({ ipa, tags }) => {
+    const labels = (tags ?? [])
+      .filter((tag) => tag !== "IPA")
+      .map((tag) => descriptions?.[tag] || tag);
+    return {
+      type: "structured-content",
+      content: {
+        tag: "div",
+        data: { content: "ipa" },
+        content: ipa + (labels.length ? ` (${labels.join(", ")})` : ""),
+      },
+    };
+  });
 }
 
 export type Tag = {

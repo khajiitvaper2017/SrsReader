@@ -3,7 +3,15 @@ import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
 import { nounArticle } from "../src/cards/noun-article";
 import { cardEncounterKey } from "../src/cards/encounter-key";
 import { stateOf, stateForEncounter } from "../src/vocabulary/state";
-import { ipaDataSchema, ipaDefinitions } from "../src/dictionaries/model";
+import {
+  ipaDataSchema,
+  ipaDefinitions,
+  type Meaning,
+} from "../src/dictionaries/model";
+import {
+  dictionaryPronunciations,
+  preferredIpaMeanings,
+} from "../src/dictionaries/pronunciation";
 import {
   analysisTerms,
   normalizeTokens,
@@ -258,4 +266,65 @@ test("merged IPA entries preserve transcriptions and dialect or context labels",
       transcriptions: [{ ipa: 5 }],
     }).success,
   ).toBe(false);
+});
+
+test("hervorbringen and sprechen use headword IPA instead of unlabelled inflected forms", () => {
+  const meaning = (ipas: string[]): Meaning => ({
+    dictionaryId: "ipa",
+    title: "IPA",
+    revision: "1",
+    attribution: "",
+    sourceUrl: "",
+    tags: "ipa",
+    definitions: ipaDefinitions({
+      reading: "",
+      transcriptions: ipas.map((ipa) => ({ ipa })),
+    }),
+  });
+  for (const [headword, merged] of [
+    [
+      "[hɛɐ̯ˈfoːɐ̯ˌbʁɪŋən]",
+      [
+        "[hɛɐ̯ˈfoːɐ̯ˌbʀɪŋən]",
+        "[hɛɐ̯ˈfoːɐ̯ˌbʁɪŋən]",
+        "/ˌbʀaχtə hɛɐ̯ˈfoːɐ̯/",
+        "/hɛɐ̯ˈfoːɐ̯ɡəˌbʀaχt/",
+      ],
+    ],
+    ["[ˈʃpʁɛçn̩]", ["/ˈʃprɛçən/", "[-çn̩]", "/'ʃpra:x/", "/gə'ʃpro:xən/"]],
+  ] as const) {
+    const selected = preferredIpaMeanings([
+      { merged: true, meanings: [meaning([...merged])] },
+      { merged: false, meanings: [meaning([headword])] },
+    ]);
+    expect(dictionaryPronunciations(selected)).toEqual([headword]);
+  }
+});
+
+test("IPA expands dictionary explanations and removes only exact duplicates", () => {
+  const meanings: Meaning[] = [
+    {
+      dictionaryId: "ipa",
+      title: "IPA",
+      revision: "1",
+      attribution: "",
+      sourceUrl: "",
+      tags: "ipa",
+      definitions: ipaDefinitions(
+        {
+          reading: "Garage",
+          transcriptions: [
+            { ipa: "[ɡaˈʁaːʒə]", tags: ["🇩🇪"] },
+            { ipa: "[ɡaˈʁaːʒə]", tags: ["🇩🇪"] },
+            { ipa: "[ɡaˈʁaːʃ]", tags: ["🇦🇹"] },
+          ],
+        },
+        { "🇩🇪": "Germany", "🇦🇹": "Austria" },
+      ),
+    },
+  ];
+  expect(dictionaryPronunciations(meanings)).toEqual([
+    "[ɡaˈʁaːʒə] (Germany)",
+    "[ɡaˈʁaːʃ] (Austria)",
+  ]);
 });

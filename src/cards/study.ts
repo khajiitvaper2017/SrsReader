@@ -6,6 +6,7 @@ import type {
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
 import { dictionaryIpa } from "@/dictionaries/ipa";
+import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
 import type { Meaning } from "@/dictionaries/model";
 import {
   dictionaryPartsOfSpeech,
@@ -28,37 +29,6 @@ function lexicalClass(meanings: Meaning[]) {
   return noun === verb ? undefined : noun ? "noun" : "verb";
 }
 
-function pronunciation(value: unknown): string[] {
-  if (Array.isArray(value)) return value.flatMap(pronunciation);
-  if (!value || typeof value !== "object") return [];
-  const node = value as Record<string, unknown>;
-  const data = node.data as Record<string, unknown> | undefined;
-  const marker = [
-    node.type,
-    node.class,
-    node.className,
-    data?.content,
-    data?.type,
-  ];
-  if (
-    marker.some(
-      (value) =>
-        typeof value === "string" &&
-        /(?:^|[\s_-])ipa(?:$|[\s_-])/iu.test(value),
-    )
-  ) {
-    function text(value: unknown): string {
-      if (typeof value === "string") return value;
-      if (Array.isArray(value)) return value.map(text).join("");
-      if (!value || typeof value !== "object") return "";
-      const node = value as Record<string, unknown>;
-      return text(node.content ?? node.text);
-    }
-    const ipa = text(node.content ?? node.text).trim();
-    return ipa ? [ipa] : [];
-  }
-  return pronunciation(node.content);
-}
 
 export function cardStudyDetails(
   language: string,
@@ -79,15 +49,7 @@ export function cardStudyDetails(
           )
       : dictionaryPartsOfSpeech(meanings),
     forms: [],
-    ipa: [
-      ...new Set(
-        meanings.flatMap((meaning) =>
-          (meaning.customDefinitions ?? meaning.definitions).flatMap(
-            pronunciation,
-          ),
-        ),
-      ),
-    ],
+    ipa: dictionaryPronunciations(meanings),
   };
   if (encounter) {
     study.grammar = Object.entries(encounter.feats)

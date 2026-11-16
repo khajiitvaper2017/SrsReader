@@ -20,7 +20,7 @@ import {
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { Meanings } from "@/dictionaries/components/Meanings";
-import { Structured } from "@/dictionaries/components/StructuredContent";
+import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { WordExamples } from "@/examples/components/WordExamples";
 import { folded } from "@/languages/text";
@@ -163,6 +163,13 @@ function LookupEntry({
   const heading = writtenNumeral ?? word?.lemma ?? term;
   const meanings =
     word?.meanings.filter((meaning) => meaning.tags !== "ipa") ?? [];
+  const ipa = dictionaryPronunciations(
+    word?.meanings.filter(
+      (meaning) =>
+        meaning.tags === "ipa" &&
+        !hiddenDictionaries.includes(meaning.dictionaryId),
+    ) ?? [],
+  );
   const hiddenCandidateDictionaries = new Map(
     result?.words
       .filter((candidate) => !wordMatchesGrammar(candidate, result.grammar))
@@ -373,36 +380,23 @@ function LookupEntry({
                 )}
               </Group>
               <Group gap="xs">
-                <FrequencyBadge word={word} />
-                {word.meanings
-                  .filter(
-                    (meaning) =>
-                      meaning.tags === "ipa" &&
-                      !hiddenDictionaries.includes(meaning.dictionaryId),
-                  )
-                  .flatMap((meaning) =>
-                    (meaning.customDefinitions ?? meaning.definitions).map(
-                      (definition, index) => (
-                        <Text
-                          key={`${meaning.dictionaryId}:${index}`}
-                          variant="supporting"
-                          component="div"
-                          maw="100%"
-                          style={{ overflowWrap: "anywhere" }}
-                        >
-                          <Structured
-                            value={definition}
-                            dictionaryId={meaning.dictionaryId}
-                          />
-                        </Text>
-                      ),
-                    ),
-                  )}
-                {word.reading && (
+                {ipa.map((pronunciation) => (
+                  <Text
+                    key={pronunciation}
+                    variant="supporting"
+                    component="span"
+                    maw="100%"
+                    style={{ overflowWrap: "anywhere" }}
+                  >
+                    {pronunciation}
+                  </Text>
+                ))}
+                {word.reading && !ipa.includes(word.reading) && (
                   <Text variant="supporting" component="span" inherit>
                     {word.reading}
                   </Text>
                 )}
+                <FrequencyBadge word={word} />
                 {saved && (
                   <Badge w="fit-content">
                     {t(
