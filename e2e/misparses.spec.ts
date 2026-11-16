@@ -268,7 +268,7 @@ test("merged IPA entries preserve transcriptions and dialect or context labels",
   ).toBe(false);
 });
 
-test("hervorbringen and sprechen use headword IPA instead of unlabelled inflected forms", () => {
+test("merged IPA displays only its first pronunciation even when another source exists", () => {
   const meaning = (ipas: string[]): Meaning => ({
     dictionaryId: "ipa",
     title: "IPA",
@@ -297,11 +297,11 @@ test("hervorbringen and sprechen use headword IPA instead of unlabelled inflecte
       { merged: true, meanings: [meaning([...merged])] },
       { merged: false, meanings: [meaning([headword])] },
     ]);
-    expect(dictionaryPronunciations(selected)).toEqual([headword]);
+    expect(dictionaryPronunciations(selected)).toEqual([merged[0]]);
   }
 });
 
-test("IPA expands dictionary explanations and removes only exact duplicates", () => {
+test("IPA displays only its first pronunciation with its dictionary explanation", () => {
   const meanings: Meaning[] = [
     {
       dictionaryId: "ipa",
@@ -323,8 +323,5 @@ test("IPA expands dictionary explanations and removes only exact duplicates", ()
       ),
     },
   ];
-  expect(dictionaryPronunciations(meanings)).toEqual([
-    "[ɡaˈʁaːʒə] (Germany)",
-    "[ɡaˈʁaːʃ] (Austria)",
-  ]);
+  expect(dictionaryPronunciations(meanings)).toEqual(["[ɡaˈʁaːʒə] (Germany)"]);
 });

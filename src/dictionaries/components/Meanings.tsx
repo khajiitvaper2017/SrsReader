@@ -56,7 +56,11 @@ export function Meanings({
     tagDescriptions,
     monolingual,
     definitionLanguages,
-  } = useMeanings({ meanings, language, settings });
+  } = useMeanings({
+    meanings: meanings.filter((meaning) => meaning.tags !== "ipa"),
+    language,
+    settings,
+  });
   const dictionaryStyles = useMemo(
     () =>
       Object.fromEntries(

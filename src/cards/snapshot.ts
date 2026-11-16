@@ -116,6 +116,7 @@ function serializeMeanings(
   images?: Map<string, { dictionaryId: string; path: string }>,
 ) {
   return meanings
+    .filter((meaning) => meaning.tags !== "ipa")
     .map((meaning) => {
       const definitions = meaning.customDefinitions ?? meaning.definitions;
       const attribution = meaning.attribution

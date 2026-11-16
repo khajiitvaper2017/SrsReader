@@ -278,8 +278,17 @@ export function renderCard(
                 element.getAttribute("data-sc-type"),
               ].join(" "),
             )
-          )
+          ) {
+            let parent = element.parentElement;
             element.remove();
+            while (parent?.localName === "div" && !parent.hasChildNodes()) {
+              const container = parent.parentElement;
+              if (container?.matches("section[data-dictionary]"))
+                container.remove();
+              else parent.remove();
+              parent = container;
+            }
+          }
         fields[name] = document.body.innerHTML;
       }
     }

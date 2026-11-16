@@ -33,24 +33,22 @@ function pronunciation(value: unknown): string[] {
 }
 
 export function dictionaryPronunciations(meanings: Meaning[]): string[] {
-  return [
-    ...new Set(
-      meanings.flatMap((meaning) =>
-        meaning.tags === "ipa" && meaning.customDefinitions
-          ? meaning.customDefinitions
-          : (meaning.customDefinitions ?? meaning.definitions).flatMap(
-              pronunciation,
-            ),
-      ),
-    ),
-  ];
+  return meanings
+    .flatMap((meaning) =>
+      meaning.tags === "ipa" && meaning.customDefinitions
+        ? meaning.customDefinitions
+        : (meaning.customDefinitions ?? meaning.definitions).flatMap(
+            pronunciation,
+          ),
+    )
+    .slice(0, 1);
 }
 
 export function preferredIpaMeanings(
   sources: { merged: boolean; meanings: Meaning[] }[],
 ): Meaning[] {
   const specific = sources.filter(
-    (source) => !source.merged && source.meanings.length,
+    (source) => source.merged && source.meanings.length,
   );
   return (specific.length ? specific : sources).flatMap(
     (source) => source.meanings,

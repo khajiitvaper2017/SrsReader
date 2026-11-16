@@ -17,6 +17,7 @@ import { CardDefinitions } from "@/vocabulary/components/CardDefinitions";
 import { ContextSentence } from "@/vocabulary/components/ContextSentence";
 import type { DefinitionEditing } from "@/vocabulary/components/EditableMeanings";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
+import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
 import { WordExamples } from "@/examples/components/WordExamples";
 import { useState } from "react";
 import type { Settings } from "@/settings/model";
@@ -66,7 +67,6 @@ export function WordDetails({
           {word.lemma}
         </Title>
         <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
-          <FrequencyBadge word={{ ...word, forms: [] }} />
           <AudioButton word={word} settings={settings} onError={setError} />
           <ActionIcon
             visibleFrom="md"
@@ -140,6 +140,24 @@ export function WordDetails({
             </Menu.Dropdown>
           </Menu>
         </Group>
+      </Group>
+      <Group gap="xs">
+        {dictionaryPronunciations(
+          word.meanings.filter(
+            (meaning) =>
+              !word.hiddenDictionaries?.includes(meaning.dictionaryId),
+          ),
+        ).map((pronunciation) => (
+          <Text
+            key={pronunciation}
+            variant="supporting"
+            component="span"
+            style={{ overflowWrap: "anywhere" }}
+          >
+            {pronunciation}
+          </Text>
+        ))}
+        <FrequencyBadge word={{ ...word, forms: [] }} />
       </Group>
       <CardEditor
         key={word.id}
