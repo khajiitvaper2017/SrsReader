@@ -20,6 +20,7 @@ import {
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { Meanings } from "@/dictionaries/components/Meanings";
+import { Structured } from "@/dictionaries/components/StructuredContent";
 import { wordMatchesGrammar } from "@/dictionaries/grammar";
 import { WordExamples } from "@/examples/components/WordExamples";
 import { folded } from "@/languages/text";
@@ -160,13 +161,15 @@ function LookupEntry({
           ?.text
       : undefined;
   const heading = writtenNumeral ?? word?.lemma ?? term;
+  const meanings =
+    word?.meanings.filter((meaning) => meaning.tags !== "ipa") ?? [];
   const hiddenCandidateDictionaries = new Map(
     result?.words
       .filter((candidate) => !wordMatchesGrammar(candidate, result.grammar))
       .flatMap((candidate) =>
-        candidate.meanings.map(
-          (meaning) => [meaning.dictionaryId, meaning.title] as const,
-        ),
+        candidate.meanings
+          .filter((meaning) => meaning.tags !== "ipa")
+          .map((meaning) => [meaning.dictionaryId, meaning.title] as const),
       ),
   );
   const renderHeader = (
@@ -371,6 +374,30 @@ function LookupEntry({
               </Group>
               <Group gap="xs">
                 <FrequencyBadge word={word} />
+                {word.meanings
+                  .filter(
+                    (meaning) =>
+                      meaning.tags === "ipa" &&
+                      !hiddenDictionaries.includes(meaning.dictionaryId),
+                  )
+                  .flatMap((meaning) =>
+                    (meaning.customDefinitions ?? meaning.definitions).map(
+                      (definition, index) => (
+                        <Text
+                          key={`${meaning.dictionaryId}:${index}`}
+                          variant="supporting"
+                          component="div"
+                          maw="100%"
+                          style={{ overflowWrap: "anywhere" }}
+                        >
+                          <Structured
+                            value={definition}
+                            dictionaryId={meaning.dictionaryId}
+                          />
+                        </Text>
+                      ),
+                    ),
+                  )}
                 {word.reading && (
                   <Text variant="supporting" component="span" inherit>
                     {word.reading}
@@ -471,8 +498,10 @@ function LookupEntry({
           {!word && !!result?.words.length && (
             <Stack>
               <Meanings
-                meanings={result.words.flatMap(
-                  (candidate) => candidate.meanings,
+                meanings={result.words.flatMap((candidate) =>
+                  candidate.meanings.filter(
+                    (meaning) => meaning.tags !== "ipa",
+                  ),
                 )}
                 language={settings.studyLanguage}
                 settings={settings}
@@ -576,7 +605,7 @@ function LookupEntry({
                   />
                 ) : (
                   <EditableMeanings
-                    word={word}
+                    word={{ ...word, meanings }}
                     term={term}
                     context={context}
                     occurrence={page.occurrence}
