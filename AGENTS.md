@@ -43,7 +43,7 @@
 - Run `pnpm fix` to apply ESLint fixes and Prettier formatting across the repo. `pnpm format` only applies formatting.
 - When linting is relevant, use `pnpm exec eslint <files> --fix` on affected files only. Format only files that need formatting. Do not automatically run either command for an obvious one-line presentation edit.
 - Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
-- Do not add tests unless asked. If asked, add only end-to-end tests that check app behavior.
+- Do not add tests unless asked, except when a concrete misparse and example are available: add a small direct regression for the parsing or matching logic. Keep all misparse cases together in `e2e/misparses.spec.ts`; use the existing runner without browser, website, database, or live parser setup. Other requested tests must check end-to-end app behavior.
 - For trivial presentation-only changes (hover, spacing, labels, icons), do one quick check of the affected UI. Do not automatically run typecheck, ESLint, E2E tests, builds, screenshot collections, or multiple viewport/theme checks.
 - For logic, types, imports, storage, security, dependencies, or build changes, run only the relevant static checks and one focused behavior check. Reuse known APIs and callers; skip repeated documentation searches and temporary harnesses for obvious styling edits.
 - Repeat only failed checks or checks affected by a later edit. Do not repeat checks the user completed, successful browser setup, or successful fixture imports.

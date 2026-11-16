@@ -8,9 +8,15 @@ import {
 import { lookup } from "@/dictionaries/resolve";
 import { isOnlineDictionary } from "@/dictionaries/online";
 import { listDictionaries } from "@/dictionaries/storage";
+import { dictionaryTagValues } from "@/dictionaries/grammar";
+import { phraseMatchesPartOfSpeech } from "@/reader/phrase-matching";
 import { displayedWords } from "@/dictionaries/display";
 import type { Settings } from "@/settings/model";
-import { meaningTags, type LookupWord } from "@/dictionaries/model";
+import {
+  isInflectionReference,
+  meaningTags,
+  type LookupWord,
+} from "@/dictionaries/model";
 import {
   folded,
   germanHyphenatedCompounds,
@@ -40,6 +46,7 @@ type Candidate = {
   end: number;
   term: string;
   analysis?: SurfaceAnalysis;
+  phrasePartsOfSpeech?: string[];
   compoundPart?: CompoundPart;
   joined?: string;
 };
@@ -228,7 +235,20 @@ export async function scanTexts(
         ) {
           analyzed.terms.push(phrase);
           (analyzed.occurrence.phrases ??= []).push(phrase);
-        } else candidates.push({ start: segment.index, end, term: phrase });
+        } else
+          candidates.push({
+            start: segment.index,
+            end,
+            term: phrase,
+            phrasePartsOfSpeech: analyzed
+              ? analysis
+                  .filter(
+                    (surface) =>
+                      surface.start >= segment.index && surface.end <= end,
+                  )
+                  .flatMap((surface) => surface.partsOfSpeech)
+              : undefined,
+          });
       }
     }
     if (language === "de") {
@@ -501,8 +521,21 @@ export async function scanTexts(
     )) {
       if (candidate.start < end) continue;
       let words: LookupWord[] = [];
-      for (const term of candidate.analysis?.terms || [candidate.term])
-        words.push(...(matches.get(normalize(term))?.words || []));
+      for (const term of candidate.analysis?.terms || [candidate.term]) {
+        for (const word of matches.get(normalize(term))?.words || []) {
+          // Inflected phrase forms must agree with the sentence, not just its spelling.
+          if (
+            candidate.phrasePartsOfSpeech &&
+            !phraseMatchesPartOfSpeech(
+              candidate.phrasePartsOfSpeech,
+              dictionaryTagValues(word.meanings, "UPOS"),
+              isInflectionReference([word.lemma, word.forms]),
+            )
+          )
+            continue;
+          words.push(word);
+        }
+      }
       words = displayedWords(
         words,
         settings,

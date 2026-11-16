@@ -30,6 +30,7 @@ export type SurfaceAnalysis = {
   start: number;
   end: number;
   terms: string[];
+  partsOfSpeech: string[];
   properName: boolean;
   occurrence: Occurrence;
   related?: { start: number; end: number }[];
@@ -279,6 +280,10 @@ export function analysisTerms(
           start: token.start,
           end: token.end,
           terms: [...new Set(terms)],
+          partsOfSpeech: components.flatMap((part) => [
+            predicateOf(part, tokens).upos,
+            ...(part.feats.VerbForm === "Part" ? ["VERB", "AUX"] : []),
+          ]),
           properName: components.some(
             (part) =>
               !part.feats.NameType?.split(",").includes("Nat") &&
