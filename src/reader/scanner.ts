@@ -20,6 +20,7 @@ import {
 import { blockSelector, createBlockReader, makeRange } from "@/reader/blocks";
 import { readerClient } from "@/reader/client";
 import type { ReaderHighlights } from "@/reader/highlights";
+import { createScanScheduler } from "@/reader/scan-scheduler";
 import type {
   Block,
   Pointer,
@@ -93,7 +94,7 @@ export function createScanner(
   let session = crypto.randomUUID();
   // Live highlights can contain just one lookup. Cache only scan results.
   const parsed = new Map<string, ScanResult>();
-  let scanTimer: ReturnType<typeof setTimeout> | undefined;
+  const scanScheduler = createScanScheduler(() => void drain());
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let observer: MutationObserver | undefined;
   let queuedAt: number | undefined;
@@ -411,22 +412,16 @@ export function createScanner(
     for (const block of candidates) changed = queueBlock(block) || changed;
     if (changed) schedule();
   }
-  function schedule(delay = website ? 500 : 0) {
-    if (!queued.size || (starting && website)) return;
+  function schedule() {
+    if (scanning || !queued.size || (starting && website)) return;
+    let background = website;
     for (const element of visible)
       if (queued.has(element)) {
-        delay = 0;
+        background = false;
         break;
       }
     queuedAt ??= performance.now();
-    if (scanTimer !== undefined) {
-      if (delay) return;
-      clearTimeout(scanTimer);
-    }
-    scanTimer = setTimeout(() => {
-      scanTimer = undefined;
-      void drain();
-    }, delay);
+    scanScheduler.schedule(background);
   }
   function render(
     element: Element,
@@ -614,14 +609,8 @@ export function createScanner(
       const inView = [...queued].filter((element) => visible.has(element));
       const prioritize = inView.length > 0;
       const candidates = prioritize ? inView : queued;
-      const blockLimit = !website
-        ? Infinity
-        : prioritize
-          ? firstVisibleBatch
-            ? 1
-            : 8
-          : 64;
-      const byteLimit = !website ? Infinity : prioritize ? 8 * 1024 : 32 * 1024;
+      const blockLimit = website && prioritize && firstVisibleBatch ? 1 : 8;
+      const byteLimit = 8 * 1024;
       const snapshots = [];
       let bytes = 0;
       for (const element of candidates) {
@@ -794,7 +783,7 @@ export function createScanner(
         profile = undefined;
       }
       scanning = false;
-      schedule(0);
+      schedule();
     }
   }
   function contextFor(
@@ -1272,9 +1261,8 @@ export function createScanner(
     pageLanguage = undefined;
     session = crypto.randomUUID();
     observer?.disconnect();
-    clearTimeout(scanTimer);
+    scanScheduler.cancel();
     clearTimeout(retryTimer);
-    scanTimer = undefined;
     queuedAt = undefined;
     profile = undefined;
     parsed.clear();
@@ -1306,7 +1294,7 @@ export function createScanner(
           } else visible.delete(entry.target);
         if (starting || scanVisible) {
           starting = false;
-          schedule(0);
+          schedule();
         }
       });
     }
