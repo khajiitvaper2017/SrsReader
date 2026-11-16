@@ -4,6 +4,7 @@ import type {
   CardStudyDetails,
 } from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
+import { nounArticle } from "@/cards/noun-article";
 import type { Meaning } from "@/dictionaries/model";
 import {
   dictionaryPartsOfSpeech,
@@ -18,11 +19,6 @@ import { t } from "@/shared/i18n/i18n";
 import type { Vocabulary } from "@/vocabulary/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
-const articles: Record<string, string> = {
-  Masc: "der",
-  Fem: "die",
-  Neut: "das",
-};
 
 function lexicalClass(meanings: Meaning[]) {
   const parts = dictionaryTagValues(meanings, "UPOS");
@@ -115,10 +111,11 @@ export function cardStudyDetails(
             })}: ${translated}`;
       });
   }
-  if (language !== "de") return study;
   const kind = lexicalClass(meanings);
-  if (!kind) return study;
-  if (kind === "noun") {
+  if (
+    kind === "noun" ||
+    encounter?.pos.split(",").some((pos) => pos === "NOUN" || pos === "PROPN")
+  ) {
     const genders = dictionaryTagValues(
       meanings.filter((meaning) =>
         dictionaryTagValues([meaning], "UPOS").some(
@@ -127,11 +124,10 @@ export function cardStudyDetails(
       ),
       "Gender",
     );
-    if (genders.length === 1) {
-      study.article = articles[genders[0]!];
-    }
+    study.article = nounArticle(language, encounter?.feats.Gender, genders);
     if (genders.length > 1) return study;
   }
+  if (language !== "de" || !kind) return study;
   const categories =
     kind === "noun"
       ? [

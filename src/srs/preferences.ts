@@ -33,6 +33,7 @@ export const srsPreferencesSchema = z.object({
   reviewBindings: reviewBindingsSchema,
   front: z.enum(["word", "sentence"]).default("word"),
   showPartOfSpeech: z.boolean().default(true),
+  showGenderedArticle: z.boolean().default(true),
   retention: z.number().min(0.7).max(0.99).default(0.8),
   algorithm: z.enum(["fsrs", "rwkv"]).default("fsrs"),
   fsrsVersion: fsrsVersionSchema.default("7"),

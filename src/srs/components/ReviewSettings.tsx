@@ -64,6 +64,21 @@ export function ReviewSettings({
             labelWrapper: { flex: 1 },
             track: { flexShrink: 0 },
           }}
+          label={t("show_gendered_article")}
+          description={t("show_gendered_article_help")}
+          checked={settings.showGenderedArticle}
+          onChange={(event) =>
+            void update({ showGenderedArticle: event.currentTarget.checked })
+          }
+        />
+        <Switch
+          labelPosition="left"
+          w="100%"
+          styles={{
+            body: { width: "100%", minHeight: 44, alignItems: "center" },
+            labelWrapper: { flex: 1 },
+            track: { flexShrink: 0 },
+          }}
           label={t("show_sentence_translations")}
           checked={settings.showSentenceTranslation}
           onChange={(event) =>

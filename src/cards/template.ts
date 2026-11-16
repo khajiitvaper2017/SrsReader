@@ -50,6 +50,7 @@ export type RenderOptions = {
   front?: "word" | "sentence";
   showReading?: boolean;
   showPartOfSpeech?: boolean;
+  showGenderedArticle?: boolean;
 };
 
 export function templateWarnings(
@@ -241,7 +242,10 @@ export function renderCard(
   };
   if (noteType.id.startsWith("reader:")) {
     const study = document.study;
-    fields.SrsArticle = escapeHtml(study?.article ?? "");
+    fields.SrsArticle =
+      options.showGenderedArticle === false
+        ? ""
+        : escapeHtml(study?.article ?? "");
     fields.SrsGrammar = (study?.grammar ?? []).map(escapeHtml).join(" · ");
     fields.SrsPartOfSpeech = (study?.partsOfSpeech ?? [])
       .map(escapeHtml)

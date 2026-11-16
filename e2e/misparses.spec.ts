@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
+import { nounArticle } from "../src/cards/noun-article";
 import { cardEncounterKey } from "../src/cards/encounter-key";
 import { stateOf, stateForEncounter } from "../src/vocabulary/state";
 import {
@@ -206,4 +207,31 @@ test("live color updates and forgetting a Band card remain encounter-specific", 
   } as const;
   expect(stateForEncounter(forgotten, musicKey)).toBe("unknown");
   expect(stateForEncounter(forgotten, volumeKey)).toBe("learning");
+});
+
+for (const [gender, article] of [
+  ["Masc", "der"],
+  ["Fem", "die"],
+  ["Neut", "das"],
+] as const) {
+  test(`${article} Band displays its article despite mixed dictionary genders`, () => {
+    expect(nounArticle("de", gender, ["Masc", "Fem", "Neut"])).toBe(article);
+  });
+}
+
+test("ambiguous noun articles are displayed instead of silently omitted", () => {
+  expect(nounArticle("de", undefined, ["Neut", "Fem", "Masc"])).toBe(
+    "der/die/das",
+  );
+  expect(nounArticle("de", undefined, ["Fem"])).toBe("die");
+  expect(nounArticle("de", undefined, [])).toBeUndefined();
+});
+
+test("noun articles follow the study language instead of applying German articles globally", () => {
+  expect(nounArticle("es", "Fem", ["Masc", "Fem"])).toBe("la");
+  expect(nounArticle("fr", "Masc", ["Masc", "Fem"])).toBe("le");
+  expect(nounArticle("el", "Neut", ["Neut"])).toBe("το");
+  expect(nounArticle("nl", undefined, ["Masc", "Fem"])).toBe("de");
+  expect(nounArticle("en", undefined, [])).toBeUndefined();
+  expect(nounArticle("cs", "Fem", ["Fem"])).toBeUndefined();
 });

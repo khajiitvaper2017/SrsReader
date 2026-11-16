@@ -66,6 +66,7 @@ export function createReviewPreload(settings: Settings) {
         deckName: deck?.name,
         front: settings.front,
         showPartOfSpeech: settings.showPartOfSpeech,
+        showGenderedArticle: settings.showGenderedArticle,
       };
       await Promise.all(
         [false, true].map((revealed) =>

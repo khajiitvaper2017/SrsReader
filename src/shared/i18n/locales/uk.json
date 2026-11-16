@@ -402,6 +402,8 @@
   "settings_imported": "Налаштування імпортовано.",
   "setup": "Налаштування",
   "show_answer": "Показати відповідь",
+  "show_gendered_article": "Показувати артикль перед іменником",
+  "show_gendered_article_help": "Для мов, у яких артикль указує на рід іменника, наприклад der Tisch.",
   "show_part_of_speech_on_card_fronts": "Частина мови на лицьовому боці",
   "show_sentence_translations": "Переклад речень",
   "sort_by": "Сортувати за",

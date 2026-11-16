@@ -112,6 +112,7 @@ export function CardViewer({
           deckName,
           front: settings.front,
           showPartOfSpeech: settings.showPartOfSpeech,
+          showGenderedArticle: settings.showGenderedArticle,
         }),
         templateError: "",
       };
@@ -124,6 +125,7 @@ export function CardViewer({
     deckName,
     settings.front,
     settings.showPartOfSpeech,
+    settings.showGenderedArticle,
   ]);
   const scan = settings.scanPopups && !!onLookup;
   useEffect(() => {

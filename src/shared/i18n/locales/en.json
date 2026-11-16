@@ -396,6 +396,8 @@
   "settings_imported": "Settings imported.",
   "setup": "Setup",
   "show_answer": "Show answer",
+  "show_gendered_article": "Show article before noun",
+  "show_gendered_article_help": "For languages where the article indicates gender, such as der Tisch.",
   "show_part_of_speech_on_card_fronts": "Part of speech on front",
   "show_sentence_translations": "Sentence translations",
   "sort_by": "Sort by",
