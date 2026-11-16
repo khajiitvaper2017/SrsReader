@@ -179,6 +179,8 @@ function LookupEntry({
           component="header"
           pos="sticky"
           top={0}
+          mt="-sm"
+          pt="sm"
           bg="var(--mantine-color-body)"
           style={{ zIndex: 2 }}
           data-srs-reader
