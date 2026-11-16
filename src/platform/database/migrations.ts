@@ -366,6 +366,9 @@ export function installMigrations(database: Dexie) {
           type.css = css;
         });
     });
+  database.version(27).stores({
+    ipa: "id, revisionId, [revisionId+folded]",
+  });
 }
 
 async function migrateCards(tx: Transaction, hasLegacyMedia: boolean) {

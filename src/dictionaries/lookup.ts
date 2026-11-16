@@ -7,6 +7,7 @@ import type {
   Phrase,
 } from "@/dictionaries/model";
 import { meaningTags } from "@/dictionaries/model";
+import { dictionaryIpa } from "@/dictionaries/ipa";
 import { nechybujteCacheKey } from "@/dictionaries/nechybujte";
 import { isOnlineDictionary, mergeOnline } from "@/dictionaries/online";
 import { spanishDictCacheKey } from "@/dictionaries/spanishdict";
@@ -475,6 +476,20 @@ export async function lookupMany(
         const term = normalize(terms[index]!);
         results.set(term, mergeOnline(results.get(term)!, record.result, term));
       }
+  }
+  if (withDefinitions) {
+    await Promise.all(
+      [...results.values()].map(async (result) => {
+        result.words = await Promise.all(
+          result.words.map(async (word) => {
+            const ipa = await dictionaryIpa(word, ordered);
+            return ipa.length
+              ? { ...word, meanings: [...word.meanings, ...ipa] }
+              : word;
+          }),
+        );
+      }),
+    );
   }
   for (const result of results.values())
     result.words = result.words.flatMap((word) => {

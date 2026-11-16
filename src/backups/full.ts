@@ -176,7 +176,9 @@ export async function readFull(
     )
       throw new Error(t("full_backup_invalid"));
     const meta = await peakImportFile(database);
-    const expected = tables();
+    const expected = tables().filter(
+      (table) => manifest.databaseVersion >= 27 || table.name !== "ipa",
+    );
     if (
       meta.formatName !== "dexie" ||
       meta.formatVersion !== 1 ||
@@ -323,11 +325,15 @@ export async function restoreFull(
             if (!table.name.startsWith("sync") && !learningTables[table.name])
               await table.clear();
           let done = 0;
-          const restoredTables = tables().sort(
-            (a, b) =>
-              (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
-              (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
-          );
+          const restoredTables = tables()
+            .filter(
+              (table) => backup.staged.verno >= 27 || table.name !== "ipa",
+            )
+            .sort(
+              (a, b) =>
+                (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
+                (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
+            );
           for (const table of restoredTables)
             await copyTable(backup.staged.table(table.name), table, (rows) => {
               done += rows;

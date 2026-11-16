@@ -5,11 +5,13 @@ import {
   entryMatch,
   frequencyDataSchema,
   indexSchema,
+  ipaDataSchema,
   termMetaSchema,
   termSchema,
   type Dictionary,
   type Entry,
   type Frequency,
+  type Ipa,
 } from "@/dictionaries/model";
 import { languageCode } from "@/languages/codes";
 import { folded, normalize } from "@/languages/text";
@@ -85,6 +87,7 @@ async function importRevision(
     const totalBanks = banks.length + metaBanks.length;
     let count = 0;
     let frequencyCount = 0;
+    let ipaCount = 0;
     let maxFrequency = 0;
     const segmenter = new Intl.Segmenter(language, { granularity: "word" });
     for (const [bankNumber, file] of banks.entries()) {
@@ -170,6 +173,7 @@ async function importRevision(
           t("invalid_term_metadata_bank", { filename: file.filename }),
         );
       for (let offset = 0; offset < rows.length; offset += importBatchSize) {
+        const pronunciations: Ipa[] = [];
         const batch: Frequency[] = rows
           .slice(offset, offset + importBatchSize)
           .flatMap((row, i) => {
@@ -182,6 +186,24 @@ async function importRevision(
                 }),
               );
             const [term, mode, data] = parsed.data;
+            if (mode === "ipa") {
+              const pronunciation = ipaDataSchema.safeParse(data);
+              if (!pronunciation.success)
+                throw new Error(
+                  t("invalid_ipa_entry_in", {
+                    value1: offset + i + 1,
+                    filename: file.filename,
+                  }),
+                );
+              pronunciations.push({
+                ...pronunciation.data,
+                id: `${revisionId}:${ipaCount++}`,
+                revisionId,
+                key: normalize(term),
+                folded: folded(term, language),
+              });
+              return [];
+            }
             if (mode !== "freq") return [];
             const frequency = frequencyDataSchema.safeParse(data);
             if (!frequency.success)
@@ -214,7 +236,8 @@ async function importRevision(
               },
             ];
           });
-        await db.frequencies.bulkAdd(batch);
+        if (batch.length) await db.frequencies.bulkAdd(batch);
+        if (pronunciations.length) await db.ipa.bulkAdd(pronunciations);
         rows.fill(null, offset, offset + importBatchSize);
         progress({
           phase: t("reading", { filename: file.filename }),
@@ -226,7 +249,7 @@ async function importRevision(
         });
       }
     }
-    if (!count && !frequencyCount)
+    if (!count && !frequencyCount && !ipaCount)
       throw new Error(t("this_zip_contains_no_terms_or_numeric_frequencies"));
     for (const file of files.filter((f) =>
       /^tag_bank_\d+\.json$/.test(f.filename),
@@ -282,6 +305,7 @@ async function importRevision(
         ) + 1,
       count,
       frequencyCount,
+      ipaCount,
       maxFrequency,
       imported: Date.now(),
       styles,

@@ -90,7 +90,9 @@ export function DictionarySettings({
         dictionary.language === settings.studyLanguage &&
         (role === "frequency"
           ? dictionary.frequencyCount > 0
-          : dictionary.count > 0 || isOnlineDictionary(dictionary.id)),
+          : dictionary.count > 0 ||
+            (dictionary.ipaCount ?? 0) > 0 ||
+            isOnlineDictionary(dictionary.id)),
     )
     .sort((a, b) =>
       role === "frequency"
@@ -142,6 +144,8 @@ export function DictionarySettings({
                         t("frequency_count", {
                           count: dictionary.frequencyCount,
                         })}
+                      {(dictionary.ipaCount ?? 0) > 0 &&
+                        t("ipa_count", { count: dictionary.ipaCount })}
                     </>
                   )}
                 </Text>

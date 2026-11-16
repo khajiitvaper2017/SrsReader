@@ -5,6 +5,7 @@ import type {
 } from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
+import { dictionaryIpa } from "@/dictionaries/ipa";
 import type { Meaning } from "@/dictionaries/model";
 import {
   dictionaryPartsOfSpeech,
@@ -200,7 +201,10 @@ export async function prepareStudyDocument(
         }
       : document;
   let meanings: Vocabulary["meanings"] = applyDefinitionOverrides(
-    word.meanings,
+    [
+      ...word.meanings.filter((meaning) => meaning.tags !== "ipa"),
+      ...(await dictionaryIpa(word)),
+    ],
     word,
   ).filter(
     (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),

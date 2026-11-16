@@ -33,6 +33,7 @@ export type Dictionary = {
   order: number;
   count: number;
   frequencyCount: number;
+  ipaCount?: number;
   maxFrequency: number;
   imported: number;
   styles: string;
@@ -143,6 +144,36 @@ export type Frequency = {
   reading: string | null;
   rank: number;
 };
+
+export const ipaDataSchema = z.object({
+  reading: z.string(),
+  transcriptions: z.array(
+    z.object({
+      ipa: z.string().min(1),
+      tags: z.array(z.string()).optional(),
+    }),
+  ),
+});
+
+export type Ipa = z.infer<typeof ipaDataSchema> & {
+  id: string;
+  revisionId: string;
+  key: string;
+  folded: string;
+};
+
+export function ipaDefinitions(
+  data: z.infer<typeof ipaDataSchema>,
+): Definition[] {
+  return data.transcriptions.map(({ ipa, tags }) => ({
+    type: "structured-content",
+    content: {
+      tag: "div",
+      data: { content: "ipa" },
+      content: ipa + (tags?.length ? ` (${tags.join(", ")})` : ""),
+    },
+  }));
+}
 
 export type Tag = {
   id: string;

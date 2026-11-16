@@ -11,6 +11,7 @@ import {
   definitionSchema,
   indexSchema,
   meaningSchema,
+  ipaDataSchema,
 } from "@/dictionaries/model";
 import { sentenceSchema } from "@/examples/sentence-model";
 import { settingsSchema } from "@/settings/model";
@@ -131,6 +132,7 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
     order: number,
     count,
     frequencyCount: count,
+    ipaCount: count.optional(),
     maxFrequency: number,
     imported: number,
     styles: z.string(),
@@ -144,6 +146,12 @@ export const fullRowSchemas: Record<string, z.ZodType> = {
     folded: z.string(),
     reading: z.string().nullable(),
     rank: number,
+  }),
+  ipa: ipaDataSchema.extend({
+    id,
+    revisionId: id,
+    key: z.string(),
+    folded: z.string(),
   }),
   tags: z.object({
     id,

@@ -19,10 +19,10 @@ import { SourceAttribution } from "@/shared/ui/SourceAttribution";
 export type WiktionaryDownload = {
   source: string;
   target: string;
-  type: "main" | "glossary";
+  type: "main" | "glossary" | "ipa";
   size: number;
 };
-const types = ["main", "glossary"] as const;
+const types = ["main", "glossary", "ipa"] as const;
 const catalog: Record<
   WiktionaryDownload["type"],
   Record<string, Record<string, number>>
@@ -40,12 +40,14 @@ const downloads: WiktionaryDownload[] = types.flatMap((type) =>
 const typeLabels = {
   main: "dictionary_definitions",
   glossary: "dictionary_translations",
+  ipa: "dictionary_ipa_merged",
 };
 export function wiktionaryName(entry: WiktionaryDownload) {
+  if (entry.type === "ipa") return `wty-${entry.source}-ipa`;
   return `wty-${entry.source}-${entry.target}${entry.type === "glossary" ? "-gloss" : ""}`;
 }
 export function wiktionaryDownloadUrl(entry: WiktionaryDownload) {
-  return `https://huggingface.co/datasets/daxida/wty-release/resolve/main/latest/dict/${entry.source}/${entry.target}/${wiktionaryName(entry)}.zip?download=true`;
+  return `https://huggingface.co/datasets/daxida/wty-release/resolve/main/latest/dict/${entry.type === "ipa" ? "all" : entry.source}/${entry.target}/${wiktionaryName(entry)}.zip?download=true`;
 }
 const compareLanguages = (a: string, b: string) =>
   languageName(a).localeCompare(languageName(b), i18n.resolvedLanguage);
@@ -208,8 +210,9 @@ export function WiktionaryBrowser({
                   >
                     <Stack gap={0} miw={0} flex={1}>
                       <strong>
-                        {languageLabel(languageCode(entry.source))} →{" "}
-                        {languageLabel(languageCode(entry.target))}
+                        {languageLabel(languageCode(entry.source))}
+                        {entry.type !== "ipa" &&
+                          ` → ${languageLabel(languageCode(entry.target))}`}
                       </strong>
                       <Text variant="supporting">
                         {t(typeLabels[entry.type])} · {downloadSize(entry.size)}{" "}

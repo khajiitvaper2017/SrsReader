@@ -3,6 +3,7 @@ import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
 import { nounArticle } from "../src/cards/noun-article";
 import { cardEncounterKey } from "../src/cards/encounter-key";
 import { stateOf, stateForEncounter } from "../src/vocabulary/state";
+import { ipaDataSchema, ipaDefinitions } from "../src/dictionaries/model";
 import {
   analysisTerms,
   normalizeTokens,
@@ -234,4 +235,27 @@ test("noun articles follow the study language instead of applying German article
   expect(nounArticle("nl", undefined, ["Masc", "Fem"])).toBe("de");
   expect(nounArticle("en", undefined, [])).toBeUndefined();
   expect(nounArticle("cs", "Fem", ["Fem"])).toBeUndefined();
+});
+
+test("merged IPA entries preserve transcriptions and dialect or context labels", () => {
+  const data = ipaDataSchema.parse({
+    reading: "'n",
+    transcriptions: [
+      { ipa: "/n̩/" },
+      { ipa: "/m̩/", tags: ["often", "before a labial"] },
+    ],
+  });
+  const definitions = ipaDefinitions(data) as {
+    content: { content: string };
+  }[];
+  expect(definitions.map((definition) => definition.content.content)).toEqual([
+    "/n̩/",
+    "/m̩/ (often, before a labial)",
+  ]);
+  expect(
+    ipaDataSchema.safeParse({
+      reading: "'n",
+      transcriptions: [{ ipa: 5 }],
+    }).success,
+  ).toBe(false);
 });

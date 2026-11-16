@@ -4,6 +4,7 @@ import { t } from "@/shared/i18n/i18n";
 const indexedTables = () => [
   db.entries,
   db.frequencies,
+  db.ipa,
   db.tags,
   db.dictionaryMedia,
   db.phrases,

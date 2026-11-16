@@ -5,6 +5,7 @@ import type {
   Entry,
   EntryMatch,
   Frequency,
+  Ipa,
   LookupResult,
   Phrase,
   Tag,
@@ -56,6 +57,7 @@ class ReaderDatabase extends Dexie {
   entries!: Table<Entry, string>;
   entryMatches!: Table<EntryMatch, string>;
   frequencies!: Table<Frequency, string>;
+  ipa!: Table<Ipa, string>;
   tags!: Table<Tag, string>;
   dictionaryMedia!: Table<DictionaryMedia, string>;
   archives!: Table<{ id: string; blob: Blob }, string>;
