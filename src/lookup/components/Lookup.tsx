@@ -226,7 +226,7 @@ function LookupEntry({
                     <Title
                       lang={word.language}
                       order={1}
-                      size="h3"
+                      size="h2"
                       tabIndex={0}
                       style={{ minWidth: 0, overflowWrap: "anywhere" }}
                     >
