@@ -263,7 +263,11 @@ export function App() {
                   deckId={deckId}
                 />
               ) : (
-                <StudyPage settings={settings} setSettings={setSettings} />
+                <StudyPage
+                  settings={settings}
+                  setSettings={setSettings}
+                  sync={sync}
+                />
               )}
             </React.Suspense>
           </Container>

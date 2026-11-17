@@ -1,6 +1,7 @@
 import { AnkiTransfer } from "@/anki/components/AnkiTransfer";
 import {
   ActionIcon,
+  Alert,
   Box,
   Button,
   Group,
@@ -23,7 +24,7 @@ import { settingsClient } from "@/settings/client";
 import type { Settings } from "@/settings/model";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { number, t } from "@/shared/i18n/i18n";
+import { i18n, number, t } from "@/shared/i18n/i18n";
 import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { srsClient } from "@/srs/client";
@@ -31,6 +32,7 @@ import { DeckEditor } from "@/srs/components/DeckEditor";
 import { deckPathLabel } from "@/srs/deck-tree";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
 import type { Responses } from "@/srs/contracts";
+import type { useSync } from "@/sync/hooks/useSync";
 import {
   ChevronDown,
   ChevronRight,
@@ -58,10 +60,32 @@ type DeckAction = {
 export function StudyPage({
   settings,
   setSettings,
+  sync,
 }: {
   settings: Settings;
   setSettings: (settings: Settings) => void;
+  sync: ReturnType<typeof useSync>;
 }) {
+  const status = sync.status;
+  const canSync = !!status?.connected && !status.authorizationRequired;
+  const syncBusy = !!status?.running || !!sync.operation;
+  const syncWarning = status?.configured
+    ? !status.connected
+      ? t("sync_not_connected")
+      : status.authorizationRequired
+        ? t("sync_auth_required")
+        : status.pending
+          ? t("sync_pending", { count: status.pending })
+          : !status.lastSuccess
+            ? t("sync_never_synced")
+            : ""
+    : "";
+  const syncErrorKey = sync.error?.toLowerCase();
+  const syncError = sync.error
+    ? syncErrorKey && i18n.exists(syncErrorKey)
+      ? t(syncErrorKey)
+      : t("sync_error_detail", { detail: sync.error })
+    : "";
   const [languages, setLanguages] = useState<Responses["studyOverview"]>();
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");
@@ -210,6 +234,20 @@ export function StudyPage({
         title={t("study_languages")}
         actions={
           <>
+            {status?.configured && (
+              <ActionIcon
+                variant="subtle"
+                aria-label={t(canSync ? "sync_now" : "sync_title")}
+                title={t(canSync ? "sync_now" : "sync_title")}
+                loading={syncBusy}
+                onClick={() => {
+                  if (canSync) void sync.syncNow();
+                  else location.hash = "settings/sync";
+                }}
+              >
+                <RefreshCw aria-hidden size={16} />
+              </ActionIcon>
+            )}
             <Menu>
               <Menu.Target>
                 <ActionIcon
@@ -258,6 +296,8 @@ export function StudyPage({
           </>
         }
       />
+      {syncWarning && <Alert color="yellow">{syncWarning}</Alert>}
+      <ErrorBox error={syncError} />
       <TaskAlerts
         busy={busy}
         error={modal || confirmation ? "" : error}
