@@ -92,6 +92,7 @@ export function useLookupWord({
   }>();
   const { term, context, occurrence } = refined?.page === page ? refined : page;
   const [selected, setSelected] = useState(page.selected || "");
+  const chosen = useRef(page.selected);
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [editing, setEditing] = useState<DefinitionEditing>(null);
   const selectionKey = JSON.stringify([selected, term, context, occurrence]);
@@ -209,7 +210,7 @@ export function useLookupWord({
   }, [word?.id]);
   useEffect(() => {
     let alive = true;
-    const show = (lookup: LookupResult) => {
+    const show = (lookup: LookupResult, contextual = false) => {
       if (!alive) return;
       setResult(lookup);
       setError(lookup.warning || "");
@@ -217,7 +218,9 @@ export function useLookupWord({
         (current) =>
           (
             lookup.words.find(
-              (word) => word.id === (current || page.selected),
+              (word) =>
+                word.id ===
+                (chosen.current ?? (contextual ? undefined : current)),
             ) ||
             lookup.words.find((word) =>
               wordMatchesGrammar(word, lookup.grammar),
@@ -291,7 +294,7 @@ export function useLookupWord({
             },
             occurrence: span.occurrence,
           });
-          show(contextual);
+          show(contextual, true);
         })().catch((error) =>
           console.warn("SrsReader: sentence lookup failed", error),
         );
@@ -408,6 +411,7 @@ export function useLookupWord({
     !reviewed;
   useReviewControls({
     settings,
+    mouseCapture: false,
     onGrade: canGrade ? (rating) => void act(rating) : undefined,
     onFlip: canGrade ? () => void act(3) : undefined,
     onUndo:
@@ -613,7 +617,10 @@ export function useLookupWord({
     result,
     term,
     context,
-    setSelected,
+    setSelected: (id: string) => {
+      chosen.current = id;
+      setSelected(id);
+    },
     candidateOpen,
     setCandidateOpen,
     candidates,

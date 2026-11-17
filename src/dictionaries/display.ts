@@ -1,7 +1,7 @@
 import { isOnlineDictionary } from "@/dictionaries/online";
 import type { Dictionary, Meaning, LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
-import { folded } from "@/languages/text";
+import { folded, normalize } from "@/languages/text";
 
 export type DictionaryRole = "vocabulary" | "frequency";
 
@@ -102,7 +102,14 @@ export function displayedWords(
       (lemma) =>
         folded(lemma, word.language) === folded(word.lemma, word.language),
     );
-    return index < 0 ? preferredLemmas.length : index;
+    if (index < 0) return preferredLemmas.length * 2;
+    return (
+      index * 2 +
+      Number(
+        word.language === "de" &&
+          normalize(preferredLemmas[index]!) !== normalize(word.lemma),
+      )
+    );
   };
   return words
     .flatMap((word) => {

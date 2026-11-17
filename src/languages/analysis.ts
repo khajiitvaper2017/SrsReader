@@ -224,6 +224,13 @@ export function normalizeTokens(
         token.upos === "NOUN" || token.upos === "PROPN"
           ? determiners.get(token.id)
           : undefined;
+      if (
+        language === "de" &&
+        token.upos === "NOUN" &&
+        /^\p{Lu}/u.test(form) &&
+        /^\p{Ll}/u.test(lemma)
+      )
+        lemma = lemma[0]!.toLocaleUpperCase("de") + lemma.slice(1);
       // HDT may put noun agreement only on its linked determiner.
       if (determiner)
         for (const feature of ["Gender", "Case", "Number"]) {

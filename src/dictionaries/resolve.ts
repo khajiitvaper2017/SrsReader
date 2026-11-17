@@ -138,7 +138,12 @@ export async function lookup(
     result.words.push(...(match?.words || []));
     result.unresolved.push(...(match?.unresolved || []));
   }
-  result.words = displayedWords(result.words, settings, dictionaries, bases);
+  result.words = displayedWords(
+    result.words,
+    settings,
+    dictionaries,
+    bases.length ? bases : [lookupTerm],
+  );
   const saved = await db.vocabulary.bulkGet(
     result.words.map((word) => word.id),
   );
@@ -149,12 +154,11 @@ export async function lookup(
   const germanNoun =
     settings.studyLanguage === "de" &&
     baseTokens.some((token) => token.upos === "NOUN" || token.upos === "PROPN");
+  const hasNoun = result.words.some((word) =>
+    bases.some((base) => normalize(word.lemma) === normalize(base)),
+  );
   let nounLemma = normalize(lookupTerm);
-  if (
-    germanNoun &&
-    !result.words.length &&
-    !hasGermanSuspensionHyphen(nounLemma)
-  ) {
+  if (germanNoun && !hasNoun && !hasGermanSuspensionHyphen(nounLemma)) {
     const last = (await lookupGermanCompounds([nounLemma]))
       .get(nounLemma)
       ?.at(-1);
@@ -169,23 +173,27 @@ export async function lookup(
     }
   }
   for (const lemma of result.numeral ? [] : bases) {
-    if (germanNoun && result.words.length) continue;
+    if (germanNoun && hasNoun) continue;
     const headword = germanNoun ? nounLemma : lemma;
     if (
-      result.words.some(
-        (word) =>
-          folded(word.lemma, word.language) === folded(headword, word.language),
+      result.words.some((word) =>
+        germanNoun
+          ? normalize(word.lemma) === normalize(headword)
+          : folded(word.lemma, word.language) ===
+            folded(headword, word.language),
       )
     )
       continue;
-    result.words.push({
+    const fallback = {
       id: wordId(settings.studyLanguage, headword, ""),
       lemma: headword,
       language: settings.studyLanguage,
       reading: "",
       forms: [],
       meanings: [],
-    });
+    };
+    if (germanNoun) result.words.unshift(fallback);
+    else result.words.push(fallback);
   }
   if (result.words.length) result.unresolved = [];
   return result;

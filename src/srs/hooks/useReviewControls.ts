@@ -8,12 +8,14 @@ export function useReviewControls({
   onFlip,
   onUndo,
   onPauseTimer,
+  mouseCapture = true,
 }: {
   settings: Settings;
   onGrade?: (rating: number) => void;
   onFlip?: () => void;
   onUndo?: () => void;
   onPauseTimer?: () => void;
+  mouseCapture?: boolean;
 }) {
   const suppressed = useRef(new Set<number>());
   useEffect(() => {
@@ -60,13 +62,13 @@ export function useReviewControls({
     };
     const clear = () => suppressed.current.clear();
     window.addEventListener("keydown", handle, true);
-    window.addEventListener("mousedown", handle, true);
+    window.addEventListener("mousedown", handle, mouseCapture);
     window.addEventListener("blur", clear);
     for (const type of ["mouseup", "click", "auxclick", "contextmenu"] as const)
       window.addEventListener(type, preventMouse, true);
     return () => {
       window.removeEventListener("keydown", handle, true);
-      window.removeEventListener("mousedown", handle, true);
+      window.removeEventListener("mousedown", handle, mouseCapture);
       window.removeEventListener("blur", clear);
       for (const type of [
         "mouseup",

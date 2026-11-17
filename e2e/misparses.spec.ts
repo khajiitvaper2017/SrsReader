@@ -218,6 +218,18 @@ test("live color updates and forgetting a Band card remain encounter-specific", 
   expect(stateForEncounter(forgotten, volumeKey)).toBe("learning");
 });
 
+test("Wird Lernen als ein Prozess definiert? → Lernen", () => {
+  const text = "Wird Lernen als ein Prozess definiert?";
+  const token = { ...band, form: "Lernen", lemma: "lernen", start: 5, end: 11 };
+  const [surface] = analysisTerms(
+    [{ metadata: { text }, tokens: [token] }],
+    text,
+    "0".repeat(64),
+    "de",
+  );
+  expect(surface?.terms).toEqual(["Lernen"]);
+});
+
 for (const [gender, article] of [
   ["Masc", "der"],
   ["Fem", "die"],
