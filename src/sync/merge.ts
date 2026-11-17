@@ -24,12 +24,12 @@ import { applyPortableSettings, portableSettings } from "./settings";
 import {
   recordKey,
   snapshotSchema,
-  syncRecordSchema,
   type SyncIdentity,
   type SyncRecord,
   type SyncSnapshot,
 } from "./model";
 import { withoutSyncTracking } from "./tracking";
+import { readMergeFrontier, writeMergeFrontier } from "./metadata";
 
 const cardFields = {
   deckId: cardSchema.shape.deckId,
@@ -254,7 +254,7 @@ export async function mergeSnapshots(
         db.rwkvCards,
         db.rwkvEntities,
       ],
-      () =>
+      async () =>
         withoutSyncTracking(async () => {
           const identity = (await db.syncMeta.get("identity")) as
             SyncIdentity | undefined;
@@ -264,13 +264,8 @@ export async function mergeSnapshots(
             });
           const previous = await db.syncRecords.toArray();
           const localDependencies = await db.syncDependencies.toArray();
-          const saved = await db.syncMeta.get("merge-frontier");
-          const savedRecords = z
-            .array(syncRecordSchema)
-            .parse(saved && "records" in saved ? saved.records : []);
-          const retainedRecords = z
-            .array(syncRecordSchema)
-            .parse(saved && "retained" in saved ? saved.retained : []);
+          const { records: savedRecords, retained: retainedRecords } =
+            await readMergeFrontier();
           const groups = new Map<string, SyncRecord[]>();
           const retainedGroups = new Map<string, SyncRecord[]>();
           for (const record of [
@@ -756,17 +751,13 @@ export async function mergeSnapshots(
           });
           await db.syncRecords.clear();
           await db.syncRecords.bulkPut([...winners.values()]);
-          await db.syncMeta.put({
-            id: "merge-frontier",
-            records: frontiers,
-            retained: retainedFrontiers,
-          });
+          await writeMergeFrontier(frontiers, retainedFrontiers);
           await db.syncMeta.put({ ...identity, observed });
-          report(5, 5);
         }),
     ),
   ).catch((error: unknown) => {
     if (error instanceof z.ZodError) throw invalid();
     throw error;
   });
+  report(5, 5);
 }

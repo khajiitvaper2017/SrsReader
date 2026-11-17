@@ -4,9 +4,17 @@ import { getSettings } from "@/settings/store";
 import { rwkvStatus } from "@/srs/engines/rwkv/cache";
 import { replayBatch } from "@/srs/engines/rwkv/replay";
 import { mergeSnapshots } from "@/sync/merge";
-import type { SyncSnapshot } from "@/sync/model";
+import {
+  migrateSyncFrontier,
+  outgoingId,
+  outgoingMedia,
+  readStagedSnapshot,
+  replaceSyncRows,
+  stageSnapshot,
+} from "@/sync/metadata";
 import {
   syncWorkError,
+  type PackedSync,
   type SyncWork,
   type SyncWorkError,
   type SyncWorkMessage,
@@ -50,7 +58,9 @@ self.onmessage = async (
         await db.transaction("rw", db.syncMeta, async () => {
           await db.syncMeta.where("id").startsWith("sync-work-").delete();
           await db.syncMeta.where("id").startsWith("sync-worker-").delete();
+          await db.syncMeta.bulkDelete(["captured", "drive-index"]);
         });
+        await migrateSyncFrontier();
         await initializeTracking();
         break;
       case "prepare":
@@ -84,47 +94,33 @@ self.onmessage = async (
           snapshot.revision !== request.revision
         )
           throw new Error("sync_invalid_snapshot");
-        await db.syncMeta.put({ id: request.key, snapshot });
+        await stageSnapshot(request.key, snapshot);
         break;
       }
       case "merge": {
-        const rows = await db.syncMeta.bulkGet(request.keys);
-        await mergeSnapshots(
-          rows.map((row) => {
-            if (!row || !("snapshot" in row))
-              throw new Error("sync_invalid_snapshot");
-            return row.snapshot as SyncSnapshot;
-          }),
-          (done, total) => send({ progress: { phase: "merge", done, total } }),
+        const snapshots = [];
+        for (const key of request.keys)
+          snapshots.push(await readStagedSnapshot(key));
+        await mergeSnapshots(snapshots, (done, total) =>
+          send({ progress: { phase: "merge", done, total } }),
         );
         break;
       }
       case "pack": {
-        await initializeTracking();
-        const outgoing = await db.syncMeta.get("outgoing");
-        const snapshot =
-          outgoing &&
-          "account" in outgoing &&
-          outgoing.account === request.account &&
-          "snapshot" in outgoing
-            ? (outgoing.snapshot as SyncSnapshot)
-            : await captureSnapshot();
-        if (
-          !outgoing ||
-          !("snapshot" in outgoing) ||
-          snapshot !== outgoing.snapshot
-        )
+        const outgoing = (await db.syncMeta.get(outgoingId)) as
+          PackedSync | undefined;
+        if (outgoing?.account === request.account) break;
+        const snapshot = await captureSnapshot();
+        const { blob, media } = await packSnapshot(snapshot);
+        await db.transaction("rw", db.syncMeta, async () => {
+          await replaceSyncRows(outgoingMedia, [...media]);
           await db.syncMeta.put({
-            id: "outgoing",
+            id: outgoingId,
             account: request.account,
-            snapshot,
+            device: snapshot.device,
+            revision: snapshot.revision,
+            blob,
           });
-        const packed = await packSnapshot(snapshot);
-        await db.syncMeta.put({
-          id: request.key,
-          device: snapshot.device,
-          revision: snapshot.revision,
-          ...packed,
         });
         break;
       }

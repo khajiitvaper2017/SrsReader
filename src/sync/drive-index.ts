@@ -1,5 +1,6 @@
 import { db } from "@/platform/database/db";
 import { authStatus, GoogleAuthError } from "@/sync/auth";
+import { readSyncRows, replaceSyncRows } from "@/sync/metadata";
 import {
   DriveError,
   driveTransferSignal,
@@ -9,12 +10,21 @@ import {
   type DriveFile,
 } from "@/sync/drive";
 
-type DriveIndex = {
-  id: "drive-index";
+const indexId = "drive-cursor";
+const fileRows = "drive-cursor:files:";
+type DriveCursor = {
+  id: typeof indexId;
   account: string;
-  files: DriveFile[];
   pageToken: string;
 };
+type DriveIndex = DriveCursor & { files: DriveFile[] };
+
+async function writeIndex({ files, ...cursor }: DriveIndex) {
+  await db.transaction("rw", db.syncMeta, async () => {
+    await replaceSyncRows(fileRows, files);
+    await db.syncMeta.put(cursor);
+  });
+}
 
 async function assertAccount(account: string, signal?: AbortSignal) {
   if (signal?.aborted) throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
@@ -31,7 +41,7 @@ async function baseline(
   // Establish the cursor first so events during the full scan cannot be lost.
   const pageToken = await getStartPageToken(account, signal);
   const files = await listFiles(account, signal);
-  return { id: "drive-index", account, files, pageToken };
+  return { id: indexId, account, files, pageToken };
 }
 
 async function applyChanges(
@@ -76,8 +86,11 @@ async function applyChanges(
 export async function readDriveFiles(account: string): Promise<DriveFile[]> {
   const signal = driveTransferSignal();
   await assertAccount(account, signal);
-  const cached = (await db.syncMeta.get("drive-index")) as
-    DriveIndex | undefined;
+  const cached = await db.transaction("r", db.syncMeta, async () => {
+    const cursor = (await db.syncMeta.get(indexId)) as DriveCursor | undefined;
+    if (cursor?.account !== account) return;
+    return { ...cursor, files: await readSyncRows<DriveFile>(fileRows) };
+  });
   let index: DriveIndex;
   try {
     const initial =
@@ -94,13 +107,9 @@ export async function readDriveFiles(account: string): Promise<DriveFile[]> {
     index = await applyChanges(await baseline(account, signal), signal);
   }
   await assertAccount(account, signal);
-  // A single row atomically commits metadata and the fully consumed cursor.
-  if (
-    cached?.account !== index.account ||
-    cached.pageToken !== index.pageToken ||
-    cached.files !== index.files
-  )
-    await db.syncMeta.put(index);
+  if (cached?.files !== index.files) await writeIndex(index);
+  else if (cached.pageToken !== index.pageToken)
+    await db.syncMeta.put({ id: indexId, account, pageToken: index.pageToken });
   return index.files;
 }
 
@@ -110,11 +119,10 @@ export async function saveDriveFiles(
 ): Promise<void> {
   await assertAccount(account);
   await db.transaction("rw", db.syncMeta, async () => {
-    const index = (await db.syncMeta.get("drive-index")) as
-      DriveIndex | undefined;
+    const index = (await db.syncMeta.get(indexId)) as DriveCursor | undefined;
     if (index?.account !== account) return;
     // Own uploads/deletions are replayed idempotently by the next change poll.
-    await db.syncMeta.put({
+    await writeIndex({
       ...index,
       files: files.filter((file) => !file.trashed),
     });

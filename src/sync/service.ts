@@ -26,6 +26,12 @@ import {
 } from "@/sync/drive";
 import { readDriveFiles, saveDriveFiles } from "@/sync/drive-index";
 import { findLocalMedia } from "@/sync/media";
+import {
+  clearOutgoing,
+  outgoingId,
+  outgoingMedia,
+  readSyncRows,
+} from "@/sync/metadata";
 import { transferConcurrently } from "@/sync/concurrency";
 import {
   batchMedia,
@@ -41,7 +47,7 @@ import {
   type SyncStatus,
   type SyncTransferState,
 } from "@/sync/model";
-import type { PackedSync } from "@/sync/processing";
+import { isLargeValueReadError, type PackedSync } from "@/sync/processing";
 import { markPublished, onSyncEdit, pendingCount } from "@/sync/tracking";
 
 const storageKey = "syncTransfer";
@@ -214,7 +220,7 @@ async function bindAccount(account: string) {
     action: "prepare",
     replaceAccount: transfer.account !== null,
   });
-  await db.syncMeta.delete("outgoing");
+  await clearOutgoing();
   await clearDriveUploads();
   transfer = { ...emptyTransfer(), account, automatic: transfer.automatic };
   await persist();
@@ -239,6 +245,7 @@ async function synchronize() {
   await accessToken(account.id);
   checkCancelled();
   const files = await readDriveFiles(account.id);
+  let filesChanged = false;
   updateStorageUsage(files);
   const latest = latestSnapshots(files);
   const mediaFiles = new Map<string, DriveFile>();
@@ -298,7 +305,11 @@ async function synchronize() {
   await processWork({ action: "rebuild" });
   checkCancelled();
   const identity = (await db.syncMeta.get("identity")) as SyncIdentity;
-  const outgoing = await db.syncMeta.get("outgoing");
+  const [outgoing] = await db.syncMeta
+    .where("id")
+    .anyOf("outgoing", outgoingId)
+    .limit(1)
+    .primaryKeys();
   if (
     (await pendingCount()) > 0 ||
     outgoing ||
@@ -306,13 +317,11 @@ async function synchronize() {
     !latest.has(identity.device)
   ) {
     await report("upload", 0, 0);
-    const key = `sync-work-${crypto.randomUUID()}`;
-    await processWork({ action: "pack", key, account: account.id });
-    const packed = (await db.syncMeta.get(key)) as PackedSync;
-    const snapshot = packed;
-    const missingMedia = [...packed.media].filter(
-      ([hash]) => !mediaFiles.has(hash),
-    );
+    await processWork({ action: "pack", account: account.id });
+    const snapshot = (await db.syncMeta.get(outgoingId)) as PackedSync;
+    const missingMedia = (
+      await readSyncRows<[string, Blob]>(outgoingMedia)
+    ).filter(([hash]) => !mediaFiles.has(hash));
     await report("media", 0, missingMedia.length);
     let done = 0;
     await transferConcurrently(batchMedia(missingMedia), async (batch) => {
@@ -341,6 +350,7 @@ async function synchronize() {
       }
       for (const [hash] of batch) mediaFiles.set(hash, file);
       files.push(file);
+      filesChanged = true;
       done += batch.length;
       await report("media", done, missingMedia.length);
     });
@@ -357,7 +367,7 @@ async function synchronize() {
       existing ??
       (await uploadFile(
         `snapshot.${snapshot.device}.${snapshot.revision}.json.gz`,
-        packed.blob,
+        snapshot.blob,
         {
           srsKind: "snapshot",
           device: snapshot.device,
@@ -372,9 +382,12 @@ async function synchronize() {
       transfer.received[snapshot.device] ?? 0,
       snapshot.revision,
     );
-    await db.syncMeta.delete("outgoing");
+    await clearOutgoing();
     await report("upload", 1, 1);
-    if (!existing) files.push(uploaded);
+    if (!existing) {
+      files.push(uploaded);
+      filesChanged = true;
+    }
   }
   // Cleanup retries independently of publication acknowledgement after restart.
   const own = files
@@ -397,8 +410,9 @@ async function synchronize() {
     checkCancelled();
     await deleteFile(old.id, account.id);
     files.splice(files.indexOf(old), 1);
+    filesChanged = true;
   }
-  await saveDriveFiles(account.id, files);
+  if (filesChanged) await saveDriveFiles(account.id, files);
   await clearDriveUploads();
   updateStorageUsage(files);
   transfer.lastSuccess = Date.now();
@@ -424,6 +438,7 @@ async function recordFailure(error: unknown, reportError = true) {
   if (reportError || transfer.authorizationRequired) transfer.error = code;
   const temporary =
     code === "SYNC_NETWORK" ||
+    isLargeValueReadError(error) ||
     error instanceof TypeError ||
     (error instanceof Error &&
       "temporary" in error &&

@@ -5,15 +5,15 @@ export type SyncWork =
   | { action: "prepare"; replaceAccount: boolean }
   | { action: "unpack"; key: string; device: string; revision: number }
   | { action: "merge"; keys: string[] }
-  | { action: "pack"; key: string; account: string }
+  | { action: "pack"; account: string }
   | { action: "rebuild" };
 
 export type PackedSync = {
   id: string;
+  account: string;
   device: string;
   revision: number;
   blob: Blob;
-  media: Map<string, Blob>;
 };
 
 export type SyncWorkError = {
@@ -24,11 +24,20 @@ export type SyncWorkError = {
   retryAfter?: number;
 };
 
+export function isLargeValueReadError(error: unknown) {
+  return (
+    error instanceof Error &&
+    error.name === "UnknownError" &&
+    error.message.includes("Failed to read large IndexedDB value")
+  );
+}
+
 export function syncWorkError(error: unknown): SyncWorkError {
   return {
     message: error instanceof Error ? error.message : String(error),
     ...(error instanceof Error ? error : {}),
     ...(error instanceof TypeError ||
+    isLargeValueReadError(error) ||
     (error instanceof Error && "temporary" in error && error.temporary === true)
       ? { temporary: true }
       : {}),

@@ -9,6 +9,7 @@ import { srsWrite } from "@/platform/locks";
 import { browser } from "wxt/browser";
 import { settingsSchema } from "@/settings/model";
 import { portableSettings } from "@/sync/settings";
+import { readMergeFrontier } from "@/sync/metadata";
 import {
   recordKey,
   type SyncIdentity,
@@ -659,13 +660,13 @@ export async function captureSnapshot(): Promise<SyncSnapshot> {
       [db.syncMeta, db.syncAuthored, db.syncRecords, db.syncDependencies],
       async () => {
         const current = (await db.syncMeta.get("identity")) as SyncIdentity;
-        const cached = await db.syncMeta.get("captured");
-        if (
-          cached &&
-          "snapshot" in cached &&
-          cached.revision === current.counter
-        )
-          return cached.snapshot as SyncSnapshot;
+        // The old cache may be unreadable. Advance past its revision without
+        // reusing a publication name that can already be reserved on Drive.
+        if (await db.syncMeta.where("id").equals("outgoing").count()) {
+          await db.syncMeta.delete("outgoing");
+          current.observed[current.device] = ++current.counter;
+          await db.syncMeta.put(current);
+        }
         const records = await db.syncAuthored.toArray();
         const authored = new Set(
           records.map((record) =>
@@ -673,11 +674,7 @@ export async function captureSnapshot(): Promise<SyncSnapshot> {
           ),
         );
         const dependencies = new Map<string, SyncRecord>();
-        const frontier = await db.syncMeta.get("merge-frontier");
-        const retained =
-          frontier && "retained" in frontier && Array.isArray(frontier.retained)
-            ? (frontier.retained as SyncRecord[])
-            : [];
+        const { retained } = await readMergeFrontier();
         for (const source of [
           await db.syncRecords.toArray(),
           await db.syncDependencies.toArray(),
@@ -702,7 +699,7 @@ export async function captureSnapshot(): Promise<SyncSnapshot> {
           for (const [device, counter] of Object.entries(record.observed))
             observed[device] = Math.max(observed[device] ?? 0, counter);
         }
-        const snapshot: SyncSnapshot = {
+        return {
           format: "srs-reader-sync",
           version: 1,
           device: current.device,
@@ -711,12 +708,6 @@ export async function captureSnapshot(): Promise<SyncSnapshot> {
           records,
           dependencies: [...dependencies.values()],
         };
-        await db.syncMeta.put({
-          id: "captured",
-          revision: current.counter,
-          snapshot,
-        });
-        return snapshot;
       },
     ),
   );
