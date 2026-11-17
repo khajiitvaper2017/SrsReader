@@ -3,6 +3,7 @@ import { prepareBlob } from "@/audio/playback";
 import { preparePronunciation } from "@/audio/prepare";
 import { wordFrequencies } from "@/dictionaries/frequency";
 import type { Settings } from "@/settings/model";
+import { deckTree } from "@/srs/deck-tree";
 import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
 import { vocabularyClient } from "@/vocabulary/client";
@@ -59,11 +60,12 @@ export function createReviewPreload(settings: Settings) {
       const stored = await getCardDocument(id);
       if (!stored) return;
       const document = await prepareStudyDocument(stored);
-      const deck = document.card.deckId
-        ? await db.decks.get(document.card.deckId)
-        : undefined;
+      const { deckId, language } = document.card;
+      const decks = deckId
+        ? await db.decks.where("language").equals(language).toArray()
+        : [];
       const options = {
-        deckName: deck?.name,
+        deckName: deckTree(decks).find((deck) => deck.id === deckId)?.name,
         front: settings.front,
         showPartOfSpeech: settings.showPartOfSpeech,
         showGenderedArticle: settings.showGenderedArticle,

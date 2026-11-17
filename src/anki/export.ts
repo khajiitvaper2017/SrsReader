@@ -1,4 +1,4 @@
-import { deckIdsInTree } from "@/srs/deck-tree";
+import { deckIdsInTree, deckTree } from "@/srs/deck-tree";
 import { scheduleSchema } from "@/srs/model";
 import {
   BlobReader,
@@ -390,7 +390,7 @@ export async function exportPackage(
           assets,
           reviews,
           rawReviews,
-          decks: allDecks,
+          decks: deckTree(allDecks),
         };
       },
     ),

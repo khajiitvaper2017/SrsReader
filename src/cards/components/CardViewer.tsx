@@ -1,4 +1,5 @@
 import { Box, Stack, Text } from "@mantine/core";
+import { deckTree } from "@/srs/deck-tree";
 import { useColorScheme } from "@mantine/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDocument } from "@/cards/model";
@@ -97,14 +98,19 @@ export function CardViewer({
     if (previewDeckName !== undefined) return;
     let cancelled = false;
     void (
-      card.deckId ? db.decks.get(card.deckId) : Promise.resolve(undefined)
-    ).then((deck) => {
-      if (!cancelled) setDeck({ id: card.deckId, name: deck?.name || "" });
+      card.deckId
+        ? db.decks.where("language").equals(card.language).toArray()
+        : Promise.resolve([])
+    ).then((decks) => {
+      const name = deckTree(decks).find(
+        (deck) => deck.id === card.deckId,
+      )?.name;
+      if (!cancelled) setDeck({ id: card.deckId, name: name || "" });
     });
     return () => {
       cancelled = true;
     };
-  }, [card.deckId, previewDeckName]);
+  }, [card.deckId, card.language, previewDeckName]);
   const { html, templateError } = useMemo(() => {
     try {
       return {

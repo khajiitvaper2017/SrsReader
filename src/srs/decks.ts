@@ -19,24 +19,36 @@ import {
 } from "@/vocabulary/storage";
 import { deleteCards, ensureReaderCard } from "@/cards/storage";
 import Dexie from "dexie";
-import { deckContains, deckIdsInTree, deckTree } from "@/srs/deck-tree";
+import {
+  deckBranch,
+  deckIdsInTree,
+  deckTree,
+  type DeckNode,
+} from "@/srs/deck-tree";
 import type { Deck } from "@/srs/deck-model";
 
-async function keepParentDecks(decks: Deck[], path: string) {
-  const parents = deckTree(decks).filter(
-    (parent) =>
-      parent.name !== path &&
-      deckContains(parent.name, path) &&
-      !decks.some((deck) => deck.id === parent.id),
-  );
-  await db.decks.bulkPut(
-    parents.map((parent) => ({
-      id: crypto.randomUUID(),
-      name: parent.name,
-      language: parent.language,
-      created: parent.created,
-    })),
-  );
+async function keepParentDecks(
+  decks: Deck[],
+  nodes: DeckNode[],
+  id: string | null,
+) {
+  const saved = new Set(decks.map((deck) => deck.id));
+  const parents: Deck[] = [];
+  while (id) {
+    const node = nodes.find((deck) => deck.id === id)!;
+    const { id: parent, label, parentId, language, legacyPath, created } = node;
+    if (!saved.has(parent))
+      parents.push({
+        id: parent,
+        name: label,
+        parentId,
+        language,
+        legacyPath,
+        created,
+      });
+    id = parentId;
+  }
+  if (parents.length) await db.decks.bulkPut(parents);
 }
 
 export async function studyOverview(settings: Settings) {
@@ -101,11 +113,14 @@ export async function manageStudyDeck(
     throw new Error(t("study_deck_not_found"));
   const decks = await db.decks.where("language").equals(language).toArray();
   const ids = mined ? [] : deckIdsInTree(decks, deckId);
-  if (!mined && operation === "delete")
+  if (!mined && operation === "delete") {
+    const nodes = deckTree(decks);
     await keepParentDecks(
       decks,
-      deckTree(decks).find((deck) => deck.id === deckId)!.name,
+      nodes,
+      nodes.find((deck) => deck.id === deckId)!.parentId,
     );
+  }
   const cards = await db.cards
     .where("language")
     .equals(language)
@@ -131,34 +146,35 @@ export async function saveStudyDeck(
     : undefined;
   if ((id && !current) || (parentId && !parent))
     throw new Error(t("study_deck_not_found"));
-  if (current && parent && deckContains(current.name, parent.name))
+  if (
+    current &&
+    parent &&
+    deckBranch(nodes, nodes.indexOf(current)).some(
+      (deck) => deck.id === parent.id,
+    )
+  )
     throw new Error(t("study_deck_parent_invalid"));
-  const path = parent ? `${parent.name}::${name}` : name;
-  const moving = new Set(current ? deckIdsInTree(decks, current.id) : []);
-  const updated = decks
-    .filter((deck) => moving.has(deck.id))
-    .map((deck) => ({
-      ...deck,
-      name: path + deck.name.slice(current!.name.length),
-    }));
-  if (!current || !decks.some((deck) => deck.id === current.id))
-    updated.push({
-      id: crypto.randomUUID(),
-      name: path,
-      language,
-      created: Date.now(),
-    });
   if (
     nodes.some(
       (node) =>
-        !moving.has(node.id) &&
-        node.id !== id &&
-        updated.some((deck) => deck.name === node.name),
+        node.id !== id && node.parentId === parentId && node.label === name,
     )
   )
     throw new Error(t("study_deck_name_exists"));
-  if (current) await keepParentDecks(decks, current.name);
-  await db.decks.bulkPut(updated);
+  await db.transaction("rw", db.decks, async () => {
+    await keepParentDecks(decks, nodes, parentId);
+    if (current && current.parentId !== parentId)
+      await keepParentDecks(decks, nodes, current.parentId);
+    await db.decks.put({
+      ...decks.find((deck) => deck.id === id),
+      id: current?.id ?? crypto.randomUUID(),
+      created: current?.created ?? Date.now(),
+      language,
+      name,
+      parentId,
+      legacyPath: current?.legacyPath,
+    });
+  });
 }
 
 async function frequencyDeckWords(dictionaryId: string, limit: number) {
@@ -221,8 +237,8 @@ export async function createFrequencyDeck(
 ) {
   const { dictionary, words } = await frequencyDeckWords(dictionaryId, limit);
   if (
-    (
-      await db.decks.where("language").equals(dictionary.language).toArray()
+    deckTree(
+      await db.decks.where("language").equals(dictionary.language).toArray(),
     ).some((deck) => deck.name === name)
   )
     throw new Error(t("study_deck_name_exists"));
@@ -239,6 +255,7 @@ export async function createFrequencyDeck(
     id: crypto.randomUUID(),
     language: dictionary.language,
     name,
+    parentId: null,
     dictionaryId,
     limit,
     created: Date.now(),

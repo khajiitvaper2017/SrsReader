@@ -695,6 +695,70 @@ export async function importPackage(
                     card.source.flags = current.source.flags;
                 }
               }
+              const language = options.language;
+              const prefix = `anki:deck:${language}:`;
+              const deckIds = new Set(
+                cards.flatMap((card) =>
+                  card.deckId?.startsWith(prefix) ? [card.deckId] : [],
+                ),
+              );
+              const savedDecks = await db.decks
+                .where("language")
+                .equals(language)
+                .toArray();
+              const savedIds = new Set(savedDecks.map((deck) => deck.id));
+              const savedNodes = deckTree(savedDecks);
+              const byId = new Map(savedNodes.map((node) => [node.id, node]));
+              const byName = new Map(
+                savedNodes.map((node) => [node.name, node]),
+              );
+              const bySourceName = new Map(
+                source.decks.map((deck) => [deck.name, deck]),
+              );
+              const targets = new Map<string, { id: string; name: string }>();
+              const incoming = [...deckIds].map((id) => ({
+                id,
+                name:
+                  sourceDecks.get(id.slice(prefix.length))?.name ??
+                  byId.get(id)?.name ??
+                  "Default",
+                language,
+                created: now,
+              }));
+              for (const node of deckTree(incoming)) {
+                const sourceDeck = bySourceName.get(node.name);
+                const sourceId = node.id.startsWith(prefix)
+                  ? node.id
+                  : sourceDeck && prefix + sourceDeck.id;
+                const parent = node.parentId && targets.get(node.parentId);
+                const path = parent
+                  ? `${parent.name}::${node.label}`
+                  : node.label;
+                const existing =
+                  (sourceId && byId.get(sourceId)) || byName.get(path);
+                const id = existing?.id ?? sourceId ?? crypto.randomUUID();
+                const name = existing?.name ?? path;
+                if (!savedIds.has(id)) {
+                  await db.decks.put({
+                    id,
+                    language,
+                    name: existing?.label ?? node.label,
+                    parentId: existing
+                      ? existing.parentId
+                      : parent
+                        ? parent.id
+                        : null,
+                    legacyPath: existing?.legacyPath,
+                    created: now,
+                  });
+                  savedIds.add(id);
+                }
+                targets.set(node.id, { id, name });
+              }
+              for (const card of cards) {
+                const target = card.deckId && targets.get(card.deckId);
+                if (target) card.deckId = target.id;
+              }
               await db.cards.bulkPut(cards);
               if (reviews.length) await db.ankiReviews.bulkPut(reviews);
               const eligible = new Set(events.map((event) => event.id));
@@ -704,49 +768,6 @@ export async function importPackage(
                   (await db.reviews.get(review.id))
                 )
                   await db.reviews.update(review.id, { active: false });
-              }
-              const deckIds = new Set(
-                cards.flatMap((card) =>
-                  card.deckId?.startsWith(`anki:deck:${options.language}:`)
-                    ? [card.deckId]
-                    : [],
-                ),
-              );
-              for (const deckId of deckIds) {
-                const sourceId = deckId.slice(
-                  `anki:deck:${options.language}:`.length,
-                );
-                const original = sourceDecks.get(sourceId);
-                const previous = await db.decks.get(deckId);
-                await db.decks.put({
-                  ...previous,
-                  id: deckId,
-                  name: previous?.name ?? original?.name ?? "Default",
-                  language: options.language,
-                  created: previous?.created ?? now,
-                });
-              }
-              const savedDecks = await db.decks
-                .where("language")
-                .equals(options.language)
-                .toArray();
-              for (const parent of deckTree(savedDecks)) {
-                if (savedDecks.some((deck) => deck.id === parent.id)) continue;
-                const original = source.decks.find(
-                  (deck) => deck.name === parent.name,
-                );
-                const sourceId = original
-                  ? `anki:deck:${options.language}:${original.id}`
-                  : undefined;
-                await db.decks.put({
-                  id:
-                    sourceId && !savedDecks.some((deck) => deck.id === sourceId)
-                      ? sourceId
-                      : crypto.randomUUID(),
-                  name: parent.name,
-                  language: options.language,
-                  created: now,
-                });
               }
               const reportHistory = (done: number, total: number) =>
                 Dexie.ignoreTransaction(() =>

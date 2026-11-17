@@ -11,7 +11,7 @@ import { useState } from "react";
 import { languageLabel } from "@/languages/codes";
 import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
-import { deckContains, deckPathLabel } from "@/srs/deck-tree";
+import { deckBranch, deckPathLabel } from "@/srs/deck-tree";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 
@@ -36,9 +36,10 @@ export function DeckEditor({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const parents = (
-    overview.find((row) => row.language === language)?.decks ?? []
-  ).filter((deck) => !initial || !deckContains(initial.name, deck.name));
+  const decks = overview.find((row) => row.language === language)?.decks ?? [];
+  const index = decks.findIndex((deck) => deck.id === selection.id);
+  const descendants = index < 0 ? [] : deckBranch(decks, index);
+  const parents = decks.filter((deck) => !descendants.includes(deck));
   const invalidName = name.includes("::") || /\p{Cc}/u.test(name);
   async function save() {
     setBusy(true);
