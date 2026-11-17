@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
-import { nounArticle } from "../src/cards/noun-article";
+import { germanNounField, nounArticle } from "../src/cards/noun-article";
 import { cardEncounterKey } from "../src/cards/encounter-key";
 import { stateOf, stateForEncounter } from "../src/vocabulary/state";
 import {
@@ -228,6 +228,39 @@ test("Wird Lernen als ein Prozess definiert? → Lernen", () => {
     "de",
   );
   expect(surface?.terms).toEqual(["Lernen"]);
+});
+
+test("Anki nouns match reading encounters using the article's gender", () => {
+  expect(germanNounField("der Bullshit")).toEqual({
+    lemma: "Bullshit",
+    gender: "Masc",
+  });
+  expect(germanNounField("die beste Lösung")).toEqual({
+    lemma: "die beste Lösung",
+  });
+  const importedCards = [
+    { importedGenders: ["Fem"], suspended: false, schedule: null },
+  ];
+  const word = { known: false, linkedCards: importedCards };
+  expect(stateOf(word, 28, musicKey)).toBe("new");
+  expect(stateOf(word, 28, ribbonKey)).toBe("unknown");
+  expect(
+    stateForEncounter(
+      { state: "new", encounterStates: {}, importedCards },
+      musicKey,
+      28,
+    ),
+  ).toBe("new");
+  expect(
+    stateOf(
+      {
+        known: false,
+        linkedCards: [{ ...importedCards[0]!, importedGenders: [] }],
+      },
+      28,
+      ribbonKey,
+    ),
+  ).toBe("new");
 });
 
 for (const [gender, article] of [

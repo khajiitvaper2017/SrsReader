@@ -412,12 +412,17 @@ export function AnkiTransfer({
                           })}
                         </Text>
                       </Stack>
-                      <AnkiCardPreview
-                        type={type}
-                        preview={preview}
-                        language={options.language}
-                        settings={settings}
-                      />
+                      {options.language && !missingWord && (
+                        <AnkiCardPreview
+                          type={type}
+                          preview={preview}
+                          language={options.language}
+                          deckIds={options.deckIds}
+                          bindings={bindings}
+                          convert={options.mode === "convert"}
+                          settings={settings}
+                        />
+                      )}
                       {missingWord && (
                         <Alert color="yellow">
                           {t("anki_word_field_required", { name: type.name })}

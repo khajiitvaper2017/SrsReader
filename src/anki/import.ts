@@ -2,7 +2,6 @@ import { mediaType } from "@/anki/media";
 import { deckTree } from "@/srs/deck-tree";
 import { matchesNoteType, mergeNoteType, retainedFields } from "@/anki/merge";
 import { recalculateLapses } from "@/srs/lapses";
-import { parseHTML } from "linkedom";
 import Dexie from "dexie";
 import { PackageReader, incompatibleNoteTypeIds } from "@/anki/read";
 import {
@@ -21,8 +20,6 @@ import {
   type NoteType,
 } from "@/cards/model";
 import { readerNote } from "@/cards/defaults";
-import { prepareDictionarySnapshot } from "@/cards/snapshot";
-import { lookup } from "@/dictionaries/resolve";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import { getSettings, saveSettings } from "@/settings/store";
@@ -34,27 +31,8 @@ import {
 } from "@/srs/import-history";
 import { emptySchedule } from "@/srs/model";
 import { downloadModel, loadModel } from "@/srs/engines/rwkv/assets";
-import { freshWord } from "@/vocabulary/service";
-import { applyDefinitionOverrides } from "@/vocabulary/definitions";
-import { wordId, type Vocabulary } from "@/vocabulary/model";
-
-function plain(value: string, reading = false) {
-  const { document } = parseHTML(`<html><body>${value}</body></html>`);
-  document
-    .querySelectorAll("script,style")
-    .forEach((element) => element.remove());
-  for (const ruby of document.querySelectorAll("ruby")) {
-    if (reading)
-      ruby.replaceWith(
-        ruby.querySelector("rt")?.textContent ?? ruby.textContent ?? "",
-      );
-    else ruby.querySelectorAll("rt,rp").forEach((element) => element.remove());
-  }
-  return (document.body.textContent ?? "")
-    .replace(/\[sound:[^\]]*\]/g, "")
-    .replace(/ ?([^ >]+?)\[(?!sound:)(.+?)\]/g, reading ? "$2" : "$1")
-    .trim();
-}
+import type { Vocabulary } from "@/vocabulary/model";
+import { ankiWord, convertedAnkiNote } from "@/anki/conversion";
 
 async function typeId(model: AnkiModel) {
   const bytes = new TextEncoder().encode(
@@ -179,6 +157,9 @@ async function mergeConverted(
       id,
       noteTypeId: prepared.noteType.id,
       fields: prepared.note.fields,
+      importedGenders: [
+        ...new Set(group.flatMap((note) => note.importedGenders ?? [])),
+      ],
       tags: [...new Set(group.flatMap((note) => note.tags))],
       sourceId: undefined,
       created: previous?.created ?? group[0]!.created,
@@ -376,88 +357,28 @@ export async function importPackage(
       incomingValues.forEach((value, index) => {
         values[plan.fieldMap[index]!] = value;
       });
-      let word: Vocabulary | undefined;
-      if (bindings.word !== undefined) {
-        const lemma = plain(values[bindings.word]!);
-        const reading =
-          bindings.reading === undefined
-            ? ""
-            : plain(values[bindings.reading]!, true);
-        if (lemma) {
-          let found;
-          if (options.mode === "convert") {
-            const result = await lookup(lemma, settings, false);
-            found = result.words.find(
-              (word) =>
-                word.lemma.normalize() === lemma.normalize() &&
-                word.reading.normalize() === reading.normalize(),
-            );
-          }
-          const entry = found ?? {
-            id: wordId(options.language, lemma, reading),
-            language: options.language,
-            lemma,
-            reading,
-            meanings: [],
-            forms: [],
-          };
-          word = (await db.vocabulary.get(entry.id)) ?? freshWord(entry);
-          if (options.mode === "convert")
-            word = {
-              ...word,
-              meanings: [
-                ...word.meanings.filter(
-                  (meaning) => meaning.dictionaryId === "personal",
-                ),
-                ...entry.meanings.filter(
-                  (meaning) => meaning.dictionaryId !== "personal",
-                ),
-              ],
-              updated: now,
-            };
-          words.set(word.id, word);
-        } else if (options.mode === "convert")
-          throw new Error(t("anki_word_field_empty", { name: model.name }));
+      const converted = options.mode === "convert";
+      const imported = await ankiWord(values, bindings, settings, converted);
+      const word = imported?.word;
+      if (word) {
+        if (converted) word.updated = now;
+        words.set(word.id, word);
       }
       let note: Note;
       let noteType: NoteType;
-      if (options.mode === "convert") {
-        const mapped = new Set(Object.values(bindings));
-        const extra = model.flds.flatMap((field, fieldIndex) =>
-          mapped.has(fieldIndex)
-            ? []
-            : [{ name: field.name, value: values[fieldIndex]! }],
+      if (converted) {
+        if (!word)
+          throw new Error(t("anki_word_field_empty", { name: model.name }));
+        const prepared = await convertedAnkiNote(
+          word,
+          model.flds,
+          values,
+          bindings,
+          namespace,
         );
-        const prepared = readerNote(word!, undefined, extra);
         note = prepared.note;
         noteType = prepared.noteType;
-        const snapshot = await prepareDictionarySnapshot(
-          {
-            ...word!,
-            meanings: applyDefinitionOverrides(word!.meanings, word!),
-          },
-          { namespace },
-        );
-        note.fields[noteType.bindings.definitions!] = snapshot.html;
-        snapshotAssets.push(...snapshot.assets);
-        for (const role of [
-          "sentence",
-          "sentenceFurigana",
-          "translation",
-          "wordAudio",
-          "sentenceAudio",
-          "image",
-        ] as const) {
-          const from = bindings[role],
-            to = noteType.bindings[role];
-          if (from !== undefined && to !== undefined)
-            note.fields[to] = values[from]!;
-        }
-        // Extra source fields remain HTML; conversion only replaces the selected semantic fields.
-        const extraStart = note.fields.length - extra.length;
-        extra.forEach((field, i) => {
-          note.fields[extraStart + i] = field.value;
-        });
+        snapshotAssets.push(...prepared.assets);
       } else {
         noteType = {
           id: await plan.id,
@@ -495,6 +416,7 @@ export async function importPackage(
         language: options.language,
         tags: original.tags.split(/\s+/).filter(Boolean),
         ...(word ? { wordId: word.id } : {}),
+        importedGenders: imported?.gender ? [imported.gender] : undefined,
         mediaNamespace: namespace,
         created: previous?.created ?? (Number(original.id) || now),
         updated: now,

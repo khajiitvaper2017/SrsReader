@@ -5,6 +5,7 @@ import type {
 } from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
+import { readingCardIdentity } from "@/cards/encounter-key";
 import { dictionaryIpa } from "@/dictionaries/ipa";
 import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
 import type { Meaning } from "@/dictionaries/model";
@@ -190,5 +191,8 @@ export async function prepareStudyDocument(
     inflections,
     encounter,
   );
+  const { importedGenders } = readingCardIdentity(document.note, word.lemma);
+  if (importedGenders?.length)
+    study.article = nounArticle(word.language, undefined, importedGenders);
   return { ...document, study };
 }

@@ -26,6 +26,7 @@ import {
 } from "@/languages/text";
 import { db } from "@/platform/database/db";
 import { wordId } from "@/vocabulary/model";
+import { germanArticleSpellings, germanNounField } from "@/cards/noun-article";
 import { getSettings } from "@/settings/store";
 import { listDictionaries } from "@/dictionaries/storage";
 import { displayedMeanings } from "@/dictionaries/display";
@@ -410,7 +411,11 @@ export async function lookupMany(
   const savedQueryStarted = performance.now();
   const savedEntries = await db.vocabulary
     .where("lemma")
-    .anyOf(lemmas)
+    .anyOf(
+      language === "de"
+        ? [...lemmas, ...lemmas.flatMap(germanArticleSpellings)]
+        : lemmas,
+    )
     .filter((word) => word.language === language)
     .toArray();
   const linkedWords = new Set(
@@ -425,10 +430,17 @@ export async function lookupMany(
   const byId = new Map(savedEntries.map((word) => [word.id, word]));
   const byLemma = new Map<string, typeof savedEntries>();
   for (const word of savedEntries) {
-    const key = folded(word.lemma, language);
-    const group = byLemma.get(key) || [];
-    group.push(word);
-    byLemma.set(key, group);
+    const remember = (lemma: string) => {
+      const key = folded(lemma, language);
+      const group = byLemma.get(key) || [];
+      group.push(word);
+      byLemma.set(key, group);
+    };
+    remember(word.lemma);
+    if (language === "de" && linkedWords.has(word.id)) {
+      const { lemma, gender } = germanNounField(word.lemma);
+      if (gender) remember(lemma);
+    }
   }
   for (const term of terms.map(normalize)) {
     const result = results.get(term) || { words: [], unresolved: [] };
@@ -450,13 +462,31 @@ export async function lookupMany(
     });
     for (const word of byLemma.get(folded(term, language)) || []) {
       if (words.some((candidate) => candidate.id === word.id)) continue;
+      const imported =
+        language === "de" ? germanNounField(word.lemma) : undefined;
+      const alias =
+        imported?.gender &&
+        folded(imported.lemma, language) === folded(term, language);
       const meanings = word.meanings.filter(
         (meaning) =>
           meaning.dictionaryId === "personal" ||
           isOnlineDictionary(meaning.dictionaryId) ||
           !!word.definitionOverrides?.[meaningKey(meaning)],
       );
-      if (meanings.length || linkedWords.has(word.id))
+      if (alias && imported?.gender && linkedWords.has(word.id)) {
+        const dictionary = words.find(
+          (candidate) =>
+            candidate.lemma === imported.lemma &&
+            candidate.reading === word.reading,
+        );
+        words.unshift({
+          ...word,
+          lemma: imported.lemma,
+          importedGenders: [imported.gender],
+          meanings: [...meanings, ...(dictionary?.meanings ?? [])],
+          forms: dictionary?.forms ?? [],
+        });
+      } else if (meanings.length || linkedWords.has(word.id))
         words.unshift({ ...word, meanings, forms: [] });
     }
     results.set(term, {

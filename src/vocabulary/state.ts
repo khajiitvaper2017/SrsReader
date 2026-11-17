@@ -1,3 +1,8 @@
+import {
+  cardsForEncounter,
+  type ReadingCardIdentity,
+} from "@/cards/encounter-key";
+
 export const wordStates = [
   "unknown",
   "new",
@@ -22,8 +27,7 @@ export const wordStateLabels = {
   unparsed: "unparsed",
 };
 
-export type LearningCard = {
-  encounterKey?: string;
+export type LearningCard = ReadingCardIdentity & {
   suspended: boolean;
   schedule: { state: number; dueAt: number; scheduledDays: number } | null;
 };
@@ -38,9 +42,7 @@ export function stateOf(
   const cards =
     encounterKey === undefined
       ? word.linkedCards || []
-      : (word.linkedCards || []).filter(
-          (card) => card.encounterKey === encounterKey,
-        );
+      : cardsForEncounter(word.linkedCards || [], encounterKey);
   if (!cards.length) return encounterKey === undefined ? "new" : "unknown";
   const active = cards.filter((card) => !card.suspended);
   if (!active.length) return "suspended";
@@ -67,13 +69,20 @@ export function stateOf(
 export type WordStateUpdate = {
   state: WordState;
   encounterStates: Record<string, WordState>;
+  importedCards?: LearningCard[];
 };
 
 export function stateForEncounter(
   update: WordStateUpdate,
   encounterKey?: string,
+  matureIntervalDays = 0,
 ): WordState {
   return encounterKey === undefined || update.state === "known"
     ? update.state
-    : (update.encounterStates[encounterKey] ?? "unknown");
+    : (update.encounterStates[encounterKey] ??
+        stateOf(
+          { known: false, linkedCards: update.importedCards },
+          matureIntervalDays,
+          encounterKey,
+        ));
 }

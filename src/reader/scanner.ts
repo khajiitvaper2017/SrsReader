@@ -192,7 +192,11 @@ export function createScanner(
     for (const candidate of span.candidates) {
       const snapshot = wordStates.get(candidate.id);
       if (snapshot)
-        candidate.state = stateForEncounter(snapshot, span.encounterKey);
+        candidate.state = stateForEncounter(
+          snapshot,
+          span.encounterKey,
+          getSettings().matureIntervalDays,
+        );
     }
     const candidate = span.candidates[0];
     const state = candidate?.state ?? "unparsed";

@@ -227,6 +227,7 @@ export function meaningTags(meaning: Meaning): string[] {
 }
 
 export type LookupWord = {
+  importedGenders?: string[];
   id: string;
   lemma: string;
   reading: string;

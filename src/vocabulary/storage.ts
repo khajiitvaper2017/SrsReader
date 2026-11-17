@@ -1,7 +1,7 @@
 import type { LookupWord, Meaning } from "@/dictionaries/model";
 import type { Card, CardDocument, CardEncounter } from "@/cards/model";
 import { resolveCardEncounter } from "@/cards/encounter";
-import { cardEncounterKey } from "@/cards/encounter-key";
+import { cardEncounterKey, readingCardIdentity } from "@/cards/encounter-key";
 import {
   deleteCards,
   ensureReaderCard,
@@ -10,6 +10,7 @@ import {
   readingCard,
   refreshDictionaryFields,
   saveCustomFields,
+  selectCardForReading,
 } from "@/cards/storage";
 import { escapeHtml } from "@/cards/defaults";
 import { definitionSenses } from "@/dictionaries/definitions";
@@ -78,6 +79,9 @@ async function projectWords(
     loadedTypes.flatMap((type) => (type ? [[type.id, type] as const] : [])),
   );
   const byWord = new Map<string, WordWithCards["linkedCards"]>();
+  const lemmas = new Map(
+    words.flatMap((word) => (word ? [[word.id, word.lemma] as const] : [])),
+  );
   const byNote = new Map(notes.map((note) => [note.id, note]));
   for (const card of cards) {
     const note = byNote.get(card.noteId)!;
@@ -85,7 +89,7 @@ async function projectWords(
     const entries = byWord.get(wordId) || [];
     entries.push({
       ...card,
-      encounterKey: note.encounter && cardEncounterKey(note.encounter),
+      ...readingCardIdentity(note, lemmas.get(wordId)),
     });
     byWord.set(wordId, entries);
   }
@@ -93,10 +97,11 @@ async function projectWords(
   return words.map((word): WordWithCards | undefined => {
     if (!word) return undefined;
     const linkedCards = byWord.get(word.id) || [];
-    const selected = encounter
-      ? linkedCards.find((card) => card.encounterKey === encounterKey)
-      : linkedCards.find((card) => card.id === word.readingCardId) ||
-        (linkedCards.length === 1 ? linkedCards[0] : undefined);
+    const selected = selectCardForReading(
+      linkedCards,
+      word.readingCardId,
+      encounterKey,
+    );
     const note = selected && byNote.get(selected.noteId);
     const noteType = note && types.get(note.noteTypeId);
     return {

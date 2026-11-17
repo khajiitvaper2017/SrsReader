@@ -45,6 +45,7 @@ export const noteSchema = z.object({
   tags: z.array(z.string()),
   wordId: z.string().optional(),
   encounter: cardEncounterSchema.optional(),
+  importedGenders: z.array(z.string()).optional(),
   mediaNamespace: z.string(),
   version: z.number().int().nonnegative(),
   created: z.number().finite(),

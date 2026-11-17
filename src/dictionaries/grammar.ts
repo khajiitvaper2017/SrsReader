@@ -5,6 +5,7 @@ import {
   type Meaning,
 } from "@/dictionaries/model";
 import type { AnalysisToken, OccurrenceGrammar } from "@/languages/analysis";
+import { grammarFeatures, importedGendersMatch } from "@/cards/encounter-key";
 import { t } from "@/shared/i18n/i18n";
 
 const tagFeatures = new Map<string, [string, string[]]>(
@@ -312,6 +313,11 @@ export function wordMatchesGrammar(
   grammar?: OccurrenceGrammar,
   expandedDictionaries: string[] = [],
 ) {
+  if (word.importedGenders && grammar) {
+    const { pos, feats } = grammarFeatures(grammar);
+    if (!importedGendersMatch(word.importedGenders, pos, feats.Gender))
+      return false;
+  }
   return (
     !word.meanings.length ||
     word.meanings.some(

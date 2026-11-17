@@ -14,7 +14,12 @@ import {
 } from "@/cards/defaults";
 import type { Card, CardDocument, CardEncounter } from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
-import { cardEncounterKey } from "@/cards/encounter-key";
+import {
+  cardEncounterKey,
+  cardsForEncounter,
+  readingCardIdentity,
+  type ReadingCardIdentity,
+} from "@/cards/encounter-key";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
 
@@ -48,26 +53,40 @@ export async function readingCard(
   selectedCardId?: string,
   encounter?: CardEncounter,
 ) {
-  if (encounter) {
-    const key = cardEncounterKey(encounter);
-    const notes = await db.notes
-      .where("wordId")
-      .equals(id)
-      .filter(
-        (note) => !!note.encounter && cardEncounterKey(note.encounter) === key,
-      )
-      .primaryKeys();
-    return notes.length
-      ? db.cards.where("noteId").anyOf(notes).first()
-      : undefined;
-  }
-  const [word, cards] = await Promise.all([
+  const [word, notes] = await Promise.all([
     db.vocabulary.get(id),
-    getWordCards(id),
+    db.notes.where("wordId").equals(id).toArray(),
   ]);
+  if (!notes.length) return;
+  const identities = new Map(
+    notes.map((note) => [note.id, readingCardIdentity(note, word?.lemma)]),
+  );
+  const cards = await db.cards
+    .where("noteId")
+    .anyOf([...identities.keys()])
+    .toArray();
+  return selectCardForReading(
+    cards.map((card) => ({ ...card, ...identities.get(card.noteId) })),
+    selectedCardId ?? word?.readingCardId,
+    encounter && cardEncounterKey(encounter),
+  );
+}
+
+export function selectCardForReading<T extends Card & ReadingCardIdentity>(
+  cards: T[],
+  selectedId?: string,
+  encounterKey?: string,
+) {
+  if (encounterKey === undefined)
+    return (
+      cards.find((card) => card.id === selectedId) ??
+      (cards.length === 1 ? cards[0] : undefined)
+    );
+  const matches = cardsForEncounter(cards, encounterKey);
   return (
-    cards.find((card) => card.id === (selectedCardId ?? word?.readingCardId)) ??
-    (cards.length === 1 ? cards[0] : undefined)
+    matches.find((card) => card.id === selectedId) ??
+    matches.find((card) => !card.suspended) ??
+    matches[0]
   );
 }
 

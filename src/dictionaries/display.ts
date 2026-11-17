@@ -123,7 +123,9 @@ export function displayedWords(
             .sort(
               (a, b) => order.get(a.dictionaryId)! - order.get(b.dictionaryId)!,
             );
-      return meanings.length ? [{ ...word, meanings }] : [];
+      return meanings.length || !word.meanings.length
+        ? [{ ...word, meanings }]
+        : [];
     })
     .sort((a, b) => priority(a) - priority(b));
 }

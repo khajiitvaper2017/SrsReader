@@ -25,7 +25,7 @@ export type AnkiPreview = {
     notes: number;
     cards: number;
     suggestedBindings: FieldBindings;
-    samples: { document: CardDocument; deckName: string }[];
+    samples: { document: CardDocument; deckId: string; deckName: string }[];
     deckIds: string[];
   }[];
   decks: { id: string; name: string; cards: number }[];

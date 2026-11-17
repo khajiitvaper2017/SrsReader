@@ -4,6 +4,7 @@ import { languageSchema } from "@/languages/model";
 import { t } from "@/shared/i18n/i18n";
 import type { Schedule } from "@/srs/model";
 import type { Card, CardDocument } from "@/cards/model";
+import type { ReadingCardIdentity } from "@/cards/encounter-key";
 import { translationSchema } from "@/translation/model";
 import { z } from "zod";
 
@@ -66,7 +67,7 @@ export const vocabularySchema = z.object({
 export type Vocabulary = z.infer<typeof vocabularySchema>;
 
 export type WordWithCards = Vocabulary & {
-  linkedCards: (Card & { encounterKey?: string })[];
+  linkedCards: (Card & ReadingCardIdentity)[];
   encounterKey?: string;
   cardId?: string;
   card: Schedule | null;

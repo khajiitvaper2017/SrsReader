@@ -58,9 +58,8 @@ async function execute(request: Request, settings: Settings) {
         request.occurrence,
         request.localOnly,
       );
-      const words = result.words.filter(
-        (word) =>
-          word.meanings.length && wordMatchesGrammar(word, result.grammar),
+      const words = result.words.filter((word) =>
+        wordMatchesGrammar(word, result.grammar),
       );
       if (words.length) {
         const encounterKey = cardEncounterKey({
@@ -70,27 +69,35 @@ async function execute(request: Request, settings: Settings) {
             : { pos: "", feats: {} }),
         });
         void getWords(words.map((word) => word.id))
-          .then((saved) =>
-            broadcast({
-              ...(request.occurrence
-                ? ({
-                    event: "parsedOccurrence",
-                    occurrence: request.occurrence,
-                  } as const)
-                : ({ event: "parsed", term: request.term } as const)),
-              language: settings.studyLanguage,
-              encounterKey,
-              candidates: words.map((word, index) => ({
-                id: word.id,
-                tags: word.meanings.flatMap(meaningTags),
-                state: stateOf(
-                  saved[index],
-                  settings.matureIntervalDays,
-                  encounterKey,
-                ),
-              })),
-            }),
-          )
+          .then((saved) => {
+            const candidates = words.flatMap((word, index) =>
+              word.meanings.length || saved[index]?.linkedCards.length
+                ? [
+                    {
+                      id: word.id,
+                      tags: word.meanings.flatMap(meaningTags),
+                      state: stateOf(
+                        saved[index],
+                        settings.matureIntervalDays,
+                        encounterKey,
+                      ),
+                    },
+                  ]
+                : [],
+            );
+            if (candidates.length)
+              return broadcast({
+                ...(request.occurrence
+                  ? ({
+                      event: "parsedOccurrence",
+                      occurrence: request.occurrence,
+                    } as const)
+                  : ({ event: "parsed", term: request.term } as const)),
+                language: settings.studyLanguage,
+                encounterKey,
+                candidates,
+              });
+          })
           .catch(console.warn);
       }
       return result;

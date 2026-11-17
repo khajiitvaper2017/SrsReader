@@ -33,7 +33,7 @@ import { getWords } from "@/vocabulary/storage";
 import { stateOf } from "@/vocabulary/state";
 import { getSettings } from "@/settings/store";
 import type { WordState } from "@/vocabulary/state";
-import { cardEncounterKey } from "@/cards/encounter-key";
+import { cardEncounterKey, cardsForEncounter } from "@/cards/encounter-key";
 
 type CompoundPart = {
   before: number;
@@ -555,6 +555,11 @@ export async function scanTexts(
           pos: "",
           feats: {},
         });
+      words = words.filter(
+        (word) =>
+          !word.importedGenders ||
+          cardsForEncounter([word], encounterKey).length,
+      );
       const state = words.length
         ? stateOf(
             vocabulary.get(words[0]!.id),

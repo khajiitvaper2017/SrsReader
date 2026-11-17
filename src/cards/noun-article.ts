@@ -7,6 +7,27 @@ const articles: Record<string, Record<string, string>> = {
   pt: { Masc: "o", Fem: "a" },
 };
 
+export function germanNounField(word: string) {
+  const match = /^(der|die|das)\s+(\p{Lu}.*)$/iu.exec(word);
+  if (!match || !/^\p{Lu}/u.test(match[2]!)) return { lemma: word };
+  const article = match[1]!.toLowerCase();
+  return {
+    lemma: match[2]!,
+    gender: Object.keys(articles.de!).find(
+      (gender) => articles.de![gender] === article,
+    ),
+  };
+}
+
+export function germanArticleSpellings(lemma: string) {
+  return /^\p{Lu}/u.test(lemma)
+    ? Object.values(articles.de!).flatMap((article) => [
+        `${article} ${lemma}`,
+        `${article[0]!.toUpperCase()}${article.slice(1)} ${lemma}`,
+      ])
+    : [];
+}
+
 export function nounArticle(
   language: string,
   gender: string | undefined,

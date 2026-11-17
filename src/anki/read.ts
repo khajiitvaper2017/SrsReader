@@ -532,14 +532,17 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
           ),
           created: 0,
         };
-        const sampleCards = new Map<number, AnkiCard>();
-        for (const card of cards)
-          if (!sampleCards.has(card.ord)) sampleCards.set(card.ord, card);
+        const sampleCards = new Map<string, AnkiCard>();
+        for (const card of cards) {
+          const key = JSON.stringify([cardDeckId(card), card.ord]);
+          if (!sampleCards.has(key)) sampleCards.set(key, card);
+        }
         const samples = [...sampleCards.values()]
           .sort((a, b) => a.ord - b.ord)
           .map((card) => {
             const note = notes.get(card.nid)!;
             return {
+              deckId: cardDeckId(card),
               deckName: deckNames.get(cardDeckId(card)) ?? "",
               document: {
                 noteType,

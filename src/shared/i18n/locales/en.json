@@ -1168,6 +1168,7 @@
   "card_back": "Back",
   "anki_decks_help": "Only decks with their own cards are listed. Parent decks stay in the deck path. Counts exclude child decks.",
   "anki_original_preview": "Original card preview",
+  "anki_dictionary_preview": "Dictionary card preview",
   "anki_preview_card": "Card template",
   "anki_cloze_preview": "Cloze {{number}}",
   "anki_optional_mapping": "Dictionary and review fields (optional)",
