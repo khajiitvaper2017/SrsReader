@@ -17,6 +17,7 @@ export function usePronunciation({
   settings,
   onError,
   prepareRecording,
+  recording,
 }: {
   word?: Pick<LookupWord, "id" | "lemma" | "language">;
   /** Additional recording-search form and word TTS text, not a replacement word identity. */
@@ -27,6 +28,7 @@ export function usePronunciation({
   onError: (message: string) => void;
   /** Reuse recordings prepared by the review session. */
   prepareRecording?: typeof preparePronunciation;
+  recording?: Blob;
 }) {
   const pronunciationForm = form ? normalize(form).trim() : undefined;
   const [busy, setBusy] = useState(false);
@@ -73,7 +75,7 @@ export function usePronunciation({
       clearTimeout(hold.current);
       playback.current++;
     };
-  }, [word?.id, pronunciationForm, sentence, noteId]);
+  }, [word?.id, pronunciationForm, sentence, noteId, recording]);
   useEffect(() => {
     if (!open || !word) return;
     let alive = true;
@@ -139,28 +141,33 @@ export function usePronunciation({
     );
   }
   async function play(source?: AudioInfo | { voice: string }) {
-    if (!word) return;
+    if (!word && !recording) return;
     const attempt = ++playback.current;
     stopAudio();
     setBusy(true);
     onError("");
     try {
+      if (!source && recording) {
+        await playBlob(recording, settings.normalizeAudio);
+        return;
+      }
+      if (!word) return;
       if (source && "voice" in source) {
         setActive(`tts:${source.voice}`);
         playVoice(source.voice);
         return;
       }
       if (!source) {
-        const recording = await getCardMedia(
+        const media = await getCardMedia(
           word.id,
           sentence ? "audio" : "wordAudio",
           sentence,
           noteId,
         );
         if (attempt !== playback.current) return;
-        if (recording) {
-          setActive(recording.id);
-          await playBlob(recording.blob, settings.normalizeAudio);
+        if (media) {
+          setActive(media.id);
+          await playBlob(media.blob, settings.normalizeAudio);
           return;
         }
       }

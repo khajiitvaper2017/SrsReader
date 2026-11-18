@@ -171,6 +171,7 @@ export function AnkiCardPreview({
                       document={document}
                       revealed={value === "back"}
                       settings={{ ...settings, autoplay: false }}
+                      wordAudio="preview"
                       deckName={sample.deckName}
                       loadAssets={loadAssets}
                       requestAsset={requestAsset}

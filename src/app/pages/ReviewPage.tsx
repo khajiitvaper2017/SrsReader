@@ -496,6 +496,7 @@ export function ReviewPage({
                 </Box>
                 <CardViewer
                   document={viewerDocument!}
+                  wordAudio={word.wordId ? "toolbar" : undefined}
                   loadAssets={preload.loadAssets}
                   onReady={cardReady}
                   loading={

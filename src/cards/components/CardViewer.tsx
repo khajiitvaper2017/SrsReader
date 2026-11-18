@@ -3,7 +3,7 @@ import { deckTree } from "@/srs/deck-tree";
 import { useColorScheme } from "@mantine/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CardDocument } from "@/cards/model";
-import { renderCard, templateWarnings } from "@/cards/template";
+import { fieldText, renderCard, templateWarnings } from "@/cards/template";
 import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
 import type { CardFrameMessage } from "@/cards/sandbox/protocol";
 import { db } from "@/platform/database/db";
@@ -11,6 +11,7 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { stopAudio } from "@/audio/playback";
+import { AudioButton } from "@/audio/components/AudioButton";
 import { readCardStorage, writeCardStorage } from "@/cards/sandbox/storage";
 import { reviewInputSchema } from "@/srs/controls";
 import dictionaryCss from "@/shared/styles/dictionary.css?inline";
@@ -48,6 +49,7 @@ export function CardViewer({
   loading = false,
   loadAssets = loadCardAssets,
   requestAsset = requestedCardAsset,
+  wordAudio,
   deckName: previewDeckName,
   onError,
   onLookup,
@@ -59,6 +61,7 @@ export function CardViewer({
   loading?: boolean;
   loadAssets?: typeof loadCardAssets;
   requestAsset?: typeof requestedCardAsset;
+  wordAudio?: "preview" | "toolbar";
   deckName?: string;
   onError?: (message: string) => void;
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
@@ -74,6 +77,7 @@ export function CardViewer({
   }>();
   const [height, setHeight] = useState(180);
   const [message, setMessage] = useState<CardFrameMessage>();
+  const [recording, setRecording] = useState<Blob>();
   const renderId = useRef(0);
   const activeRender = useRef<{ id: number; revealed: boolean } | undefined>(
     undefined,
@@ -85,6 +89,19 @@ export function CardViewer({
       ? system === "dark"
       : settings.theme === "dark" || settings.theme === "oled";
   const { card, note, noteType } = cardDocument;
+  const audioIndex = noteType.bindings.wordAudio;
+  const sound =
+    wordAudio && audioIndex !== undefined
+      ? note.fields[audioIndex]?.match(/\[sound:([^\]]+)\]/)
+      : undefined;
+  const audioTag =
+    sound &&
+    !note.fields.some(
+      (field, index) => index !== audioIndex && field.includes(sound[0]),
+    )
+      ? sound[0]
+      : undefined;
+  const audioName = sound && fieldText(sound[1]!);
   const activeCard = useRef({ id: card.id, namespace: note.mediaNamespace });
   activeCard.current = { id: card.id, namespace: note.mediaNamespace };
   const warnings = useMemo(() => templateWarnings(noteType), [noteType]);
@@ -141,17 +158,27 @@ export function CardViewer({
       return;
     let cancelled = false;
     setError("");
+    setRecording(undefined);
     try {
       if (templateError) throw new Error(templateError);
       void loadAssets(note.mediaNamespace, html, noteType.css)
         .then((assets) => {
-          if (!cancelled)
+          if (!cancelled) {
+            const audio =
+              audioTag && html.includes(audioTag)
+                ? assets.find(
+                    (asset) =>
+                      asset.name === audioName &&
+                      asset.mime.startsWith("audio/"),
+                  )
+                : undefined;
+            if (wordAudio === "preview") setRecording(audio?.blob);
             setMessage({
               channel: "srs-card-render",
               cardId: card.id,
               renderId: id,
               ordinal: card.templateOrdinal,
-              html,
+              html: audio && audioTag ? html.replaceAll(audioTag, "") : html,
               css: noteType.css,
               assets,
               dark,
@@ -168,6 +195,7 @@ export function CardViewer({
               resourceError: t("card_media_unavailable"),
               reviewBindings: settings.reviewBindings,
             });
+          }
         })
         .catch((error: Error) => {
           if (!cancelled) {
@@ -185,6 +213,9 @@ export function CardViewer({
     };
   }, [
     html,
+    audioTag,
+    audioName,
+    wordAudio,
     loading,
     loadAssets,
     templateError,
@@ -364,6 +395,13 @@ export function CardViewer({
   return (
     <Stack gap="xs" data-srs-reader>
       <ErrorBox error={error} />
+      {recording && message?.cardId === card.id && (
+        <AudioButton
+          recording={recording}
+          settings={settings}
+          onError={setError}
+        />
+      )}
       {!!warnings.length && (
         <Text variant="supporting">
           {t("card_template_unsupported", { filters: warnings.join(", ") })}

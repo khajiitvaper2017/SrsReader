@@ -13,8 +13,11 @@ export function AudioButton({
   settings,
   onError,
   prepareRecording,
-}: {
-  word: Pick<LookupWord, "id" | "lemma" | "language">;
+  recording,
+}: (
+  | { word: Pick<LookupWord, "id" | "lemma" | "language">; recording?: never }
+  | { word?: never; recording: Blob }
+) & {
   /** Additional recording-search form and word TTS text; retains the original word identity. */
   form?: string;
   sentence?: string;
@@ -45,21 +48,28 @@ export function AudioButton({
     settings,
     onError,
     prepareRecording,
+    recording,
   });
   return (
     <Text data-srs-reader="" component="span" inherit>
-      <Menu opened={open} onChange={setOpen} closeOnItemClick={false}>
+      <Menu
+        disabled={!word}
+        opened={open}
+        onChange={setOpen}
+        closeOnItemClick={false}
+      >
         <Menu.Target>
           <Box component="span" display="inline-flex">
             <ActionIcon
               variant="subtle"
               color="gray"
-              aria-haspopup="menu"
-              aria-expanded={open}
-              title={t("audio_button_hint", { action: label })}
+              aria-haspopup={word ? "menu" : undefined}
+              aria-expanded={word ? open : undefined}
+              title={word ? t("audio_button_hint", { action: label }) : label}
               aria-label={label}
               aria-busy={busy}
               onPointerDown={(event) => {
+                if (!word) return;
                 event.preventDefault();
                 if (event.button !== 0) return;
                 event.currentTarget.focus();
@@ -73,6 +83,7 @@ export function AudioButton({
               onPointerCancel={() => clearTimeout(hold.current)}
               onPointerLeave={() => clearTimeout(hold.current)}
               onContextMenu={(event) => {
+                if (!word) return;
                 event.preventDefault();
                 clearTimeout(hold.current);
                 held.current = true;
@@ -85,13 +96,14 @@ export function AudioButton({
                   held.current = false;
                   return;
                 }
-                if (event.shiftKey) setOpen(true);
+                if (word && event.shiftKey) setOpen(true);
                 else void play();
               }}
               onKeyDown={(event) => {
                 if (
-                  event.key === "ArrowDown" ||
-                  (event.shiftKey && event.key === "Enter")
+                  word &&
+                  (event.key === "ArrowDown" ||
+                    (event.shiftKey && event.key === "Enter"))
                 ) {
                   event.preventDefault();
                   setOpen(true);
