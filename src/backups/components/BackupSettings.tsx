@@ -11,6 +11,7 @@ import {
   Title,
 } from "@mantine/core";
 import { exportLearning, exportSettings } from "@/backups/archive";
+import { ResetPreview } from "@/backups/components/ResetPreview";
 import { useBackups } from "@/backups/hooks/useBackups";
 import type { SettingsTask } from "@/settings/hooks/useSettingsTask";
 import type { Settings } from "@/settings/model";
@@ -86,10 +87,7 @@ export function BackupSettings({
           action: "clearExtensionData",
           category: resetTarget.category,
         });
-        if (
-          resetTarget.category === "reviews" ||
-          resetTarget.category === "cards"
-        )
+        if (resetTarget.category !== "dictionaries")
           sessionStorage.removeItem("last-review");
         setResetTarget(undefined);
         setResetComplete(true);
@@ -314,6 +312,17 @@ export function BackupSettings({
                 )}
               </>
             )
+          )}
+          {resetTarget && (
+            <ResetPreview
+              category={resetTarget.category}
+              accountId={
+                resetTarget.category === "all"
+                  ? resetTarget.account?.id
+                  : undefined
+              }
+              storageUsage={storageUsage}
+            />
           )}
           <ErrorBox error={resetError} />
           <Group justify="flex-end">

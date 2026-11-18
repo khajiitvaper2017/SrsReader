@@ -47,6 +47,7 @@ import {
   type SyncProgress,
   type SyncRecord,
   type SyncStatus,
+  type SyncStorage,
   type SyncTransferState,
 } from "@/sync/model";
 import { isLargeValueReadError, type PackedSync } from "@/sync/processing";
@@ -186,7 +187,7 @@ function revision(file: DriveFile) {
   const value = Number(file.appProperties?.revision);
   return Number.isSafeInteger(value) && value > 0 ? value : 0;
 }
-function updateStorageUsage(files: DriveFile[]) {
+function driveStorageUsage(files: DriveFile[]): SyncStorage {
   let bytes: number | null = 0;
   for (const file of files) {
     const raw = file.quotaBytesUsed ?? file.size;
@@ -198,7 +199,7 @@ function updateStorageUsage(files: DriveFile[]) {
     }
     bytes += size;
   }
-  transfer.storage = { bytes, files: files.length, updated: Date.now() };
+  return { bytes, files: files.length, updated: Date.now() };
 }
 function latestSnapshots(files: DriveFile[]) {
   const latest = new Map<string, DriveFile>();
@@ -253,7 +254,7 @@ async function synchronize() {
   checkCancelled();
   const files = await readDriveFiles(account.id);
   let filesChanged = false;
-  updateStorageUsage(files);
+  transfer.storage = driveStorageUsage(files);
   const latest = latestSnapshots(files);
   const mediaFiles = new Map<string, DriveFile>();
   for (const file of files) {
@@ -421,7 +422,7 @@ async function synchronize() {
   }
   if (filesChanged) await saveDriveFiles(account.id, files);
   await clearDriveUploads();
-  updateStorageUsage(files);
+  transfer.storage = driveStorageUsage(files);
   transfer.lastSuccess = Date.now();
   transfer.failures = 0;
   transfer.retryAt = 0;
@@ -508,7 +509,7 @@ export async function refreshSyncStorage() {
         const files = await readDriveFiles(account.id);
         checkCancelled();
         await assertAccount();
-        updateStorageUsage(files);
+        transfer.storage = driveStorageUsage(files);
         if (transfer.authorizationRequired) {
           transfer.authorizationRequired = false;
           transfer.error = null;
@@ -620,6 +621,12 @@ export async function disconnectSync() {
     await changed();
   }
 }
+export async function resetDrivePreview(account: string) {
+  return driveStorageUsage(
+    await listFiles(account, AbortSignal.timeout(10_000)),
+  );
+}
+
 export async function resetExtension(confirmedAccount: string | null) {
   await initialize();
   if (connecting || disconnecting || active || storageRequest)

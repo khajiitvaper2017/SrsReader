@@ -4,6 +4,7 @@ import Dexie, {
   type DBCoreTable,
   type DBCoreTransaction,
 } from "dexie";
+import { learningResetTables } from "@/backups/reset-scope";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import { browser } from "wxt/browser";
@@ -66,7 +67,6 @@ type TransactionState = {
   suppressed: number;
   answer: number;
   restoring: number;
-  deletingCardResources?: boolean;
   undo: number;
   reviewId?: string;
   restoredReviews?: Map<string, Row>;
@@ -164,18 +164,6 @@ export async function withReviewScheduling<T>(
   }
 }
 
-export async function deleteCardResources() {
-  const trans = Dexie.currentTransaction!.idbtrans;
-  const state = stateFor(trans);
-  state.deletingCardResources = true;
-  try {
-    await db.cardAssets.clear();
-    await db.noteTypes.clear();
-  } finally {
-    state.deletingCardResources = false;
-  }
-}
-
 /** Restore differences are new local edits, not historical remote revisions. */
 export async function withRestoredTracking<T>(
   work: () => Promise<T>,
@@ -262,8 +250,9 @@ async function author(
   value: Row | null,
   time: number,
   current: SyncIdentity,
+  retainPrevious = true,
 ) {
-  if (value === null && dependencyKinds[kind]) {
+  if (retainPrevious && value === null && dependencyKinds[kind]) {
     const previous = (await core
       .table("syncRecords")
       .get({ trans, key: recordKey(kind, id) })) as SyncRecord | undefined;
@@ -295,6 +284,30 @@ async function author(
   stateFor(trans).changed = true;
 }
 
+export async function deleteLearningRecords() {
+  const trans = Dexie.currentTransaction!.idbtrans;
+  const current = (await db.syncMeta.get("identity")) as
+    SyncIdentity | undefined;
+  if (current) {
+    const core = trackingCores.get(db)!;
+    const keys = await db.syncRecords
+      .where("kind")
+      .anyOf([...learningResetTables, "schedules"])
+      .primaryKeys();
+    const now = Date.now();
+    // Clearing the entire collection only needs tombstones. Copying the deleted
+    // records to dependency storage can rewrite gigabytes of attached media.
+    for (const key of keys) {
+      const [kind, id] = JSON.parse(key) as [SyncKind, string];
+      await author(core, trans, kind, id, null, now, current, false);
+    }
+    await put(core, "syncMeta", trans, [current]);
+  }
+  await withoutSyncTracking(async () => {
+    for (const table of learningResetTables) await db[table].clear();
+  });
+}
+
 async function recordChange(
   core: DBCore,
   trans: DBCoreTransaction,
@@ -308,12 +321,7 @@ async function recordChange(
   if (!old && !next) return;
   if (!baseline && kind === "cards" && stateFor(trans).undo) return;
   // Resource garbage collection is local-only. A peer may still reference it.
-  if (
-    !next &&
-    resources[kind] &&
-    !(kind !== "audio" && stateFor(trans).deletingCardResources)
-  )
-    return;
+  if (!next && resources[kind]) return;
   const id = String((next ?? old)!.id);
   const time = baseline
     ? originalTime(next)

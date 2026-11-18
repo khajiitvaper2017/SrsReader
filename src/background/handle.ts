@@ -14,10 +14,12 @@ import { handleVocabulary } from "@/vocabulary/commands";
 import { handleImports } from "@/imports/commands";
 import { clearExtensionData } from "@/backups/reset";
 import { handleSync } from "@/sync/commands";
-import { resetExtension } from "@/sync/service";
+import { resetDrivePreview, resetExtension } from "@/sync/service";
 
 export async function handle(request: Request, warn?: ScanWarning) {
   switch (request.action) {
+    case "resetDrivePreview":
+      return resetDrivePreview(request.account);
     case "resetExtension":
       return resetExtension(request.account);
     case "clearExtensionData":
