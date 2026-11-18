@@ -460,6 +460,7 @@ export async function mergeSnapshots(
           const fieldRecords = alive("cards").filter(
             (record) => typeof record.value!.field === "string",
           );
+          const editsByCard = new Map<string, Map<string, SyncRecord[]>>();
           for (const record of fieldRecords) {
             if (
               record.value!.reviewId &&
@@ -468,6 +469,13 @@ export async function mergeSnapshots(
             )
               throw invalid();
             const cardId = record.value!.id as string;
+            const field = record.value!.field as string;
+            const byField =
+              editsByCard.get(cardId) ?? new Map<string, SyncRecord[]>();
+            const edits = byField.get(field) ?? [];
+            edits.push(record);
+            byField.set(field, edits);
+            editsByCard.set(cardId, byField);
             if (
               !cards.has(cardId) &&
               !winners.get(recordKey("cards", cardId))?.deleted
@@ -476,12 +484,10 @@ export async function mergeSnapshots(
           }
           const projectFields = (record: SyncRecord, excluding?: string) => {
             const value = { ...record.value! };
-            for (const field of Object.keys(cardFields)) {
+            for (const [field, records] of editsByCard.get(record.id) ?? []) {
               const edits = frontier(
-                fieldRecords.filter(
+                records.filter(
                   (edit) =>
-                    edit.value!.id === record.id &&
-                    edit.value!.field === field &&
                     !observes(record, edit) &&
                     (!excluding || edit.value!.reviewId !== excluding) &&
                     (!edit.value!.reviewId ||
