@@ -11,7 +11,7 @@ const tables = {
   reviews: ["reviews", "ankiReviews"],
   learning: learningResetTables,
   dictionaries: ["dictionaries"],
-  all: [...learningResetTables, "decks", "dictionaries"],
+  all: [...learningResetTables, "dictionaries"],
 } as const;
 
 export function ResetPreview({

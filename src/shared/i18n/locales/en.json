@@ -1116,7 +1116,7 @@
   "reset_preview_drive_loading": "Checking Google Drive…",
   "reset_preview_drive_unavailable": "Google Drive file count and size are unavailable.",
   "reset_data_learning": "Clear learning data",
-  "reset_data_learning_confirm": "Delete saved words, cards and their media, review history, saved sentences, and saved recordings? Decks, installed dictionaries, and settings are kept.",
+  "reset_data_learning_confirm": "Delete saved words, decks, cards and their media, review history, saved sentences, and saved recordings? Installed dictionaries and settings are kept.",
   "reset_preview_sentences": "Saved sentences: {{total}}",
   "reset_extension": "Reset extension",
   "reset_extension_confirm": "Permanently delete all SrsReader data in this browser, including settings, dictionaries, cards, and review history? You will return to setup.",

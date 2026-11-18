@@ -1,6 +1,7 @@
 export const learningResetTables = [
   "vocabulary",
   "cards",
+  "decks",
   "notes",
   "noteTypes",
   "cardAssets",
