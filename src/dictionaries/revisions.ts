@@ -77,6 +77,15 @@ export async function cleanupUnusedRevisions() {
   );
 }
 
+export function clearInstalledDictionaries() {
+  return navigator.locks.request("srs-reader-dictionary-write", () =>
+    db.transaction("rw", [db.dictionaries, ...revisionTables()], async () => {
+      await db.dictionaries.clear();
+      for (const table of revisionTables()) await table.clear();
+    }),
+  );
+}
+
 export function cleanupDictionaryData() {
   return navigator.locks.request(
     "srs-reader-dictionary-write",

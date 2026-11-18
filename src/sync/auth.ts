@@ -186,14 +186,19 @@ async function ready() {
 export async function authStatus(): Promise<{
   configured: boolean;
   account: SyncAccount | null;
+  boundAccount: SyncAccount | undefined;
   authorizationRequired: boolean;
 }> {
   await ready();
-  const credentials = await storedCredentials();
+  const [credentials, boundAccount] = await Promise.all([
+    storedCredentials(),
+    binding(),
+  ]);
   const configured = configuration() !== null;
   return {
     configured,
     account: credentials?.account ?? null,
+    boundAccount,
     authorizationRequired: Boolean(
       credentials && (!configured || !(await dataConsent(false))),
     ),

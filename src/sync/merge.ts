@@ -397,6 +397,12 @@ export async function mergeSnapshots(
           const reviewById = new Map(
             reviews.map((review) => [review.id, review]),
           );
+          const reviewBelongsToCard = (reviewId: string, cardId: string) => {
+            const review = reviewById.get(reviewId);
+            return review
+              ? review.cardId === cardId
+              : winners.get(recordKey("reviews", reviewId))?.deleted;
+          };
           const changedHistoryCards = new Set<string>();
           for (const review of reviews) {
             if (!same(normalizedOld.get(review.id), review))
@@ -453,7 +459,7 @@ export async function mergeSnapshots(
             const checkpoint = checkpointSchema.parse(record.value);
             if (
               checkpoint.reviewId &&
-              reviewById.get(checkpoint.reviewId)?.cardId !== record.id
+              !reviewBelongsToCard(checkpoint.reviewId, record.id)
             )
               throw invalid();
           }
@@ -464,8 +470,10 @@ export async function mergeSnapshots(
           for (const record of fieldRecords) {
             if (
               record.value!.reviewId &&
-              reviewById.get(record.value!.reviewId as string)?.cardId !==
-                record.value!.id
+              !reviewBelongsToCard(
+                record.value!.reviewId as string,
+                record.value!.id as string,
+              )
             )
               throw invalid();
             const cardId = record.value!.id as string;
@@ -511,8 +519,6 @@ export async function mergeSnapshots(
               const source = parsed.reviewId
                 ? reviewById.get(parsed.reviewId)
                 : undefined;
-              if (parsed.reviewId && (!source || source.cardId !== id))
-                throw invalid();
               if (
                 (!parsed.reviewId || source?.active) &&
                 (!excluding || parsed.reviewId !== excluding)

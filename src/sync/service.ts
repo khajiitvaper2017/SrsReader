@@ -6,6 +6,7 @@ import {
   retainSyncHost,
 } from "@/imports/commands";
 import { db } from "@/platform/database/db";
+import { srsWrite } from "@/platform/locks";
 import { t } from "@/shared/i18n/i18n";
 import {
   accessToken,
@@ -21,6 +22,7 @@ import {
   deleteFile,
   downloadFile,
   driveTransferSignal,
+  listFiles,
   uploadFile,
   type DriveFile,
 } from "@/sync/drive";
@@ -48,7 +50,12 @@ import {
   type SyncTransferState,
 } from "@/sync/model";
 import { isLargeValueReadError, type PackedSync } from "@/sync/processing";
-import { markPublished, onSyncEdit, pendingCount } from "@/sync/tracking";
+import {
+  markPublished,
+  onSyncEdit,
+  pendingCount,
+  withoutSyncTracking,
+} from "@/sync/tracking";
 
 const storageKey = "syncTransfer";
 const periodicAlarm = "srs-reader-sync";
@@ -613,8 +620,57 @@ export async function disconnectSync() {
     await changed();
   }
 }
+export async function resetExtension(confirmedAccount: string | null) {
+  await initialize();
+  if (connecting || disconnecting || active || storageRequest)
+    throw new Error(t("reset_extension_sync_busy"));
+  disconnecting = true;
+  try {
+    await Promise.allSettled([trackingReady, pendingRequest]);
+    await srsWrite(async () => {
+      if ((await db.importTasks.get("current"))?.status === "running")
+        throw new Error(t("reset_extension_import_busy"));
+      const auth = await authStatus();
+      if ((auth.account?.id ?? null) !== confirmedAccount)
+        throw new Error(t("reset_extension_account_changed"));
+      if (!auth.account && (auth.boundAccount || transfer.account))
+        throw new Error(t("reset_extension_reconnect"));
+      if (auth.account) {
+        // A partial Drive wipe must not prompt the automatic uploader to refill it.
+        transfer.automatic = false;
+        await persist();
+        await accessToken(auth.account.id);
+        const { id } = auth.account;
+        await transferConcurrently(await listFiles(id), (file) =>
+          deleteFile(file.id, id),
+        );
+      }
+      await clearDriveUploads();
+      for (const name of await caches.keys()) await caches.delete(name);
+      await db.transaction("rw", db.tables, async () => {
+        await withoutSyncTracking(async () => {
+          for (const table of db.tables) await table.clear();
+        });
+      });
+      await disconnectGoogle();
+      await browser.alarms.clear(editAlarm);
+      await browser.alarms.clear(retryAlarm);
+      await browser.storage.local.clear();
+      await browser.storage.session.clear();
+      transfer = emptyTransfer();
+      pending = 0;
+      trackingReady = undefined;
+    });
+    await notify();
+  } finally {
+    disconnecting = false;
+    await changed();
+  }
+}
+
 export async function setAutomaticSync(enabled: boolean) {
   await initialize();
+  if (disconnecting) return;
   transfer.automatic = enabled;
   await persist();
   if (enabled) void automaticSync().catch(console.warn);
@@ -640,6 +696,7 @@ export async function automaticSync() {
 }
 export async function scheduleEdits() {
   await initialize();
+  if (disconnecting) return;
   await changed();
   void prepareTracking().then(refreshPending).catch(console.warn);
   if (

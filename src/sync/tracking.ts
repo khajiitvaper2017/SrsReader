@@ -66,6 +66,7 @@ type TransactionState = {
   suppressed: number;
   answer: number;
   restoring: number;
+  deletingCardResources?: boolean;
   undo: number;
   reviewId?: string;
   restoredReviews?: Map<string, Row>;
@@ -160,6 +161,18 @@ export async function withReviewScheduling<T>(
     state.answer--;
     if (options.undo) state.undo--;
     state.reviewId = previousReviewId;
+  }
+}
+
+export async function deleteCardResources() {
+  const trans = Dexie.currentTransaction!.idbtrans;
+  const state = stateFor(trans);
+  state.deletingCardResources = true;
+  try {
+    await db.cardAssets.clear();
+    await db.noteTypes.clear();
+  } finally {
+    state.deletingCardResources = false;
   }
 }
 
@@ -295,7 +308,12 @@ async function recordChange(
   if (!old && !next) return;
   if (!baseline && kind === "cards" && stateFor(trans).undo) return;
   // Resource garbage collection is local-only. A peer may still reference it.
-  if (!next && resources[kind]) return;
+  if (
+    !next &&
+    resources[kind] &&
+    !(kind !== "audio" && stateFor(trans).deletingCardResources)
+  )
+    return;
   const id = String((next ?? old)!.id);
   const time = baseline
     ? originalTime(next)

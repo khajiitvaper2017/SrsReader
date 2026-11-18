@@ -12,10 +12,16 @@ import { getSettings } from "@/settings/store";
 import { handleSrs } from "@/srs/commands";
 import { handleVocabulary } from "@/vocabulary/commands";
 import { handleImports } from "@/imports/commands";
+import { clearExtensionData } from "@/backups/reset";
 import { handleSync } from "@/sync/commands";
+import { resetExtension } from "@/sync/service";
 
 export async function handle(request: Request, warn?: ScanWarning) {
   switch (request.action) {
+    case "resetExtension":
+      return resetExtension(request.account);
+    case "clearExtensionData":
+      return clearExtensionData(request.category);
     case "syncStatus":
     case "syncStorage":
     case "syncConnect":
