@@ -542,7 +542,8 @@ export async function scanTexts(
         words,
         settings,
         ordered,
-        candidate.analysis?.terms.slice(0, -1),
+        candidate.analysis?.terms.slice(0, -1) ?? [],
+        vocabulary,
       );
       if (!words.length && !candidate.analysis) continue;
       const encounterKey =

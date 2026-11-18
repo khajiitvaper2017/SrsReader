@@ -1,6 +1,7 @@
 import { parseHTML } from "linkedom";
 import type { CardDocument, NoteType } from "@/cards/model";
 import { escapeHtml } from "@/cards/snapshot";
+import { isPhoneticReading } from "@/dictionaries/pronunciation";
 import { t } from "@/shared/i18n/i18n";
 
 export function fieldText(value: string): string {
@@ -253,7 +254,11 @@ export function renderCard(
     fields.SrsForms = study?.forms.length
       ? `<dl class="srs-forms">${study.forms.map(({ label, value }) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`
       : "";
-    fields.SrsIpa = (study?.ipa ?? []).map(escapeHtml).join(" · ");
+    const reading = fieldText(fields.Reading ?? "");
+    if (isPhoneticReading(reading)) {
+      fields.SrsIpa = escapeHtml(reading);
+      fields.Reading = "";
+    } else fields.SrsIpa = (study?.ipa ?? []).map(escapeHtml).join(" · ");
     fields.SrsFormsLabel = t("study_forms");
     fields.SrsIpaLabel = t("study_ipa");
     fields.SrsExamplesLabel = t("examples");

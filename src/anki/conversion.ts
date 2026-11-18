@@ -46,13 +46,15 @@ export async function ankiWord(
     bindings.reading === undefined
       ? ""
       : plain(values[bindings.reading]!, true);
-  const found = convert
-    ? (await lookup(lemma, settings)).words.find(
-        (word) =>
-          word.lemma.normalize() === lemma.normalize() &&
-          word.reading.normalize() === reading.normalize(),
+  const candidates = convert
+    ? (await lookup(lemma, settings, { reading })).words.filter(
+        (word) => word.lemma.normalize() === lemma.normalize(),
       )
-    : undefined;
+    : [];
+  const found =
+    candidates.find(
+      (word) => word.reading.normalize() === reading.normalize(),
+    ) ?? candidates.find((word) => !word.reading);
   const legacyId = gender && wordId(language, text, reading);
   const legacyNote =
     convert && legacyId ? await db.notes.get(legacyId) : undefined;

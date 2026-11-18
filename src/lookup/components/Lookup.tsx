@@ -171,6 +171,7 @@ function LookupEntry({
         meaning.tags === "ipa" &&
         !hiddenDictionaries.includes(meaning.dictionaryId),
     ) ?? [],
+    word?.reading,
   );
   const hiddenCandidateDictionaries = new Map(
     result?.words

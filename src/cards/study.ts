@@ -6,6 +6,10 @@ import type {
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
 import { readingCardIdentity } from "@/cards/encounter-key";
+import { definitionsHtml } from "@/cards/snapshot";
+import { lookup } from "@/dictionaries/resolve";
+import { getSettings } from "@/settings/store";
+import { snapshot } from "@/vocabulary/snapshot";
 import { dictionaryIpa } from "@/dictionaries/ipa";
 import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
 import type { Meaning } from "@/dictionaries/model";
@@ -161,9 +165,38 @@ export async function prepareStudyDocument(
           study: cardStudyDetails(document.note.language, [], [], encounter),
         }
       : document;
+  let definitions = word.meanings;
+  const field = document.noteType.bindings.definitions;
+  if (
+    word.reading &&
+    Array.isArray(document.note.source?.importedNotes) &&
+    !definitions.some((meaning) => meaning.tags !== "ipa") &&
+    field !== undefined &&
+    /^<style>[^<]*<\/style>$/u.test(document.note.fields[field] ?? "")
+  ) {
+    // Older converted cards can contain only the generated stylesheet.
+    const result = await lookup(
+      word.lemma,
+      { ...(await getSettings()), studyLanguage: word.language },
+      { localOnly: true, reading: word.reading },
+    );
+    const match = result.words.find(
+      (candidate) => candidate.id === document.note.wordId,
+    );
+    if (match?.meanings.some((meaning) => meaning.tags !== "ipa")) {
+      definitions = (await snapshot(match)).meanings;
+      const fields = [...document.note.fields];
+      fields[field] += definitionsHtml(
+        applyDefinitionOverrides(definitions, word).filter(
+          (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
+        ),
+      );
+      document = { ...document, note: { ...document.note, fields } };
+    }
+  }
   let meanings: Vocabulary["meanings"] = applyDefinitionOverrides(
     [
-      ...word.meanings.filter((meaning) => meaning.tags !== "ipa"),
+      ...definitions.filter((meaning) => meaning.tags !== "ipa"),
       ...(await dictionaryIpa(word)),
     ],
     word,

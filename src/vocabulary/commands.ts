@@ -98,8 +98,7 @@ async function execute(request: Request, settings: Settings) {
       const result = await lookup(
         occurrence ? context!.surface : saved.lemma,
         { ...settings, studyLanguage: saved.language },
-        false,
-        occurrence,
+        { occurrence },
       );
       return {
         saved,
@@ -223,7 +222,7 @@ async function execute(request: Request, settings: Settings) {
           ...settings,
           studyLanguage: saved.language,
         },
-        true,
+        { refreshOnline: true },
       );
       if (response.warning) throw new Error(response.warning);
       const result = response.words.find((w) => w.id === saved.id);

@@ -32,7 +32,18 @@ function pronunciation(value: unknown): string[] {
   return pronunciation(node.content);
 }
 
-export function dictionaryPronunciations(meanings: Meaning[]): string[] {
+export function isPhoneticReading(reading: string) {
+  return (
+    /^(?:\/[^/]+\/|\[[^\]]+\])$/u.test(reading) ||
+    /[\u0250-\u02afˈˌː]/u.test(reading)
+  );
+}
+
+export function dictionaryPronunciations(
+  meanings: Meaning[],
+  reading = "",
+): string[] {
+  if (isPhoneticReading(reading)) return [reading];
   return meanings
     .flatMap((meaning) =>
       meaning.tags === "ipa" && meaning.customDefinitions

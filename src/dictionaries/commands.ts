@@ -51,13 +51,10 @@ async function execute(request: Request, settings: Settings) {
       return;
     case "lookup": {
       settings = { ...settings, studyLanguage: request.language };
-      const result = await lookup(
-        request.term,
-        settings,
-        false,
-        request.occurrence,
-        request.localOnly,
-      );
+      const result = await lookup(request.term, settings, {
+        occurrence: request.occurrence,
+        localOnly: request.localOnly,
+      });
       const words = result.words.filter((word) =>
         wordMatchesGrammar(word, result.grammar),
       );

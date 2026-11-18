@@ -152,6 +152,7 @@ export function WordDetails({
             (meaning) =>
               !word.hiddenDictionaries?.includes(meaning.dictionaryId),
           ),
+          word.reading,
         ).map((pronunciation) => (
           <Text
             key={pronunciation}

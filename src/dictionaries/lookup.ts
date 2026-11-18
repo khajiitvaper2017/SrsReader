@@ -460,13 +460,26 @@ export async function lookupMany(
           }
         : word;
     });
-    for (const word of byLemma.get(folded(term, language)) || []) {
+    const headwords = new Set(result.words.map((word) => word.lemma));
+    const savedMatches = new Set(
+      [term, ...headwords].flatMap(
+        (lemma) => byLemma.get(folded(lemma, language)) ?? [],
+      ),
+    );
+    for (const word of savedMatches) {
       if (words.some((candidate) => candidate.id === word.id)) continue;
       const imported =
         language === "de" ? germanNounField(word.lemma) : undefined;
       const alias =
         imported?.gender &&
-        folded(imported.lemma, language) === folded(term, language);
+        (folded(imported.lemma, language) === folded(term, language) ||
+          headwords.has(imported.lemma));
+      if (
+        !alias &&
+        folded(word.lemma, language) !== folded(term, language) &&
+        !headwords.has(word.lemma)
+      )
+        continue;
       const meanings = word.meanings.filter(
         (meaning) =>
           meaning.dictionaryId === "personal" ||

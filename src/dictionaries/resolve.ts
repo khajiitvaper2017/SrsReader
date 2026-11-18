@@ -23,9 +23,17 @@ import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 export async function lookup(
   term: string,
   settings: Settings,
-  refreshOnline = false,
-  occurrence?: Occurrence,
-  localOnly = false,
+  {
+    refreshOnline = false,
+    occurrence,
+    localOnly = false,
+    reading,
+  }: {
+    refreshOnline?: boolean;
+    occurrence?: Occurrence;
+    localOnly?: boolean;
+    reading?: string;
+  } = {},
 ): Promise<LookupResult> {
   const lookupTerm =
     settings.studyLanguage === "cs" ? normalizeCzechReflexive(term) : term;
@@ -138,18 +146,24 @@ export async function lookup(
     result.words.push(...(match?.words || []));
     result.unresolved.push(...(match?.unresolved || []));
   }
+  if (reading !== undefined)
+    result.words = result.words.filter(
+      (word) => !word.reading || normalize(word.reading) === normalize(reading),
+    );
+  const saved = new Map(
+    (await db.vocabulary.bulkGet(result.words.map((word) => word.id))).flatMap(
+      (word) => (word ? [[word.id, word] as const] : []),
+    ),
+  );
   result.words = displayedWords(
     result.words,
     settings,
     dictionaries,
     bases.length ? bases : [lookupTerm],
-  );
-  const saved = await db.vocabulary.bulkGet(
-    result.words.map((word) => word.id),
-  );
-  result.words = result.words.map((word, index) => ({
+    saved,
+  ).map((word) => ({
     ...word,
-    meanings: applyDefinitionOverrides(word.meanings, saved[index]),
+    meanings: applyDefinitionOverrides(word.meanings, saved.get(word.id)),
   }));
   const germanNoun =
     settings.studyLanguage === "de" &&
@@ -213,8 +227,7 @@ export async function resolved(
         ...settings,
         studyLanguage: saved?.language || JSON.parse(id)[0],
       },
-      false,
-      occurrence,
+      { occurrence },
     )
   ).words.find((w) => w.id === id);
   if (match) return match;

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { displayedWords } from "../src/dictionaries/display";
 import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
 import { germanNounField, nounArticle } from "../src/cards/noun-article";
 import { cardEncounterKey } from "../src/cards/encounter-key";
@@ -228,6 +229,62 @@ test("Wird Lernen als ein Prozess definiert? → Lernen", () => {
     "de",
   );
   expect(surface?.terms).toEqual(["Lernen"]);
+});
+
+test("groß with an imported IPA reading keeps its card and dictionary definition", () => {
+  const lemma = "groß";
+  const general = {
+    id: "dictionary",
+    language: "de",
+    lemma,
+    reading: "",
+    forms: ["comparative"],
+    meanings: [
+      {
+        dictionaryId: "de-en",
+        title: "German",
+        revision: "1",
+        attribution: "",
+        sourceUrl: "",
+        tags: "",
+        definitions: ["large"],
+      },
+    ],
+  };
+  const reading = "/ɡʁoːs/";
+  const card = {
+    ...general,
+    id: "imported",
+    reading,
+    forms: [],
+    meanings: [],
+  };
+  const other = {
+    ...general,
+    id: "homograph",
+    reading: "other",
+  };
+  const saved = new Map([[card.id, true]]);
+  const lookup = () =>
+    displayedWords(
+      [card, general, other],
+      { dictionaryPreferences: {}, nechybujte: false },
+      [],
+      [lemma],
+      saved,
+    );
+  expect(lookup()).toEqual([
+    { ...card, meanings: general.meanings, forms: general.forms },
+    other,
+  ]);
+  saved.set(general.id, true);
+  expect(lookup().map((word) => word.id)).toEqual([
+    card.id,
+    general.id,
+    other.id,
+  ]);
+  expect(dictionaryPronunciations([], reading)).toEqual([reading]);
+  expect(dictionaryPronunciations([], "かな")).toEqual([]);
 });
 
 test("Anki nouns match reading encounters using the article's gender", () => {

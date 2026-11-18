@@ -3,13 +3,15 @@ import type { Dictionary, Meaning, LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { folded, normalize } from "@/languages/text";
 
+type DisplaySettings = Pick<Settings, "dictionaryPreferences" | "nechybujte">;
+
 export type DictionaryRole = "vocabulary" | "frequency";
 
 export type DictionaryDisplay = "show" | "fallback" | "hide";
 
 export function dictionaryDisplay(
   id: string,
-  settings: Settings,
+  settings: DisplaySettings,
 ): DictionaryDisplay {
   const preference = settings.dictionaryPreferences[id];
   const enabled =
@@ -24,7 +26,7 @@ export function dictionaryDisplay(
 
 export function displayedMeanings(
   meanings: Meaning[],
-  settings: Settings,
+  settings: DisplaySettings,
   dictionaries: Dictionary[],
 ) {
   const metadata = new Map(
@@ -63,32 +65,58 @@ export function displayedMeanings(
 
 export function displayedWords(
   words: LookupWord[],
-  settings: Settings,
+  settings: DisplaySettings,
   dictionaries: Dictionary[],
-  preferredLemmas: string[] = [],
+  preferredLemmas: string[],
+  saved: ReadonlyMap<string, unknown>,
 ) {
+  function mergeContent(
+    target: LookupWord,
+    forms: string[],
+    meanings: Meaning[],
+  ) {
+    for (const form of forms)
+      if (!target.forms.includes(form)) target.forms.push(form);
+    for (const meaning of meanings)
+      if (
+        !target.meanings.some(
+          (current) => JSON.stringify(current) === JSON.stringify(meaning),
+        )
+      )
+        target.meanings.push(meaning);
+  }
   const merged = new Map<string, LookupWord>();
   for (const word of words) {
     const existing = merged.get(word.id);
-    if (!existing)
+    if (existing) mergeContent(existing, word.forms, word.meanings);
+    else
       merged.set(word.id, {
         ...word,
         forms: [...word.forms],
         meanings: [...word.meanings],
       });
-    else {
-      for (const form of word.forms)
-        if (!existing.forms.includes(form)) existing.forms.push(form);
-      for (const meaning of word.meanings)
-        if (
-          !existing.meanings.some(
-            (current) => JSON.stringify(current) === JSON.stringify(meaning),
-          )
-        )
-          existing.meanings.push(meaning);
-    }
   }
-  words = [...merged.values()];
+  const covered = new Set<string>();
+  for (const word of merged.values()) {
+    if (!word.reading || !saved.has(word.id)) continue;
+    const general = words.find(
+      (candidate) =>
+        !candidate.reading &&
+        normalize(candidate.lemma) === normalize(word.lemma) &&
+        candidate.language === word.language,
+    );
+    const base = general && merged.get(general.id);
+    if (!base) continue;
+    // Unqualified dictionary entries also describe saved cards with a reading.
+    mergeContent(
+      word,
+      base.forms,
+      base.meanings.filter((meaning) => meaning.dictionaryId !== "personal"),
+    );
+    if (!saved.has(base.id) && !word.importedGenders?.length)
+      covered.add(base.id);
+  }
+  words = [...merged.values()].filter((word) => !covered.has(word.id));
   const visible = displayedMeanings(
     words.flatMap((word) => word.meanings),
     settings,

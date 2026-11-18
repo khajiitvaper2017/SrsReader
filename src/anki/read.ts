@@ -412,7 +412,7 @@ function suggestedBindings(
   const aliases: Record<keyof FieldBindings, RegExp> = {
     word: /^(word|expression|term|vocab(?:ulary)?|front|слово|wyraz|słówko|polski|expression|表現|単語|語彙|見出し語)$/iu,
     reading:
-      /^(reading|pronunciation|kana|読み|読み方|振り仮名|ふりがな|word reading)$/iu,
+      /^(reading|pronunciation|ipa|kana|読み|読み方|振り仮名|ふりがな|word reading)$/iu,
     definitions:
       /^(meaning|definition|definitions|back|значення|значение|訳|意味|translation|english|angielski|znaczenie)$/iu,
     sentence:
