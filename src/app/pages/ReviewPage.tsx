@@ -8,7 +8,6 @@ import { fieldText } from "@/cards/template";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
 import type { ReadingContext } from "@/vocabulary/model";
 import { CardTools } from "@/cards/components/CardTools";
-import { setCardSuspended } from "@/cards/storage";
 import { ChevronRight, FilePenLine, RefreshCw } from "lucide-react";
 import { refreshNote } from "@/cards/storage";
 import {
@@ -290,7 +289,11 @@ export function ReviewPage({
                   leftSection={<Pause aria-hidden="true" size={16} />}
                   disabled={busy}
                   onClick={() =>
-                    void setCardSuspended(word.id, true)
+                    void vocabularyClient({
+                      action: "suspend",
+                      cardId: word.id,
+                      value: true,
+                    })
                       .then(load)
                       .catch((error) => setError(error.message))
                   }

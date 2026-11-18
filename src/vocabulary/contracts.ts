@@ -83,7 +83,7 @@ export const requests = [
   }),
   z.object({
     action: z.literal("suspend"),
-    id: z.string(),
+    cardId: z.string(),
     value: z.boolean(),
   }),
   z.object({

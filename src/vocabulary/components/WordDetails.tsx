@@ -60,6 +60,7 @@ export function WordDetails({
   const contextIndex = exampleIndex % (contexts.length || 1);
   const context = contexts[contextIndex];
   if (!word) return null;
+  const selectedCard = word.linkedCards.find((card) => card.id === word.cardId);
   return (
     <Stack>
       <Group align="flex-start" justify="space-between" wrap="nowrap">
@@ -119,14 +120,18 @@ export function WordDetails({
               >
                 {word.known ? t("unmaster") : t("master")}
               </Menu.Item>
-              {!word.known && (
+              {!word.known && selectedCard && (
                 <Menu.Item
                   leftSection={
-                    word.suspended ? <Play size={16} /> : <Pause size={16} />
+                    selectedCard?.suspended ? (
+                      <Play size={16} />
+                    ) : (
+                      <Pause size={16} />
+                    )
                   }
                   onClick={() => toggleSuspension()}
                 >
-                  {word.suspended ? t("resume") : t("suspend")}
+                  {selectedCard?.suspended ? t("resume") : t("suspend")}
                 </Menu.Item>
               )}
               <Menu.Divider />

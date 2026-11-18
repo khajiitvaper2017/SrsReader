@@ -617,6 +617,7 @@ export function useLookupWord({
     result,
     term,
     context,
+    occurrence,
     setSelected: (id: string) => {
       chosen.current = id;
       setSelected(id);

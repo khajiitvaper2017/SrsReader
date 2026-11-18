@@ -169,12 +169,13 @@ export function useWords({
     );
   }
   function toggleSuspension() {
-    if (!word) return;
+    const card = word?.linkedCards.find((card) => card.id === word.cardId);
+    if (!card) return;
     return void action(() =>
       vocabularyClient({
         action: "suspend",
-        id: word.id,
-        value: !word.suspended,
+        cardId: card.id,
+        value: !card.suspended,
       }),
     );
   }

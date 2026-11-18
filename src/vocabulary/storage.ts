@@ -480,22 +480,6 @@ export async function deleteDefinition(
   });
 }
 
-export async function setSuspended(
-  request: Extract<Request, { action: "suspend" }>,
-) {
-  const word = await getWord(request.id);
-  const card = word?.cardId;
-  if (!card) throw new Error(t("select_reading_card"));
-  const current = await db.cards.get(card);
-  if (current)
-    await db.cards.update(card, {
-      suspended: request.value,
-      srsVersion: current.srsVersion + 1,
-      version: current.version + 1,
-      updated: Date.now(),
-    });
-}
-
 export async function deleteWord(
   request: Extract<Request, { action: "deleteWord" }>,
 ) {

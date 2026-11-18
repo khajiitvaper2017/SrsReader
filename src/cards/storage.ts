@@ -315,18 +315,16 @@ export async function deleteCards(ids: string[]) {
 }
 
 export async function setCardSuspended(id: string, value: boolean) {
-  await srsWrite(() =>
-    db.transaction("rw", [db.cards, db.srsMeta], async () => {
-      await db.cards
-        .where("id")
-        .equals(id)
-        .modify((card) => {
-          card.suspended = value;
-          card.srsVersion++;
-          card.version++;
-          card.updated = Date.now();
-        });
-      await db.srsMeta.update("main", { undo: undefined });
-    }),
-  );
+  return db.transaction("rw", [db.cards, db.notes, db.srsMeta], async () => {
+    const card = await db.cards.get(id);
+    if (!card) throw new Error(t("card_not_found"));
+    await db.cards.update(id, {
+      suspended: value,
+      srsVersion: card.srsVersion + 1,
+      version: card.version + 1,
+      updated: Date.now(),
+    });
+    await db.srsMeta.update("main", { undo: undefined });
+    return (await db.notes.get(card.noteId))?.wordId;
+  });
 }

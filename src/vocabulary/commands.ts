@@ -1,4 +1,4 @@
-import { selectReadingCard } from "@/cards/storage";
+import { selectReadingCard, setCardSuspended } from "@/cards/storage";
 import { resolveCardEncounter } from "@/cards/encounter";
 import { cacheAudio } from "@/audio/cache";
 import { notify } from "@/background/events";
@@ -32,7 +32,6 @@ import {
   saveCustomTranslation,
   setMastered,
   setRetentionOverride,
-  setSuspended,
 } from "@/vocabulary/storage";
 
 export function handleVocabulary(request: Request, settings: Settings) {
@@ -208,8 +207,7 @@ async function execute(request: Request, settings: Settings) {
       return result;
     }
     case "suspend":
-      await setSuspended(request);
-      await notify(request.id);
+      await notify(await setCardSuspended(request.cardId, request.value));
       return;
     case "deleteWord":
       await deleteWord(request);

@@ -109,6 +109,7 @@ function LookupEntry({
     result,
     term,
     context,
+    occurrence,
     setSelected,
     candidateOpen,
     setCandidateOpen,
@@ -144,6 +145,7 @@ function LookupEntry({
     toggleMastery,
     definitionSaved,
   } = useLookupWord({ page, onLookup, onBack });
+  const cardId = saved?.cardId;
   const compound = page.compound;
   const canForget = !!saved && (!context || !!saved.cardId);
   const surface = result?.grammar?.group?.form || term;
@@ -571,10 +573,10 @@ function LookupEntry({
                             term: part,
                             compoundSource:
                               compoundSource ??
-                              (page.occurrence
+                              (occurrence
                                 ? {
-                                    occurrence: page.occurrence,
-                                    surface: page.term,
+                                    occurrence,
+                                    surface: term,
                                   }
                                 : undefined),
                             selected: wordId("de", part, ""),
@@ -593,7 +595,7 @@ function LookupEntry({
                     word={result?.words.length ? word : undefined}
                     term={term}
                     context={context}
-                    occurrence={page.occurrence}
+                    occurrence={occurrence}
                     grammar={result?.grammar}
                     settings={settings}
                     draft={page.definitionDraft}
@@ -608,7 +610,7 @@ function LookupEntry({
                     word={{ ...word, meanings }}
                     term={term}
                     context={context}
-                    occurrence={page.occurrence}
+                    occurrence={occurrence}
                     settings={settings}
                     grammar={result?.grammar}
                     editing={editing}
@@ -667,12 +669,12 @@ function LookupEntry({
             >
               {saved?.known ? t("unmaster") : t("master")}
             </Button>
-            {!saved?.known && !reviewed && saved?.suspended && (
+            {!saved?.known && !reviewed && saved?.suspended && cardId && (
               <Button
                 onClick={() =>
                   void vocabularyClient({
                     action: "suspend",
-                    id: word.id,
+                    cardId,
                     value: false,
                   }).then(reload)
                 }
