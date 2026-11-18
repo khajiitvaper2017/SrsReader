@@ -170,8 +170,12 @@ export function ReviewPage({
       return queue?.document;
     const fields = [...queue!.document!.note.fields];
     const bindings = queue!.document!.noteType.bindings;
-    if (context && bindings.sentence !== undefined)
-      fields[bindings.sentence] = escapeHtml(context.sentence);
+    if (context && bindings.sentence !== undefined) {
+      const { sentence, surface, start, end } = context;
+      fields[bindings.sentence] = surface
+        ? `${escapeHtml(sentence.slice(0, start))}<mark style="color:inherit;background:var(--mantine-color-violet-light)">${escapeHtml(surface)}</mark>${escapeHtml(sentence.slice(end))}`
+        : escapeHtml(sentence);
+    }
     if (bindings.translation !== undefined)
       fields[bindings.translation] = escapeHtml(translationText);
     if (context && bindings.sentenceAudio !== undefined)

@@ -56,11 +56,17 @@ export function Ratings({
           {compact ? (
             label
           ) : (
-            <Stack gap={0} align="center">
-              <Text span inherit>
+            <Stack component="span" gap={2} align="center">
+              <Text span inherit fw={600} lh={1.15}>
                 {label}
               </Text>
-              <Text variant="supporting" span>
+              <Text
+                variant="supporting"
+                span
+                fw={400}
+                lh={1.15}
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
                 {interval ?? "—"}
               </Text>
             </Stack>
