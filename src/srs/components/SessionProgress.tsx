@@ -25,7 +25,7 @@ export function SessionProgress({
   children: ReactNode;
 }) {
   const reviews = queue.reviews + queue.learning + queue.relearning;
-  const remaining = queue.words.length;
+  const remaining = queue.remaining;
   const total = answers.length + remaining;
   const label = t("session_progress_count", {
     answered: number(answers.length),

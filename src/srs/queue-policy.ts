@@ -3,38 +3,36 @@ import { dayStart, studyDay } from "@/srs/study-day";
 import type { ReviewWord } from "@/vocabulary/model";
 import { mergeQueues, queueRandom } from "@/srs/queue-order";
 
-export function buildQueue(
-  words: ReviewWord[],
+export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
+  words: T[],
   counts: { today: number; introduced: number; reviews: number },
   settings: SchedulingPreferences,
   now: number,
-  orderedNew: ReviewWord[],
+  orderedNew: T[],
   deckOrder: ReadonlyMap<string, number> = new Map(),
 ) {
   const available = Math.max(
     0,
     (settings.reviewLimit ?? Infinity) - counts.reviews,
   );
-  const byDue = (a: ReviewWord, b: ReviewWord) =>
+  const byDue = (a: T, b: T) =>
     a.card!.dueAt - b.card!.dueAt || a.id.localeCompare(b.id);
   const day = studyDay(now, settings.rolloverHour);
-  const byRandom = (a: ReviewWord, b: ReviewWord) =>
+  const byRandom = (a: T, b: T) =>
     queueRandom(a.id, day) - queueRandom(b.id, day) || a.id.localeCompare(b.id);
-  const byDeck = (a: ReviewWord, b: ReviewWord) =>
+  const byDeck = (a: T, b: T) =>
     (deckOrder.get(a.id) ?? 0) - (deckOrder.get(b.id) ?? 0);
-  const byDueDay = (a: ReviewWord, b: ReviewWord) =>
+  const byDueDay = (a: T, b: T) =>
     studyDay(a.card!.dueAt, settings.rolloverHour) -
     studyDay(b.card!.dueAt, settings.rolloverHour);
   const reviewOrder = {
     due: byDue,
-    due_random: (a: ReviewWord, b: ReviewWord) =>
-      byDueDay(a, b) || byRandom(a, b),
-    due_deck: (a: ReviewWord, b: ReviewWord) =>
-      byDueDay(a, b) || byDeck(a, b) || byDue(a, b),
-    deck_due: (a: ReviewWord, b: ReviewWord) => byDeck(a, b) || byDue(a, b),
-    interval_asc: (a: ReviewWord, b: ReviewWord) =>
+    due_random: (a: T, b: T) => byDueDay(a, b) || byRandom(a, b),
+    due_deck: (a: T, b: T) => byDueDay(a, b) || byDeck(a, b) || byDue(a, b),
+    deck_due: (a: T, b: T) => byDeck(a, b) || byDue(a, b),
+    interval_asc: (a: T, b: T) =>
       a.card!.scheduledDays - b.card!.scheduledDays || byDue(a, b),
-    interval_desc: (a: ReviewWord, b: ReviewWord) =>
+    interval_desc: (a: T, b: T) =>
       b.card!.scheduledDays - a.card!.scheduledDays || byDue(a, b),
     random: byRandom,
   };

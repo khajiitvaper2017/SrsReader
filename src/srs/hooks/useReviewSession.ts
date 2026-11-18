@@ -1,5 +1,3 @@
-import { getCardDocument } from "@/cards/storage";
-import { prepareStudyDocument } from "@/cards/study";
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import { stopAudio } from "@/audio/playback";
 import type { Settings } from "@/settings/model";
@@ -125,9 +123,10 @@ export function useReviewSession({
   }, [word?.id, word?.version, encounter, settings, sentenceRevision, preload]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const fetchQueue = useCallback(
-    () =>
+    (currentCardId?: string) =>
       srsClient({
         action: "queue",
+        currentCardId,
         language: settings.studyLanguage,
         deckId,
         limits: limits.current,
@@ -138,33 +137,14 @@ export function useReviewSession({
     (preserveCurrent: boolean) => {
       if (busyRef.current) return;
       const revision = ++queueRevision.current;
-      void fetchQueue()
-        .then(async (value) => {
-          const pinned = preserveCurrent
-            ? value.words.find((entry) => entry.id === activeCardId.current)
-            : undefined;
-          let document = value.document;
-          if (pinned && pinned.id !== value.words[0]?.id) {
-            const stored = await getCardDocument(pinned.id);
-            document = stored ? await prepareStudyDocument(stored) : undefined;
-          }
+      void fetchQueue(preserveCurrent ? activeCardId.current : undefined)
+        .then((value) => {
           if (revision !== queueRevision.current) return;
-          if (!pinned && value.words[0]?.id !== activeCardId.current) {
+          if (value.words[0]?.id !== activeCardId.current) {
             setRevealed(false);
             setExample(0);
           }
-          setQueue((current) =>
-            pinned && document && current?.words[0]?.id === pinned.id
-              ? {
-                  ...value,
-                  document,
-                  words: [
-                    pinned,
-                    ...value.words.filter((next) => next.id !== pinned.id),
-                  ],
-                }
-              : value,
-          );
+          setQueue(value);
         })
         .catch((error) => {
           if (revision === queueRevision.current) setError(error.message);

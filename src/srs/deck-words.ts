@@ -1,30 +1,34 @@
 import type { Deck } from "@/srs/deck-model";
-import type { ReviewWord, WordWithCards } from "@/vocabulary/model";
+import type { WordWithCards } from "@/vocabulary/model";
 import { t } from "@/shared/i18n/i18n";
 import { deckBranch, deckTree } from "@/srs/deck-tree";
 
 export const isFrequencyWord = (term: string) => /\p{L}/u.test(term);
 
-type GroupWord = WordWithCards | ReviewWord;
+import type { QueueEntry } from "@/srs/queue-entries";
+type GroupWord = WordWithCards | QueueEntry;
 export function studyGroups<T extends GroupWord>(words: T[], decks: Deck[]) {
-  const belongs = (word: T, id: string | null) =>
-    "document" in word
-      ? word.document.card.deckId === id
-      : word.linkedCards.some((card) => card.deckId === id) ||
-        (id === null && !word.linkedCards.length && word.mined !== false);
-  const direct = new Map(
-    decks.map((deck) => [
-      deck.id,
-      words.filter(
-        (word) =>
-          belongs(word, deck.id) &&
-          (!deck.dictionaryId || isFrequencyWord(word.lemma)),
-      ),
-    ]),
+  const direct = new Map<string | null, T[]>();
+  const frequencyDecks = new Set(
+    decks.filter((deck) => deck.dictionaryId).map((deck) => deck.id),
   );
+  for (const word of words) {
+    const ids =
+      "deckId" in word
+        ? new Set([word.deckId])
+        : new Set(word.linkedCards.map((card) => card.deckId));
+    if (!ids.size && "mined" in word && word.mined !== false) ids.add(null);
+    for (const id of ids) {
+      if (id && frequencyDecks.has(id) && !isFrequencyWord(word.lemma))
+        continue;
+      const entries = direct.get(id) ?? [];
+      entries.push(word);
+      direct.set(id, entries);
+    }
+  }
   const nodes = deckTree(decks);
   return {
-    mined: words.filter((word) => belongs(word, null)),
+    mined: direct.get(null) ?? [],
     decks: nodes.map((deck, index) => ({
       ...deck,
       words: deckBranch(nodes, index).flatMap(

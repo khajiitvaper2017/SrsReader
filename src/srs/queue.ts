@@ -2,12 +2,13 @@ import { orderNewWords } from "@/dictionaries/frequency";
 import { getSettings } from "@/settings/store";
 import { buildQueue } from "@/srs/queue-policy";
 import { dailyCounts } from "@/srs/workload";
-import { allReviewCards } from "@/vocabulary/storage";
+import { reviewCards } from "@/vocabulary/storage";
 import { db } from "@/platform/database/db";
 import { studyGroups, wordsInDeck } from "@/srs/deck-words";
+import { deckIdsInTree } from "@/srs/deck-tree";
 import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
-import type { ReviewWord } from "@/vocabulary/model";
+import { queueEntries, type QueueEntry } from "@/srs/queue-entries";
 import type { SchedulingPreferences } from "@/srs/preferences";
 import { prepareStudyDocument } from "@/cards/study";
 
@@ -15,6 +16,7 @@ export async function reviewQueue(
   language: string,
   deckId?: string,
   limits?: Pick<SchedulingPreferences, "newLimit" | "reviewLimit">,
+  currentCardId?: string,
 ) {
   const settings = {
     ...(await getSettings()),
@@ -22,10 +24,10 @@ export async function reviewQueue(
     studyLanguage: language,
   };
   const now = Date.now();
-  const [saved, decks] = await Promise.all([
-    allReviewCards(settings.studyLanguage),
-    db.decks.where("language").equals(settings.studyLanguage).toArray(),
-  ]);
+  const decks = await db.decks.where("language").equals(language).toArray();
+  const selectedDecks =
+    deckId && deckId !== "mined" ? deckIdsInTree(decks, deckId) : undefined;
+  const saved = await queueEntries(language, selectedDecks);
   const groups = studyGroups(saved, decks);
   const included = wordsInDeck(groups, deckId);
   const words = included.filter(
@@ -43,19 +45,19 @@ export async function reviewQueue(
     ),
   );
   const day = studyDay(now, settings.rolloverHour);
-  const byCreated = (a: ReviewWord, b: ReviewWord) =>
+  const byCreated = (a: QueueEntry, b: QueueEntry) =>
     a.created - b.created || a.id.localeCompare(b.id);
-  const byRandom = (a: ReviewWord, b: ReviewWord) =>
+  const byRandom = (a: QueueEntry, b: QueueEntry) =>
     queueRandom(a.id, day) - queueRandom(b.id, day) || byCreated(a, b);
-  const byDeck = (a: ReviewWord, b: ReviewWord) =>
+  const byDeck = (a: QueueEntry, b: QueueEntry) =>
     deckOrder.get(a.id)! - deckOrder.get(b.id)!;
   const newWords = words.filter((word) => word.card!.state === 0);
   const gatherOrder = {
-    deck: (a: ReviewWord, b: ReviewWord) => byDeck(a, b) || byCreated(a, b),
-    deck_random: (a: ReviewWord, b: ReviewWord) =>
+    deck: (a: QueueEntry, b: QueueEntry) => byDeck(a, b) || byCreated(a, b),
+    deck_random: (a: QueueEntry, b: QueueEntry) =>
       byDeck(a, b) || byRandom(a, b),
     oldest: byCreated,
-    newest: (a: ReviewWord, b: ReviewWord) => byCreated(b, a),
+    newest: (a: QueueEntry, b: QueueEntry) => byCreated(b, a),
     random: byRandom,
   };
   const orderedNew =
@@ -65,14 +67,27 @@ export async function reviewQueue(
         : newWords.sort(gatherOrder[settings.newGatherOrder])
       : [];
   const queue = buildQueue(words, counts, settings, now, orderedNew, deckOrder);
+  const current =
+    currentCardId && queue.words.find((word) => word.id === currentCardId);
+  const upcoming = current
+    ? [current, ...queue.words.filter((word) => word !== current).slice(0, 2)]
+    : queue.words.slice(0, 3);
+  const details = await reviewCards(
+    (await db.cards.bulkGet(upcoming.map((word) => word.id))).filter(
+      (card) => !!card,
+    ),
+  );
   return {
     ...queue,
-    words: queue.words.map(({ document: _document, ...word }) => word),
-    document: queue.words[0]
-      ? await prepareStudyDocument(queue.words[0].document, queue.words[0])
+    remaining: queue.words.length,
+    words: details.map(({ document: _document, ...word }) => word),
+    document: details[0]
+      ? await prepareStudyDocument(details[0].document, details[0])
       : undefined,
     today: counts.today,
-    total: saved.length,
+    total: selectedDecks
+      ? await db.cards.where("language").equals(language).count()
+      : saved.length,
     limits: {
       newLimit: Math.max(settings.newLimit, counts.introduced),
       reviewLimit:

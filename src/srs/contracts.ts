@@ -26,6 +26,7 @@ export const requests = [
   z.object({ action: z.literal("undo"), id: z.string() }),
   z.object({
     action: z.literal("queue"),
+    currentCardId: z.string().optional(),
     language: languageSchema,
     deckId: z.string().optional(),
     limits: z

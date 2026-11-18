@@ -26,7 +26,7 @@ import { clearUndo } from "@/srs/storage";
 import { undoReview } from "@/srs/undo";
 import { dailyCounts } from "@/srs/workload";
 import { snapshot } from "@/vocabulary/snapshot";
-import { getWord, languageWords, mine, reviewCard } from "@/vocabulary/storage";
+import { getWord, mine, reviewCard } from "@/vocabulary/storage";
 import { freshWord } from "@/vocabulary/service";
 import type { Grade } from "ts-fsrs";
 import {
@@ -36,6 +36,8 @@ import {
   saveStudyDeck,
 } from "@/srs/decks";
 import { sentenceExamples } from "@/examples/sentences";
+
+import { queueMetadata } from "@/srs/queue-entries";
 
 export function handleSrs(request: Request, settings: Settings) {
   return request.action === "createFrequencyDeck" ||
@@ -142,7 +144,12 @@ async function execute(request: Request, settings: Settings) {
       await notify(await undoReview(request.id));
       return;
     case "queue":
-      return reviewQueue(request.language, request.deckId, request.limits);
+      return reviewQueue(
+        request.language,
+        request.deckId,
+        request.limits,
+        request.currentCardId,
+      );
     case "preview": {
       const encounter = await resolveCardEncounter(
         request.context,
@@ -189,13 +196,13 @@ async function execute(request: Request, settings: Settings) {
     case "reviewStats":
       return reviewStatistics(settings, request.year);
     case "stats": {
-      const words = (
-        await Promise.all(settings.studyLanguages.map(languageWords))
-      ).flat();
+      const languages = await Promise.all(
+        settings.studyLanguages.map(queueMetadata),
+      );
       const overview = await studyOverview(settings);
       return {
-        total: words.length,
-        known: words.filter((w) => w.known).length,
+        total: languages.reduce((sum, lang) => sum + lang.total, 0),
+        known: languages.reduce((sum, lang) => sum + lang.known, 0),
         due: overview.reduce(
           (sum, language) =>
             sum + language.fresh + language.learning + language.due,

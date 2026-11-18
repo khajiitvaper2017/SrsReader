@@ -8,7 +8,8 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { buildQueue } from "@/srs/queue-policy";
 import { dailyCounts } from "@/srs/workload";
-import type { Vocabulary, ReviewWord } from "@/vocabulary/model";
+import { queueEntries, type QueueEntry } from "@/srs/queue-entries";
+import type { Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { snapshot } from "@/vocabulary/snapshot";
 import { isFrequencyWord, studyGroups, wordsInDeck } from "@/srs/deck-words";
@@ -52,19 +53,16 @@ async function keepParentDecks(
 }
 
 export async function studyOverview(settings: Settings) {
-  const [words, decks] = await Promise.all([
-    allReviewCards(),
-    db.decks.toArray(),
-  ]);
+  const decks = await db.decks.toArray();
   return Promise.all(
     settings.studyLanguages.map(async (language) => {
       const preferences = { ...settings, studyLanguage: language };
       const counts = await dailyCounts(preferences);
       const groups = studyGroups(
-        words.filter((word) => word.language === language),
+        await queueEntries(language),
         decks.filter((deck) => deck.language === language),
       );
-      function summary(entries: ReviewWord[]) {
+      function summary(entries: QueueEntry[]) {
         const active = entries.filter(
           (word) => word.card && !word.known && !word.suspended,
         );

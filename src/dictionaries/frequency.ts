@@ -105,10 +105,12 @@ export async function wordFrequencies(
   return matchingFrequencies(word, await frequencyData([word], settings));
 }
 
-export async function orderNewWords<T extends Vocabulary>(
-  words: T[],
-  settings: Settings,
-) {
+export async function orderNewWords<
+  T extends Pick<
+    Vocabulary,
+    "id" | "language" | "lemma" | "reading" | "created"
+  >,
+>(words: T[], settings: Settings) {
   if (!words.length) return words;
   const data = await frequencyData(
     words.filter((word) => !("wordId" in word) || !!word.wordId),

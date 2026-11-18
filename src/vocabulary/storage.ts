@@ -6,6 +6,7 @@ import {
   deleteCards,
   ensureReaderCard,
   fieldText,
+  noteHeadword,
   getCardDocument,
   readingCard,
   refreshDictionaryFields,
@@ -176,13 +177,7 @@ export async function reviewCards(cards: Card[]): Promise<ReviewWord[]> {
       freshWord({
         id: card.id,
         language: note.language,
-        lemma:
-          fieldText(note.fields[noteType.bindings.word ?? 0] || "") ||
-          noteType.name,
-        reading:
-          noteType.bindings.reading === undefined
-            ? ""
-            : fieldText(note.fields[noteType.bindings.reading] || ""),
+        ...noteHeadword(note, noteType),
         meanings: [],
         forms: [],
       });

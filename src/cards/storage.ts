@@ -34,6 +34,19 @@ export function fieldText(value: string, trim = true) {
   return trim ? text.trim() : text;
 }
 
+export function noteHeadword(
+  note: CardDocument["note"],
+  type: CardDocument["noteType"],
+) {
+  return {
+    lemma: fieldText(note.fields[type.bindings.word ?? 0] || "") || type.name,
+    reading:
+      type.bindings.reading === undefined
+        ? ""
+        : fieldText(note.fields[type.bindings.reading] || ""),
+  };
+}
+
 export async function getCardDocument(
   id: string,
 ): Promise<CardDocument | undefined> {
