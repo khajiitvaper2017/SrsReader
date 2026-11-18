@@ -527,6 +527,7 @@ export function createScanner(
     if (!target && JSON.stringify(parsed.get(key)) === JSON.stringify(result))
       return;
     remember(key, result);
+    if (result.retryAt) scheduleRetry();
     const targets = target ? [[target, blocks.get(target)] as const] : blocks;
     for (const [element, block] of targets) {
       if (
@@ -590,21 +591,26 @@ export function createScanner(
   }
   function scheduleRetry() {
     clearTimeout(retryTimer);
-    const expires = [...retries.values()];
-    if (!expires.length) return;
+    if (!retries.size) return;
+    let next = Infinity;
+    for (const time of retries.values()) next = Math.min(next, time);
     retryTimer = setTimeout(
       () => {
-        for (const [key, retryAt] of retries) {
-          if (retryAt > Date.now()) continue;
+        const now = Date.now();
+        const expired = new Set<string>();
+        for (const [key, time] of retries) {
+          if (time > now) continue;
+          expired.add(key);
           retries.delete(key);
           parsed.delete(key);
-          for (const [element, block] of blocks)
-            if (scanKey(block.language, block.text) === key)
-              queued.add(element);
         }
+        for (const [element, block] of blocks)
+          if (expired.has(scanKey(block.language, block.text)))
+            queued.add(element);
+        scheduleRetry();
         schedule();
       },
-      Math.max(0, Math.min(...expires) - Date.now()),
+      Math.max(0, next - Date.now()),
     );
   }
   async function drain() {
