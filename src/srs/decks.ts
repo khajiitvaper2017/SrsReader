@@ -335,6 +335,8 @@ async function refreshFrequencyDeck(language: string, deckId: string) {
           .filter(
             (card) =>
               card.document.card.deckId === deckId &&
+              !card.known &&
+              !card.card?.reps &&
               (!card.wordId || !selectedIds.has(card.wordId)),
           )
           .map((card) => card.id),
