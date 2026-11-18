@@ -287,6 +287,11 @@ async function refreshFrequencyDeck(language: string, deckId: string) {
     allReviewCards(language),
   ]);
   const byId = new Map(saved.map((word) => [word.id, word]));
+  const members = new Set(
+    cards
+      .filter((card) => card.document.card.deckId === deckId)
+      .map((card) => card.wordId),
+  );
   const assigned = new Set(
     cards
       .filter((card) => card.document.card.deckId !== deckId)
@@ -294,8 +299,9 @@ async function refreshFrequencyDeck(language: string, deckId: string) {
   );
   const selected = words.filter(
     (word) =>
-      !assigned.has(word.id) &&
-      (!byId.has(word.id) || byId.get(word.id)!.mined === false),
+      members.has(word.id) ||
+      (!assigned.has(word.id) &&
+        (!byId.has(word.id) || byId.get(word.id)!.mined === false)),
   );
   const selectedIds = new Set(selected.map((word) => word.id));
   const snapshots = await Promise.all(selected.map(snapshot));
@@ -320,6 +326,7 @@ async function refreshFrequencyDeck(language: string, deckId: string) {
             ),
           );
         else await db.vocabulary.put({ ...freshWord(word), mined: false });
+        if (members.has(word.id)) continue;
         const card = await ensureReaderCard(
           (await db.vocabulary.get(word.id))!,
         );
