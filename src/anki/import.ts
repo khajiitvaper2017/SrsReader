@@ -221,7 +221,7 @@ export async function importPackage(
   const options = importOptionsSchema.parse(rawOptions);
   const reader = new PackageReader(file);
   const namespace = `anki:${crypto.randomUUID()}`;
-  let committed = false;
+  const stagePrefix = namespace + ":";
   try {
     report({ phase: t("anki_reading"), done: 0, total: 0 });
     const source = await reader.open((done, total) =>
@@ -282,14 +282,6 @@ export async function importPackage(
               .join(", "),
           }),
         );
-    }
-    for (const key of await db.cardAssets.orderBy("namespace").uniqueKeys()) {
-      if (
-        typeof key === "string" &&
-        key.startsWith("anki:") &&
-        !(await db.notes.where("mediaNamespace").equals(key).count())
-      )
-        await db.cardAssets.where("namespace").equals(key).delete();
     }
     const sourceDecks = new Map(source.decks.map((deck) => [deck.id, deck]));
     const sourceHistories = new Map<string, AnkiRevlog[]>();
@@ -492,11 +484,15 @@ export async function importPackage(
     if (!notes.length) return { notes: 0, cards: 0, skipped };
     const usedTypes = new Set(notes.map((note) => note.noteTypeId));
     const usedWords = new Set(notes.map((note) => note.wordId));
-    let assets: CardAsset[] = [],
-      batchBytes = 0;
+    await db.importFiles.where("id").startsWith("anki:").delete();
+    const batches: string[][] = [];
+    let files: { id: string; blob: Blob }[] = [];
+    let batchBytes = 0;
     const flush = async () => {
-      if (assets.length) await db.cardAssets.bulkPut(assets);
-      assets = [];
+      if (!files.length) return;
+      await db.importFiles.bulkPut(files);
+      batches.push(files.map((file) => file.id));
+      files = [];
       batchBytes = 0;
     };
     for (const [index, media] of reader.media.entries()) {
@@ -504,15 +500,12 @@ export async function importPackage(
       if (media.size !== undefined && media.size !== bytes.byteLength)
         throw new Error(t("anki_invalid_package"));
       const mime = mediaType(media.name);
-      assets.push({
-        id: assetId(namespace, media.name),
-        namespace,
-        name: media.name,
-        mime,
+      files.push({
+        id: stagePrefix + media.name,
         blob: new Blob([bytes.slice().buffer], { type: mime }),
       });
       batchBytes += bytes.byteLength;
-      if (batchBytes >= 16 * 1024 * 1024 || assets.length >= 100) await flush();
+      if (batchBytes >= 16 * 1024 * 1024 || files.length >= 100) await flush();
       report({
         phase: t("anki_import_media"),
         done: index + 1,
@@ -520,7 +513,7 @@ export async function importPackage(
       });
     }
     await flush();
-    if (snapshotAssets.length) await db.cardAssets.bulkPut(snapshotAssets);
+
     const oldNamespaces = new Set<string>();
     await srsWrite(async () => {
       // CacheStorage must finish before the atomic IndexedDB publication.
@@ -530,12 +523,28 @@ export async function importPackage(
           : undefined;
       await db.transaction(
         "rw",
-        db.tables.filter(
-          (table) => !["importTasks", "importFiles"].includes(table.name),
-        ),
+        db.tables.filter((table) => table.name !== "importTasks"),
         () =>
           Dexie.waitFor(
             (async () => {
+              for (const batch of batches) {
+                const staged = await db.importFiles.bulkGet(batch);
+                await db.cardAssets.bulkPut(
+                  staged.map((file) => {
+                    if (!file) throw new Error(t("anki_invalid_package"));
+                    const name = file.id.slice(stagePrefix.length);
+                    return {
+                      id: assetId(namespace, name),
+                      namespace,
+                      name,
+                      mime: file.blob.type,
+                      blob: file.blob,
+                    };
+                  }),
+                );
+              }
+              if (snapshotAssets.length)
+                await db.cardAssets.bulkPut(snapshotAssets);
               for (const note of notes) {
                 const previous = await db.notes.get(note.id);
                 if (previous && previous.mediaNamespace !== namespace)
@@ -718,7 +727,6 @@ export async function importPackage(
             2_147_483_647,
           ),
       );
-      committed = true;
     });
     for (const oldNamespace of oldNamespaces)
       if (
@@ -728,7 +736,6 @@ export async function importPackage(
     return { notes: notes.length, cards: cards.length, skipped };
   } finally {
     await reader.close();
-    if (!committed)
-      await db.cardAssets.where("namespace").equals(namespace).delete();
+    await db.importFiles.where("id").startsWith(stagePrefix).delete();
   }
 }
