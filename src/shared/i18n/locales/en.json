@@ -1243,6 +1243,7 @@
   "anki_preview_card_number": "Card {{number}}",
   "anki_preview_no_matches": "No matching cards",
   "anki_omit_fields": "Fields to omit",
+  "anki_omit_field": "Omit {{field}}",
   "anki_omit_fields_help": "Choose which fields to leave out. Clear a field's mapping before omitting it.",
   "anki_cloze_preview": "Cloze {{number}}",
   "anki_optional_mapping": "Dictionary and review fields (optional)",

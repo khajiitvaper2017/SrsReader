@@ -1290,6 +1290,7 @@
   "anki_preview_card_number": "Картка {{number}}",
   "anki_preview_no_matches": "Карток за цим запитом немає",
   "anki_omit_fields": "Поля, які слід пропустити",
+  "anki_omit_field": "Пропустити поле «{{field}}»",
   "anki_omit_fields_help": "Виберіть поля, які не потрібно імпортувати. Щоб пропустити зіставлене поле, спочатку скасуйте його зіставлення.",
   "anki_cloze_preview": "Пропуск {{number}}",
   "anki_optional_mapping": "Поля для словників і повторень (необов’язково)",

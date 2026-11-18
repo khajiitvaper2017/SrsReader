@@ -51,6 +51,7 @@ export function CardViewer({
   requestAsset = requestedCardAsset,
   wordAudio,
   deckName: previewDeckName,
+  title = t("card_viewer_title"),
   onError,
   onLookup,
   onReady,
@@ -63,6 +64,7 @@ export function CardViewer({
   requestAsset?: typeof requestedCardAsset;
   wordAudio?: "preview" | "toolbar";
   deckName?: string;
+  title?: string;
   onError?: (message: string) => void;
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
@@ -190,7 +192,7 @@ export function CardViewer({
               autoplay: revealed && settings.autoplay,
               audioLabel: t("play_audio"),
               videoLabel: t("play_video"),
-              title: t("card_viewer_title"),
+              title,
               storage: readCardStorage(note.mediaNamespace),
               resourceError: t("card_media_unavailable"),
               reviewBindings: settings.reviewBindings,
@@ -228,6 +230,7 @@ export function CardViewer({
     deckName,
     deck.id,
     previewDeckName,
+    title,
     card.deckId,
     settings.front,
     settings.showPartOfSpeech,
@@ -420,7 +423,7 @@ export function CardViewer({
           component="iframe"
           ref={frame}
           src={browser.runtime.getURL("/card-viewer.html")}
-          title={t("card_viewer_title")}
+          title={title}
           sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
           w="100%"
           bg="var(--mantine-color-body)"

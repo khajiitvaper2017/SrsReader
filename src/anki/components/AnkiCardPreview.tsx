@@ -15,7 +15,7 @@ import {
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import {
   ankiDictionarySnapshot,
   ankiWord,
@@ -25,6 +25,7 @@ import type { AnkiPreview } from "@/anki/model";
 import { CardViewer } from "@/cards/components/CardViewer";
 import type { CardAsset, CardDocument, FieldBindings } from "@/cards/model";
 import { prepareStudyDocument } from "@/cards/study";
+import { fieldHasContent } from "@/cards/template";
 import type { Settings } from "@/settings/model";
 import { number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
@@ -50,6 +51,7 @@ export function AnkiCardPreview({
   deckIds,
   bindings,
   omittedFields,
+  onOmitField,
   convert,
   settings,
 }: {
@@ -59,6 +61,7 @@ export function AnkiCardPreview({
   deckIds: string[];
   bindings: FieldBindings;
   omittedFields: number[];
+  onOmitField: (index: number) => void;
   convert: boolean;
   settings: Settings;
 }) {
@@ -74,13 +77,10 @@ export function AnkiCardPreview({
     samples.find((sample) => sample.cardId === cardId) ?? samples[0]!;
   const selectedCard = sample.cardId;
   const omitted = useMemo(() => new Set(omittedFields), [omittedFields]);
-  const original = useMemo(() => {
-    const document = type.sampleDocument(selectedCard);
-    document.note.fields = document.note.fields.map((value, index) =>
-      omitted.has(index) ? "" : value,
-    );
-    return document;
-  }, [type, selectedCard, omitted]);
+  const original = useMemo(
+    () => type.sampleDocument(selectedCard),
+    [type, selectedCard],
+  );
   const choices = useMemo(
     () =>
       samples.map((sample) => {
@@ -137,7 +137,8 @@ export function AnkiCardPreview({
         original.note.fields,
         bindings,
         original.note.mediaNamespace,
-        omitted,
+        // Extra fields render separately so their buttons stay outside the card sandbox.
+        new Set(original.note.fields.keys()),
       );
       const { html, assets } = await ankiDictionarySnapshot(
         imported.word,
@@ -166,14 +167,20 @@ export function AnkiCardPreview({
     return () => {
       active = false;
     };
-  }, [convert, original, bindings, omitted, language, settings, type.name]);
+  }, [convert, original, bindings, language, settings, type.name]);
   const document = convert
     ? converted?.document
     : {
         ...original,
         noteType: { ...original.noteType, bindings },
         card: { ...original.card, language },
-        note: { ...original.note, language },
+        note: {
+          ...original.note,
+          language,
+          fields: original.note.fields.map((value, index) =>
+            omitted.has(index) ? "" : value,
+          ),
+        },
       };
   const title = t(
     convert ? "anki_dictionary_preview" : "anki_original_preview",
@@ -189,6 +196,17 @@ export function AnkiCardPreview({
   const requestAsset: AnkiPreview["requestAsset"] = async (namespace, name) =>
     assets?.find((asset) => asset.name === name)?.blob ??
     preview.requestAsset(namespace, name);
+  const mapped = new Set(Object.values(bindings));
+  const extraFields = convert
+    ? type.fields.flatMap((name, index) => {
+        const value = original.note.fields[index] ?? "";
+        return !mapped.has(index) &&
+          !omitted.has(index) &&
+          fieldHasContent(value)
+          ? [{ name, index, value }]
+          : [];
+      })
+    : [];
   return (
     <Stack gap="xs" miw={0}>
       <Title order={4}>{title}</Title>
@@ -253,6 +271,67 @@ export function AnkiCardPreview({
                       loadAssets={loadAssets}
                       requestAsset={requestAsset}
                     />
+                    {value === "back" &&
+                      extraFields.map((field) => {
+                        const label = t("anki_omit_field", {
+                          field: field.name,
+                        });
+                        return (
+                          <Stack component="section" gap={0} key={field.index}>
+                            <Group
+                              justify="space-between"
+                              wrap="nowrap"
+                              px="sm"
+                            >
+                              <Title
+                                order={5}
+                                style={{ overflowWrap: "anywhere" }}
+                              >
+                                {field.name}
+                              </Title>
+                              <ActionIcon
+                                variant="subtle"
+                                color="gray"
+                                title={label}
+                                aria-label={label}
+                                onClick={() => onOmitField(field.index)}
+                              >
+                                <X size={16} aria-hidden />
+                              </ActionIcon>
+                            </Group>
+                            <CardViewer
+                              document={{
+                                card: document.card,
+                                note: {
+                                  ...document.note,
+                                  fields: [field.value],
+                                },
+                                noteType: {
+                                  ...document.noteType,
+                                  fields: [{ name: "Preview" }],
+                                  bindings: {},
+                                  templates: [
+                                    {
+                                      name: field.name,
+                                      front: "{{Preview}}",
+                                      back: "",
+                                    },
+                                  ],
+                                  css:
+                                    document.noteType.css +
+                                    ".card{min-height:0}",
+                                },
+                              }}
+                              revealed={false}
+                              settings={settings}
+                              title={field.name}
+                              deckName={sample.deckName}
+                              loadAssets={loadAssets}
+                              requestAsset={requestAsset}
+                            />
+                          </Stack>
+                        );
+                      })}
                   </ScrollArea.Autosize>
                 </Paper>
               </Stack>

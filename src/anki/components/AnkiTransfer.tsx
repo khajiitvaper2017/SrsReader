@@ -401,6 +401,11 @@ export function AnkiTransfer({
                   const mapped = new Set(Object.values(bindings));
                   const omitted =
                     options.omitFields[type.id] ?? noOmittedFields;
+                  const setOmitted = (fields: number[]) =>
+                    setOptions((current) => ({
+                      ...current,
+                      omitFields: { ...current.omitFields, [type.id]: fields },
+                    }));
                   const excluded = new Set(omitted);
                   const unmapped = type.fields.filter(
                     (_, index) => !mapped.has(index) && !excluded.has(index),
@@ -427,6 +432,9 @@ export function AnkiTransfer({
                           deckIds={options.deckIds}
                           bindings={bindings}
                           omittedFields={omitted}
+                          onOmitField={(index) =>
+                            setOmitted([...omitted, index])
+                          }
                           convert={options.mode === "convert"}
                           settings={settings}
                         />
@@ -443,15 +451,7 @@ export function AnkiTransfer({
                           searchable
                           clearable
                           value={omitted.map(String)}
-                          onChange={(values) =>
-                            setOptions({
-                              ...options,
-                              omitFields: {
-                                ...options.omitFields,
-                                [type.id]: values.map(Number),
-                              },
-                            })
-                          }
+                          onChange={(values) => setOmitted(values.map(Number))}
                         />
                       )}
                       {missingWord && (

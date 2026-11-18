@@ -147,6 +147,13 @@ function cloze(
   return result + (only ? "" : value.slice(cursor));
 }
 
+export function fieldHasContent(value: string): boolean {
+  return (
+    !!templateText(value).trim() ||
+    /<(?:img|audio|video|svg)\b|\[sound:/i.test(value)
+  );
+}
+
 function renderTemplate(
   template: string,
   fields: Record<string, string>,
@@ -176,9 +183,7 @@ function renderTemplate(
       if (tag.startsWith("#") || tag.startsWith("^")) {
         const name = tag.slice(1).trim();
         const content = section(name);
-        const present =
-          !!templateText(field(name)).trim() ||
-          /<(?:img|audio|video|svg)\b|\[sound:/i.test(field(name));
+        const present = fieldHasContent(field(name));
         if (present !== tag.startsWith("^")) html += content;
         continue;
       }
