@@ -440,7 +440,7 @@ export function useLookupWord({
       setSettings(
         await settingsClient({
           action: "setSettings",
-          value: { ...latest, ignoredTags: [...latest.ignoredTags, tag] },
+          value: { ignoredTags: [...latest.ignoredTags, tag] },
         }),
       );
     } catch (error) {

@@ -88,7 +88,7 @@ export function SettingsPage({
               action: "setAudioSources",
               sources: patch.audioSources,
             })
-          : await settingsClient({ action: "setSettings", value: next }),
+          : await settingsClient({ action: "setSettings", value: patch }),
       );
       setError("");
     } catch (error) {
@@ -103,7 +103,7 @@ export function SettingsPage({
       setSettings(
         await settingsClient({
           action: "setSettings",
-          value: { ...preferences, setupComplete: true },
+          value: { setupComplete: true },
         }),
       );
       location.hash = "review";

@@ -1,7 +1,7 @@
 import { notify } from "@/background/events";
 import { srsWrite } from "@/platform/locks";
 import type { Request } from "@/settings/contracts";
-import type { Settings } from "@/settings/model";
+import { settingsSchema, type Settings } from "@/settings/model";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { rwkvStatus } from "@/srs/engines/rwkv/cache";
@@ -15,15 +15,17 @@ async function execute(request: Request, settings: Settings) {
   switch (request.action) {
     case "settings":
       return settings;
-    case "setSettings":
+    case "setSettings": {
+      const next = settingsSchema.parse({ ...settings, ...request.value });
       if (
-        request.value.algorithm === "rwkv" &&
+        next.algorithm === "rwkv" &&
         settings.algorithm !== "rwkv" &&
-        !(await rwkvStatus(request.value)).ready
+        !(await rwkvStatus(next)).ready
       )
         throw new Error(t("rwkv_not_ready"));
-      await saveSettings(request.value);
+      await saveSettings(next);
       await notify(undefined, "settings");
-      return request.value;
+      return next;
+    }
   }
 }

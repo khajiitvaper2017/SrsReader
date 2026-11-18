@@ -81,9 +81,8 @@ export function Popup() {
   async function toggle(site: boolean) {
     try {
       const enabled = !isWebsiteEnabled(settings, host);
-      const next = site
+      const patch = site
         ? {
-            ...settings,
             enabledHosts: enabled
               ? [...settings.enabledHosts, host]
               : settings.enabledHosts.filter((h) => h !== host),
@@ -91,9 +90,11 @@ export function Popup() {
               ? settings.disabledHosts.filter((h) => h !== host)
               : [...settings.disabledHosts, host],
           }
-        : { ...settings, paused: !settings.paused };
-      setSettings(next);
-      setSettings(await settingsClient({ action: "setSettings", value: next }));
+        : { paused: !settings.paused };
+      setSettings({ ...settings, ...patch });
+      setSettings(
+        await settingsClient({ action: "setSettings", value: patch }),
+      );
     } catch (error) {
       setSettings(settings);
       setError((error as Error).message);

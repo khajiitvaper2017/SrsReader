@@ -141,7 +141,6 @@ export function StudyPage({
           await settingsClient({
             action: "setSettings",
             value: {
-              ...settings,
               studyLanguages: [
                 ...new Set([...settings.studyLanguages, language]),
               ],
