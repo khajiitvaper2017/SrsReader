@@ -30,10 +30,13 @@ import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { srsClient } from "@/srs/client";
 import { DeckEditor } from "@/srs/components/DeckEditor";
 import { deckPathLabel } from "@/srs/deck-tree";
+import { StudyStatistics } from "@/srs/components/StudyStatistics";
+import type { StatisticsScope } from "@/srs/statistics";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
 import type { Responses } from "@/srs/contracts";
 import type { useSync } from "@/sync/hooks/useSync";
 import {
+  ChartNoAxesColumn,
   ChevronDown,
   ChevronRight,
   FolderPlus,
@@ -90,6 +93,7 @@ export function StudyPage({
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [statistics, setStatistics] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<"language" | "deck" | null>(null);
   const [deckEditor, setDeckEditor] = useState<{
@@ -212,12 +216,30 @@ export function StudyPage({
       setBusy(false);
     }
   }
+  const statisticsOptions = [
+    { value: "collection", label: t("srs_stats_collection") },
+    ...(languages ?? []).flatMap(({ language, decks }) => {
+      const label = languageLabel(language);
+      return [
+        { value: JSON.stringify({ language }), label },
+        {
+          value: JSON.stringify({ language, deckId: "mined" }),
+          label: `${label} / ${t("study_mined_words")}`,
+        },
+        ...decks.map((deck) => ({
+          value: JSON.stringify({ language, deckId: deck.id }),
+          label: `${label} / ${deckPathLabel(deck.name)}`,
+        })),
+      ];
+    }),
+  ];
   const rows = languages?.map((row) => (
     <StudyRows
       key={row.language}
       row={row}
       busy={busy}
       start={start}
+      showStatistics={(scope) => setStatistics(JSON.stringify(scope))}
       edit={(id, parentId) =>
         setDeckEditor({ language: row.language, id, parentId })
       }
@@ -291,6 +313,14 @@ export function StudyPage({
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
+            <ActionIcon
+              variant="subtle"
+              aria-label={t("srs_stats_title")}
+              title={t("srs_stats_title")}
+              onClick={() => setStatistics("collection")}
+            >
+              <ChartNoAxesColumn size={16} aria-hidden />
+            </ActionIcon>
             <AnkiTransfer settings={settings} onComplete={load} />
           </>
         }
@@ -340,6 +370,13 @@ export function StudyPage({
         </Box>
       )}
       <ReviewStatistics />
+      {statistics && (
+        <StudyStatistics
+          initial={statistics}
+          options={statisticsOptions}
+          onClose={() => setStatistics(undefined)}
+        />
+      )}
       {deckEditor && languages && (
         <DeckEditor
           selection={deckEditor}
@@ -507,7 +544,9 @@ function StudyRows({
   start,
   manage,
   edit,
+  showStatistics,
 }: {
+  showStatistics: (scope: StatisticsScope) => void;
   row: Responses["studyOverview"][number];
   busy: boolean;
   start: (language: string, deckId?: string) => Promise<void>;
@@ -571,6 +610,14 @@ function StudyRows({
                 leftSection={<List size={16} />}
               >
                 {t("study_view_words")}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<ChartNoAxesColumn size={16} />}
+                onClick={() =>
+                  showStatistics({ language: row.language, deckId: deck.id })
+                }
+              >
+                {t("srs_stats_title")}
               </Menu.Item>
               {"dictionaryId" in deck && deck.dictionaryId && (
                 <Menu.Item

@@ -194,7 +194,7 @@ async function execute(request: Request, settings: Settings) {
       );
     }
     case "reviewStats":
-      return reviewStatistics(settings, request.year);
+      return reviewStatistics(settings, request);
     case "stats": {
       const languages = await Promise.all(
         settings.studyLanguages.map(queueMetadata),

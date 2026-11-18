@@ -1,9 +1,17 @@
 import { useChanges } from "@/shared/hooks/useChanges";
 import { srsClient } from "@/srs/client";
-import type { ReviewStatistics } from "@/srs/statistics";
+import type {
+  ReviewStatistics,
+  StatisticsRange,
+  StatisticsScope,
+} from "@/srs/statistics";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useReviewStatistics() {
+export function useReviewStatistics(
+  scope?: StatisticsScope,
+  range?: StatisticsRange,
+) {
+  const { language, deckId } = scope ?? {};
   const [year, setYear] = useState<number>();
   const revision = useRef(0);
   const [loading, setLoading] = useState(false);
@@ -12,7 +20,12 @@ export function useReviewStatistics() {
   const load = useCallback(() => {
     const current = ++revision.current;
     setLoading(true);
-    void srsClient({ action: "reviewStats", year })
+    void srsClient({
+      action: "reviewStats",
+      year,
+      scope: language ? { language, deckId } : undefined,
+      range,
+    })
       .then((value) => {
         if (current !== revision.current) return;
         setData(value);
@@ -24,7 +37,7 @@ export function useReviewStatistics() {
       .finally(() => {
         if (current === revision.current) setLoading(false);
       });
-  }, [year]);
+  }, [year, language, deckId, range]);
   useEffect(() => {
     load();
     const timer = setInterval(load, 60000);
@@ -33,6 +46,6 @@ export function useReviewStatistics() {
       revision.current++;
     };
   }, [load]);
-  useChanges(load, ["vocabulary", "srs", "settings"]);
+  useChanges(load, ["vocabulary", "srs", "settings", "collection"]);
   return { data, error, loading, setYear };
 }

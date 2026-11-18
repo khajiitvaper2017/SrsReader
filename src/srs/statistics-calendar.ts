@@ -3,7 +3,7 @@ import { DAY, dayStart, studyDay } from "@/srs/study-day";
 import type { ReviewWord } from "@/vocabulary/model";
 
 export function calendarStatistics(
-  words: ReviewWord[],
+  words: Pick<ReviewWord, "known" | "suspended" | "card">[],
   history: { day: number; count: number }[],
   year: number,
   settings: Settings,

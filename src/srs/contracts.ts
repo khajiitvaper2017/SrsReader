@@ -95,6 +95,10 @@ export const requests = [
   z.object({
     action: z.literal("reviewStats"),
     year: z.number().int().min(1970).max(9998).optional(),
+    scope: z
+      .object({ language: languageSchema, deckId: z.string().optional() })
+      .optional(),
+    range: z.union([z.literal(30), z.literal(90), z.literal(365)]).optional(),
   }),
 ] as const;
 export type Request = z.infer<(typeof requests)[number]>;

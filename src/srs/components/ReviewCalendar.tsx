@@ -20,11 +20,13 @@ export function ReviewCalendar({
   today,
   loading,
   onYear,
+  showToday = true,
 }: {
   calendar: ReviewStatistics["calendar"];
   today: ReviewStatistics["today"];
   loading: boolean;
   onYear: (year: number) => void;
+  showToday?: boolean;
 }) {
   const scheme = useComputedColorScheme("light");
   const cells = useRef<(HTMLButtonElement | null)[]>([]);
@@ -69,23 +71,25 @@ export function ReviewCalendar({
   return (
     <Paper p="sm" data-srs-reader="true">
       <Stack>
-        <Text ta="center">
-          {t(
-            today.timedAnswers === today.answers
-              ? "srs_heatmap_today"
-              : "srs_heatmap_today_partial",
-            {
-              answers: format(today.answers),
-              minutes: format(today.durationMs / 60000),
-              seconds: format(
-                today.timedAnswers
-                  ? today.durationMs / today.timedAnswers / 1000
-                  : 0,
-              ),
-              timed: format(today.timedAnswers),
-            },
-          )}
-        </Text>
+        {showToday && (
+          <Text ta="center">
+            {t(
+              today.timedAnswers === today.answers
+                ? "srs_heatmap_today"
+                : "srs_heatmap_today_partial",
+              {
+                answers: format(today.answers),
+                minutes: format(today.durationMs / 60000),
+                seconds: format(
+                  today.timedAnswers
+                    ? today.durationMs / today.timedAnswers / 1000
+                    : 0,
+                ),
+                timed: format(today.timedAnswers),
+              },
+            )}
+          </Text>
+        )}
         <Group justify="center">
           <Tooltip label={t("srs_heatmap_previous")}>
             <ActionIcon

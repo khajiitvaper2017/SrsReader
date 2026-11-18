@@ -1,7 +1,7 @@
 import type { Card } from "@/cards/model";
 import { db } from "@/platform/database/db";
 import { t } from "@/shared/i18n/i18n";
-import { dayStart, studyDay } from "@/srs/study-day";
+import { studyDay } from "@/srs/study-day";
 import type { candidates } from "@/srs/answers";
 import type { SchedulingPreferences } from "@/srs/preferences";
 import type { Schedule } from "@/srs/model";
@@ -129,27 +129,66 @@ export function rescheduleCard(id: string, card: Schedule | null) {
 }
 export const clearUndo = () => db.srsMeta.update("main", { undo: undefined });
 
-export async function statisticsHistory(now: number, rolloverHour: number) {
-  const today = { answers: 0, durationMs: 0, timedAnswers: 0 };
+export async function statisticsHistory(
+  now: number,
+  rolloverHour: number,
+  scope?: { language: string; cardIds?: string[] },
+  details?: { range: number; matureIntervalDays: number },
+) {
+  const today = { answers: 0, durationMs: 0, timedAnswers: 0, again: 0 };
   const activity = new Map<number, number>();
-  const start = dayStart(studyDay(now, rolloverHour), rolloverHour);
-  await db.reviews
-    .where("time")
-    .between(0, now, true, true)
-    .filter((review) => review.active)
-    .each((review) => {
-      const day = studyDay(review.time, rolloverHour);
-      activity.set(day, (activity.get(day) ?? 0) + 1);
-      if (review.time >= start) {
-        today.answers++;
-        today.durationMs += review.durationMs ?? 0;
-        if (review.durationMs !== null) today.timedAnswers++;
-      }
-    });
+  const start = studyDay(now, rolloverHour);
+  const hourly = Array.from({ length: 24 }, () => ({ count: 0, passed: 0 }));
+  const grades = [0, 0, 0, 0];
+  const retention = [1, 2, 7, 30, 365].map((days) => ({
+    days,
+    young: { count: 0, passed: 0 },
+    mature: { count: 0, passed: 0 },
+  }));
+  const reviews = scope?.cardIds
+    ? db.reviews.where("cardId").anyOf(scope.cardIds)
+    : db.reviews.where("time").between(0, now, true, true);
+  await reviews.each((review) => {
+    if (
+      !review.active ||
+      review.time < 0 ||
+      review.time > now ||
+      (scope && review.language !== scope.language)
+    )
+      return;
+    const day = studyDay(review.time, rolloverHour);
+    activity.set(day, (activity.get(day) ?? 0) + 1);
+    if (day === start) {
+      today.answers++;
+      today.durationMs += review.durationMs ?? 0;
+      if (review.durationMs !== null) today.timedAnswers++;
+      if (review.rating === 1) today.again++;
+    }
+    if (!details) return;
+    const age = start - day;
+    const passed = review.rating > 1 ? 1 : 0;
+    if (age < details.range) {
+      grades[review.rating - 1]!++;
+      const hour = hourly[new Date(review.time).getHours()]!;
+      hour.count++;
+      hour.passed += passed;
+    }
+    const interval = review.before?.schedule?.scheduledDays;
+    if (interval === undefined || interval < 1) return;
+    const group = interval >= details.matureIntervalDays ? "mature" : "young";
+    for (const row of retention) {
+      if (row.days === 2 ? age !== 1 : age >= row.days) continue;
+      row[group].count++;
+      row[group].passed += passed;
+    }
+  });
   return {
     today,
     activity: [...activity]
       .map(([day, count]) => ({ day, count }))
       .sort((a, b) => a.day - b.day),
+    hourly,
+    grades,
+    retention,
   };
 }
