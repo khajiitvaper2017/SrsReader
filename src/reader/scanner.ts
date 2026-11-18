@@ -526,7 +526,7 @@ export function createScanner(
     const key = scanKey(result.language, text);
     if (!target && JSON.stringify(parsed.get(key)) === JSON.stringify(result))
       return;
-    parsed.set(key, result);
+    remember(key, result);
     const targets = target ? [[target, blocks.get(target)] as const] : blocks;
     for (const [element, block] of targets) {
       if (
@@ -580,16 +580,23 @@ export function createScanner(
   function scanKey(language: string, text: string) {
     return JSON.stringify([language, text]);
   }
+  const retries = new Map<string, number>();
+  function remember(key: string, result: ScanResult) {
+    if (result.retryAt) retries.set(key, result.retryAt);
+    else retries.delete(key);
+    parsed.delete(key);
+    parsed.set(key, result);
+    if (parsed.size > 256) parsed.delete(parsed.keys().next().value!);
+  }
   function scheduleRetry() {
     clearTimeout(retryTimer);
-    const expires = [...parsed.values()].flatMap((result) =>
-      result.retryAt ? [result.retryAt] : [],
-    );
+    const expires = [...retries.values()];
     if (!expires.length) return;
     retryTimer = setTimeout(
       () => {
-        for (const [key, result] of parsed) {
-          if (!result.retryAt || result.retryAt > Date.now()) continue;
+        for (const [key, retryAt] of retries) {
+          if (retryAt > Date.now()) continue;
+          retries.delete(key);
           parsed.delete(key);
           for (const [element, block] of blocks)
             if (scanKey(block.language, block.text) === key)
@@ -757,7 +764,7 @@ export function createScanner(
             for (const [index, text] of missing.entries()) {
               const key = scanKey(language, text);
               const result = parsed.get(key) ?? results[index]!;
-              parsed.set(key, result);
+              remember(key, result);
               for (const element of texts.get(text)!)
                 paint(element, text, result);
             }
@@ -1278,6 +1285,7 @@ export function createScanner(
     queuedAt = undefined;
     profile = undefined;
     parsed.clear();
+    retries.clear();
     viewport?.disconnect();
     viewport = undefined;
     observed.clear();
