@@ -50,7 +50,7 @@ export function detachRetiredDictionary(deck: Deck) {
   delete deck.limit;
 }
 
-export function installMigrations(database: Dexie) {
+export function installMigrations(database: Dexie, through = Infinity) {
   database.version(1).stores({
     dictionaries: "id, revisionId, order",
     entries: "id, revisionId, [revisionId+key], [revisionId+folded]",
@@ -312,12 +312,14 @@ export function installMigrations(database: Dexie) {
         reschedule: undefined,
       });
     });
+  if (through < 24) return;
   database.version(24).stores({
     syncRecords: "key, kind, device, counter",
     syncAuthored: "key, kind, counter",
     syncDependencies: "[device+counter], key",
     syncMeta: "id",
   });
+  if (through < 25) return;
   database
     .version(25)
     .stores({
@@ -347,6 +349,7 @@ export function installMigrations(database: Dexie) {
         lastKey = batch[batch.length - 1]!.id;
       }
     });
+  if (through < 26) return;
   database
     .version(26)
     .stores({})
@@ -366,6 +369,7 @@ export function installMigrations(database: Dexie) {
           type.css = css;
         });
     });
+  if (through < 27) return;
   database.version(27).stores({
     ipa: "id, revisionId, [revisionId+folded]",
   });

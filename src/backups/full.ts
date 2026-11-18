@@ -9,6 +9,7 @@ import {
 } from "@zip.js/zip.js";
 import Dexie, { type Table } from "dexie";
 import { exportDB, importInto, peakImportFile } from "dexie-export-import";
+import { installMigrations } from "@/platform/database/migrations";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import { getSettings } from "@/settings/store";
@@ -176,8 +177,10 @@ export async function readFull(
     )
       throw new Error(t("full_backup_invalid"));
     const meta = await peakImportFile(database);
-    const expected = tables().filter(
-      (table) => manifest.databaseVersion >= 27 || table.name !== "ipa",
+    staged = new Dexie(name);
+    installMigrations(staged, manifest.databaseVersion);
+    const expected = staged.tables.filter(
+      (table) => !transientTables.includes(table.name),
     );
     if (
       meta.formatName !== "dexie" ||
@@ -230,14 +233,6 @@ export async function readFull(
       throw new Error(t("full_backup_invalid"));
     // Import into a temporary database first: validation, decoding, unique keys,
     // and row counts all succeed before the destination is touched.
-    staged = new Dexie(name);
-    staged
-      .version(meta.data.databaseVersion)
-      .stores(
-        Object.fromEntries(
-          meta.data.tables.map((table) => [table.name, table.schema]),
-        ),
-      );
     await staged.open();
     await importInto(staged, database, {
       acceptNameDiff: true,
@@ -252,6 +247,12 @@ export async function readFull(
     for (const item of meta.data.tables)
       if ((await staged.table(item.name).count()) !== item.rowCount)
         throw new Error(t("full_backup_invalid"));
+    if (staged.verno < db.verno) {
+      staged.close();
+      staged = new Dexie(name);
+      installMigrations(staged);
+      await staged.open();
+    }
     validateCardReferences(
       await staged.table("noteTypes").toArray(),
       await staged.table("notes").toArray(),
@@ -325,15 +326,11 @@ export async function restoreFull(
             if (!table.name.startsWith("sync") && !learningTables[table.name])
               await table.clear();
           let done = 0;
-          const restoredTables = tables()
-            .filter(
-              (table) => backup.staged.verno >= 27 || table.name !== "ipa",
-            )
-            .sort(
-              (a, b) =>
-                (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
-                (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
-            );
+          const restoredTables = tables().sort(
+            (a, b) =>
+              (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
+              (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
+          );
           for (const table of restoredTables)
             await copyTable(backup.staged.table(table.name), table, (rows) => {
               done += rows;
