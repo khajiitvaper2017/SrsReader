@@ -13,6 +13,9 @@ export const importOptionsSchema = z.object({
   duplicates: z.enum(["keep", "update"]).default("keep"),
   mergeNoteTypes: z.boolean().default(false),
   bindings: z.record(z.string(), fieldBindingsSchema).default({}),
+  omitFields: z
+    .record(z.string(), z.array(z.number().int().nonnegative()))
+    .default({}),
 });
 export type AnkiImportOptions = z.infer<typeof importOptionsSchema>;
 export type AnkiPreview = {
@@ -25,7 +28,14 @@ export type AnkiPreview = {
     notes: number;
     cards: number;
     suggestedBindings: FieldBindings;
-    samples: { document: CardDocument; deckId: string; deckName: string }[];
+    samples: {
+      cardId: string;
+      deckId: string;
+      deckName: string;
+      ordinal: number;
+      label: string;
+    }[];
+    sampleDocument: (cardId: string) => CardDocument;
     deckIds: string[];
   }[];
   decks: { id: string; name: string; cards: number }[];

@@ -99,6 +99,55 @@ export function dictionaryPartsOfSpeech(meanings: Meaning[]): string[] {
     .filter(Boolean);
 }
 
+const universalPartsOfSpeech = new Set(
+  "ADJ ADP ADV AUX CCONJ DET INTJ NOUN NUM PART PRON PROPN PUNCT SCONJ SYM VERB X".split(
+    " ",
+  ),
+);
+
+function importedPartAliases(label: string): string[] {
+  const code = label.toUpperCase();
+  if (universalPartsOfSpeech.has(code)) return [code];
+  const alias = label.toLowerCase().replace(/[ _]+/g, "-");
+  const rule = tagFeatures.get(alias);
+  if (rule?.[0] !== "UPOS") return [];
+  return rule[1][0] === "CCONJ" ? rule[1] : [rule[1][0]!];
+}
+
+export function importedPartValues(labels: string[]): string[] {
+  return [...new Set(labels.flatMap(importedPartAliases))];
+}
+
+export function importedPartLabels(labels: string[]): string[] {
+  return [
+    ...new Set(
+      labels.map((label) => {
+        const aliases = importedPartAliases(label);
+        const code =
+          aliases.length === 2 && aliases[0] === "CCONJ"
+            ? "CONJ"
+            : (aliases[0] ?? label.toUpperCase());
+        return t(`sentence_grammar.pos.${code}`, {
+          defaultValue: label,
+          nsSeparator: false,
+        });
+      }),
+    ),
+  ];
+}
+
+export function meaningsForImportedParts(
+  meanings: Meaning[],
+  labels: string[],
+): Meaning[] {
+  const expected = importedPartValues(labels);
+  if (!expected.length) return meanings;
+  return meanings.filter((meaning) => {
+    const parts = dictionaryTagValues([meaning], "UPOS");
+    return !parts.length || parts.some((part) => expected.includes(part));
+  });
+}
+
 function partsOfSpeechForMatching(
   token: AnalysisToken,
   forms: string[] = [],

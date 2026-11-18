@@ -1,4 +1,4 @@
-import { mediaType } from "@/anki/media";
+import { fieldMediaNames, mediaType } from "@/anki/media";
 import { deckTree } from "@/srs/deck-tree";
 import { matchesNoteType, mergeNoteType, retainedFields } from "@/anki/merge";
 import { recalculateLapses } from "@/srs/lapses";
@@ -32,7 +32,12 @@ import {
 import { emptySchedule } from "@/srs/model";
 import { downloadModel, loadModel } from "@/srs/engines/rwkv/assets";
 import type { Vocabulary } from "@/vocabulary/model";
-import { ankiWord, convertedAnkiNote } from "@/anki/conversion";
+import {
+  ankiDictionarySnapshot,
+  ankiPartOfSpeech,
+  ankiWord,
+  convertedAnkiNote,
+} from "@/anki/conversion";
 
 async function typeId(model: AnkiModel) {
   const bytes = new TextEncoder().encode(
@@ -92,6 +97,7 @@ async function mergeConverted(
   events: HistoricalAnswer[],
   reviews: AnkiReview[],
   options: AnkiImportOptions,
+  snapshotAssets: CardAsset[],
 ) {
   const groups = new Map<string, Note[]>();
   for (const note of notes) {
@@ -160,6 +166,9 @@ async function mergeConverted(
       importedGenders: [
         ...new Set(group.flatMap((note) => note.importedGenders ?? [])),
       ],
+      importedPartsOfSpeech: [
+        ...new Set(group.flatMap((note) => note.importedPartsOfSpeech ?? [])),
+      ],
       tags: [...new Set(group.flatMap((note) => note.tags))],
       sourceId: undefined,
       created: previous?.created ?? group[0]!.created,
@@ -169,6 +178,13 @@ async function mergeConverted(
         importedNoteData: originalNotes,
       },
     };
+    const snapshot = await ankiDictionarySnapshot(
+      words.get(id)!,
+      note.mediaNamespace,
+      note.importedPartsOfSpeech,
+    );
+    note.fields[prepared.noteType.bindings.definitions!] = snapshot.html;
+    snapshotAssets.push(...snapshot.assets);
     const noteIds = new Set(group.map((note) => note.id));
     const groupCards = cards.filter((card) => noteIds.has(card.noteId));
     const first = groupCards[0]!;
@@ -297,6 +313,7 @@ export async function importPackage(
     const events: HistoricalAnswer[] = [];
     const reviews: AnkiReview[] = [];
     const snapshotAssets: CardAsset[] = [];
+    const omittedMedia = new Set<string>();
     let skipped = 0;
     const now = Date.now();
     const byNote = new Map<string, typeof sourceCards>();
@@ -309,8 +326,15 @@ export async function importPackage(
       const plan = models.get(original.mid)!;
       const model = plan.model;
       const incomingBindings = options.bindings[model.id] ?? {};
+      const omitted = new Set(options.omitFields[model.id]);
+      for (const index of omitted)
+        if (plan.fieldMap[index] === undefined)
+          throw new Error(t("anki_invalid_mapping"));
       for (const value of Object.values(incomingBindings))
-        if (value !== undefined && plan.fieldMap[value] === undefined)
+        if (
+          value !== undefined &&
+          (plan.fieldMap[value] === undefined || omitted.has(value))
+        )
           throw new Error(t("anki_invalid_mapping"));
       const bindings: FieldBindings = Object.fromEntries(
         Object.entries(incomingBindings).map(([role, index]) => [
@@ -347,7 +371,10 @@ export async function importPackage(
       if (incomingValues.length !== plan.fieldMap.length)
         throw new Error(t("anki_invalid_package"));
       incomingValues.forEach((value, index) => {
-        values[plan.fieldMap[index]!] = value;
+        if (omitted.has(index)) {
+          for (const name of fieldMediaNames(value)) omittedMedia.add(name);
+          values[plan.fieldMap[index]!] = "";
+        } else values[plan.fieldMap[index]!] = value;
       });
       const converted = options.mode === "convert";
       const imported = await ankiWord(values, bindings, settings, converted);
@@ -361,16 +388,16 @@ export async function importPackage(
       if (converted) {
         if (!word)
           throw new Error(t("anki_word_field_empty", { name: model.name }));
-        const prepared = await convertedAnkiNote(
+        const prepared = convertedAnkiNote(
           word,
           model.flds,
           values,
           bindings,
           namespace,
+          omitted,
         );
         note = prepared.note;
         noteType = prepared.noteType;
-        snapshotAssets.push(...prepared.assets);
       } else {
         noteType = {
           id: await plan.id,
@@ -394,6 +421,7 @@ export async function importPackage(
           language: options.language,
           fields: values,
           tags: [],
+          importedPartsOfSpeech: ankiPartOfSpeech(values, bindings),
           mediaNamespace: namespace,
           created: now,
           updated: now,
@@ -480,10 +508,38 @@ export async function importPackage(
         events,
         reviews,
         options,
+        snapshotAssets,
       );
     if (!notes.length) return { notes: 0, cards: 0, skipped };
     const usedTypes = new Set(notes.map((note) => note.noteTypeId));
     const usedWords = new Set(notes.map((note) => note.wordId));
+    const retainedTypes = [...types.values()].filter((type) =>
+      usedTypes.has(type.id),
+    );
+    if (omittedMedia.size) {
+      const templates = retainedTypes.flatMap((type) => [
+        type.css,
+        ...type.templates.flatMap(({ front, back }) => [front, back]),
+      ]);
+      if (
+        options.mode === "preserve" &&
+        (templates.some((template) => /<script\b/i.test(template)) ||
+          reader.media.some(({ name }) => /\.(?:js|css)$/i.test(name)))
+      ) {
+        // Original templates can load assets by name from a script or stylesheet.
+        omittedMedia.clear();
+      } else {
+        for (const text of templates)
+          for (const name of fieldMediaNames(text)) omittedMedia.delete(name);
+        for (const note of notes)
+          for (const field of note.fields)
+            for (const name of fieldMediaNames(field))
+              omittedMedia.delete(name);
+      }
+    }
+    const mediaToImport = reader.media.filter(
+      ({ name }) => !omittedMedia.has(name),
+    );
     await db.importFiles.where("id").startsWith("anki:").delete();
     const batches: string[][] = [];
     let files: { id: string; blob: Blob }[] = [];
@@ -495,7 +551,7 @@ export async function importPackage(
       files = [];
       batchBytes = 0;
     };
-    for (const [index, media] of reader.media.entries()) {
+    for (const [index, media] of mediaToImport.entries()) {
       const bytes = await reader.bytes(media.entry, reader.compressed);
       if (media.size !== undefined && media.size !== bytes.byteLength)
         throw new Error(t("anki_invalid_package"));
@@ -509,7 +565,7 @@ export async function importPackage(
       report({
         phase: t("anki_import_media"),
         done: index + 1,
-        total: reader.media.length,
+        total: mediaToImport.length,
       });
     }
     await flush();
@@ -596,9 +652,7 @@ export async function importPackage(
                   missing.forEach((name) => names.add(name));
                 }
               }
-              await db.noteTypes.bulkPut(
-                [...types.values()].filter((type) => usedTypes.has(type.id)),
-              );
+              await db.noteTypes.bulkPut(retainedTypes);
               const vocabulary = [...words.values()].filter((word) =>
                 usedWords.has(word.id),
               );

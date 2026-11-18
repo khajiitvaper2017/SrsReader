@@ -5,7 +5,7 @@ import { fieldText } from "@/cards/template";
 
 const sharedAssets = new Map<string, Promise<string[]>>();
 
-function references(text: string): string[] {
+export function cardAssetReferences(text: string): string[] {
   return [
     ...text.matchAll(
       /\[sound:([^\]]+)\]|(?:src|href|poster)\s*=\s*["']([^"']+)["']|url\(\s*["']?([^"')]+)["']?\s*\)|["']([^"'\r\n]+\.(?:js|css|woff2?|ttf|otf|svg|png|jpe?g|avif|gif|ico))["']/gi,
@@ -18,7 +18,7 @@ function references(text: string): string[] {
 export function cardAssetKey(namespace: string, html: string, css: string) {
   return JSON.stringify([
     namespace,
-    [...new Set(references(`${html}\n${css}`))].sort(),
+    [...new Set(cardAssetReferences(`${html}\n${css}`))].sort(),
   ]);
 }
 
@@ -62,7 +62,11 @@ export async function loadCardAssets(
         sharedAssets.delete(namespace);
     });
   }
-  let pending = [...(await shared), ...references(html), ...references(css)];
+  let pending = [
+    ...(await shared),
+    ...cardAssetReferences(html),
+    ...cardAssetReferences(css),
+  ];
   const seen = new Set<string>();
   const loaded = new Set<string>();
   const assets: CardAsset[] = [];
@@ -92,7 +96,7 @@ export async function loadCardAssets(
         loaded.add(asset.id);
         assets.push(asset);
         if (/\.(?:css|js)$/i.test(asset.name))
-          pending.push(...references(await asset.blob.text()));
+          pending.push(...cardAssetReferences(await asset.blob.text()));
       }),
     );
   }

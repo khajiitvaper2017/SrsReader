@@ -1,3 +1,20 @@
+import { cardAssetReferences } from "@/cards/sandbox/assets";
+import { fieldText } from "@/cards/template";
+
+export function fieldMediaNames(value: string) {
+  return cardAssetReferences(value).flatMap((reference) => {
+    const name = reference.replace(/^\.\//, "");
+    const text = fieldText(name);
+    let decoded = text;
+    try {
+      decoded = decodeURIComponent(text);
+    } catch {
+      /* Filenames can contain literal percent signs. */
+    }
+    return [name, text, decoded, decoded.split(/[?#]/)[0]!];
+  });
+}
+
 export function mediaType(name: string) {
   const extension = name.split(".").at(-1)?.toLowerCase();
   return (

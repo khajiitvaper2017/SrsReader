@@ -38,6 +38,7 @@ const roles: (keyof FieldBindings)[] = [
   "word",
   "reading",
   "definitions",
+  "pos",
   "sentence",
   "sentenceFurigana",
   "translation",
@@ -45,6 +46,7 @@ const roles: (keyof FieldBindings)[] = [
   "sentenceAudio",
   "image",
 ];
+const noOmittedFields: number[] = [];
 
 export function AnkiTransfer({
   settings,
@@ -66,6 +68,7 @@ export function AnkiTransfer({
     duplicates: "keep",
     mergeNoteTypes: false,
     bindings: {},
+    omitFields: {},
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -111,6 +114,7 @@ export function AnkiTransfer({
         bindings: Object.fromEntries(
           result.noteTypes.map((type) => [type.id, type.suggestedBindings]),
         ),
+        omitFields: {},
       });
     } catch (error) {
       setError((error as Error).message);
@@ -395,8 +399,11 @@ export function AnkiTransfer({
                 {selectedTypes.map((type) => {
                   const bindings = options.bindings[type.id] ?? {};
                   const mapped = new Set(Object.values(bindings));
+                  const omitted =
+                    options.omitFields[type.id] ?? noOmittedFields;
+                  const excluded = new Set(omitted);
                   const unmapped = type.fields.filter(
-                    (_, index) => !mapped.has(index),
+                    (_, index) => !mapped.has(index) && !excluded.has(index),
                   );
                   const missingWord =
                     options.mode === "convert" && bindings.word === undefined;
@@ -419,8 +426,32 @@ export function AnkiTransfer({
                           language={options.language}
                           deckIds={options.deckIds}
                           bindings={bindings}
+                          omittedFields={omitted}
                           convert={options.mode === "convert"}
                           settings={settings}
+                        />
+                      )}
+                      {type.fields.some((_, index) => !mapped.has(index)) && (
+                        <MultiSelect
+                          label={t("anki_omit_fields")}
+                          description={t("anki_omit_fields_help")}
+                          data={type.fields.flatMap((label, index) =>
+                            mapped.has(index)
+                              ? []
+                              : [{ label, value: String(index) }],
+                          )}
+                          searchable
+                          clearable
+                          value={omitted.map(String)}
+                          onChange={(values) =>
+                            setOptions({
+                              ...options,
+                              omitFields: {
+                                ...options.omitFields,
+                                [type.id]: values.map(Number),
+                              },
+                            })
+                          }
                         />
                       )}
                       {missingWord && (
@@ -476,10 +507,16 @@ export function AnkiTransfer({
                                         value: "",
                                         label: t("anki_not_mapped"),
                                       },
-                                      ...type.fields.map((name, index) => ({
-                                        value: String(index),
-                                        label: name,
-                                      })),
+                                      ...type.fields.flatMap((name, index) =>
+                                        excluded.has(index)
+                                          ? []
+                                          : [
+                                              {
+                                                value: String(index),
+                                                label: name,
+                                              },
+                                            ],
+                                      ),
                                     ]}
                                     required={
                                       options.mode === "convert" &&

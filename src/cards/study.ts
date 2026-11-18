@@ -16,6 +16,9 @@ import type { Meaning } from "@/dictionaries/model";
 import {
   dictionaryPartsOfSpeech,
   dictionaryTagValues,
+  importedPartLabels,
+  importedPartValues,
+  meaningsForImportedParts,
 } from "@/dictionaries/grammar";
 import {
   dictionaryInflections,
@@ -26,8 +29,10 @@ import { t } from "@/shared/i18n/i18n";
 import type { Vocabulary } from "@/vocabulary/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
-function lexicalClass(meanings: Meaning[]) {
-  const parts = dictionaryTagValues(meanings, "UPOS");
+function lexicalClass(meanings: Meaning[], imported: string[]) {
+  const parts = imported.length
+    ? imported
+    : dictionaryTagValues(meanings, "UPOS");
   const noun = parts.some((part) => part === "NOUN" || part === "PROPN");
   const verb = parts.some((part) => part === "VERB" || part === "AUX");
   return noun === verb ? undefined : noun ? "noun" : "verb";
@@ -38,6 +43,7 @@ export function cardStudyDetails(
   meanings: Meaning[],
   inflections: DictionaryInflection[],
   encounter?: CardEncounter,
+  imported: string[] = [],
 ): CardStudyDetails {
   const study: CardStudyDetails = {
     partsOfSpeech: encounter
@@ -50,7 +56,9 @@ export function cardStudyDetails(
               nsSeparator: false,
             }),
           )
-      : dictionaryPartsOfSpeech(meanings),
+      : imported.length
+        ? importedPartLabels(imported)
+        : dictionaryPartsOfSpeech(meanings),
     forms: [],
     ipa: dictionaryPronunciations(meanings),
   };
@@ -77,7 +85,7 @@ export function cardStudyDetails(
             })}: ${translated}`;
       });
   }
-  const kind = lexicalClass(meanings);
+  const kind = lexicalClass(meanings, importedPartValues(imported));
   if (
     kind === "noun" ||
     encounter?.pos.split(",").some((pos) => pos === "NOUN" || pos === "PROPN")
@@ -157,12 +165,19 @@ export async function prepareStudyDocument(
   if (!document.noteType.id.startsWith("reader:") || !document.note.wordId)
     return document;
   const encounter = document.note.encounter;
+  const imported = document.note.importedPartsOfSpeech ?? [];
   const word = saved ?? (await db.vocabulary.get(document.note.wordId));
   if (!word)
-    return encounter
+    return encounter || imported.length
       ? {
           ...document,
-          study: cardStudyDetails(document.note.language, [], [], encounter),
+          study: cardStudyDetails(
+            document.note.language,
+            [],
+            [],
+            encounter,
+            imported,
+          ),
         }
       : document;
   let definitions = word.meanings;
@@ -187,19 +202,25 @@ export async function prepareStudyDocument(
       definitions = (await snapshot(match)).meanings;
       const fields = [...document.note.fields];
       fields[field] += definitionsHtml(
-        applyDefinitionOverrides(definitions, word).filter(
+        meaningsForImportedParts(
+          applyDefinitionOverrides(definitions, word),
+          imported,
+        ).filter(
           (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
         ),
       );
       document = { ...document, note: { ...document.note, fields } };
     }
   }
-  let meanings: Vocabulary["meanings"] = applyDefinitionOverrides(
-    [
-      ...definitions.filter((meaning) => meaning.tags !== "ipa"),
-      ...(await dictionaryIpa(word)),
-    ],
-    word,
+  let meanings = meaningsForImportedParts(
+    applyDefinitionOverrides(
+      [
+        ...definitions.filter((meaning) => meaning.tags !== "ipa"),
+        ...(await dictionaryIpa(word)),
+      ],
+      word,
+    ),
+    imported,
   ).filter(
     (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
   );
@@ -215,7 +236,9 @@ export async function prepareStudyDocument(
     ).length > 1;
   if (encounter) meanings = meaningsForEncounter(meanings, encounter);
   const inflections =
-    word.language === "de" && !ambiguousGender && lexicalClass(meanings)
+    word.language === "de" &&
+    !ambiguousGender &&
+    lexicalClass(meanings, importedPartValues(imported))
       ? await dictionaryInflections(word.lemma, meanings)
       : [];
   const study = cardStudyDetails(
@@ -223,6 +246,7 @@ export async function prepareStudyDocument(
     meanings,
     inflections,
     encounter,
+    imported,
   );
   const { importedGenders } = readingCardIdentity(document.note, word.lemma);
   if (importedGenders?.length)

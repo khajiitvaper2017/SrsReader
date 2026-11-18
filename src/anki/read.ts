@@ -29,7 +29,7 @@ import { mediaType } from "@/anki/media";
 import { matchesNoteType, previousFields, sameAnkiItem } from "@/anki/merge";
 import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
-import { templateWarnings } from "@/cards/template";
+import { fieldText, templateWarnings } from "@/cards/template";
 
 const invalid = () => new Error(t("anki_invalid_package"));
 const text = (value: unknown) => {
@@ -415,6 +415,7 @@ function suggestedBindings(
       /^(reading|pronunciation|ipa|kana|読み|読み方|振り仮名|ふりがな|word reading)$/iu,
     definitions:
       /^(meaning|definition|definitions|back|значення|значение|訳|意味|translation|english|angielski|znaczenie)$/iu,
+    pos: /^(pos|part[ _-]?of[ _-]?speech|wortart|частина мови)$/iu,
     sentence:
       /^(sentence|example|sentence[ _-]?text|пример|приклад|例文|文|zdanie)$/iu,
     sentenceFurigana:
@@ -532,51 +533,79 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
           ),
           created: 0,
         };
-        const sampleCards = new Map<string, AnkiCard>();
-        for (const card of cards) {
-          const key = JSON.stringify([cardDeckId(card), card.ord]);
-          if (!sampleCards.has(key)) sampleCards.set(key, card);
-        }
-        const samples = [...sampleCards.values()]
-          .sort((a, b) => a.ord - b.ord)
+        const sampleCards = new Map(cards.map((card) => [card.id, card]));
+        const sampleNotes = new Map<
+          string,
+          { label: string; filled: number }
+        >();
+        const samples = cards
           .map((card) => {
+            let sample = sampleNotes.get(card.nid);
+            if (!sample) {
+              const note = notes.get(card.nid)!;
+              const fields = note.flds.split("\x1f");
+              sample = {
+                label: fieldText(
+                  fields[noteType.bindings.word ?? Number(model.sortf ?? 0)] ||
+                    String(note.sfld),
+                )
+                  .replace(/\[sound:[^\]]*\]/g, "")
+                  .trim()
+                  .slice(0, 100),
+                filled: fields.filter(
+                  (field) =>
+                    fieldText(field).trim() ||
+                    /<(?:img|audio|video|svg)\b|\[sound:/i.test(field),
+                ).length,
+              };
+              sampleNotes.set(card.nid, sample);
+            }
+            const deckId = cardDeckId(card);
+            return {
+              ...sample,
+              cardId: card.id,
+              deckId,
+              deckName: deckNames.get(deckId) ?? "",
+              ordinal: card.ord,
+            };
+          })
+          .sort((a, b) => b.filled - a.filled || a.ordinal - b.ordinal);
+        const sampleDocument: AnkiPreview["noteTypes"][number]["sampleDocument"] =
+          (id) => {
+            const card = sampleCards.get(id)!;
             const note = notes.get(card.nid)!;
             return {
-              deckId: cardDeckId(card),
-              deckName: deckNames.get(cardDeckId(card)) ?? "",
-              document: {
-                noteType,
-                note: {
-                  id: note.id,
-                  noteTypeId: model.id,
-                  language: "",
-                  fields: note.flds.split("\x1f"),
-                  tags: note.tags.trim().split(/\s+/).filter(Boolean),
-                  mediaNamespace: namespace,
-                  version: 0,
-                  created: 0,
-                  updated: 0,
-                },
-                card: {
-                  id: card.id,
-                  noteId: note.id,
-                  templateOrdinal: card.ord,
-                  deckId: null,
-                  language: "",
-                  schedule: null,
-                  suspended: card.queue === -1,
-                  leech: false,
-                  retentionOverride: null,
-                  srsVersion: 0,
-                  version: 0,
-                  created: 0,
-                  updated: 0,
-                  sourceId: card.id,
-                  source: { flags: card.flags },
-                },
+              noteType,
+              note: {
+                id: note.id,
+                noteTypeId: model.id,
+                language: "",
+                fields: note.flds.split("\x1f"),
+                tags: note.tags.trim().split(/\s+/).filter(Boolean),
+                mediaNamespace: namespace,
+                version: 0,
+                created: 0,
+                updated: 0,
+              },
+              card: {
+                id: card.id,
+                noteId: note.id,
+                templateOrdinal: card.ord,
+                deckId: null,
+                language: "",
+                schedule: null,
+                suspended: card.queue === -1,
+                leech: false,
+                retentionOverride: null,
+                srsVersion: 0,
+                version: 0,
+                created: 0,
+                updated: 0,
+                sourceId: card.id,
+                source: { flags: card.flags },
               },
             };
-          });
+          };
         return [
           {
             id: model.id,
@@ -589,6 +618,7 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
             cards: cards.length,
             suggestedBindings: noteType.bindings,
             samples,
+            sampleDocument,
             deckIds: [...new Set(cards.map(cardDeckId))],
           },
         ];

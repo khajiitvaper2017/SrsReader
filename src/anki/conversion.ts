@@ -4,6 +4,7 @@ import type { FieldBindings } from "@/cards/model";
 import { germanNounField } from "@/cards/noun-article";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { lookup } from "@/dictionaries/resolve";
+import { meaningsForImportedParts } from "@/dictionaries/grammar";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
@@ -83,26 +84,47 @@ export async function ankiWord(
   return { word, gender };
 }
 
-export async function convertedAnkiNote(
+export function ankiPartOfSpeech(values: string[], bindings: FieldBindings) {
+  const pos = bindings.pos === undefined ? "" : plain(values[bindings.pos]!);
+  return pos ? [pos] : undefined;
+}
+
+export function ankiDictionarySnapshot(
+  word: Vocabulary,
+  namespace: string,
+  parts: string[] = [],
+) {
+  return prepareDictionarySnapshot(
+    {
+      ...word,
+      meanings: meaningsForImportedParts(
+        applyDefinitionOverrides(word.meanings, word),
+        parts,
+      ),
+    },
+    { namespace },
+  );
+}
+
+export function convertedAnkiNote(
   word: Vocabulary,
   fields: { name: string }[],
   values: string[],
   bindings: FieldBindings,
   namespace: string,
+  omitted: ReadonlySet<number>,
 ) {
   const mapped = new Set(Object.values(bindings));
   const extra = fields.flatMap((field, index) =>
-    mapped.has(index) ? [] : [{ name: field.name, value: values[index]! }],
+    mapped.has(index) || omitted.has(index)
+      ? []
+      : [{ name: field.name, value: values[index]! }],
   );
   const lemma =
     word.language === "de" ? germanNounField(word.lemma).lemma : word.lemma;
   const { note, noteType } = readerNote({ ...word, lemma }, undefined, extra);
-  const snapshot = await prepareDictionarySnapshot(
-    { ...word, meanings: applyDefinitionOverrides(word.meanings, word) },
-    { namespace },
-  );
   note.mediaNamespace = namespace;
-  note.fields[noteType.bindings.definitions!] = snapshot.html;
+  note.importedPartsOfSpeech = ankiPartOfSpeech(values, bindings);
   for (const role of [
     "sentence",
     "sentenceFurigana",
@@ -119,5 +141,5 @@ export async function convertedAnkiNote(
   extra.forEach((field, index) => {
     note.fields[extraStart + index] = field.value;
   });
-  return { note, noteType, assets: snapshot.assets };
+  return { note, noteType };
 }
