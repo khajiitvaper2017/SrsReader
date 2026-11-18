@@ -197,6 +197,32 @@ export function queryExamples(
   });
 }
 
+async function openOffscreenHost(url: string) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await browser.offscreen.createDocument({
+        url,
+        reasons: ["WORKERS"],
+        justification: t("background_work_reason"),
+      });
+      return;
+    } catch (error) {
+      // Chromium closes a document that failed its first load before rejecting.
+      if (!(error instanceof Error) || error.message !== "Page failed to load.")
+        throw error;
+      if (attempt > 0)
+        throw Object.assign(
+          new Error(t("background_host_failed"), { cause: error }),
+          {
+            code: "background_host_failed",
+            temporary: true,
+          },
+        );
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+}
+
 export function handleImports(action: "runImport" | "closeImportHost") {
   return navigator.locks.request("srs-reader-import-host", async () => {
     const task = await db.importTasks.get("current");
@@ -237,12 +263,7 @@ export function handleImports(action: "runImport" | "closeImportHost") {
           if (contexts.length) await browser.offscreen.closeDocument();
           return;
         }
-        if (!contexts.length)
-          await browser.offscreen.createDocument({
-            url,
-            reasons: ["WORKERS"],
-            justification: t("background_work_reason"),
-          });
+        if (!contexts.length) await openOffscreenHost(url);
       }
       if (!hosts.size) {
         if (running)
