@@ -28,7 +28,7 @@ import {
   type SyncRecord,
   type SyncSnapshot,
 } from "./model";
-import { withoutSyncTracking } from "./tracking";
+import { discardStagedAnkiMedia, withoutSyncTracking } from "./tracking";
 import { readMergeFrontier, writeMergeFrontier } from "./metadata";
 
 const cardFields = {
@@ -256,6 +256,7 @@ export async function mergeSnapshots(
       ],
       async () =>
         withoutSyncTracking(async () => {
+          await discardStagedAnkiMedia();
           const identity = (await db.syncMeta.get("identity")) as
             SyncIdentity | undefined;
           if (!identity)

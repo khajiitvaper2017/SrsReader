@@ -9,6 +9,8 @@ import {
 import { validateCardReferences } from "@/cards/validate";
 import { audioInfoSchema } from "@/audio/model";
 import { db } from "@/platform/database/db";
+import { srsWrite } from "@/platform/locks";
+import { discardStagedAnkiMedia } from "@/sync/tracking";
 import {
   detachRetiredDictionary,
   removeRetiredDictionaryPreferences,
@@ -91,33 +93,36 @@ const learningSchema = z.object({
 });
 
 export async function exportLearning() {
-  const snapshot = await db.transaction(
-    "r",
-    [
-      db.vocabulary,
-      db.noteTypes,
-      db.notes,
-      db.cards,
-      db.reviews,
-      db.ankiReviews,
-      db.audio,
-      db.cardAssets,
-      db.decks,
-      db.sentences,
-    ],
-    async () => ({
-      vocabulary: await db.vocabulary.toArray(),
-      noteTypes: await db.noteTypes.toArray(),
-      notes: await db.notes.toArray(),
-      cards: await db.cards.toArray(),
-      reviews: await db.reviews.toArray(),
-      ankiReviews: await db.ankiReviews.toArray(),
-      audio: await db.audio.toArray(),
-      cardAssets: await db.cardAssets.toArray(),
-      decks: await db.decks.toArray(),
-      sentences: await db.sentences.toArray(),
-    }),
-  );
+  const snapshot = await srsWrite(async () => {
+    await discardStagedAnkiMedia();
+    return db.transaction(
+      "r",
+      [
+        db.vocabulary,
+        db.noteTypes,
+        db.notes,
+        db.cards,
+        db.reviews,
+        db.ankiReviews,
+        db.audio,
+        db.cardAssets,
+        db.decks,
+        db.sentences,
+      ],
+      async () => ({
+        vocabulary: await db.vocabulary.toArray(),
+        noteTypes: await db.noteTypes.toArray(),
+        notes: await db.notes.toArray(),
+        cards: await db.cards.toArray(),
+        reviews: await db.reviews.toArray(),
+        ankiReviews: await db.ankiReviews.toArray(),
+        audio: await db.audio.toArray(),
+        cardAssets: await db.cardAssets.toArray(),
+        decks: await db.decks.toArray(),
+        sentences: await db.sentences.toArray(),
+      }),
+    );
+  });
   const writer = new ZipWriter(new BlobWriter("application/zip"));
   try {
     await writer.add(

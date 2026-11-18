@@ -5,7 +5,7 @@ import { srsWrite } from "@/platform/locks";
 import { settingsSchema } from "@/settings/model";
 import { srsClient } from "@/srs/client";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
-import { withRestoredTracking } from "@/sync/tracking";
+import { discardStagedAnkiMedia, withRestoredTracking } from "@/sync/tracking";
 import type { Table } from "dexie";
 
 export async function restoreSettings(
@@ -42,8 +42,9 @@ export async function restoreSettings(
 export async function restoreLearning(
   data: Awaited<ReturnType<typeof readLearning>>,
 ) {
-  await srsWrite(() =>
-    db.transaction(
+  await srsWrite(async () => {
+    await discardStagedAnkiMedia();
+    return db.transaction(
       "rw",
       [
         db.vocabulary,
@@ -82,8 +83,8 @@ export async function restoreLearning(
           await replaceLearningRows(db.decks, data.decks);
           await replaceLearningRows(db.sentences, data.sentences);
         }),
-    ),
-  );
+    );
+  });
 }
 
 // Diff instead of clearing first: restoring identical rows must not turn them

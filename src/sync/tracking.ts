@@ -285,6 +285,7 @@ async function author(
 }
 
 export async function deleteLearningRecords() {
+  await discardStagedAnkiMedia();
   const trans = Dexie.currentTransaction!.idbtrans;
   const current = (await db.syncMeta.get("identity")) as
     SyncIdentity | undefined;
@@ -306,6 +307,31 @@ export async function deleteLearningRecords() {
   await withoutSyncTracking(async () => {
     for (const table of learningResetTables) await db[table].clear();
   });
+}
+
+export const stagedAnkiMediaId = "staged-anki-media";
+
+/** Call under the SRS write lock, before replacing or publishing the collection. */
+export async function discardStagedAnkiMedia() {
+  const stage = await db.syncMeta.get(stagedAnkiMediaId);
+  if (!stage || !("namespace" in stage) || typeof stage.namespace !== "string")
+    return;
+  const namespace = stage.namespace;
+  await db.transaction(
+    "rw",
+    [db.cardAssets, db.syncAuthored, db.syncRecords, db.syncMeta],
+    async () => {
+      const ids = await db.cardAssets
+        .where("namespace")
+        .equals(namespace)
+        .primaryKeys();
+      const keys = ids.map((id) => recordKey("cardAssets", id));
+      await withoutSyncTracking(() => db.cardAssets.bulkDelete(ids));
+      await db.syncAuthored.bulkDelete(keys);
+      await db.syncRecords.bulkDelete(keys);
+      await db.syncMeta.delete(stagedAnkiMediaId);
+    },
+  );
 }
 
 async function recordChange(
@@ -683,8 +709,15 @@ export async function captureSnapshot(): Promise<SyncSnapshot> {
   return srsWrite(() =>
     db.transaction(
       "rw",
-      [db.syncMeta, db.syncAuthored, db.syncRecords, db.syncDependencies],
+      [
+        db.syncMeta,
+        db.syncAuthored,
+        db.syncRecords,
+        db.syncDependencies,
+        db.cardAssets,
+      ],
       async () => {
+        await discardStagedAnkiMedia();
         const current = (await db.syncMeta.get("identity")) as SyncIdentity;
         // The old cache may be unreadable. Advance past its revision without
         // reusing a publication name that can already be reserved on Drive.
@@ -761,6 +794,7 @@ export async function prepareAccountSync(
   await initializeTracking();
   await srsWrite(() =>
     db.transaction("rw", db.tables, async () => {
+      await discardStagedAnkiMedia();
       const current = (await db.syncMeta.get("identity")) as SyncIdentity;
       const records = await db.syncRecords.toArray();
       if (

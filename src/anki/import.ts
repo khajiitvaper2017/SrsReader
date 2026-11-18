@@ -22,6 +22,11 @@ import {
 import { readerNote } from "@/cards/defaults";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
+import {
+  discardStagedAnkiMedia,
+  stagedAnkiMediaId,
+  withoutSyncTracking,
+} from "@/sync/tracking";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import type { ImportProgress } from "@/shared/download";
@@ -237,7 +242,6 @@ export async function importPackage(
   const options = importOptionsSchema.parse(rawOptions);
   const reader = new PackageReader(file);
   const namespace = `anki:${crypto.randomUUID()}`;
-  const stagePrefix = namespace + ":";
   try {
     report({ phase: t("anki_reading"), done: 0, total: 0 });
     const source = await reader.open((done, total) =>
@@ -540,118 +544,116 @@ export async function importPackage(
     const mediaToImport = reader.media.filter(
       ({ name }) => !omittedMedia.has(name),
     );
-    await db.importFiles.where("id").startsWith("anki:").delete();
-    const batches: string[][] = [];
-    let files: { id: string; blob: Blob }[] = [];
-    let batchBytes = 0;
-    const flush = async () => {
-      if (!files.length) return;
-      await db.importFiles.bulkPut(files);
-      batches.push(files.map((file) => file.id));
-      files = [];
-      batchBytes = 0;
-    };
-    for (const [index, media] of mediaToImport.entries()) {
-      const bytes = await reader.bytes(media.entry, reader.compressed);
-      if (media.size !== undefined && media.size !== bytes.byteLength)
-        throw new Error(t("anki_invalid_package"));
-      const mime = mediaType(media.name);
-      files.push({
-        id: stagePrefix + media.name,
-        blob: new Blob([bytes.slice().buffer], { type: mime }),
-      });
-      batchBytes += bytes.byteLength;
-      if (batchBytes >= 16 * 1024 * 1024 || files.length >= 100) await flush();
-      report({
-        phase: t("anki_import_media"),
-        done: index + 1,
-        total: mediaToImport.length,
-      });
-    }
-    await flush();
-
-    const oldNamespaces = new Set<string>();
     await srsWrite(async () => {
-      // CacheStorage must finish before the atomic IndexedDB publication.
+      await discardStagedAnkiMedia();
+      await db.importFiles.where("id").startsWith("anki:").delete();
       const model =
         (await getSettings()).algorithm === "rwkv"
           ? (await downloadModel(), await loadModel())
           : undefined;
-      await db.transaction(
+      const batchSize = 100;
+      const oldNamespaces = new Set<string>();
+      for (let offset = 0; offset < notes.length; offset += batchSize) {
+        const previous = await db.notes.bulkGet(
+          notes.slice(offset, offset + batchSize).map((note) => note.id),
+        );
+        for (const note of previous)
+          if (note && note.mediaNamespace !== namespace)
+            oldNamespaces.add(note.mediaNamespace);
+      }
+      const stageMedia = async () => {
+        await db.syncMeta.put({ id: stagedAnkiMediaId, namespace });
+        let batch: CardAsset[] = [];
+        let batchBytes = 0;
+        const flush = async () => {
+          if (!batch.length) return;
+          // Each batch must commit before the next one opens more blob files.
+          await db.cardAssets.bulkPut(batch);
+          batch = [];
+          batchBytes = 0;
+        };
+        const store = async (asset: CardAsset) => {
+          batch.push(asset);
+          batchBytes += asset.blob.size;
+          if (batchBytes >= 16 * 1024 * 1024 || batch.length >= batchSize)
+            await flush();
+        };
+        for (const [index, media] of mediaToImport.entries()) {
+          const bytes = await reader.bytes(media.entry, reader.compressed);
+          if (media.size !== undefined && media.size !== bytes.byteLength)
+            throw new Error(t("anki_invalid_package"));
+          const mime = mediaType(media.name);
+          await store({
+            id: assetId(namespace, media.name),
+            namespace,
+            name: media.name,
+            mime,
+            blob: new Blob([bytes.slice().buffer], { type: mime }),
+          });
+          report({
+            phase: t("anki_import_media"),
+            done: index + 1,
+            total: mediaToImport.length,
+          });
+        }
+        for (const asset of snapshotAssets) await store(asset);
+        if (options.mergeNoteTypes && options.mode === "preserve") {
+          const names = new Set(reader.media.map((media) => media.name));
+          const related = await db.notes
+            .where("noteTypeId")
+            .anyOf(
+              existingTypes
+                .filter((type) =>
+                  [...models.values()].some(({ model }) =>
+                    matchesNoteType(model, type),
+                  ),
+                )
+                .map((type) => type.id),
+            )
+            .toArray();
+          const assetNamespaces = new Set([
+            ...oldNamespaces,
+            ...related.map((note) => note.mediaNamespace),
+          ]);
+          for (const oldNamespace of assetNamespaces) {
+            const keys = await db.cardAssets
+              .where("[namespace+name]")
+              .between(
+                [oldNamespace, Dexie.minKey],
+                [oldNamespace, Dexie.maxKey],
+              )
+              .keys();
+            for (const key of keys) {
+              if (!Array.isArray(key) || typeof key[1] !== "string") continue;
+              const name = key[1];
+              if (names.has(name)) continue;
+              const asset = await db.cardAssets.get(
+                assetId(oldNamespace, name),
+              );
+              if (!asset) throw new Error(t("anki_invalid_package"));
+              await store({
+                ...asset,
+                id: assetId(namespace, name),
+                namespace,
+              });
+              names.add(name);
+            }
+          }
+        }
+        await flush();
+      };
+      await stageMedia().catch(async (error: unknown) => {
+        await discardStagedAnkiMedia();
+        throw error;
+      });
+      const publication = db.transaction(
         "rw",
-        db.tables.filter((table) => table.name !== "importTasks"),
+        db.tables.filter(
+          (table) => !["importTasks", "importFiles"].includes(table.name),
+        ),
         () =>
           Dexie.waitFor(
             (async () => {
-              for (const batch of batches) {
-                const staged = await db.importFiles.bulkGet(batch);
-                await db.cardAssets.bulkPut(
-                  staged.map((file) => {
-                    if (!file) throw new Error(t("anki_invalid_package"));
-                    const name = file.id.slice(stagePrefix.length);
-                    return {
-                      id: assetId(namespace, name),
-                      namespace,
-                      name,
-                      mime: file.blob.type,
-                      blob: file.blob,
-                    };
-                  }),
-                );
-              }
-              if (snapshotAssets.length)
-                await db.cardAssets.bulkPut(snapshotAssets);
-              for (const note of notes) {
-                const previous = await db.notes.get(note.id);
-                if (previous && previous.mediaNamespace !== namespace)
-                  oldNamespaces.add(previous.mediaNamespace);
-              }
-              if (options.mergeNoteTypes && options.mode === "preserve") {
-                const names = new Set(reader.media.map((media) => media.name));
-                const related = await db.notes
-                  .where("noteTypeId")
-                  .anyOf(
-                    existingTypes
-                      .filter((type) =>
-                        [...models.values()].some(({ model }) =>
-                          matchesNoteType(model, type),
-                        ),
-                      )
-                      .map((type) => type.id),
-                  )
-                  .toArray();
-                const assetNamespaces = new Set([
-                  ...oldNamespaces,
-                  ...related.map((note) => note.mediaNamespace),
-                ]);
-                for (const oldNamespace of assetNamespaces) {
-                  const keys = await db.cardAssets
-                    .where("[namespace+name]")
-                    .between(
-                      [oldNamespace, Dexie.minKey],
-                      [oldNamespace, Dexie.maxKey],
-                    )
-                    .keys();
-                  const missing = keys.flatMap((key) =>
-                    Array.isArray(key) &&
-                    typeof key[1] === "string" &&
-                    !names.has(key[1])
-                      ? [key[1]]
-                      : [],
-                  );
-                  const retained = await db.cardAssets.bulkGet(
-                    missing.map((name) => assetId(oldNamespace, name)),
-                  );
-                  await db.cardAssets.bulkPut(
-                    retained.map((asset) => ({
-                      ...asset!,
-                      id: assetId(namespace, asset!.name),
-                      namespace,
-                    })),
-                  );
-                  missing.forEach((name) => names.add(name));
-                }
-              }
               await db.noteTypes.bulkPut(retainedTypes);
               const vocabulary = [...words.values()].filter((word) =>
                 usedWords.has(word.id),
@@ -777,19 +779,29 @@ export async function importPackage(
                 );
               await recalculateLapses(cards.map((card) => card.id));
               reportHistory(events.length, events.length);
+              for (const oldNamespace of oldNamespaces) {
+                if (
+                  await db.notes
+                    .where("mediaNamespace")
+                    .equals(oldNamespace)
+                    .count()
+                )
+                  continue;
+                const ids = await db.cardAssets
+                  .where("namespace")
+                  .equals(oldNamespace)
+                  .primaryKeys();
+                await withoutSyncTracking(() => db.cardAssets.bulkDelete(ids));
+              }
+              await db.syncMeta.delete(stagedAnkiMediaId);
             })(),
             2_147_483_647,
           ),
       );
+      await publication.finally(discardStagedAnkiMedia);
     });
-    for (const oldNamespace of oldNamespaces)
-      if (
-        !(await db.notes.where("mediaNamespace").equals(oldNamespace).count())
-      )
-        await db.cardAssets.where("namespace").equals(oldNamespace).delete();
     return { notes: notes.length, cards: cards.length, skipped };
   } finally {
     await reader.close();
-    await db.importFiles.where("id").startsWith(stagePrefix).delete();
   }
 }

@@ -15,7 +15,7 @@ import { srsWrite } from "@/platform/locks";
 import { getSettings } from "@/settings/store";
 import { saveBlob, type ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
-import { withRestoredTracking } from "@/sync/tracking";
+import { discardStagedAnkiMedia, withRestoredTracking } from "@/sync/tracking";
 import {
   fullManifestSchema,
   fullRowSchemas,
@@ -84,8 +84,9 @@ async function replaceCaches(
 
 export async function exportFull(report: (value: ImportProgress) => void) {
   await db.open();
-  const database = await srsWrite(() =>
-    db.transaction("r", db.tables, async () => {
+  const database = await srsWrite(async () => {
+    await discardStagedAnkiMedia();
+    return db.transaction("r", db.tables, async () => {
       await idleImports();
       return exportDB(db, {
         skipTables: transientTables,
@@ -93,8 +94,8 @@ export async function exportFull(report: (value: ImportProgress) => void) {
         noTransaction: true,
         progressCallback: progress(report, t("full_backup_exporting")),
       });
-    }),
-  );
+    });
+  });
   const writer = new ZipWriter(new BlobWriter("application/zip"));
   try {
     report({ phase: t("full_backup_packing"), done: 0, total: 0 });
@@ -316,6 +317,7 @@ export async function restoreFull(
 ) {
   return srsWrite(async () => {
     await idleImports();
+    await discardStagedAnkiMedia();
     const previousModels = await cacheSnapshot();
     try {
       await replaceCaches(backup.models);
