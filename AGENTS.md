@@ -64,7 +64,7 @@
 ## Google Drive build configuration
 
 - For Drive-enabled builds, enable the Drive API and register both OAuth clients in one Google Cloud project. Keep these build-time values in an untracked `.env.local`:
-  - `WXT_GOOGLE_CLIENT_ID`: Chrome Extension OAuth client for extension ID `nlmfchmfabficodmhaioejabcbdaekjh`.
+  - `WXT_GOOGLE_TEST_CLIENT_ID`: Chrome Extension OAuth client for extension ID `nlmfchmfabficodmhaioejabcbdaekjh`.
   - `WXT_GOOGLE_FIREFOX_CLIENT_ID`: Web application OAuth client for Firefox.
   - `WXT_GOOGLE_REDIRECT_URI`: Exact HTTPS callback registered for Firefox on an authorized, verified domain.
 - Both clients request `drive.appdata`, `openid`, and `email`. Do not include a client secret. Without client configuration, sync connection is disabled.

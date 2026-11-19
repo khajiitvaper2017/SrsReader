@@ -1291,7 +1291,7 @@
   "sync_title": "Sync",
   "sync_help": "Sync vocabulary, cards, review history, notes, media and portable settings through your Google Drive. Your data stays on this device until you choose to connect.",
   "sync_loading": "Checking sync status…",
-  "sync_not_configured_help": "Google sign-in is not configured in this build. Chromium requires WXT_GOOGLE_CLIENT_ID for this extension ID. Firefox requires WXT_GOOGLE_FIREFOX_CLIENT_ID and WXT_GOOGLE_REDIRECT_URI with a registered HTTPS callback on a verified domain. These values must be supplied when building the extension.",
+  "sync_not_configured_help": "Google sign-in is not configured in this build. Chromium requires a Google OAuth client ID registered for this extension. Firefox requires WXT_GOOGLE_FIREFOX_CLIENT_ID and WXT_GOOGLE_REDIRECT_URI with a registered HTTPS callback on a verified domain. These values must be supplied when building the extension.",
   "sync_connected_account": "Connected as {{email}}",
   "sync_disconnected_account": "Not connected. Previous account: {{email}}",
   "sync_not_connected": "Not connected to Google Drive",

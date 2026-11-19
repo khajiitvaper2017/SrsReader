@@ -9,6 +9,26 @@ import uk from "./src/shared/i18n/locales/uk.json";
 const chromiumKey =
   "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyxu+YaR5pEgMuX0vWacW0ag8Ic36AA74q14jBYxChU0l8CtgYbOx4PmSUaW7e+z8gqKeEYCq47r/lWRF03joFYgnRLtOfsyUrZGuJVCznp7TyyWJdozvjiqjPZSirHc0+MZQ7Smw8fMZvNRuXyAy/5JKmx6m7+vAZtszIaqTs2MABSh5onlZWWep5dPEtPgz7qCHvD4/A75dxOAg1jc+/oql5dVutT4tWY+1lqWFuC8ssLOuz2jvW6/ziB19OEc8qUIz+10LnidvQtqSurlxHSb+E+tRaMVPEuF9Iud/cefvc7t7WWZ7ON1QLbZqS1mVha7z4gGzcHNxaiM762EIHwIDAQAB";
 
+function chromiumOAuth(mode: string) {
+  const clientId =
+    process.env[
+      mode === "store"
+        ? "WXT_GOOGLE_PRODUCTION_CLIENT_ID"
+        : "WXT_GOOGLE_TEST_CLIENT_ID"
+    ]?.trim();
+  if (!clientId) return {};
+  return {
+    oauth2: {
+      client_id: clientId,
+      scopes: [
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/drive.appdata",
+      ],
+    },
+  };
+}
+
 export default defineConfig({
   srcDir: "src",
   entrypointsDir: "../entrypoints",
@@ -95,24 +115,13 @@ export default defineConfig({
       });
     },
   },
-  manifest: ({ browser }) => ({
+  manifest: ({ browser, mode }) => ({
     name: "SrsReader",
     ...(browser === "chrome"
       ? {
           minimum_chrome_version: "125",
           key: chromiumKey,
-          ...(process.env.WXT_GOOGLE_CLIENT_ID
-            ? {
-                oauth2: {
-                  client_id: process.env.WXT_GOOGLE_CLIENT_ID,
-                  scopes: [
-                    "openid",
-                    "email",
-                    "https://www.googleapis.com/auth/drive.appdata",
-                  ],
-                },
-              }
-            : {}),
+          ...chromiumOAuth(mode),
         }
       : {}),
     default_locale: "en",

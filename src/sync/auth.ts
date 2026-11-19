@@ -11,7 +11,6 @@ const CONSENT = [
   "personallyIdentifyingInfo",
   "websiteContent",
 ];
-const env = import.meta.env as Record<string, string | boolean | undefined>;
 const firefox = import.meta.env.BROWSER === "firefox";
 
 type Credentials = {
@@ -59,9 +58,10 @@ let credentialWrites = Promise.resolve();
 let startup: Promise<void> | undefined;
 
 function configuration() {
-  const client = String(
-    env[firefox ? "WXT_GOOGLE_FIREFOX_CLIENT_ID" : "WXT_GOOGLE_CLIENT_ID"] ??
-      "",
+  const client = (
+    (firefox
+      ? import.meta.env.WXT_GOOGLE_FIREFOX_CLIENT_ID
+      : browser.runtime.getManifest().oauth2?.client_id) ?? ""
   ).trim();
   if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(client)) return null;
   if (!firefox) return { client, redirect: "" };
@@ -70,7 +70,7 @@ function configuration() {
   // Google does not offer a secret-free Web-client code exchange: the tab flow
   // uses its documented token response, not an invented PKCE/refresh exchange.
   try {
-    const redirect = new URL(String(env.WXT_GOOGLE_REDIRECT_URI ?? ""));
+    const redirect = new URL(import.meta.env.WXT_GOOGLE_REDIRECT_URI ?? "");
     if (
       redirect.protocol !== "https:" ||
       redirect.username ||
