@@ -114,6 +114,12 @@ export function cardStudyDetails(
               /\bplural\b/iu.test(label) &&
               !/person|partizip|participle/iu.test(label),
           },
+          {
+            key: "study_form_genitive",
+            matches: (label: string) =>
+              /\b(?:genitiv|genitive)\b/iu.test(label) &&
+              /\bsingular\b/iu.test(label),
+          },
         ]
       : [
           {
