@@ -24,6 +24,7 @@ import { rpc } from "@/platform/messaging/send";
 import type { SyncAccount } from "@/sync/model";
 import { downloadSize, i18n, t } from "@/shared/i18n/i18n";
 import { useRef, useState } from "react";
+import { notifications } from "@mantine/notifications";
 import { Download, Upload, Eraser } from "lucide-react";
 export function BackupSettings({
   setSettings,
@@ -44,7 +45,6 @@ export function BackupSettings({
   >();
   const [resetBusy, setResetBusy] = useState(false);
   const [resetError, setResetError] = useState("");
-  const [resetComplete, setResetComplete] = useState(false);
   const resetLabel =
     resetTarget &&
     (resetTarget.category === "all"
@@ -52,7 +52,6 @@ export function BackupSettings({
       : t(`reset_data_${resetTarget.category}`));
   async function confirmReset(category: "all" | ResetCategory) {
     setResetError("");
-    setResetComplete(false);
     if (category !== "all") {
       setResetTarget({ category });
       return;
@@ -90,7 +89,11 @@ export function BackupSettings({
         if (resetTarget.category !== "dictionaries")
           sessionStorage.removeItem("last-review");
         setResetTarget(undefined);
-        setResetComplete(true);
+        notifications.show({
+          message: t("reset_data_complete"),
+          color: "green",
+          role: "status",
+        });
       }
     } catch (error) {
       const message = (error as Error).message;
@@ -273,9 +276,6 @@ export function BackupSettings({
             {t("reset_extension")}
           </Button>
         </Group>
-        {resetComplete && (
-          <Alert role="status">{t("reset_data_complete")}</Alert>
-        )}
       </Stack>
       {!resetTarget && <ErrorBox error={resetError} />}
       <Modal

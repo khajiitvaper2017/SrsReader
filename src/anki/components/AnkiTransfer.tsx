@@ -73,7 +73,6 @@ export function AnkiTransfer({
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [progress, setProgress] = useState<ImportProgress>();
   const [decks, setDecks] = useState<{ id: string; name: string }[]>([]);
   const [exportDeck, setExportDeck] = useState("");
@@ -99,7 +98,6 @@ export function AnkiTransfer({
     setFile(value);
     setPreview(undefined);
     setError("");
-    setNotice("");
     setBusy(true);
     setOpened("import");
     setProgress({ phase: t("anki_reading"), done: 0, total: 0 });
@@ -129,7 +127,6 @@ export function AnkiTransfer({
   async function submit() {
     setBusy(true);
     setError("");
-    setNotice("");
     try {
       if (opened === "import" && file) {
         setOpened(null);
@@ -141,7 +138,6 @@ export function AnkiTransfer({
           title: file.name,
           options,
         });
-        setNotice(t("anki_imported"));
       } else {
         const { exportPackage } = await import("@/anki/export");
         const blob = await exportPackage(
@@ -226,11 +222,6 @@ export function AnkiTransfer({
           </Menu>
         )}
       </FileButton>
-      {notice && (
-        <Alert withCloseButton onClose={() => setNotice("")}>
-          {notice}
-        </Alert>
-      )}
       <Modal
         closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
         opened={opened !== null}

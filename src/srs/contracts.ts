@@ -109,7 +109,7 @@ export type Responses = {
   manageDeck: void;
   saveDeck: void;
   sentenceExamples: SentenceExample[];
-  grade: { word: ReviewWord; reviewId: string };
+  grade: { word: ReviewWord; reviewId: string; autoBuried: boolean };
   undo: void;
   bury: void;
   queue: Awaited<ReturnType<typeof reviewQueue>>;

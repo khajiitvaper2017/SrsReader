@@ -290,11 +290,11 @@ export function App() {
           notice={tasks.notice}
           onDismissError={() => {
             tasks.setError("");
-            void tasks.dismissImport();
+            void tasks.dismissImportResult();
           }}
           onDismissNotice={() => {
             tasks.setNotice("");
-            void tasks.dismissImport();
+            void tasks.dismissImportResult();
           }}
         />
       </AppShell>

@@ -15,7 +15,6 @@ import {
   Stack,
   Text,
   Title,
-  VisuallyHidden,
 } from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
@@ -641,6 +640,7 @@ function LookupEntry({
           gap={settings.onlyAgainGood ? 4 : "xs"}
           p="sm"
           data-srs-reader
+          data-lookup-actions
           style={{
             borderTop: "1px solid var(--mantine-color-default-border)",
             flexShrink: 0,
@@ -713,7 +713,6 @@ function LookupEntry({
               />
             </Box>
           )}
-          {notice && <VisuallyHidden role="status">{notice}</VisuallyHidden>}
         </Flex>
       )}
     </Stack>

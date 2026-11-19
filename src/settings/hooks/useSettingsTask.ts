@@ -59,7 +59,8 @@ export function useSettingsTask() {
       importTask?.status === "running" ? importTask.type : progressTarget,
     setProgressTarget,
     run: task,
-    dismissImport,
+    dismissImportResult: () =>
+      importTask ? dismissImport(importTask.runId) : undefined,
   };
 }
 export type SettingsTask = Pick<

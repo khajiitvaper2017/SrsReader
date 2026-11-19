@@ -15,3 +15,7 @@
     min-width: 6.25rem;
   }
 }
+:global(body):has([data-review-card], [data-lookup-actions])
+  .notifications[data-position="bottom-right"] {
+  bottom: calc(var(--mantine-spacing-md) + 2 * var(--mantine-spacing-xl));
+}

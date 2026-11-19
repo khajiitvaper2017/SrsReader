@@ -46,9 +46,10 @@ export async function startImport(input: ImportInput) {
   });
 }
 
-export async function dismissImport() {
+export async function dismissImport(runId?: string) {
   await db.transaction("rw", [db.importTasks, db.importFiles], async () => {
-    if ((await db.importTasks.get("current"))?.status !== "running") {
+    const task = await db.importTasks.get("current");
+    if (task?.status !== "running" && (!runId || task?.runId === runId)) {
       await db.importTasks.delete("current");
       await db.importFiles.delete("current");
     }

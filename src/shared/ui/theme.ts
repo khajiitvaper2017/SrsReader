@@ -19,6 +19,7 @@ import {
   Kbd,
   Menu,
   MultiSelect,
+  Notification,
   NumberInput,
   Paper,
   Pill,
@@ -100,6 +101,12 @@ export function createUITheme(
           },
         }),
     components: {
+      Notification: Notification.extend({
+        defaultProps: {
+          withBorder: true,
+          closeButtonProps: { "aria-label": t("dismiss_notification") },
+        },
+      }),
       ...(popup
         ? {
             Stack: Stack.extend({ defaultProps: { gap: "xs" } }),

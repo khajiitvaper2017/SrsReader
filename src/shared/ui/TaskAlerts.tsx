@@ -1,11 +1,37 @@
-import { Affix, Notification, Stack, getDefaultZIndex } from "@mantine/core";
-import { useDebouncedValue, useTimeout } from "@mantine/hooks";
-import { useEffect } from "react";
+import { useDebouncedValue } from "@mantine/hooks";
+import { notifications } from "@mantine/notifications";
+import { useEffect, useEffectEvent, useId } from "react";
 import type { ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
 import { TaskProgress } from "@/shared/ui/TaskProgress";
 
-/** Floating action feedback. Use busyLabel for non-import work; keep field errors beside controls. */
+function useTaskResult(
+  message: string,
+  color: "red" | "green",
+  onDismiss: () => void,
+) {
+  const id = useId();
+  const dismiss = useEffectEvent(onDismiss);
+  useEffect(() => {
+    if (!message) return;
+    let active = true;
+    notifications.show({
+      id,
+      message,
+      color,
+      role: color === "red" ? "alert" : "status",
+      onClose: () => {
+        if (active) dismiss();
+      },
+    });
+    return () => {
+      active = false;
+      notifications.hide(id);
+    };
+  }, [id, message, color]);
+}
+
+/** Sends task state to the shared notification stack. */
 export function TaskAlerts({
   busy = false,
   busyLabel,
@@ -23,58 +49,37 @@ export function TaskAlerts({
   onDismissError: () => void;
   onDismissNotice: () => void;
 }) {
-  const { start, clear } = useTimeout(onDismissNotice, 5000);
+  const id = useId();
   const [delayedBusy] = useDebouncedValue(busy, 300);
   const showProgress = busy && (!!progress || delayedBusy);
-
   useEffect(() => {
-    if (!busy && notice) start();
-    return clear;
-  }, [busy, notice, start, clear]);
-
-  if (!showProgress && !error && (!notice || busy)) return null;
-  return (
-    <Affix
-      position={{
-        bottom: "var(--mantine-spacing-md)",
-        right: "var(--mantine-spacing-md)",
-      }}
-      zIndex={getDefaultZIndex("modal") - 1}
-      w={400}
-      maw="calc(100vw - 2 * var(--mantine-spacing-md))"
-      data-srs-reader=""
-    >
-      <Stack gap="xs">
-        {showProgress && (
-          <Notification loading withCloseButton={false} role="status">
-            {progress ? (
-              <TaskProgress progress={progress} />
-            ) : (
-              busyLabel || t("working")
-            )}
-          </Notification>
-        )}
-        {error && (
-          <Notification
-            color="red"
-            role="alert"
-            onClose={onDismissError}
-            closeButtonProps={{ "aria-label": t("dismiss_notification") }}
-          >
-            {error}
-          </Notification>
-        )}
-        {!busy && notice && (
-          <Notification
-            color="green"
-            role="status"
-            onClose={onDismissNotice}
-            closeButtonProps={{ "aria-label": t("dismiss_notification") }}
-          >
-            {notice}
-          </Notification>
-        )}
-      </Stack>
-    </Affix>
+    if (!showProgress) {
+      notifications.hide(id);
+      return;
+    }
+    const notification = {
+      id,
+      message: progress ? (
+        <TaskProgress progress={progress} />
+      ) : (
+        busyLabel || t("working")
+      ),
+      loading: true,
+      autoClose: false as const,
+      allowClose: false,
+      role: "status",
+    };
+    notifications.show(notification);
+    notifications.update(notification);
+  }, [id, showProgress, progress, busyLabel]);
+  useEffect(
+    () => () => {
+      notifications.hide(id);
+    },
+    [id],
   );
+
+  useTaskResult(error, "red", onDismissError);
+  useTaskResult(busy ? "" : notice, "green", onDismissNotice);
+  return null;
 }

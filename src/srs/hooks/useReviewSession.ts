@@ -1,6 +1,8 @@
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import { stopAudio } from "@/audio/playback";
 import type { Settings } from "@/settings/model";
+import { notifications } from "@mantine/notifications";
+import { notifyAutoBury } from "@/srs/auto-bury-notice";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { srsClient } from "@/srs/client";
 import type { Request, Responses } from "@/srs/contracts";
@@ -221,6 +223,7 @@ export function useReviewSession({
         durationMs,
         time,
       });
+      if (result.autoBuried) notifyAutoBury(result.reviewId);
       const card = word.card!;
       setAnswers((answers) => [
         ...answers,
@@ -297,6 +300,7 @@ export function useReviewSession({
     setError("");
     try {
       await srsClient({ action: "undo", id: last });
+      notifications.hide(last);
       setAnswers((answers) => answers.filter((answer) => answer.id !== last));
       setLast("");
       sessionStorage.removeItem("last-review");

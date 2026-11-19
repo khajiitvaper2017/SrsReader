@@ -22,6 +22,7 @@ import { useSrsSettings } from "@/srs/hooks/useSrsSettings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { fsrsVersionSchema, learningStepsSchema } from "@/srs/preferences";
 import { useState } from "react";
+import { notifications } from "@mantine/notifications";
 function NumberSetting({
   label,
   value,
@@ -69,8 +70,10 @@ export function SrsSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
   onError: (message: string) => void;
 }) {
-  const { busy, message, setMessage, status, bands, setBands, task, prepare } =
-    useSrsSettings({ settings, onError });
+  const { busy, status, bands, setBands, task, prepare } = useSrsSettings({
+    settings,
+    onError,
+  });
   type ModelSelection = {
     algorithm: Settings["algorithm"];
     fsrsVersion: Settings["fsrsVersion"];
@@ -149,13 +152,15 @@ export function SrsSettings({
                   await onChange(
                     await srsClient({ action: "activateAlgorithm", ...next }),
                   );
-                  setMessage(
-                    t(
+                  notifications.show({
+                    message: t(
                       next.algorithm === "fsrs"
                         ? "srs_fsrs_ready"
                         : "srs_algorithm_ready",
                     ),
-                  );
+                    color: "green",
+                    role: "status",
+                  });
                 });
               }}
             >
@@ -247,7 +252,6 @@ export function SrsSettings({
               })}
         </Text>
       )}
-      {message && <Text role="status">{message}</Text>}
       {busy && (
         <Progress.Root
           role="progressbar"
@@ -495,8 +499,12 @@ export function SrsSettings({
                       });
                       count += result.count;
                       after = result.cursor ?? "";
-                      setMessage(t("srs_rescheduled", { count }));
                     } while (after);
+                    notifications.show({
+                      message: t("srs_rescheduled", { count }),
+                      color: "green",
+                      role: "status",
+                    });
                   })
                 }
                 variant="default"
@@ -511,7 +519,11 @@ export function SrsSettings({
                     void task(async () => {
                       await srsClient({ action: "resetRwkv" });
                       await prepare();
-                      setMessage(t("rwkv_ready"));
+                      notifications.show({
+                        message: t("rwkv_ready"),
+                        color: "green",
+                        role: "status",
+                      });
                     })
                   }
                   variant="default"

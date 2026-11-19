@@ -11,9 +11,12 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { MantineProvider } from "@mantine/core";
+import { MantineProvider, getDefaultZIndex } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
+import "@mantine/notifications/styles.css";
 import { useColorScheme } from "@mantine/hooks";
 import { createUITheme } from "@/shared/ui/theme";
+import classes from "./theme.module.css";
 import type { PageScope } from "@/reader/input-prevention";
 import { useTranslation } from "react-i18next";
 import { browser } from "wxt/browser";
@@ -97,6 +100,14 @@ export function UIProvider({
         }
       >
         {children}
+        <Notifications
+          autoClose={5000}
+          containerWidth={400}
+          position="bottom-right"
+          zIndex={getDefaultZIndex("modal") - 1}
+          classNames={{ root: classes.notifications }}
+          data-srs-reader
+        />
         <TranslationModelPrompt />
       </MantineProvider>
     </SettingsContext.Provider>

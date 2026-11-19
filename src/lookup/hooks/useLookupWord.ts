@@ -19,6 +19,8 @@ import { useSettings } from "@/settings/hooks/useSettings";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
+import { notifications } from "@mantine/notifications";
+import { notifyAutoBury } from "@/srs/auto-bury-notice";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { vocabularyClient } from "@/vocabulary/client";
@@ -423,9 +425,11 @@ export function useLookupWord({
     setBusy(true);
     try {
       await srsClient({ action: "undo", id: lastReview });
+      notifications.hide(lastReview);
       setLastReview("");
       setReviewed(false);
       setNotice(t("review_undone"));
+      notifications.show({ message: t("review_undone"), role: "status" });
       reload();
     } catch (error) {
       setError((error as Error).message);
@@ -484,11 +488,13 @@ export function useLookupWord({
         setSavedKey(selectionKey);
         setLastReview(result.reviewId);
         setReviewed(true);
-        setNotice(
-          t("reviewed", {
-            value1: [t("again"), t("hard"), t("good"), t("easy")][rating - 1],
-          }),
-        );
+        const message = t("reviewed", {
+          value1: [t("again"), t("hard"), t("good"), t("easy")][rating - 1],
+        });
+        setNotice(message);
+        if (result.autoBuried) notifyAutoBury(result.reviewId);
+        else
+          notifications.show({ id: result.reviewId, message, role: "status" });
       } else {
         setSaved(
           await vocabularyClient({

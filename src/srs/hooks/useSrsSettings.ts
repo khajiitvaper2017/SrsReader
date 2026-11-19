@@ -1,5 +1,4 @@
 import type { Settings } from "@/settings/model";
-import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
 import { useEffect, useState } from "react";
@@ -12,7 +11,6 @@ export function useSrsSettings({
   onError: (message: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Responses["rwkvStatus"]>();
   const [bands, setBands] = useState(settings.retentionBands);
   useEffect(() => setBands(settings.retentionBands), [settings.retentionBands]);
@@ -24,7 +22,6 @@ export function useSrsSettings({
   async function task(work: () => Promise<void>) {
     setBusy(true);
     onError("");
-    setMessage("");
     try {
       await work();
     } catch (error) {
@@ -34,19 +31,12 @@ export function useSrsSettings({
     }
   }
   async function prepare() {
-    setMessage(t("rwkv_preparing"));
     let progress = await srsClient({ action: "rwkvStatus" });
     while (!progress.ready) {
       progress = await srsClient({ action: "prepareRwkv" });
       setStatus(progress);
-      setMessage(
-        t("rwkv_replaying", {
-          processed: progress.processed,
-          total: progress.total,
-        }),
-      );
     }
   }
 
-  return { busy, message, setMessage, status, bands, setBands, task, prepare };
+  return { busy, status, bands, setBands, task, prepare };
 }

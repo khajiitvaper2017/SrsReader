@@ -3,6 +3,7 @@ import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { candidates } from "@/srs/answers";
 import { commitReview } from "@/srs/storage";
+import { autoBuriesAfterAgain } from "@/srs/workload";
 import type { ReadingContext, ReviewWord } from "@/vocabulary/model";
 import { cacheContext } from "@/examples/sentences";
 import { reviewCard } from "@/vocabulary/storage";
@@ -47,6 +48,17 @@ export async function grade(
   saved.updated = now;
   saved.version++;
   saved.srsVersion++;
+  const autoBuried =
+    rating === 1 &&
+    settings.autoBuryFailed &&
+    !saved.suspended &&
+    (before.buriedUntil ?? 0) <= now &&
+    (await autoBuriesAfterAgain(
+      word.id,
+      word.language,
+      settings.rolloverHour,
+      now,
+    ));
   const id = crypto.randomUUID();
   await commitReview({
     word,
@@ -61,5 +73,5 @@ export async function grade(
     settings,
     result,
   });
-  return { word: (await reviewCard(saved.id))!, reviewId: id };
+  return { word: (await reviewCard(saved.id))!, reviewId: id, autoBuried };
 }

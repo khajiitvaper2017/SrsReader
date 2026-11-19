@@ -1298,6 +1298,8 @@
   "bury_card": "Bury card until tomorrow",
   "auto_bury_failed": "Automatically bury repeatedly failed cards",
   "auto_bury_failed_help": "After three consecutive Again answers in one study day, hide the card until the next study day.",
+  "card_auto_buried": "Card buried until the next study day",
+  "card_auto_buried_reason": "You answered Again three times in a row.",
   "sync_last_success": "Last successful sync: {{time}}",
   "sync_never_synced": "No successful sync yet",
   "sync_storage_used": "Google Drive storage: {{size}}",
