@@ -12,6 +12,7 @@ import {
   Badge,
   HoverCard,
   Menu,
+  ScrollArea,
   Stack,
   Text,
   Title,
@@ -252,37 +253,40 @@ function LookupEntry({
                     data-srs-reader
                     maw="calc(100vw - 24px)"
                     mah="65dvh"
-                    style={{
-                      overflowY: "auto",
-                      overflowWrap: "anywhere",
-                      scrollbarGutter: "stable",
-                    }}
+                    display="flex"
                   >
-                    <Stack>
-                      {surface !== heading &&
-                        (!result?.grammar || result.grammar.group) && (
-                          <Text lang={word.language} fw={500}>
-                            {surface}
-                          </Text>
-                        )}
-                      {result?.grammar ? (
-                        <Grammar grammar={result.grammar} heading={heading} />
-                      ) : (
-                        compoundAnalysis && (
-                          <Stack gap="xs">
-                            <Text variant="supporting">
-                              {t("compound_source_grammar", {
-                                word: compoundSource?.surface,
-                              })}
+                    <ScrollArea.Autosize
+                      type="auto"
+                      scrollbars="y"
+                      offsetScrollbars="present"
+                      viewportProps={{ tabIndex: 0 }}
+                    >
+                      <Stack style={{ overflowWrap: "anywhere" }}>
+                        {surface !== heading &&
+                          (!result?.grammar || result.grammar.group) && (
+                            <Text lang={word.language} fw={500}>
+                              {surface}
                             </Text>
-                            <Grammar
-                              grammar={compoundAnalysis}
-                              heading={heading}
-                            />
-                          </Stack>
-                        )
-                      )}
-                    </Stack>
+                          )}
+                        {result?.grammar ? (
+                          <Grammar grammar={result.grammar} heading={heading} />
+                        ) : (
+                          compoundAnalysis && (
+                            <Stack gap="xs">
+                              <Text variant="supporting">
+                                {t("compound_source_grammar", {
+                                  word: compoundSource?.surface,
+                                })}
+                              </Text>
+                              <Grammar
+                                grammar={compoundAnalysis}
+                                heading={heading}
+                              />
+                            </Stack>
+                          )
+                        )}
+                      </Stack>
+                    </ScrollArea.Autosize>
                   </HoverCard.Dropdown>
                 </HoverCard>
                 {(compound ||
@@ -464,16 +468,15 @@ function LookupEntry({
     );
   return (
     <Stack gap={0} h="100dvh" style={{ overflow: "hidden" }}>
-      <Stack
-        ref={contentRef}
-        gap={0}
+      <ScrollArea
         component="main"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          scrollbarGutter: "stable",
-        }}
+        viewportRef={contentRef}
+        flex={1}
+        mih={0}
+        type="auto"
+        scrollbars="y"
+        offsetScrollbars="y"
+        viewportProps={{ tabIndex: 0 }}
       >
         <Stack p="sm" gap="xs">
           {onBack && !word && (
@@ -633,87 +636,92 @@ function LookupEntry({
             </>
           )}
         </Stack>
-      </Stack>
+      </ScrollArea>
       {word && !unparsed && (
-        <Flex
-          direction={settings.onlyAgainGood ? "row" : "column"}
-          gap={settings.onlyAgainGood ? 4 : "xs"}
-          p="sm"
+        <ScrollArea.Autosize
+          mah="60dvh"
+          type="auto"
+          scrollbars="y"
+          offsetScrollbars="present"
           data-srs-reader
           data-lookup-actions
           style={{
             borderTop: "1px solid var(--mantine-color-default-border)",
             flexShrink: 0,
-            maxHeight: "60dvh",
-            overflowY: "auto",
           }}
         >
-          <Group grow wrap="nowrap" align="stretch" gap={4} flex={1} miw={0}>
-            <Button
-              disabled={busy}
-              onClick={() => void (canForget ? forget() : act())}
-              variant="light"
-              px={4}
-              miw={0}
-              flex={1}
-            >
-              {t(canForget ? "forget" : "mine_word")}
-            </Button>
-            <Button
-              aria-pressed={!!saved?.known}
-              disabled={busy}
-              onClick={() => void toggleMastery()}
-              variant="light"
-              px={4}
-              miw={0}
-              flex={1}
-            >
-              {saved?.known ? t("unmaster") : t("master")}
-            </Button>
-            {!saved?.known && !reviewed && saved?.suspended && cardId && (
+          <Flex
+            direction={settings.onlyAgainGood ? "row" : "column"}
+            gap={settings.onlyAgainGood ? 4 : "xs"}
+            p="sm"
+          >
+            <Group grow wrap="nowrap" align="stretch" gap={4} flex={1} miw={0}>
               <Button
-                onClick={() =>
-                  void vocabularyClient({
-                    action: "suspend",
-                    cardId,
-                    value: false,
-                  }).then(reload)
-                }
+                disabled={busy}
+                onClick={() => void (canForget ? forget() : act())}
                 variant="light"
                 px={4}
                 miw={0}
                 flex={1}
               >
-                <Play aria-hidden="true" size={16} /> {t("resume")}
+                {t(canForget ? "forget" : "mine_word")}
               </Button>
-            )}
-            {lastReview && (
               <Button
-                title={notice}
-                aria-label={t("undo")}
+                aria-pressed={!!saved?.known}
                 disabled={busy}
-                onClick={() => void undo()}
+                onClick={() => void toggleMastery()}
                 variant="light"
                 px={4}
                 miw={0}
                 flex={1}
               >
-                <Undo2 aria-hidden="true" size={16} /> {t("cancel")}
+                {saved?.known ? t("unmaster") : t("master")}
               </Button>
+              {!saved?.known && !reviewed && saved?.suspended && cardId && (
+                <Button
+                  onClick={() =>
+                    void vocabularyClient({
+                      action: "suspend",
+                      cardId,
+                      value: false,
+                    }).then(reload)
+                  }
+                  variant="light"
+                  px={4}
+                  miw={0}
+                  flex={1}
+                >
+                  <Play aria-hidden="true" size={16} /> {t("resume")}
+                </Button>
+              )}
+              {lastReview && (
+                <Button
+                  title={notice}
+                  aria-label={t("undo")}
+                  disabled={busy}
+                  onClick={() => void undo()}
+                  variant="light"
+                  px={4}
+                  miw={0}
+                  flex={1}
+                >
+                  <Undo2 aria-hidden="true" size={16} /> {t("cancel")}
+                </Button>
+              )}
+            </Group>
+            {!saved?.known && !reviewed && !saved?.suspended && (
+              <Box flex={1} miw={0}>
+                <Ratings
+                  compact
+                  times={times}
+                  disabled={busy}
+                  onlyAgainGood={settings.onlyAgainGood}
+                  onGrade={(rating) => void act(rating)}
+                />
+              </Box>
             )}
-          </Group>
-          {!saved?.known && !reviewed && !saved?.suspended && (
-            <Box flex={1} miw={0}>
-              <Ratings
-                compact
-                times={times}
-                disabled={busy}
-                onlyAgainGood={settings.onlyAgainGood}
-                onGrade={(rating) => void act(rating)}
-              />
-            </Box>
-          )}
-        </Flex>
+          </Flex>
+        </ScrollArea.Autosize>
       )}
     </Stack>
   );

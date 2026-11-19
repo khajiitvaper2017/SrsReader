@@ -1,4 +1,4 @@
-import { Badge, Group, Popover, Stack, Text } from "@mantine/core";
+import { Badge, Group, Popover, ScrollArea, Stack, Text } from "@mantine/core";
 import { harmonicRank, wordFrequencies } from "@/dictionaries/frequency";
 import type { LookupWord } from "@/dictionaries/model";
 import { useChanges } from "@/shared/hooks/useChanges";
@@ -58,21 +58,28 @@ export function FrequencyBadge({
         data-srs-reader
         maw="calc(100vw - 8px)"
         mah="calc(100dvh - 8px)"
-        style={{ overflowY: "auto" }}
+        display="flex"
       >
-        <Stack>
-          {rows.map((row) => (
-            <Group key={row.title} justify="space-between">
-              <span title={row.title}>{row.title}</span>
-              <strong>{number(row.rank)}</strong>
-            </Group>
-          ))}
-          {rows.length > 1 && (
-            <Text variant="supporting">
-              {t("combined_using_the_harmonic_mean")}
-            </Text>
-          )}
-        </Stack>
+        <ScrollArea.Autosize
+          type="auto"
+          scrollbars="y"
+          offsetScrollbars="present"
+          viewportProps={{ tabIndex: 0 }}
+        >
+          <Stack>
+            {rows.map((row) => (
+              <Group key={row.title} justify="space-between">
+                <span title={row.title}>{row.title}</span>
+                <strong>{number(row.rank)}</strong>
+              </Group>
+            ))}
+            {rows.length > 1 && (
+              <Text variant="supporting">
+                {t("combined_using_the_harmonic_mean")}
+              </Text>
+            )}
+          </Stack>
+        </ScrollArea.Autosize>
       </Popover.Dropdown>
     </Popover>
   );

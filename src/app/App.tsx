@@ -6,6 +6,7 @@ import {
   Container,
   Drawer,
   NavLink,
+  ScrollArea,
   Stack,
   useMantineTheme,
 } from "@mantine/core";
@@ -186,27 +187,33 @@ export function App() {
         )}
         {!reviewing && !setup && (
           <>
-            <AppShell.Navbar
-              p="md"
-              visibleFrom="md"
-              style={{ overflowY: "auto" }}
-            >
-              <Anchor
-                href="#review"
-                underline="never"
-                c="inherit"
-                mb="md"
-                mih={32}
+            <AppShell.Navbar visibleFrom="md">
+              <AppShell.Section
+                grow
+                component={ScrollArea}
+                type="auto"
+                scrollbars="y"
               >
-                <Logo small />
-              </Anchor>
-              {navigation()}
+                <Stack p="md" gap={0}>
+                  <Anchor
+                    href="#review"
+                    underline="never"
+                    c="inherit"
+                    mb="md"
+                    mih={32}
+                  >
+                    <Logo small />
+                  </Anchor>
+                  {navigation()}
+                </Stack>
+              </AppShell.Section>
             </AppShell.Navbar>
             <Drawer
               opened={navigationOpen && !desktop}
               onClose={() => setNavigationOpen(false)}
               title={<Logo small />}
               closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
+              scrollAreaComponent={ScrollArea.Autosize}
               size="min(18rem, calc(100vw - 2.75rem))"
               padding="md"
               onExitTransitionEnd={() => {

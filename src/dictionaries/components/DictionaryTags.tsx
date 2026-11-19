@@ -2,6 +2,7 @@ import {
   Accordion,
   Badge,
   Checkbox,
+  ScrollArea,
   Stack,
   Text,
   TextInput,
@@ -38,27 +39,34 @@ export function DictionaryTags({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <Stack mah={240} style={{ overflowY: "auto" }}>
-              {entries.map(({ name, description }) => (
-                <Checkbox
-                  key={name}
-                  label={<Badge>{name}</Badge>}
-                  description={description !== name ? description : undefined}
-                  aria-label={name}
-                  checked={settings.ignoredTags.includes(name)}
-                  onChange={(event) =>
-                    onChange({
-                      ignoredTags: event.target.checked
-                        ? [...settings.ignoredTags, name]
-                        : settings.ignoredTags.filter((tag) => tag !== name),
-                    })
-                  }
-                />
-              ))}
-              {!entries.length && (
-                <Text variant="supporting">{t("no_matching_tags")}</Text>
-              )}
-            </Stack>
+            <ScrollArea.Autosize
+              mah={240}
+              type="auto"
+              scrollbars="y"
+              offsetScrollbars="present"
+            >
+              <Stack>
+                {entries.map(({ name, description }) => (
+                  <Checkbox
+                    key={name}
+                    label={<Badge>{name}</Badge>}
+                    description={description !== name ? description : undefined}
+                    aria-label={name}
+                    checked={settings.ignoredTags.includes(name)}
+                    onChange={(event) =>
+                      onChange({
+                        ignoredTags: event.target.checked
+                          ? [...settings.ignoredTags, name]
+                          : settings.ignoredTags.filter((tag) => tag !== name),
+                      })
+                    }
+                  />
+                ))}
+                {!entries.length && (
+                  <Text variant="supporting">{t("no_matching_tags")}</Text>
+                )}
+              </Stack>
+            </ScrollArea.Autosize>
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
