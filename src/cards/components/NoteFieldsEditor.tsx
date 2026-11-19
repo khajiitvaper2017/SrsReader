@@ -18,6 +18,7 @@ function FieldsForm({
   onSaved?: () => void;
 }) {
   const [fields, setFields] = useState(note.fields);
+  const [hint, setHint] = useState(note.hint ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const labels: Record<string, string> = {
@@ -36,7 +37,7 @@ function FieldsForm({
     setBusy(true);
     setError("");
     try {
-      await saveNoteFields(note.id, fields);
+      await saveNoteFields(note.id, fields, hint);
       await rpc({ action: "invalidate" });
       onSaved?.();
     } catch (error) {
@@ -49,13 +50,31 @@ function FieldsForm({
     <Stack gap="xs">
       <Text variant="supporting">{t("card_fields_html_help")}</Text>
       <ErrorBox error={error} />
+      {noteType.bindings.hint === undefined && (
+        <Textarea
+          label={t("card_field_hint")}
+          description={t("card_field_hint_help")}
+          value={hint}
+          disabled={busy}
+          autosize
+          maxRows={5}
+          onChange={(event) => setHint(event.currentTarget.value)}
+        />
+      )}
       {noteType.fields.map((field, index) => (
         <Textarea
           key={index}
           label={
-            noteType.id.startsWith("reader:")
-              ? labels[field.name] || field.label || field.name
-              : field.label || field.name
+            index === noteType.bindings.hint
+              ? t("card_field_hint")
+              : noteType.id.startsWith("reader:")
+                ? labels[field.name] || field.label || field.name
+                : field.label || field.name
+          }
+          description={
+            index === noteType.bindings.hint
+              ? t("card_field_hint_help")
+              : undefined
           }
           value={fields[index] || ""}
           disabled={busy}
@@ -72,7 +91,10 @@ function FieldsForm({
       ))}
       <Button
         loading={busy}
-        disabled={JSON.stringify(fields) === JSON.stringify(note.fields)}
+        disabled={
+          hint.trim() === (note.hint ?? "") &&
+          JSON.stringify(fields) === JSON.stringify(note.fields)
+        }
         onClick={() => void save()}
       >
         {t("save")}

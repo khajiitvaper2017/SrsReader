@@ -11,6 +11,8 @@ import { sqlite } from "@/anki/sqlite";
 import { stringifyJson } from "@/anki/json";
 import type { RawObject } from "@/anki/model";
 import type { Card, CardAsset, Note, NoteType } from "@/cards/model";
+import { escapeHtml } from "@/cards/snapshot";
+import { cardHintHtml } from "@/cards/template";
 import { parseHTML } from "linkedom";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
@@ -182,6 +184,29 @@ function runtimeFields(type: NoteType) {
       !type.fields.some((field) => field.name === name) &&
       new RegExp(`\\{\\{\\s*[#^/]?\\s*${name}\\s*\\}\\}`).test(templates),
   );
+}
+
+function exportHint(type: NoteType): NoteType {
+  let name = "SrsHint";
+  for (
+    let suffix = 2;
+    type.fields.some((field) => field.name === name);
+    suffix++
+  )
+    name = `SrsHint${suffix}`;
+  const hint = `{{#${name}}}${cardHintHtml(`{{${name}}}`)}{{/${name}}}`;
+  return {
+    ...type,
+    fields: [...type.fields, { name }],
+    bindings: { ...type.bindings, hint: type.fields.length },
+    templates: type.templates.map((template) => ({
+      ...template,
+      front: hint + template.front,
+      back: /\{\{\s*FrontSide\s*\}\}/.test(template.back)
+        ? template.back
+        : hint + template.back,
+    })),
+  };
 }
 
 function rawModel(type: NoteType, id: bigint, names: Map<string, string>) {
@@ -419,7 +444,17 @@ export async function exportPackage(
     const noteMap = new Map<string, bigint>(),
       cardMap = new Map<string, bigint>(),
       deckMap = new Map<string | null, bigint>();
-    const typeMap = new Map(snapshot.types.map((type) => [type.id, type]));
+    const hintedTypes = new Set(
+      snapshot.notes.filter((note) => note.hint).map((note) => note.noteTypeId),
+    );
+    const typeMap = new Map(
+      snapshot.types.map((type) => [
+        type.id,
+        type.bindings.hint === undefined && hintedTypes.has(type.id)
+          ? exportHint(type)
+          : type,
+      ]),
+    );
     const notes = new Map(snapshot.notes.map((note) => [note.id, note]));
     const created = Math.floor(Date.now() / 86400000) * 86400;
     const now = Date.now(),
@@ -510,6 +545,8 @@ export async function exportPackage(
         const fields = note.fields.map((field) =>
           renameReferences(field, names),
         );
+        if (type.bindings.hint === fields.length)
+          fields.push(escapeHtml(note.hint ?? ""));
         for (const name of runtimeFields(type))
           fields.push(
             name === "SrsSentenceFront"

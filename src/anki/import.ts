@@ -168,6 +168,9 @@ async function mergeConverted(
       id,
       noteTypeId: prepared.noteType.id,
       fields: prepared.note.fields,
+      hint:
+        [...new Set(group.flatMap((note) => note.hint || []))].join("\n") ||
+        previous?.hint,
       importedGenders: [
         ...new Set(group.flatMap((note) => note.importedGenders ?? [])),
       ],
@@ -425,6 +428,7 @@ export async function importPackage(
           noteTypeId: noteType.id,
           language: options.language,
           fields: values,
+          hint: previous?.hint,
           tags: [],
           importedPartsOfSpeech: ankiPartOfSpeech(values, bindings),
           mediaNamespace: namespace,

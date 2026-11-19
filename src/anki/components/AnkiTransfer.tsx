@@ -39,6 +39,7 @@ const roles: (keyof FieldBindings)[] = [
   "reading",
   "definitions",
   "pos",
+  "hint",
   "sentence",
   "sentenceFurigana",
   "translation",

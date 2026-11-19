@@ -1196,6 +1196,8 @@
   "card_edit": "Edit note",
   "card_viewer_title": "Study card",
   "card_fields_html_help": "Edit the card fields. Values can contain HTML, and fields can be empty. Changes apply to every card made from this note.",
+  "card_field_hint": "Hint",
+  "card_field_hint_help": "Shows on the front and back of the card.",
   "card_media_binding_missing": "This note type has no field for this media. Choose a matching field when importing.",
   "card_render_error": "The card could not be displayed.",
   "card_field_schema_fixed": "Use the note field editor to change fields in an imported note.",

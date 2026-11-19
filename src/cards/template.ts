@@ -160,14 +160,22 @@ function renderTemplate(
   {
     ordinal = 0,
     revealed = false,
-  }: { ordinal?: number; revealed?: boolean } = {},
-): string {
+    hintField,
+    frontHasHint = false,
+  }: {
+    ordinal?: number;
+    revealed?: boolean;
+    hintField?: string;
+    frontHasHint?: boolean;
+  } = {},
+) {
   const tokens = template.split(/(\{\{[\s\S]*?\}\})/g);
   const field = (name: string) =>
     Object.hasOwn(fields, name) ? fields[name] || "" : "";
   let position = 0;
-  function section(end?: string): string {
+  function section(end?: string): { html: string; hasHint: boolean } {
     let html = "";
+    let hasHint = false;
     while (position < tokens.length) {
       const token = tokens[position++]!;
       if (!token.startsWith("{{")) {
@@ -177,14 +185,17 @@ function renderTemplate(
       if (!token.endsWith("}}")) throw new Error(t("card_template_invalid"));
       const tag = token.slice(2, -2).trim();
       if (tag.startsWith("/")) {
-        if (tag.slice(1).trim() === end) return html;
+        if (tag.slice(1).trim() === end) return { html, hasHint };
         throw new Error(t("card_template_invalid"));
       }
       if (tag.startsWith("#") || tag.startsWith("^")) {
         const name = tag.slice(1).trim();
         const content = section(name);
         const present = fieldHasContent(field(name));
-        if (present !== tag.startsWith("^")) html += content;
+        if (present !== tag.startsWith("^")) {
+          html += content.html;
+          hasHint ||= content.hasHint;
+        }
         continue;
       }
       const parts = tag.split(":");
@@ -211,11 +222,18 @@ function renderTemplate(
           value = `<button type="button" data-srs-tts="${escapeHtml(fieldText(value))}" data-lang="${escapeHtml(filter.match(/^tts\s+(\S+)/)?.[1]?.replaceAll("_", "-") || "")}" aria-label="${escapeHtml(name)}">▶</button>`;
       }
       html += value;
+      hasHint ||=
+        !!value &&
+        (name === hintField || (name === "FrontSide" && frontHasHint));
     }
     if (end !== undefined) throw new Error(t("card_template_invalid"));
-    return html;
+    return { html, hasHint };
   }
   return section();
+}
+
+export function cardHintHtml(value: string): string {
+  return `<div class="srs-card-hint" style="text-align:center;color:var(--mantine-color-dimmed,currentColor);margin-block:var(--mantine-spacing-xs,0.5rem);white-space:pre-wrap">${value}</div>`;
 }
 
 export function renderCard(
@@ -303,13 +321,19 @@ export function renderCard(
       }
     }
   }
-  const context = { ordinal: card.templateOrdinal, revealed: false };
+  const hintIndex = noteType.bindings.hint;
+  const hintField =
+    hintIndex === undefined ? undefined : noteType.fields[hintIndex]?.name;
+  const context = { ordinal: card.templateOrdinal, hintField };
   const front = renderTemplate(template.front, fields, context);
-  return revealed
+  const side = revealed
     ? renderTemplate(
         template.back,
-        { FrontSide: front, ...fields },
-        { ...context, revealed: true },
+        { FrontSide: front.html, ...fields },
+        { ...context, revealed: true, frontHasHint: front.hasHint },
       )
     : front;
+  if (side.hasHint) return side.html;
+  const hint = hintField ? fieldText(fields[hintField] ?? "") : note.hint;
+  return hint ? cardHintHtml(escapeHtml(hint)) + side.html : side.html;
 }

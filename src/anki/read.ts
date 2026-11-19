@@ -416,6 +416,7 @@ function suggestedBindings(
     definitions:
       /^(meaning|definition|definitions|back|значення|значение|訳|意味|translation|english|angielski|znaczenie)$/iu,
     pos: /^(pos|part[ _-]?of[ _-]?speech|wortart|частина мови)$/iu,
+    hint: /^(srshint\d*|hint|disambig(?:uation)?|підказка)$/iu,
     sentence:
       /^(sentence|example|sentence[ _-]?text|пример|приклад|例文|文|zdanie)$/iu,
     sentenceFurigana:

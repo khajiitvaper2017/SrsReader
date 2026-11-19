@@ -178,7 +178,11 @@ export async function ensureReaderCard(
   );
 }
 
-export async function saveNoteFields(noteId: string, fields: string[]) {
+export async function saveNoteFields(
+  noteId: string,
+  fields: string[],
+  hint: string,
+) {
   await srsWrite(() =>
     db.transaction("rw", [db.notes, db.noteTypes], async () => {
       const note = await db.notes.get(noteId);
@@ -189,6 +193,7 @@ export async function saveNoteFields(noteId: string, fields: string[]) {
       await db.notes.put({
         ...note,
         fields,
+        hint: hint.trim() || undefined,
         version: note.version + 1,
         updated: Date.now(),
       });

@@ -3,6 +3,7 @@ import { readerNote } from "@/cards/defaults";
 import type { FieldBindings } from "@/cards/model";
 import { germanNounField } from "@/cards/noun-article";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
+import { fieldText } from "@/cards/template";
 import { lookup } from "@/dictionaries/resolve";
 import {
   matchesImportedGender,
@@ -130,6 +131,11 @@ export function convertedAnkiNote(
     word.language === "de" ? germanNounField(word.lemma).lemma : word.lemma;
   const { note, noteType } = readerNote({ ...word, lemma }, undefined, extra);
   note.mediaNamespace = namespace;
+  if (bindings.hint !== undefined)
+    note.hint =
+      fieldText(
+        (values[bindings.hint] ?? "").replace(/\[sound:[^\]]*\]/g, ""),
+      ) || undefined;
   note.importedPartsOfSpeech = ankiPartOfSpeech(values, bindings);
   for (const role of [
     "sentence",
