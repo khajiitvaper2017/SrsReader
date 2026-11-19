@@ -11,6 +11,8 @@ export default defineConfig(
       "dicts/**",
       "graft/**",
       "public/**",
+      "site/dist/**",
+      "site/.prerender/**",
     ],
   },
   {

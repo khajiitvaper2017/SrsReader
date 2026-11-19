@@ -33,7 +33,7 @@ export default defineConfig({
   srcDir: "src",
   entrypointsDir: "../entrypoints",
   modules: ["@wxt-dev/module-react"],
-  zip: { excludeSources: ["dicts/**", "graft/**"] },
+  zip: { excludeSources: ["dicts/**", "graft/**", "site/**"] },
   vite: () => ({
     resolve: {
       alias: [

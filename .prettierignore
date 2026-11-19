@@ -7,4 +7,6 @@
 /graft/
 /public/licenses/
 /public/morphology/
+/site/dist/
+/site/.prerender/
 /pnpm-lock.yaml
