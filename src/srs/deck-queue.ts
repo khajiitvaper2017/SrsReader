@@ -4,6 +4,7 @@ import { wordsInDeck, type studyGroups } from "@/srs/deck-words";
 import { deckPreferences, type SchedulingPreferences } from "@/srs/preferences";
 import type { QueueEntry } from "@/srs/queue-entries";
 import type { dailyCounts } from "@/srs/workload";
+import { minedCardDeferredUntil } from "@/srs/study-day";
 
 type Counts = Awaited<ReturnType<typeof dailyCounts>>;
 type Budget = { fresh: number; reviews: number };
@@ -22,13 +23,17 @@ export function deckQueueScope(
     deckId === "mined" ? minedSettings : groups.decks[index]?.reviewSettings;
   const settings = { ...deckPreferences(defaults, overrides), ...limits };
   const entries = wordsInDeck(groups, deckId);
-  const words = entries.filter(
+  const active = entries.filter(
     (word) =>
       word.card &&
       !word.known &&
       !word.suspended &&
       (word.buriedUntil ?? 0) <= now &&
       !daily.buried.has(word.id),
+  );
+  const words = active.filter(
+    (word) =>
+      word.card!.reps || !minedCardDeferredUntil(word.minedAt, settings, now),
   );
   function tally(cards: QueueEntry[]) {
     const result = { introduced: 0, reviews: 0 };
@@ -91,5 +96,12 @@ export function deckQueueScope(
     if (consume) for (const cap of caps) cap[kind]--;
     return true;
   }
-  return { settings, entries, words, counts, withinDeckLimit };
+  return {
+    settings,
+    entries,
+    words,
+    counts,
+    withinDeckLimit,
+    deferredMined: active.length - words.length,
+  };
 }

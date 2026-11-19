@@ -72,6 +72,7 @@ export const cardSchema = z.object({
     ])
     .optional(),
   buriedUntil: z.number().finite().optional(),
+  minedAt: z.number().finite().optional(),
   leech: z.boolean(),
   retentionOverride: z.number().min(0.7).max(0.99).nullable(),
   srsVersion: z.number().int().nonnegative(),

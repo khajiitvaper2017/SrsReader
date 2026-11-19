@@ -30,14 +30,8 @@ export async function reviewQueue(
   const saved = await queueEntries(language, selectedDecks);
   const groups = studyGroups(saved, decks);
   const daily = await dailyCounts(defaults, now);
-  const { settings, counts, words, withinDeckLimit } = deckQueueScope(
-    defaults,
-    groups,
-    daily,
-    now,
-    deckId,
-    limits,
-  );
+  const { settings, counts, words, withinDeckLimit, deferredMined } =
+    deckQueueScope(defaults, groups, daily, now, deckId, limits);
   const deckOrder = new Map(
     [
       groups.mined,
@@ -91,6 +85,7 @@ export async function reviewQueue(
   );
   return {
     ...queue,
+    deferredMined,
     remaining: queue.words.length,
     words: details.map(({ document: _document, ...word }) => word),
     document: details[0]

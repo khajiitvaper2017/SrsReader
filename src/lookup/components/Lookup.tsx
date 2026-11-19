@@ -121,6 +121,7 @@ function LookupEntry({
     editing,
     setEditing,
     saved,
+    minedUntil,
     times,
     error,
     setError,
@@ -709,17 +710,24 @@ function LookupEntry({
                 </Button>
               )}
             </Group>
-            {!saved?.known && !reviewed && !saved?.suspended && (
-              <Box flex={1} miw={0}>
-                <Ratings
-                  compact
-                  times={times}
-                  disabled={busy}
-                  onlyAgainGood={settings.onlyAgainGood}
-                  onGrade={(rating) => void act(rating)}
-                />
-              </Box>
-            )}
+            {!saved?.known &&
+              !reviewed &&
+              !saved?.suspended &&
+              (minedUntil ? (
+                <Text variant="supporting" role="status" flex={1}>
+                  {t("mined_card_waits")}
+                </Text>
+              ) : (
+                <Box flex={1} miw={0}>
+                  <Ratings
+                    compact
+                    times={times}
+                    disabled={busy}
+                    onlyAgainGood={settings.onlyAgainGood}
+                    onGrade={(rating) => void act(rating)}
+                  />
+                </Box>
+              ))}
           </Flex>
         </ScrollArea.Autosize>
       )}

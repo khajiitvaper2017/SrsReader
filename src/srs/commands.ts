@@ -150,6 +150,7 @@ async function execute(request: Request, settings: Settings) {
               await resolved(term, request.id, request.occurrence),
             ),
             encounter,
+            "review",
           );
           cardId = mined.cardId!;
         }

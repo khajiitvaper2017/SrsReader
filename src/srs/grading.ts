@@ -9,6 +9,7 @@ import { cacheContext } from "@/examples/sentences";
 import { reviewCard } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
 import { cardDeckPreferences } from "@/srs/preferences";
+import { minedCardDeferredUntil } from "@/srs/study-day";
 
 export async function grade(
   word: ReviewWord,
@@ -31,6 +32,11 @@ export async function grade(
     before,
     deck?.reviewSettings,
   );
+  if (
+    !before.schedule?.reps &&
+    minedCardDeferredUntil(before.minedAt, settings)
+  )
+    throw new Error(t("mined_card_waits"));
   const saved = structuredClone(before);
   if (source === "reading" && word.wordId)
     await db.vocabulary.update(word.wordId, { mined: true });

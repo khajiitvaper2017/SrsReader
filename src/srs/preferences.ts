@@ -92,6 +92,7 @@ export const srsPreferencesSchema = z.object({
   rankSources: z.record(z.string(), z.boolean()).default({}),
   onlyAgainGood: z.boolean().default(false),
   autoBuryFailed: z.boolean().default(false),
+  delayMinedCards: z.boolean().default(false),
   newLimit: z.number().int().min(0).max(10000).default(20),
   missingFrequency: z.enum(["last", "random"]).default("last"),
 });

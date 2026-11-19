@@ -81,7 +81,7 @@ export async function studyOverview(settings: Settings) {
           fresh: queue.fresh,
           learning: queue.learning + queue.relearning,
           due: queue.reviews,
-          total: scope.words.length,
+          total: scope.words.length + scope.deferredMined,
           wordCount: new Set(
             scope.entries.map((word) => word.wordId || word.noteId),
           ).size,

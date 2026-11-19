@@ -114,6 +114,14 @@ export function ReviewSettings({
       <Stack>
         <Title order={2}>{t("settings_daily_study")}</Title>
         <Text variant="supporting">{t("study_overview_help")}</Text>
+        <Switch
+          label={t("delay_mined_cards")}
+          description={t("delay_mined_cards_help")}
+          checked={settings.delayMinedCards}
+          onChange={(event) =>
+            void update({ delayMinedCards: event.currentTarget.checked })
+          }
+        />
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <NumberInput
             label={t("new_words_per_day")}

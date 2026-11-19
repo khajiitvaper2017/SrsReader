@@ -23,6 +23,7 @@ import { notifications } from "@mantine/notifications";
 import { notifyAutoBury } from "@/srs/auto-bury-notice";
 import { useReviewClock } from "@/srs/hooks/useReviewClock";
 import { useReviewControls } from "@/srs/hooks/useReviewControls";
+import { minedCardDeferredUntil } from "@/srs/study-day";
 import { vocabularyClient } from "@/vocabulary/client";
 import {
   personalWordLemma,
@@ -106,6 +107,12 @@ export function useLookupWord({
       : undefined;
   const [preview, setPreview] = useState<{ id: string; times: number[] }>();
   const times = preview?.id === selectionKey ? preview.times : [];
+  const selectedCard = saved?.linkedCards.find(
+    (card) => card.id === saved.cardId,
+  );
+  const minedUntil = selectedCard?.schedule?.reps
+    ? undefined
+    : minedCardDeferredUntil(selectedCard?.minedAt, settings);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -386,6 +393,11 @@ export function useLookupWord({
     "collection",
   ]);
   useEffect(() => {
+    if (minedUntil === undefined) return;
+    const timer = setTimeout(reload, Math.max(0, minedUntil - Date.now()));
+    return () => clearTimeout(timer);
+  }, [minedUntil, reload]);
+  useEffect(() => {
     setReviewed(false);
     setLastReview("");
     setNotice("");
@@ -414,7 +426,8 @@ export function useLookupWord({
     !busy &&
     !saved?.known &&
     !saved?.suspended &&
-    !saved?.linkedCards.find((card) => card.id === saved.cardId)?.suspended &&
+    !selectedCard?.suspended &&
+    !minedUntil &&
     (!saved?.linkedCards.length || !!saved.cardId || !!context) &&
     !reviewed;
   useReviewControls({
@@ -462,7 +475,7 @@ export function useLookupWord({
       !word ||
       busyRef.current ||
       preview?.id !== selectionKey ||
-      (rating && reviewed)
+      (rating && (reviewed || minedUntil))
     )
       return;
     busyRef.current = true;
@@ -644,6 +657,7 @@ export function useLookupWord({
     editing,
     setEditing,
     saved,
+    minedUntil,
     times,
     error,
     setError,

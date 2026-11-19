@@ -223,7 +223,11 @@ async function updateSavedFields(id: string) {
     await refreshDictionaryFields(id);
 }
 
-export async function mine(word: LookupWord, encounter?: CardEncounter) {
+export async function mine(
+  word: LookupWord,
+  encounter?: CardEncounter,
+  source: "save" | "review" = "save",
+) {
   return db.transaction("rw", wordWriteTables(), async () => {
     await cacheContext(word, encounter?.context);
     const saved = (await db.vocabulary.get(word.id)) || freshWord(word);
@@ -239,7 +243,11 @@ export async function mine(word: LookupWord, encounter?: CardEncounter) {
     saved.updated = Date.now();
     saved.version++;
     await db.vocabulary.put(saved);
-    const card = await ensureReaderCard(saved, encounter);
+    const card = await ensureReaderCard(
+      saved,
+      encounter,
+      source === "save" ? saved.updated : undefined,
+    );
     if (!card.schedule && !saved.known)
       await db.cards.update(card.id, {
         schedule: emptySchedule(),

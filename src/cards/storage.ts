@@ -113,6 +113,7 @@ export async function selectReadingCard(id: string, cardId: string) {
 export async function ensureReaderCard(
   word: Vocabulary,
   encounter?: CardEncounter,
+  minedAt?: number,
 ): Promise<Card> {
   const selected = await readingCard(word.id, undefined, encounter);
   if (selected) return selected;
@@ -148,6 +149,7 @@ export async function ensureReaderCard(
     noteId: prepared.note.id,
     templateOrdinal: 0,
     deckId: null,
+    minedAt,
     language: word.language,
     schedule: word.known ? null : emptySchedule(now),
     suspended: false,

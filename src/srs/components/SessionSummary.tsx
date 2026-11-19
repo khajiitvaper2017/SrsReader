@@ -86,6 +86,11 @@ export function SessionSummary({
               : t("no_saved_words")}
         </Title>
         <ErrorBox error={error} />
+        {!!queue.deferredMined && (
+          <Text variant="supporting" ta="center">
+            {t("mined_cards_waiting", { count: queue.deferredMined })}
+          </Text>
+        )}
         {!!data?.calendar.current && (
           <Group justify="center" gap="xs">
             <ThemeIcon variant="light" color="orange">

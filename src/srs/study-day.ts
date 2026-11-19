@@ -1,3 +1,5 @@
+import type { SchedulingPreferences } from "@/srs/preferences";
+
 export const DAY = 86400000;
 
 export function studyDay(time: number, rolloverHour: number) {
@@ -16,4 +18,15 @@ export function dayStart(day: number, rolloverHour: number) {
     date.getUTCDate(),
     rolloverHour,
   ).getTime();
+}
+
+export function minedCardDeferredUntil(
+  minedAt: number | undefined,
+  settings: Pick<SchedulingPreferences, "delayMinedCards" | "rolloverHour">,
+  now = Date.now(),
+) {
+  if (!settings.delayMinedCards || minedAt === undefined) return;
+  const { rolloverHour } = settings;
+  const available = dayStart(studyDay(minedAt, rolloverHour) + 1, rolloverHour);
+  if (available > now) return available;
 }
