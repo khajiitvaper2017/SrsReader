@@ -62,19 +62,13 @@ async function execute(request: Request, settings: Settings) {
     await requireScheduledModel(settings);
   switch (request.action) {
     case "bury": {
-      const card = await db.cards.get(request.cardId);
-      if (!card) return;
       const now = Date.now();
       const buriedUntil = dayStart(
         studyDay(now, settings.rolloverHour) + 1,
         settings.rolloverHour,
       );
-      await (
-        request.siblings
-          ? db.cards.where("noteId").equals(card.noteId)
-          : db.cards.where("id").equals(card.id)
-      ).modify({ buriedUntil });
-      await notify(undefined, "collection");
+      if (await db.cards.update(request.cardId, { buriedUntil }))
+        await notify(undefined, "collection");
       return;
     }
     case "studyOverview":

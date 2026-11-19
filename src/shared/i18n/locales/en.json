@@ -1289,7 +1289,6 @@
   "sync_pending_other": "{{count}} study changes waiting to upload",
   "audio_card_recording": "Card recording",
   "bury_card": "Bury card until tomorrow",
-  "bury_note": "Bury all cards for this note until tomorrow",
   "auto_bury_failed": "Automatically bury repeatedly failed cards",
   "auto_bury_failed_help": "After three consecutive Again answers in one study day, hide the card until the next study day.",
   "sync_last_success": "Last successful sync: {{time}}",

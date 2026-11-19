@@ -24,11 +24,7 @@ export const requests = [
     version: z.number().int().nonnegative(),
   }),
   z.object({ action: z.literal("undo"), id: z.string() }),
-  z.object({
-    action: z.literal("bury"),
-    cardId: z.string(),
-    siblings: z.boolean().optional(),
-  }),
+  z.object({ action: z.literal("bury"), cardId: z.string() }),
   z.object({
     action: z.literal("queue"),
     currentCardId: z.string().optional(),

@@ -39,6 +39,7 @@ import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
 import {
   ArrowLeft,
+  CalendarClock,
   Check,
   Eye,
   Pause,
@@ -305,23 +306,17 @@ export function ReviewPage({
                 >
                   {t("suspend")}
                 </Menu.Item>
-                {[false, true].map((siblings) => (
-                  <Menu.Item
-                    key={String(siblings)}
-                    disabled={busy}
-                    onClick={() =>
-                      void srsClient({
-                        action: "bury",
-                        cardId: word.id,
-                        siblings,
-                      })
-                        .then(load)
-                        .catch((error: Error) => setError(error.message))
-                    }
-                  >
-                    {t(siblings ? "bury_note" : "bury_card")}
-                  </Menu.Item>
-                ))}
+                <Menu.Item
+                  leftSection={<CalendarClock aria-hidden size={16} />}
+                  disabled={busy}
+                  onClick={() =>
+                    void srsClient({ action: "bury", cardId: word.id })
+                      .then(load)
+                      .catch((error: Error) => setError(error.message))
+                  }
+                >
+                  {t("bury_card")}
+                </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           </Group>
