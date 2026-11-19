@@ -18,6 +18,7 @@ import {
   Input,
   Kbd,
   Menu,
+  Modal,
   MultiSelect,
   Notification,
   NumberInput,
@@ -25,6 +26,7 @@ import {
   Pill,
   Pagination,
   Radio,
+  ScrollArea,
   Select,
   SimpleGrid,
   Stack,
@@ -47,6 +49,7 @@ export function createUITheme(
 ) {
   const oled = settings.theme === "oled";
   const controlSize = popup ? "xs" : "md";
+  const dialogHeading = popup ? "h2" : "h3";
   return createTheme({
     primaryColor: "accent",
     primaryShade: 6,
@@ -101,6 +104,35 @@ export function createUITheme(
           },
         }),
     components: {
+      Modal: Modal.extend({
+        defaultProps: { scrollAreaComponent: ScrollArea.Autosize },
+        styles: {
+          content: {
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            padding: 0,
+          },
+          header: {
+            gap: "var(--mantine-spacing-sm)",
+            minHeight: 0,
+            paddingBlock: "var(--mantine-spacing-xs)",
+            borderBottom: "1px solid var(--mantine-color-default-border)",
+          },
+          title: {
+            fontFamily: "var(--mantine-font-family-headings)",
+            fontSize: `var(--mantine-${dialogHeading}-font-size)`,
+            fontWeight: `var(--mantine-${dialogHeading}-font-weight)`,
+            lineHeight: `var(--mantine-${dialogHeading}-line-height)`,
+            overflowWrap: "anywhere",
+          },
+          close: { flexShrink: 0 },
+          body: { paddingBlockStart: "var(--mantine-spacing-sm)" },
+        },
+      }),
+      ScrollAreaAutosize: ScrollArea.Autosize.extend({
+        defaultProps: { type: "auto" },
+      }),
       Notification: Notification.extend({
         defaultProps: {
           withBorder: true,

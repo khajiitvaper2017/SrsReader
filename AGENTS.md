@@ -95,6 +95,7 @@ Mantine, the shared theme in `src/shared/ui/theme.ts`, and existing shared UI pa
 - Use React refs for DOM measurement and scrolling. Use explicit data attributes for reader exclusions. Do not make behavior depend on presentation classes or Mantine's internal DOM structure.
 - Prevent accidental horizontal overflow. Let pages scroll vertically. Keep floating popups on screen and let long popup content scroll. Ensure menus and overlays work in their page or iframe.
 - Use Mantine `ScrollArea` for scrollable panels and `ScrollArea.Autosize` for content with a maximum height. For vertical scrolling, use `type="auto"`, `scrollbars="y"`, and `offsetScrollbars` when the scrollbar needs its own space. Use `viewportRef` to read, reset, or restore the scroll position. Keep native scrolling for whole pages and controls that manage their own overflow, such as menus and color pickers.
+- Use the shared theme's title, header, and `ScrollArea.Autosize` defaults for `Modal` dialogs. Use `scrollAreaComponent={ScrollArea.Autosize}` for drawers.
 - Preserve labels, keyboard access, visible focus, numeric limits, empty values, loading states, disabled states, and save errors. Give icon-only actions accessible names.
 - Keep all UI text localized in English and Ukrainian. Allow room for longer translations and narrow screens.
 - Use Mantine MCP and skills when relevant.
