@@ -4,6 +4,7 @@ import {
   Flex,
   Group,
   Loader,
+  ScrollArea,
   Select,
   SimpleGrid,
   Stack,
@@ -66,6 +67,12 @@ export function WordsPage({
   });
   const { query, setQuery, filter, setFilter, error, word, total } = controller;
   const { overview, decksReady, loading } = controller;
+  const paneScroll = {
+    type: "auto",
+    scrollbars: desktop ? "y" : false,
+    offsetScrollbars: desktop ? "y" : false,
+    viewportProps: desktop ? { tabIndex: 0 } : undefined,
+  } as const;
   useLayoutEffect(() => {
     if (desktop) {
       detailRef.current?.scrollTo(0, 0);
@@ -233,13 +240,13 @@ export function WordsPage({
         )}
       </Box>
       <Flex gap="md" flex={1} mih={0} direction={{ base: "column", md: "row" }}>
-        <Box
+        <ScrollArea
+          {...paneScroll}
           ref={listRef}
           display={!desktop && selected ? "none" : undefined}
           flex={selected ? 5 : 1}
           miw={0}
           mih={0}
-          style={{ overflowY: desktop ? "auto" : undefined }}
         >
           {!loading && !error && !total ? (
             <Empty title={t("no_words_found")}>
@@ -252,14 +259,14 @@ export function WordsPage({
           ) : (
             <WordList settings={settings} controller={controller} />
           )}
-        </Box>
+        </ScrollArea>
         {selected && (
-          <Box
-            ref={detailRef}
+          <ScrollArea
+            {...paneScroll}
+            viewportRef={detailRef}
             flex={7}
             miw={0}
             mih={0}
-            style={{ overflowY: desktop ? "auto" : undefined }}
           >
             {word ? (
               <WordDetails
@@ -270,7 +277,7 @@ export function WordsPage({
             ) : (
               !error && <Loader aria-label={t("loading")} />
             )}
-          </Box>
+          </ScrollArea>
         )}
       </Flex>
     </Stack>
