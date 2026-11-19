@@ -1,7 +1,7 @@
 import { Button, Stack, Text, Textarea } from "@mantine/core";
 import { liveQuery } from "dexie";
 import { useEffect, useState } from "react";
-import type { Note, NoteType } from "@/cards/model";
+import { reviewAnswerMaxLength, type Note, type NoteType } from "@/cards/model";
 import { saveNoteFields } from "@/cards/storage";
 import { db } from "@/platform/database/db";
 import { t } from "@/shared/i18n/i18n";
@@ -19,6 +19,7 @@ function FieldsForm({
 }) {
   const [fields, setFields] = useState(note.fields);
   const [hint, setHint] = useState(note.hint ?? "");
+  const [reviewAnswer, setReviewAnswer] = useState(note.reviewAnswer ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const labels: Record<string, string> = {
@@ -37,7 +38,7 @@ function FieldsForm({
     setBusy(true);
     setError("");
     try {
-      await saveNoteFields(note.id, fields, hint);
+      await saveNoteFields(note.id, { fields, hint, reviewAnswer });
       await rpc({ action: "invalidate" });
       onSaved?.();
     } catch (error) {
@@ -50,6 +51,16 @@ function FieldsForm({
     <Stack gap="xs">
       <Text variant="supporting">{t("card_fields_html_help")}</Text>
       <ErrorBox error={error} />
+      <Textarea
+        label={t("review_answer")}
+        description={t("review_answer_help")}
+        value={reviewAnswer}
+        disabled={busy}
+        maxLength={reviewAnswerMaxLength}
+        autosize
+        maxRows={5}
+        onChange={(event) => setReviewAnswer(event.currentTarget.value)}
+      />
       {noteType.bindings.hint === undefined && (
         <Textarea
           label={t("card_field_hint")}
@@ -93,6 +104,7 @@ function FieldsForm({
         loading={busy}
         disabled={
           hint.trim() === (note.hint ?? "") &&
+          reviewAnswer.trim() === (note.reviewAnswer ?? "") &&
           JSON.stringify(fields) === JSON.stringify(note.fields)
         }
         onClick={() => void save()}

@@ -9,7 +9,8 @@ import { SentenceTranslation } from "@/translation/components/SentenceTranslatio
 import type { ReadingContext } from "@/vocabulary/model";
 import { CardTools } from "@/cards/components/CardTools";
 import { ChevronRight, FilePenLine, RefreshCw } from "lucide-react";
-import { refreshNote } from "@/cards/storage";
+import { refreshNote, saveNoteFields } from "@/cards/storage";
+import { rpc } from "@/platform/messaging/send";
 import {
   Badge,
   ActionIcon,
@@ -82,6 +83,8 @@ export function ReviewPage({
   } = useReviewSession({ settings, deckId });
   const [lookupSession, setLookupSession] = useState("");
   const [toolsNote, setToolsNote] = useState("");
+  const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [savingAnswer, setSavingAnswer] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   const displayedCard = useRef("");
   const cardReady = useCallback((id: string) => {
@@ -186,6 +189,20 @@ export function ReviewPage({
         : "";
     return { ...queue!.document!, note: { ...queue!.document!.note, fields } };
   }, [queue?.document, context, translationText, sentenceAudio?.media]);
+  async function useSelectedAnswer() {
+    if (!word || !revealed || !selectedAnswer || savingAnswer) return;
+    setSavingAnswer(true);
+    setError("");
+    try {
+      await saveNoteFields(word.noteId, { reviewAnswer: selectedAnswer });
+      setSelectedAnswer((text) => (text === selectedAnswer ? "" : text));
+      await rpc({ action: "invalidate" });
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setSavingAnswer(false);
+    }
+  }
   const back = (
     <ActionIcon
       component="a"
@@ -526,10 +543,30 @@ export function ReviewPage({
                   settings={settings}
                   onError={setError}
                   onLookup={openLookup}
+                  onSelectionChange={setSelectedAnswer}
                 />
               </Stack>
             </ScrollArea>
           </Paper>
+          {revealed &&
+            selectedAnswer &&
+            selectedAnswer !== viewerDocument?.note.reviewAnswer && (
+              <Group data-srs-reader gap="xs" wrap="nowrap">
+                <Text variant="supporting" truncate flex={1}>
+                  {selectedAnswer}
+                </Text>
+                <Button
+                  variant="light"
+                  size="compact-sm"
+                  loading={savingAnswer}
+                  disabled={busy}
+                  onPointerDown={(event) => event.preventDefault()}
+                  onClick={() => void useSelectedAnswer()}
+                >
+                  {t("review_answer_use_selection")}
+                </Button>
+              </Group>
+            )}
           <Group component="footer" wrap="nowrap" align="center" gap={4}>
             <ActionIcon
               size="input-md"

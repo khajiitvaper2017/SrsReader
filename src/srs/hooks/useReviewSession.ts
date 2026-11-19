@@ -168,6 +168,7 @@ export function useReviewSession({
     "srs",
     "settings",
     "dictionaries",
+    "dictionaryVisibility",
     "collection",
   ]);
   useEffect(() => {

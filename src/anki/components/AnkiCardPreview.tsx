@@ -188,8 +188,14 @@ export function AnkiCardPreview({
   );
   const assets = convert ? converted?.assets : undefined;
   const loadAssets = useCallback<AnkiPreview["loadAssets"]>(
-    async (namespace, html, css) => [
-      ...(await preview.loadAssets(namespace, html, css)),
+    async (namespace, html, css, source, dictionaryAssets) => [
+      ...(await preview.loadAssets(
+        namespace,
+        html,
+        css,
+        source,
+        dictionaryAssets,
+      )),
       ...(assets ?? []),
     ],
     [preview, assets],

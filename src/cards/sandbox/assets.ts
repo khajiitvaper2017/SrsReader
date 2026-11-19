@@ -2,8 +2,31 @@ import Dexie from "dexie";
 import { assetId, type CardAsset } from "@/cards/model";
 import { db } from "@/platform/database/db";
 import { fieldText } from "@/cards/template";
+import { dictionaryImage } from "@/dictionaries/storage";
 
 const sharedAssets = new Map<string, Promise<string[]>>();
+
+async function liveDictionaryAsset(namespace: string, name: string) {
+  const match = /^_srs_live\/([^/]+)\/([^/#?]+)/.exec(name);
+  if (!match) return;
+  let dictionaryId: string;
+  let path: string;
+  try {
+    dictionaryId = decodeURIComponent(match[1]!);
+    path = decodeURIComponent(match[2]!);
+  } catch {
+    return;
+  }
+  const media = await dictionaryImage(dictionaryId, path);
+  if (media)
+    return {
+      id: assetId(namespace, name),
+      namespace,
+      name,
+      mime: media.blob.type,
+      blob: media.blob,
+    };
+}
 
 export function cardAssetReferences(text: string): string[] {
   return [
@@ -30,6 +53,7 @@ export async function loadCardAssets(
     names: string[];
     get: (name: string) => Promise<CardAsset | undefined>;
   },
+  dictionaryAssets?: string[],
 ): Promise<CardAsset[]> {
   const get =
     source?.get ??
@@ -70,6 +94,7 @@ export async function loadCardAssets(
   const seen = new Set<string>();
   const loaded = new Set<string>();
   const assets: CardAsset[] = [];
+  const dictionaryNames = new Set(dictionaryAssets);
   while (pending.length) {
     const batch = pending;
     pending = [];
@@ -92,6 +117,9 @@ export async function loadCardAssets(
         }
         if (!asset && /[?#]/.test(name))
           asset = await get(decoded.split(/[?#]/)[0]!);
+        const dictionaryName = name.split(/[?#]/)[0]!;
+        if (!asset && dictionaryNames.has(dictionaryName))
+          asset = await liveDictionaryAsset(namespace, dictionaryName);
         if (!asset || loaded.has(asset.id)) return;
         loaded.add(asset.id);
         assets.push(asset);

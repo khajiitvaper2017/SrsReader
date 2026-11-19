@@ -17,6 +17,7 @@ export type CardFrameMessage = {
   dark: boolean;
   language: string;
   scan: boolean;
+  selectionLimit?: number;
   theme: string;
   hideSources: boolean;
   showPartOfSpeech: boolean;
@@ -33,6 +34,7 @@ export type RuntimeConfig = {
   urls: Record<string, string>;
   language: string;
   scan: boolean;
+  selectionLimit?: number;
   answers: Record<string, string>;
   autoplay: boolean;
   storage: CardStorageState;

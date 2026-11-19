@@ -131,6 +131,7 @@ export function cardBootstrap(
       urls,
       language: data.language,
       scan: data.scan,
+      selectionLimit: data.selectionLimit,
       answers: data.answers,
       autoplay: data.autoplay,
       storage: data.storage,

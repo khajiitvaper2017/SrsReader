@@ -2,7 +2,7 @@ import { Box, Stack, Text } from "@mantine/core";
 import { deckTree } from "@/srs/deck-tree";
 import { useColorScheme } from "@mantine/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CardDocument } from "@/cards/model";
+import { reviewAnswerMaxLength, type CardDocument } from "@/cards/model";
 import { fieldText, renderCard, templateWarnings } from "@/cards/template";
 import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
 import type { CardFrameMessage } from "@/cards/sandbox/protocol";
@@ -55,6 +55,7 @@ export function CardViewer({
   onError,
   onLookup,
   onReady,
+  onSelectionChange,
 }: {
   document: CardDocument;
   revealed: boolean;
@@ -68,10 +69,23 @@ export function CardViewer({
   onError?: (message: string) => void;
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
+  onSelectionChange?: (text: string) => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
-  const callbacks = useRef({ onError, onLookup, onReady, requestAsset });
-  callbacks.current = { onError, onLookup, onReady, requestAsset };
+  const callbacks = useRef({
+    onError,
+    onLookup,
+    onReady,
+    onSelectionChange,
+    requestAsset,
+  });
+  callbacks.current = {
+    onError,
+    onLookup,
+    onReady,
+    onSelectionChange,
+    requestAsset,
+  };
   const [ready, setReady] = useState(false);
   const [displayed, setDisplayed] = useState<{
     cardId: string;
@@ -153,8 +167,11 @@ export function CardViewer({
     settings.showGenderedArticle,
   ]);
   const scan = settings.scanPopups && !!onLookup;
+  const selectionLimit =
+    revealed && onSelectionChange ? reviewAnswerMaxLength : undefined;
   useEffect(() => {
     activeRender.current = undefined;
+    callbacks.current.onSelectionChange?.("");
     const id = ++renderId.current;
     if (loading || (previewDeckName === undefined && deck.id !== card.deckId))
       return;
@@ -163,7 +180,13 @@ export function CardViewer({
     setRecording(undefined);
     try {
       if (templateError) throw new Error(templateError);
-      void loadAssets(note.mediaNamespace, html, noteType.css)
+      void loadAssets(
+        note.mediaNamespace,
+        html,
+        noteType.css,
+        undefined,
+        cardDocument.study?.dictionaryAssets,
+      )
         .then((assets) => {
           if (!cancelled) {
             const audio =
@@ -186,6 +209,7 @@ export function CardViewer({
               dark,
               language: note.language,
               scan,
+              selectionLimit,
               theme: themeVariables() + dictionaryCss + mediaCss,
               hideSources: settings.hideDictionarySources,
               showPartOfSpeech: settings.showPartOfSpeech,
@@ -226,6 +250,7 @@ export function CardViewer({
     note.mediaNamespace,
     note.language,
     noteType.css,
+    cardDocument.study?.dictionaryAssets,
     revealed,
     deckName,
     deck.id,
@@ -244,6 +269,7 @@ export function CardViewer({
     settings.reviewBindings,
     dark,
     scan,
+    selectionLimit,
   ]);
   useEffect(() => {
     function receive(event: MessageEvent) {
@@ -319,6 +345,14 @@ export function CardViewer({
               ? new MouseEvent("mousedown", { ...input.data, bubbles: true })
               : new KeyboardEvent("keydown", { ...input.data, bubbles: true }),
           );
+      } else if (
+        type === "selection" &&
+        activeRender.current?.revealed &&
+        typeof value === "string"
+      ) {
+        callbacks.current.onSelectionChange?.(
+          value.length <= reviewAnswerMaxLength ? value.trim() : "",
+        );
       } else if (type === "ready") setReady(true);
       else if (
         type === "rendered" &&

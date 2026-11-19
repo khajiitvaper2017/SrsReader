@@ -41,6 +41,7 @@ import type { Vocabulary } from "@/vocabulary/model";
 import {
   ankiDictionarySnapshot,
   ankiPartOfSpeech,
+  ankiReviewAnswer,
   ankiWord,
   convertedAnkiNote,
 } from "@/anki/conversion";
@@ -172,6 +173,9 @@ async function mergeConverted(
       hint:
         [...new Set(group.flatMap((note) => note.hint || []))].join("\n") ||
         previous?.hint,
+      reviewAnswer:
+        previous?.reviewAnswer ??
+        group.find((note) => note.reviewAnswer)?.reviewAnswer,
       importedGenders: [
         ...new Set(group.flatMap((note) => note.importedGenders ?? [])),
       ],
@@ -460,6 +464,8 @@ export async function importPackage(
           language: options.language,
           fields: values,
           hint: previous?.hint,
+          reviewAnswer:
+            previous?.reviewAnswer ?? ankiReviewAnswer(values, bindings),
           tags: [],
           importedPartsOfSpeech: ankiPartOfSpeech(values, bindings),
           mediaNamespace: namespace,

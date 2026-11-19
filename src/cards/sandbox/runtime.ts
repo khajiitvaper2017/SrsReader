@@ -442,6 +442,12 @@ export function cardRuntime(config: RuntimeConfig) {
       }),
     );
     document.addEventListener("dblclick", lookup);
+    const selectionLimit = config.selectionLimit;
+    if (selectionLimit)
+      document.addEventListener("selectionchange", () => {
+        const text = window.getSelection()?.toString().trim() || "";
+        send("selection", text.slice(0, selectionLimit + 1));
+      });
     document.addEventListener("click", (event) => {
       const target = (event.target as Element).closest<HTMLElement>(
         "[data-srs-sound]",

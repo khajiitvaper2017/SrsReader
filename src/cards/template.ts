@@ -264,7 +264,12 @@ export function renderCard(
       ]),
     ),
   };
-  if (noteType.id.startsWith("reader:")) {
+  const reader = noteType.id.startsWith("reader:");
+  const answer =
+    revealed && note.reviewAnswer
+      ? `<section class="srs-study-section"><h3>${escapeHtml(t("review_answer"))}</h3><div style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(note.reviewAnswer)}</div></section>`
+      : "";
+  if (reader) {
     const study = document.study;
     fields.SrsArticle =
       options.showGenderedArticle === false
@@ -287,6 +292,7 @@ export function renderCard(
     fields.SrsExamplesLabel = t("examples");
     if (noteType.bindings.definitions !== undefined) {
       const name = noteType.fields[noteType.bindings.definitions]!.name;
+      fields[name] = study?.definitions ?? fields[name]!;
       if (fields.SrsPartOfSpeech)
         fields[name] = fields[name]!.replace(
           /<div\b[^>]*\bdata-srs-pos(?:="[^"]*")?[^>]*>[\s\S]*?<\/div>/gi,
@@ -319,6 +325,7 @@ export function renderCard(
           }
         fields[name] = document.body.innerHTML;
       }
+      fields[name] = answer + fields[name]!;
     }
   }
   const hintIndex = noteType.bindings.hint;
@@ -333,7 +340,10 @@ export function renderCard(
         { ...context, revealed: true, frontHasHint: front.hasHint },
       )
     : front;
-  if (side.hasHint) return side.html;
+  const html =
+    side.html +
+    (revealed && !reader ? answer + (document.study?.definitions ?? "") : "");
+  if (side.hasHint) return html;
   const hint = hintField ? fieldText(fields[hintField] ?? "") : note.hint;
-  return hint ? cardHintHtml(escapeHtml(hint)) + side.html : side.html;
+  return hint ? cardHintHtml(escapeHtml(hint)) + html : html;
 }

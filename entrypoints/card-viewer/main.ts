@@ -72,6 +72,13 @@ window.addEventListener("message", (event: MessageEvent) => {
     else if (type === "lookup" && current && value && typeof value === "object")
       send("lookup", { ...value, cardId: current.cardId });
     else if (
+      type === "selection" &&
+      frame === displayed &&
+      current?.selectionLimit &&
+      typeof value === "string"
+    )
+      send("selection", value.slice(0, current.selectionLimit + 1));
+    else if (
       type === "storage" &&
       current &&
       value &&

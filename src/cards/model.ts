@@ -38,6 +38,7 @@ const cardEncounterSchema = z.object({
   pos: z.string(),
   feats: z.record(z.string(), z.string()),
 });
+export const reviewAnswerMaxLength = 500;
 export type CardEncounter = z.infer<typeof cardEncounterSchema>;
 export const noteSchema = z.object({
   id: z.string(),
@@ -45,6 +46,7 @@ export const noteSchema = z.object({
   language: z.string(),
   fields: z.array(z.string()),
   hint: z.string().optional(),
+  reviewAnswer: z.string().max(reviewAnswerMaxLength).optional(),
   tags: z.array(z.string()),
   wordId: z.string().optional(),
   encounter: cardEncounterSchema.optional(),
@@ -107,6 +109,8 @@ export type CardStudyDetails = {
   partsOfSpeech: string[];
   forms: { label: string; value: string }[];
   ipa: string[];
+  definitions?: string;
+  dictionaryAssets?: string[];
 };
 export type CardDocument = {
   card: Card;

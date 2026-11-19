@@ -1,8 +1,9 @@
 import { parseHTML } from "linkedom";
 import { readerNote } from "@/cards/defaults";
-import type { FieldBindings } from "@/cards/model";
+import { reviewAnswerMaxLength, type FieldBindings } from "@/cards/model";
 import { germanNounField } from "@/cards/noun-article";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
+import { fieldText as noteFieldText } from "@/cards/storage";
 import { fieldText } from "@/cards/template";
 import { lookup } from "@/dictionaries/resolve";
 import {
@@ -93,6 +94,21 @@ export function ankiPartOfSpeech(values: string[], bindings: FieldBindings) {
   return pos ? [pos] : undefined;
 }
 
+export function ankiReviewAnswer(values: string[], bindings: FieldBindings) {
+  if (bindings.definitions === undefined) return;
+  const answer = noteFieldText(
+    (values[bindings.definitions] ?? "")
+      .replace(/\[sound:[^\]]*\]/g, "")
+      .replace(/<\/(?:div|p|li)>/gi, "<br>"),
+  );
+  return (
+    answer
+      .slice(0, reviewAnswerMaxLength)
+      .replace(/[\uD800-\uDBFF]$/u, "")
+      .trim() || undefined
+  );
+}
+
 export function ankiDictionarySnapshot(
   word: Vocabulary,
   namespace: string,
@@ -131,6 +147,7 @@ export function convertedAnkiNote(
     word.language === "de" ? germanNounField(word.lemma).lemma : word.lemma;
   const { note, noteType } = readerNote({ ...word, lemma }, undefined, extra);
   note.mediaNamespace = namespace;
+  note.reviewAnswer = ankiReviewAnswer(values, bindings);
   if (bindings.hint !== undefined)
     note.hint =
       fieldText(

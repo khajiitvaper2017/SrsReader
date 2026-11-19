@@ -48,13 +48,19 @@ export function createReviewPreload(settings: Settings) {
   let retained: ReviewWordSummary[] = [];
   let running: Promise<void> | undefined;
 
-  function loadAssets(namespace: string, html: string, css: string) {
+  const loadAssets: typeof loadCardAssets = (
+    namespace,
+    html,
+    css,
+    source,
+    dictionaryAssets,
+  ) => {
     const result = cached(assets, cardAssetKey(namespace, html, css), () =>
-      loadCardAssets(namespace, html, css),
+      loadCardAssets(namespace, html, css, source, dictionaryAssets),
     );
     while (assets.size > 6) assets.delete(assets.keys().next().value!);
     return result;
-  }
+  };
   function prepareVisual(id: string) {
     return cached(visuals, id, async () => {
       const stored = await getCardDocument(id);
@@ -76,6 +82,8 @@ export function createReviewPreload(settings: Settings) {
             document.note.mediaNamespace,
             renderCard(document, revealed, options),
             document.noteType.css,
+            undefined,
+            document.study?.dictionaryAssets,
           ),
         ),
       );

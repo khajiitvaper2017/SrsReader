@@ -7,10 +7,10 @@ import type {
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
 import { readingCardIdentity } from "@/cards/encounter-key";
-import { definitionsHtml } from "@/cards/snapshot";
+import { prepareDictionarySnapshot } from "@/cards/snapshot";
+import { dictionaryDisplay } from "@/dictionaries/display";
 import { lookup } from "@/dictionaries/resolve";
 import { getSettings } from "@/settings/store";
-import { snapshot } from "@/vocabulary/snapshot";
 import { dictionaryIpa } from "@/dictionaries/ipa";
 import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
 import type { Meaning } from "@/dictionaries/model";
@@ -164,13 +164,13 @@ export async function prepareStudyDocument(
   document: CardDocument,
   saved?: Vocabulary,
 ): Promise<CardDocument> {
-  if (!document.noteType.id.startsWith("reader:") || !document.note.wordId)
-    return document;
+  const reader = document.noteType.id.startsWith("reader:");
+  if (!document.note.wordId) return document;
   const encounter = document.note.encounter;
   const imported = document.note.importedPartsOfSpeech ?? [];
   const word = saved ?? (await db.vocabulary.get(document.note.wordId));
   if (!word)
-    return encounter || imported.length
+    return reader && (encounter || imported.length)
       ? {
           ...document,
           study: cardStudyDetails(
@@ -183,55 +183,42 @@ export async function prepareStudyDocument(
         }
       : document;
   const { importedGenders } = readingCardIdentity(document.note, word.lemma);
-  const matchesGender = (meaning: Meaning) =>
+  const matchesGender = (meaning: Pick<Meaning, "dictionaryId" | "tags">) =>
     !importedGenders?.length || matchesImportedGender(meaning, importedGenders);
-  let definitions = word.meanings;
-  const field = document.noteType.bindings.definitions;
-  if (
-    word.reading &&
-    Array.isArray(document.note.source?.importedNotes) &&
-    !definitions.some((meaning) => meaning.tags !== "ipa") &&
-    field !== undefined &&
-    /^<style>[^<]*<\/style>$/u.test(document.note.fields[field] ?? "")
-  ) {
-    // Older converted cards can contain only the generated stylesheet.
-    const result = await lookup(
-      word.lemma,
-      { ...(await getSettings()), studyLanguage: word.language },
-      { localOnly: true, reading: word.reading },
-    );
-    const match = result.words.find(
-      (candidate) => candidate.id === document.note.wordId,
-    );
-    if (match?.meanings.some((meaning) => meaning.tags !== "ipa")) {
-      definitions = (await snapshot(match)).meanings;
-      const fields = [...document.note.fields];
-      fields[field] += definitionsHtml(
-        meaningsForImportedParts(
-          applyDefinitionOverrides(definitions, word),
-          imported,
-        ).filter(
-          (meaning) =>
-            matchesGender(meaning) &&
-            !word.hiddenDictionaries?.includes(meaning.dictionaryId),
-        ),
-      );
-      document = { ...document, note: { ...document.note, fields } };
-    }
-  }
+  const settings = { ...(await getSettings()), studyLanguage: word.language };
+  const result = await lookup(word.lemma, settings, {
+    localOnly: true,
+    reading: word.reading,
+  });
+  const live =
+    (
+      result.words.find((candidate) => candidate.id === document.note.wordId) ??
+      result.words.find(
+        (candidate) =>
+          !candidate.reading &&
+          candidate.lemma.normalize() === word.lemma.normalize(),
+      )
+    )?.meanings ?? [];
+  const liveDictionaries = new Set(live.map((meaning) => meaning.dictionaryId));
+  const visible = (id: string) =>
+    !word.hiddenDictionaries?.includes(id) &&
+    dictionaryDisplay(id, settings) !== "hide";
   let meanings = meaningsForImportedParts(
     applyDefinitionOverrides(
       [
-        ...definitions.filter((meaning) => meaning.tags !== "ipa"),
-        ...(await dictionaryIpa(word)),
+        ...word.meanings.filter(
+          (meaning) =>
+            meaning.tags !== "ipa" &&
+            !liveDictionaries.has(meaning.dictionaryId),
+        ),
+        ...live.filter((meaning) => meaning.tags !== "ipa"),
+        ...(reader ? await dictionaryIpa(word) : []),
       ],
       word,
     ),
     imported,
   ).filter(
-    (meaning) =>
-      matchesGender(meaning) &&
-      !word.hiddenDictionaries?.includes(meaning.dictionaryId),
+    (meaning) => matchesGender(meaning) && visible(meaning.dictionaryId),
   );
   // Redirect forms have no sense ID, so they cannot distinguish lexical genders.
   const ambiguousGender =
@@ -245,6 +232,7 @@ export async function prepareStudyDocument(
     ).length > 1;
   if (encounter) meanings = meaningsForEncounter(meanings, encounter);
   const inflections =
+    reader &&
     word.language === "de" &&
     !ambiguousGender &&
     lexicalClass(meanings, importedPartValues(imported))
@@ -257,31 +245,39 @@ export async function prepareStudyDocument(
     encounter,
     imported,
   );
-  if (importedGenders?.length) {
+  if (importedGenders?.length)
     study.article = nounArticle(word.language, undefined, importedGenders);
-    if (
-      field !== undefined &&
-      document.note.fields[field]?.includes("srs-meaning")
-    ) {
-      const { document: html } = parseHTML(
-        `<html><body>${document.note.fields[field]}</body></html>`,
-      );
-      const sections = [
-        ...html.querySelectorAll("section.srs-meaning[data-dictionary]"),
-      ];
-      for (const section of sections) {
-        const tags =
-          section.querySelector(":scope > .srs-tags")?.textContent ?? "";
-        const dictionaryId = section.getAttribute("data-dictionary") ?? "";
-        if (!matchesImportedGender({ dictionaryId, tags }, importedGenders))
-          section.remove();
-      }
-      if (sections.some((section) => !section.parentElement)) {
-        const fields = [...document.note.fields];
-        fields[field] = html.body.innerHTML;
-        document = { ...document, note: { ...document.note, fields } };
-      }
+  const field = document.noteType.bindings.definitions;
+  let stored =
+    reader && field !== undefined ? (document.note.fields[field] ?? "") : "";
+  if (stored.includes("srs-meaning")) {
+    const { document: html } = parseHTML(`<html><body>${stored}</body></html>`);
+    for (const section of html.querySelectorAll(
+      "section.srs-meaning[data-dictionary]",
+    )) {
+      const dictionaryId = section.getAttribute("data-dictionary")!;
+      const tags =
+        section.querySelector(":scope > .srs-tags")?.textContent ?? "";
+      if (
+        liveDictionaries.has(dictionaryId) ||
+        !visible(dictionaryId) ||
+        !matchesGender({ dictionaryId, tags })
+      )
+        section.remove();
     }
+    stored = html.body.innerHTML;
   }
+  const fresh = meanings.filter((meaning) =>
+    liveDictionaries.has(meaning.dictionaryId),
+  );
+  if (fresh.length) {
+    const { html, dictionaryAssets } = await prepareDictionarySnapshot(
+      { id: document.note.wordId, meanings: fresh },
+      { live: true },
+    );
+    stored += html;
+    study.dictionaryAssets = dictionaryAssets;
+  }
+  study.definitions = stored;
   return { ...document, study };
 }

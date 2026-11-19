@@ -537,11 +537,17 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
       collection.decks.map((deck) => [deck.id, deck.name]),
     );
     return {
-      loadAssets: (namespace, html, css) =>
-        loadCardAssets(namespace, html, css, {
-          names: [...media.keys()],
-          get: getAsset,
-        }),
+      loadAssets: (namespace, html, css, _source, dictionaryAssets) =>
+        loadCardAssets(
+          namespace,
+          html,
+          css,
+          {
+            names: [...media.keys()],
+            get: getAsset,
+          },
+          dictionaryAssets,
+        ),
       requestAsset: (namespace, name) =>
         requestedCardAsset(namespace, name, getAsset),
       close: () => reader.close(),

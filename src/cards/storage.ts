@@ -12,7 +12,13 @@ import {
   escapeHtml,
   type CustomField,
 } from "@/cards/defaults";
-import type { Card, CardDocument, CardEncounter } from "@/cards/model";
+import {
+  noteSchema,
+  type Card,
+  type CardDocument,
+  type CardEncounter,
+  type Note,
+} from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
 import {
   cardEncounterKey,
@@ -182,20 +188,29 @@ export async function ensureReaderCard(
 
 export async function saveNoteFields(
   noteId: string,
-  fields: string[],
-  hint: string,
+  {
+    fields,
+    hint,
+    reviewAnswer,
+  }: Partial<Pick<Note, "fields" | "hint" | "reviewAnswer">>,
 ) {
   await srsWrite(() =>
     db.transaction("rw", [db.notes, db.noteTypes], async () => {
       const note = await db.notes.get(noteId);
       const noteType = note && (await db.noteTypes.get(note.noteTypeId));
       if (!note || !noteType) throw new Error(t("card_not_found"));
-      if (fields.length !== noteType.fields.length)
+      if (fields && fields.length !== noteType.fields.length)
         throw new Error(t("card_fields_invalid"));
       await db.notes.put({
         ...note,
-        fields,
-        hint: hint.trim() || undefined,
+        fields: fields ?? note.fields,
+        hint: hint === undefined ? note.hint : hint.trim() || undefined,
+        reviewAnswer:
+          reviewAnswer === undefined
+            ? note.reviewAnswer
+            : noteSchema.shape.reviewAnswer.parse(
+                reviewAnswer.trim() || undefined,
+              ),
         version: note.version + 1,
         updated: Date.now(),
       });

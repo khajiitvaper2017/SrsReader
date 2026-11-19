@@ -29,7 +29,7 @@ const styles = new Set(
 );
 
 const dictionaryImageName = (dictionaryId: string, path: string) =>
-  `_srs_${encodeURIComponent(dictionaryId)}_${encodeURIComponent(path)}`;
+  `_srs_live/${encodeURIComponent(dictionaryId)}/${encodeURIComponent(path)}`;
 
 function snapshotImageName(
   dictionaryId: string,
@@ -46,12 +46,13 @@ function structuredHtml(
   value: unknown,
   dictionaryId: string,
   images?: Map<string, { dictionaryId: string; path: string }>,
+  live = false,
 ): string {
   if (typeof value === "string" || typeof value === "number")
     return escapeHtml(String(value));
   if (Array.isArray(value))
     return value
-      .map((child) => structuredHtml(child, dictionaryId, images))
+      .map((child) => structuredHtml(child, dictionaryId, images, live))
       .join("");
   if (!value || typeof value !== "object") return "";
   const node = value as Record<string, unknown>;
@@ -59,8 +60,10 @@ function structuredHtml(
     return typeof node.text === "string" ? escapeHtml(node.text) : "";
   if (node.type === "image" || node.tag === "img") {
     if (typeof node.path !== "string") return "";
-    const name = snapshotImageName(dictionaryId, node.path, images);
-    images?.set(name, { dictionaryId, path: node.path });
+    const imageAssets =
+      live && node.path.startsWith("data:") ? undefined : images;
+    const name = snapshotImageName(dictionaryId, node.path, imageAssets);
+    imageAssets?.set(name, { dictionaryId, path: node.path });
     const alt =
       typeof node.description === "string"
         ? node.description
@@ -69,7 +72,7 @@ function structuredHtml(
           : "";
     return `<img src="${escapeHtml(name)}" alt="${escapeHtml(alt)}"${typeof node.width === "number" ? ` width="${node.width}"` : ""}${typeof node.height === "number" ? ` height="${node.height}"` : ""}>`;
   }
-  const content = structuredHtml(node.content, dictionaryId, images);
+  const content = structuredHtml(node.content, dictionaryId, images, live);
   const href = node.tag === "a" ? safeUrl(node.href) : undefined;
   if (node.tag === "a" && !href) return content;
   if (typeof node.tag !== "string" || !tags.has(node.tag)) return content;
@@ -114,6 +117,7 @@ function structuredHtml(
 function serializeMeanings(
   meanings: Meaning[],
   images?: Map<string, { dictionaryId: string; path: string }>,
+  live = false,
 ) {
   return meanings
     .filter((meaning) => meaning.tags !== "ipa")
@@ -122,7 +126,7 @@ function serializeMeanings(
       const attribution = meaning.attribution
         ? `<footer class="srs-attribution"${safeUrl(meaning.attribution) || safeUrl(meaning.sourceUrl) ? ' data-sc-content="backlink"' : ""}>${escapeHtml(meaning.attribution)}</footer>`
         : "";
-      return `<section class="srs-meaning" data-dictionary="${escapeHtml(meaning.dictionaryId)}"><div class="srs-dictionary-title">${escapeHtml(meaning.title)}</div>${meaning.tags ? `<div class="srs-tags">${escapeHtml(meaning.tags)}</div>` : ""}<div class="srs-glossary">${definitions.map((definition) => `<div>${structuredHtml(definition, meaning.dictionaryId, images)}</div>`).join("")}</div>${attribution}</section>`;
+      return `<section class="srs-meaning" data-dictionary="${escapeHtml(meaning.dictionaryId)}"><div class="srs-dictionary-title">${escapeHtml(meaning.title)}</div>${meaning.tags ? `<div class="srs-tags">${escapeHtml(meaning.tags)}</div>` : ""}<div class="srs-glossary">${definitions.map((definition) => `<div>${structuredHtml(definition, meaning.dictionaryId, images, live)}</div>`).join("")}</div>${attribution}</section>`;
     })
     .join("");
 }
@@ -215,14 +219,15 @@ export async function prepareDictionarySnapshot(
   {
     namespace = word.id,
     allowMissingMedia = false,
-  }: { namespace?: string; allowMissingMedia?: boolean } = {},
+    live = false,
+  }: { namespace?: string; allowMissingMedia?: boolean; live?: boolean } = {},
 ) {
   const images = new Map<string, { dictionaryId: string; path: string }>();
   const meanings = word.meanings.filter(
     (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
   );
   const parts = dictionaryPartsOfSpeech(meanings);
-  let html = `${parts.length ? `<div class="srs-tags" data-srs-pos>${parts.map(escapeHtml).join(" · ")}</div>` : ""}${serializeMeanings(meanings, images)}`;
+  let html = `${parts.length ? `<div class="srs-tags" data-srs-pos>${parts.map(escapeHtml).join(" · ")}</div>` : ""}${serializeMeanings(meanings, images, live)}`;
   let css =
     ".srs-meaning{margin-block:var(--mantine-spacing-sm)}.srs-dictionary-title,.srs-tags,.srs-attribution{font-size:.85em;color:var(--mantine-color-dimmed)}.srs-glossary>div+div{margin-top:var(--mantine-spacing-xs)}";
   for (const dictionaryId of new Set(
@@ -239,6 +244,7 @@ export async function prepareDictionarySnapshot(
       (whole, quote: string, path: string) => {
         if (/^(?:https?:|#)/i.test(path)) return whole;
         if (path.startsWith("data:")) {
+          if (live) return whole;
           const name = snapshotImageName(dictionaryId, path, images);
           images.set(name, { dictionaryId, path });
           return `url("${name}")`;
@@ -259,7 +265,7 @@ export async function prepareDictionarySnapshot(
     );
   }
   const assets: CardAsset[] = [];
-  for (const [name, image] of images) {
+  for (const [name, image] of live ? [] : images) {
     let blob: Blob | undefined;
     let filename = name;
     if (image.path.startsWith("data:")) {
@@ -332,5 +338,10 @@ export async function prepareDictionarySnapshot(
     });
   }
   html = `<style>${css.replace(/<\/style/gi, "\\3c /style")}</style>${html}`;
-  return { html, assets, css };
+  return {
+    html,
+    assets,
+    css,
+    dictionaryAssets: live ? [...images.keys()] : undefined,
+  };
 }
