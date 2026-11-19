@@ -220,7 +220,9 @@ export const meaningSchema = z.object({
 
 export type Meaning = z.infer<typeof meaningSchema>;
 
-export function meaningTags(meaning: Meaning): string[] {
+export function meaningTags(
+  meaning: Pick<Meaning, "dictionaryId" | "tags">,
+): string[] {
   return meaning.dictionaryId === "nechybujte"
     ? [meaning.tags].filter(Boolean)
     : meaning.tags.split(/\s+/u).filter(Boolean);

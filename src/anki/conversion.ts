@@ -4,7 +4,10 @@ import type { FieldBindings } from "@/cards/model";
 import { germanNounField } from "@/cards/noun-article";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { lookup } from "@/dictionaries/resolve";
-import { meaningsForImportedParts } from "@/dictionaries/grammar";
+import {
+  matchesImportedGender,
+  meaningsForImportedParts,
+} from "@/dictionaries/grammar";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
@@ -93,6 +96,7 @@ export function ankiDictionarySnapshot(
   word: Vocabulary,
   namespace: string,
   parts: string[] = [],
+  genders: string[] = [],
 ) {
   return prepareDictionarySnapshot(
     {
@@ -100,6 +104,8 @@ export function ankiDictionarySnapshot(
       meanings: meaningsForImportedParts(
         applyDefinitionOverrides(word.meanings, word),
         parts,
+      ).filter(
+        (meaning) => !genders.length || matchesImportedGender(meaning, genders),
       ),
     },
     { namespace },

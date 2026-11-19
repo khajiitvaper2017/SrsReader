@@ -55,7 +55,7 @@ const tagFeatures = new Map<string, [string, string[]]>(
 );
 
 export function dictionaryTagValues(
-  meanings: Meaning[],
+  meanings: Pick<Meaning, "dictionaryId" | "tags">[],
   feature: string,
 ): string[] {
   return [
@@ -74,6 +74,14 @@ export function dictionaryTagValues(
       ),
     ),
   ];
+}
+
+export function matchesImportedGender(
+  meaning: Pick<Meaning, "dictionaryId" | "tags">,
+  genders: readonly string[],
+) {
+  const tagged = dictionaryTagValues([meaning], "Gender");
+  return !tagged.length || genders.some((gender) => tagged.includes(gender));
 }
 
 export function dictionaryPartsOfSpeech(meanings: Meaning[]): string[] {

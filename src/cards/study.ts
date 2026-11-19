@@ -1,3 +1,4 @@
+import { parseHTML } from "linkedom";
 import type {
   CardDocument,
   CardEncounter,
@@ -18,6 +19,7 @@ import {
   dictionaryTagValues,
   importedPartLabels,
   importedPartValues,
+  matchesImportedGender,
   meaningsForImportedParts,
 } from "@/dictionaries/grammar";
 import {
@@ -180,6 +182,9 @@ export async function prepareStudyDocument(
           ),
         }
       : document;
+  const { importedGenders } = readingCardIdentity(document.note, word.lemma);
+  const matchesGender = (meaning: Meaning) =>
+    !importedGenders?.length || matchesImportedGender(meaning, importedGenders);
   let definitions = word.meanings;
   const field = document.noteType.bindings.definitions;
   if (
@@ -206,7 +211,9 @@ export async function prepareStudyDocument(
           applyDefinitionOverrides(definitions, word),
           imported,
         ).filter(
-          (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
+          (meaning) =>
+            matchesGender(meaning) &&
+            !word.hiddenDictionaries?.includes(meaning.dictionaryId),
         ),
       );
       document = { ...document, note: { ...document.note, fields } };
@@ -222,7 +229,9 @@ export async function prepareStudyDocument(
     ),
     imported,
   ).filter(
-    (meaning) => !word.hiddenDictionaries?.includes(meaning.dictionaryId),
+    (meaning) =>
+      matchesGender(meaning) &&
+      !word.hiddenDictionaries?.includes(meaning.dictionaryId),
   );
   // Redirect forms have no sense ID, so they cannot distinguish lexical genders.
   const ambiguousGender =
@@ -248,8 +257,31 @@ export async function prepareStudyDocument(
     encounter,
     imported,
   );
-  const { importedGenders } = readingCardIdentity(document.note, word.lemma);
-  if (importedGenders?.length)
+  if (importedGenders?.length) {
     study.article = nounArticle(word.language, undefined, importedGenders);
+    if (
+      field !== undefined &&
+      document.note.fields[field]?.includes("srs-meaning")
+    ) {
+      const { document: html } = parseHTML(
+        `<html><body>${document.note.fields[field]}</body></html>`,
+      );
+      const sections = [
+        ...html.querySelectorAll("section.srs-meaning[data-dictionary]"),
+      ];
+      for (const section of sections) {
+        const tags =
+          section.querySelector(":scope > .srs-tags")?.textContent ?? "";
+        const dictionaryId = section.getAttribute("data-dictionary") ?? "";
+        if (!matchesImportedGender({ dictionaryId, tags }, importedGenders))
+          section.remove();
+      }
+      if (sections.some((section) => !section.parentElement)) {
+        const fields = [...document.note.fields];
+        fields[field] = html.body.innerHTML;
+        document = { ...document, note: { ...document.note, fields } };
+      }
+    }
+  }
   return { ...document, study };
 }

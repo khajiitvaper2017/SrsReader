@@ -144,6 +144,7 @@ export function AnkiCardPreview({
         imported.word,
         note.mediaNamespace,
         note.importedPartsOfSpeech,
+        imported.gender ? [imported.gender] : undefined,
       );
       note.fields[noteType.bindings.definitions!] = html;
       note.importedGenders = imported.gender ? [imported.gender] : undefined;

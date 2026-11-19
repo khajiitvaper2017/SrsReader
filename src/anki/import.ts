@@ -187,6 +187,7 @@ async function mergeConverted(
       words.get(id)!,
       note.mediaNamespace,
       note.importedPartsOfSpeech,
+      note.importedGenders,
     );
     note.fields[prepared.noteType.bindings.definitions!] = snapshot.html;
     snapshotAssets.push(...snapshot.assets);
