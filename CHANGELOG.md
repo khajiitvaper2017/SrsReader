@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 (2026-11-19)
+
+### Fixes
+
+- Keep media-heavy Google Drive sync merges reliable by committing downloaded media in batches before publishing the merged collection. [#17](https://github.com/khajiitvaper2017/SrsReader/issues/17)
+
 ## 0.3.1 (2026-11-19)
 
 ### Changes
