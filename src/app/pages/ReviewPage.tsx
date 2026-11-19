@@ -78,6 +78,7 @@ export function ReviewPage({
     sentenceLoading,
     load,
     gradeWord,
+    playAudio,
     reveal,
     undo,
   } = useReviewSession({ settings, deckId });
@@ -543,6 +544,7 @@ export function ReviewPage({
                   settings={settings}
                   onError={setError}
                   onLookup={openLookup}
+                  onAutoplayFallback={() => void playAudio(undefined, true)}
                   onSelectionChange={setSelectedAnswer}
                 />
               </Stack>

@@ -34,6 +34,8 @@ export const srsPreferencesSchema = z.object({
   timedReview: timedReviewSchema.default(timedReviewSchema.parse({})),
   reviewBindings: reviewBindingsSchema,
   front: z.enum(["word", "sentence"]).default("word"),
+  autoplayFront: z.boolean().default(false),
+  autoplay: z.boolean().default(false),
   showPartOfSpeech: z.boolean().default(true),
   showGenderedArticle: z.boolean().default(true),
   retention: z.number().min(0.7).max(0.99).default(0.8),

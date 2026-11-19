@@ -88,7 +88,7 @@ export function useReviewSession({
     return () => ctx.abort();
   }, [word?.id, word?.card?.reps, settings]);
   const preload = useReviewPreload(settings, queue);
-  const { play: playAudio } = usePronunciation({
+  const { play: playAudio, cancel: cancelAudio } = usePronunciation({
     noteId: word?.noteId,
     cardId: word?.id,
     word: word?.wordId ? { ...word, id: word.wordId } : undefined,
@@ -293,8 +293,8 @@ export function useReviewSession({
     }
   }
   function reveal() {
+    cancelAudio();
     setRevealed(true);
-    if (settings.autoplay && word?.wordId) void playAudio();
   }
   const timer = useTimedReview({
     settings: settings.timedReview,
@@ -397,6 +397,7 @@ export function useReviewSession({
     sentenceLoading,
     load,
     gradeWord,
+    playAudio,
     reveal,
     undo,
   };

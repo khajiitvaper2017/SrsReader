@@ -56,6 +56,7 @@ export function CardViewer({
   onLookup,
   onReady,
   onSelectionChange,
+  onAutoplayFallback,
 }: {
   document: CardDocument;
   revealed: boolean;
@@ -70,6 +71,7 @@ export function CardViewer({
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
   onSelectionChange?: (text: string) => void;
+  onAutoplayFallback?: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const callbacks = useRef({
@@ -77,6 +79,7 @@ export function CardViewer({
     onLookup,
     onReady,
     onSelectionChange,
+    onAutoplayFallback,
     requestAsset,
   });
   callbacks.current = {
@@ -84,6 +87,7 @@ export function CardViewer({
     onLookup,
     onReady,
     onSelectionChange,
+    onAutoplayFallback,
     requestAsset,
   };
   const [ready, setReady] = useState(false);
@@ -92,12 +96,18 @@ export function CardViewer({
     revealed: boolean;
   }>();
   const [height, setHeight] = useState(180);
-  const [message, setMessage] = useState<CardFrameMessage>();
+  const [message, setMessage] = useState<Omit<CardFrameMessage, "autoplay">>();
   const [recording, setRecording] = useState<Blob>();
   const renderId = useRef(0);
-  const activeRender = useRef<{ id: number; revealed: boolean } | undefined>(
-    undefined,
-  );
+  const activeRender = useRef<
+    | {
+        id: number;
+        revealed: boolean;
+        autoplay: boolean;
+      }
+    | undefined
+  >(undefined);
+  const lastSide = useRef("");
   const [error, setError] = useState("");
   const system = useColorScheme();
   const dark =
@@ -105,6 +115,10 @@ export function CardViewer({
       ? system === "dark"
       : settings.theme === "dark" || settings.theme === "oled";
   const { card, note, noteType } = cardDocument;
+  const allowAutoplay =
+    !!onAutoplayFallback && (settings.autoplayFront || settings.autoplay);
+  const autoplaySide =
+    allowAutoplay && (revealed ? settings.autoplay : settings.autoplayFront);
   const audioIndex = noteType.bindings.wordAudio;
   const sound =
     wordAudio && audioIndex !== undefined
@@ -213,7 +227,6 @@ export function CardViewer({
               theme: themeVariables() + dictionaryCss + mediaCss,
               hideSources: settings.hideDictionarySources,
               showPartOfSpeech: settings.showPartOfSpeech,
-              autoplay: revealed && settings.autoplay,
               audioLabel: t("play_audio"),
               videoLabel: t("play_video"),
               title,
@@ -246,6 +259,7 @@ export function CardViewer({
     loadAssets,
     templateError,
     card.id,
+    card.schedule?.reps,
     card.templateOrdinal,
     note.mediaNamespace,
     note.language,
@@ -262,7 +276,6 @@ export function CardViewer({
     settings.scanPopups,
     settings.hideDictionarySources,
     settings.accentColor,
-    settings.autoplay,
     settings.theme,
     settings.interfaceLanguage,
     settings.nativeLanguage,
@@ -383,6 +396,12 @@ export function CardViewer({
         const message = t("card_storage_unavailable");
         setError(message);
         callbacks.current.onError?.(message);
+      } else if (
+        type === "autoplayFallback" &&
+        activeRender.current?.autoplay
+      ) {
+        activeRender.current.autoplay = false;
+        callbacks.current.onAutoplayFallback?.();
       } else if (type === "audioStarted") stopAudio(false);
       else if (
         type === "height" &&
@@ -425,10 +444,21 @@ export function CardViewer({
       message.cardId === card.id &&
       message.renderId === renderId.current
     ) {
-      activeRender.current = { id: message.renderId, revealed };
-      frame.current?.contentWindow?.postMessage(message, "*");
+      const side = JSON.stringify([card.id, card.schedule?.reps, revealed]);
+      const autoplay = autoplaySide && lastSide.current !== side;
+      lastSide.current = side;
+      activeRender.current = { id: message.renderId, revealed, autoplay };
+      frame.current?.contentWindow?.postMessage({ ...message, autoplay }, "*");
     }
-  }, [ready, message, loading, card.id, revealed]);
+  }, [
+    ready,
+    message,
+    loading,
+    card.id,
+    card.schedule?.reps,
+    revealed,
+    autoplaySide,
+  ]);
   return (
     <Stack gap="xs" data-srs-reader>
       <ErrorBox error={error} />
@@ -459,6 +489,7 @@ export function CardViewer({
           src={browser.runtime.getURL("/card-viewer.html")}
           title={title}
           sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+          allow={allowAutoplay ? "autoplay *" : undefined}
           w="100%"
           bg="var(--mantine-color-body)"
           h={height}

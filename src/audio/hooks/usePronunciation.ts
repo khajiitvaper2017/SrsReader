@@ -11,7 +11,7 @@ import type { LookupWord } from "@/dictionaries/model";
 import { normalize } from "@/languages/text";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export function usePronunciation({
   word,
@@ -48,6 +48,11 @@ export function usePronunciation({
   const hold = useRef<number | undefined>(undefined);
   const held = useRef(false);
   const playback = useRef(0);
+  const cancel = useCallback(() => {
+    playback.current++;
+    stopAudio();
+    setBusy(false);
+  }, []);
   const prepare = useMemo(() => {
     let pending: ReturnType<typeof preparePronunciation> | undefined;
     return (source?: AudioInfo) => {
@@ -146,15 +151,20 @@ export function usePronunciation({
     settings.audioSources,
     settings.audioDialects,
   ]);
-  async function play(source?: AudioInfo | { voice: string } | "card") {
+  async function play(
+    source?: AudioInfo | { voice: string } | "card",
+    automatic = false,
+  ) {
     if (!word && !recording) return;
     const attempt = ++playback.current;
     stopAudio();
     setBusy(true);
-    onError("");
+    if (!automatic) onError("");
+    const playRecording = (blob: Blob) =>
+      playBlob(blob, settings.normalizeAudio, automatic);
     try {
       if (!source && recording) {
-        await playBlob(recording, settings.normalizeAudio);
+        await playRecording(recording);
         return;
       }
       if (!word) return;
@@ -180,7 +190,7 @@ export function usePronunciation({
           if (attempt !== playback.current) return;
           if (preferred) {
             if ("voice" in preferred) await playVoice(preferred.voice);
-            else await playBlob(preferred.blob, settings.normalizeAudio);
+            else await playRecording(preferred.blob);
             return;
           }
         }
@@ -193,7 +203,7 @@ export function usePronunciation({
         if (attempt !== playback.current) return;
         if (media) {
           setActive(media.id);
-          await playBlob(media.blob, settings.normalizeAudio);
+          await playRecording(media.blob);
           if (source === "card") await remember();
           return;
         }
@@ -210,7 +220,7 @@ export function usePronunciation({
         if (attempt !== playback.current) return;
         if (!record || record.url !== source.url)
           throw new Error(t("audio_source_unavailable"));
-        await playBlob(record.blob, settings.normalizeAudio);
+        await playRecording(record.blob);
         await remember(record.blob);
         return;
       }
@@ -219,7 +229,7 @@ export function usePronunciation({
       if (record) {
         try {
           setActive(record.url);
-          await playBlob(record.blob, settings.normalizeAudio);
+          await playRecording(record.blob);
           return;
         } catch {
           /* Try the installed voice if this browser cannot decode the recording. */
@@ -229,7 +239,7 @@ export function usePronunciation({
       setActive(`tts:${settings.voice}`);
       await playVoice(settings.voice);
     } catch (error) {
-      if (attempt === playback.current)
+      if (!automatic && attempt === playback.current)
         onError(error instanceof Error ? error.message : String(error));
     } finally {
       if (attempt === playback.current) setBusy(false);
@@ -251,6 +261,7 @@ export function usePronunciation({
     hold,
     held,
     play,
+    cancel,
     label,
   };
 }

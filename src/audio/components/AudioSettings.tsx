@@ -192,9 +192,11 @@ export function AudioSettings({
           labelWrapper: { flex: 1 },
           track: { flexShrink: 0 },
         }}
-        label={t("play_audio_on_reveal")}
-        checked={settings.autoplay}
-        onChange={(event) => void update({ autoplay: event.target.checked })}
+        label={t("play_audio_on_lookup")}
+        checked={settings.autoplayLookup}
+        onChange={(event) =>
+          void update({ autoplayLookup: event.currentTarget.checked })
+        }
       />
     </Stack>
   );

@@ -1,5 +1,5 @@
 import { ReadingCardSelect } from "@/cards/components/ReadingCardSelect";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { dictionaryMetadata } from "@/dictionaries/hooks/useMeanings";
 import { useSettings } from "@/settings/hooks/useSettings";
 import {
@@ -18,6 +18,7 @@ import {
   Title,
 } from "@mantine/core";
 import { AudioButton } from "@/audio/components/AudioButton";
+import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import { FrequencyBadge } from "@/dictionaries/components/FrequencyBadge";
 import { Meanings } from "@/dictionaries/components/Meanings";
 import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
@@ -164,6 +165,21 @@ function LookupEntry({
           ?.text
       : undefined;
   const heading = writtenNumeral ?? word?.lemma ?? term;
+  const { play, cancel } = usePronunciation({
+    word,
+    form: writtenNumeral,
+    settings,
+    onError: setError,
+  });
+  const playPronunciation = useRef(play);
+  playPronunciation.current = play;
+  const autoplay =
+    settings.autoplayLookup && !!word && word.id !== page.selected;
+  useEffect(() => {
+    if (!autoplay) return;
+    void playPronunciation.current(undefined, true);
+    return cancel;
+  }, [autoplay, word?.id, writtenNumeral, cancel]);
   const meanings =
     word?.meanings.filter((meaning) => meaning.tags !== "ipa") ?? [];
   const ipa = dictionaryPronunciations(

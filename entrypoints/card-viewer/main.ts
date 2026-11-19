@@ -67,6 +67,7 @@ window.addEventListener("message", (event: MessageEvent) => {
       send("height", frameHeight);
       send("rendered", { cardId: current.cardId, renderId: current.renderId });
     } else if (["error", "audioStarted"].includes(type)) send(type, value);
+    else if (type === "autoplayFallback" && current?.autoplay) send(type, null);
     else if (type === "asset" && current && value && typeof value === "object")
       send("asset", { ...value, cardId: current.cardId });
     else if (type === "lookup" && current && value && typeof value === "object")
@@ -145,6 +146,7 @@ window.addEventListener("message", (event: MessageEvent) => {
     "sandbox",
     "allow-scripts allow-popups allow-popups-to-escape-sandbox",
   );
+  if (data.autoplay) next.allow = "autoplay *";
   next.style.cssText =
     "width:100%;height:1px;border:0;display:block;position:absolute;top:0;left:0;visibility:hidden";
   next.title = data.title;

@@ -43,6 +43,20 @@ export function ReviewSettings({
           ]}
         />
         <Switch
+          label={t("play_audio_on_card_front")}
+          checked={settings.autoplayFront}
+          onChange={(event) =>
+            void update({ autoplayFront: event.currentTarget.checked })
+          }
+        />
+        <Switch
+          label={t("play_audio_on_card_back")}
+          checked={settings.autoplay}
+          onChange={(event) =>
+            void update({ autoplay: event.currentTarget.checked })
+          }
+        />
+        <Switch
           labelPosition="left"
           w="100%"
           styles={{

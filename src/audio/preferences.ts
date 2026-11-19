@@ -32,6 +32,6 @@ export const audioPreferencesSchema = z.object({
     ]),
   normalizeAudio: z.boolean().default(true),
   voice: z.string().default(""),
-  autoplay: z.boolean().default(false),
+  autoplayLookup: z.boolean().default(false),
 });
 export type AudioPreferences = z.infer<typeof audioPreferencesSchema>;

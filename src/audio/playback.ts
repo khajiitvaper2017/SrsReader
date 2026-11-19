@@ -145,11 +145,28 @@ export async function prepareBlob(blob: Blob) {
   return prepared;
 }
 
-export async function playBlob(blob: Blob, normalize: boolean) {
+export async function playBlob(
+  blob: Blob,
+  normalize: boolean,
+  automatic = false,
+) {
   stopAudio();
   const version = playbackVersion;
   const context = (audioContext ??= new AudioContext());
-  await context.resume();
+  const resumed = context.resume();
+  if (automatic && context.state !== "running") {
+    // A browser can leave resume pending until a user gesture.
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      resumed,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new DOMException("", "NotAllowedError")),
+          1000,
+        );
+      }),
+    ]).finally(() => clearTimeout(timeout));
+  } else await resumed;
   const prepared = await prepareBlob(blob);
   if (version !== playbackVersion) return;
   const source = context.createBufferSource();

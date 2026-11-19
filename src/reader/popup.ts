@@ -53,7 +53,7 @@ export function createPopup(
     popup = document.createElement("iframe");
     popup.dataset.srsReader = "";
     popup.title = t("srsreader_dictionary");
-    popup.allow = "translator; language-detector";
+    popup.allow = "translator; language-detector; autoplay";
     popup.src =
       browser.runtime.getURL("/lookup.html") +
       (popupSession ? `?session=${encodeURIComponent(popupSession)}` : "");

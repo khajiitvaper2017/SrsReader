@@ -475,8 +475,10 @@ export function cardRuntime(config: RuntimeConfig) {
       const audio = document.querySelector<HTMLMediaElement>(
         "audio[data-srs-audio],video[data-srs-audio]",
       );
-      if (audio) void audio.play().catch(() => {});
-      else document.querySelector<HTMLElement>("[data-srs-tts]")?.click();
+      const tts = document.querySelector<HTMLElement>("[data-srs-tts]");
+      if (audio) void audio.play().catch(() => send("autoplayFallback", null));
+      else if (tts) tts.click();
+      else send("autoplayFallback", null);
     }
   }
   if (document.readyState === "loading")

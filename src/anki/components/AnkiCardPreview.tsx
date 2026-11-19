@@ -272,7 +272,7 @@ export function AnkiCardPreview({
                     <CardViewer
                       document={document}
                       revealed={value === "back"}
-                      settings={{ ...settings, autoplay: false }}
+                      settings={settings}
                       wordAudio="preview"
                       deckName={sample.deckName}
                       loadAssets={loadAssets}
