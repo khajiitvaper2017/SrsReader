@@ -45,9 +45,9 @@
 - Fix the shared cause of a bug. Check its callers and keep changes within the requested scope.
 - Do not add tests unless asked, except when a concrete misparse and example are available: add a small direct regression for the parsing or matching logic. Keep all misparse cases together in `e2e/misparses.spec.ts`; use the existing runner without browser, website, database, or live parser setup. Other requested tests must check end-to-end app behavior.
 - For trivial presentation-only changes (hover, spacing, labels, icons), do one quick check of the affected UI. Do not automatically run typecheck, ESLint, E2E tests, builds, screenshot collections, or multiple viewport/theme checks.
-- For logic, types, imports, storage, security, dependencies, or build changes, run only the relevant static checks and one focused behavior check. Reuse known APIs and callers; skip repeated documentation searches and temporary harnesses for obvious styling edits.
-- Repeat only failed checks or checks affected by a later edit. Do not repeat checks the user completed, successful browser setup, or successful fixture imports.
-- Do not run the full suite, repo-wide formatting, unused-code scans, or benchmarks unless the task requires them. Report checks not run.
+- For changes to control flow, validation rules, types, imports, storage, security, dependencies, or build configuration, run the relevant static checks and a focused behavior check where applicable. Follow the global small-change rule for simple edits to defaults and constants.
+- Do not repeat checks the user completed, successful browser setup, or successful fixture imports.
+- Run the full suite, repo-wide formatting, unused-code scans, or benchmarks only when the task requires them. Report skipped checks that matter to the result.
 
 ## Documentation
 
