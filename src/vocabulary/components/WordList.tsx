@@ -1,17 +1,30 @@
 import {
   Badge,
+  Divider,
   Group,
   NavLink,
   Pagination,
-  Box,
+  Paper,
   Stack,
   Text,
 } from "@mantine/core";
+import { Fragment } from "react";
 import { shortDefinition } from "@/dictionaries/definitions";
 import type { Settings } from "@/settings/model";
-import { t } from "@/shared/i18n/i18n";
-import { useWords } from "@/vocabulary/hooks/useWords";
-import { stateOf, wordStateLabels } from "@/vocabulary/state";
+import { i18n, t } from "@/shared/i18n/i18n";
+import type { useWords } from "@/vocabulary/hooks/useWords";
+import { stateOf, wordStateLabels, type WordState } from "@/vocabulary/state";
+
+const statusColors: Record<WordState, string> = {
+  unknown: "red",
+  new: "orange",
+  learning: "yellow",
+  review: "teal",
+  due: "violet",
+  known: "green",
+  suspended: "gray",
+};
+
 export function WordList({
   settings,
   controller,
@@ -20,34 +33,102 @@ export function WordList({
   controller: ReturnType<typeof useWords>;
 }) {
   const { selected, setSelected, pageWords, page, pages, setPage } = controller;
+  const currentYear = new Date().getFullYear();
   return (
     <Stack>
-      <Box>
-        {pageWords.map((w) => (
-          <NavLink
-            component="button"
-            key={w.id}
-            data-word-id={w.id}
-            active={selected === w.id}
-            label={w.lemma}
-            lang={w.language}
-            description={
-              <Text variant="supporting" truncate="end">
-                {shortDefinition(w).slice(0, 140) ||
-                  t("open_to_see_definitions")}
-              </Text>
-            }
-            rightSection={
-              <Badge color="gray">
-                {t(wordStateLabels[stateOf(w, settings.matureIntervalDays)])}
-              </Badge>
-            }
-            onClick={() => {
-              setSelected(w.id);
-            }}
-          />
-        ))}
-      </Box>
+      {pageWords.length > 0 && (
+        <Paper withBorder p={0}>
+          {pageWords.map((word, index) => {
+            const state = stateOf(word, settings.matureIntervalDays);
+            const next = word.known
+              ? undefined
+              : word.linkedCards
+                  .flatMap(({ schedule, suspended }) =>
+                    !suspended && schedule && schedule.state !== 0
+                      ? [schedule]
+                      : [],
+                  )
+                  .sort((a, b) => a.dueAt - b.dueAt)[0];
+            const date = next && new Date(next.dueAt);
+            return (
+              <Fragment key={word.id}>
+                {index > 0 && <Divider />}
+                <NavLink
+                  component="button"
+                  type="button"
+                  data-word-id={word.id}
+                  active={selected === word.id}
+                  aria-current={selected === word.id ? "true" : undefined}
+                  px="sm"
+                  py="xs"
+                  styles={{
+                    body: { minWidth: 0, overflowWrap: "anywhere" },
+                    section: { maxWidth: "46%", minWidth: 0 },
+                  }}
+                  label={
+                    <Group component="span" gap="xs" style={{ rowGap: 0 }}>
+                      <Text component="span" fw={600} lang={word.language}>
+                        {word.lemma}
+                      </Text>
+                      {word.reading && word.reading !== word.lemma && (
+                        <Text
+                          component="span"
+                          variant="supporting"
+                          lang={word.language}
+                        >
+                          {word.reading}
+                        </Text>
+                      )}
+                      {next && date && (
+                        <Text
+                          component="time"
+                          dateTime={date.toISOString()}
+                          variant="supporting"
+                        >
+                          {t("words_review_date", {
+                            date: date.toLocaleString(i18n.resolvedLanguage, {
+                              month: "short",
+                              day: "numeric",
+                              year:
+                                date.getFullYear() === currentYear
+                                  ? undefined
+                                  : "numeric",
+                              ...(next.state === 2 || next.interday
+                                ? {}
+                                : { hour: "numeric", minute: "2-digit" }),
+                            }),
+                          })}
+                        </Text>
+                      )}
+                    </Group>
+                  }
+                  description={
+                    <Text
+                      component="span"
+                      variant="supporting"
+                      lineClamp={2}
+                      maw="76ch"
+                    >
+                      {shortDefinition(word) || t("open_to_see_definitions")}
+                    </Text>
+                  }
+                  rightSection={
+                    <Group component="span" gap={4} justify="flex-end">
+                      {word.leech && (
+                        <Badge color="red">{t("srs_leech")}</Badge>
+                      )}
+                      <Badge color={statusColors[state]}>
+                        {t(wordStateLabels[state])}
+                      </Badge>
+                    </Group>
+                  }
+                  onClick={() => setSelected(word.id)}
+                />
+              </Fragment>
+            );
+          })}
+        </Paper>
+      )}
       {pages > 1 && (
         <Group justify="center">
           <Pagination

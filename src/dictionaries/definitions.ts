@@ -78,13 +78,13 @@ export function definitionText(value: unknown, senseSeparator = "; "): string {
 }
 
 export function shortDefinition(word: Vocabulary) {
-  return word.meanings
-    .map((m) =>
-      (m.customDefinitions || m.definitions)
-        .map((definition) => definitionText(definition))
-        .join("; "),
-    )
-    .join("; ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const glosses = word.meanings.flatMap(({ customDefinitions, definitions }) =>
+    (customDefinitions ?? definitions).flatMap((definition) =>
+      definitionText(definition, "\n")
+        .split(/[;\r\n]/u)
+        .map((gloss) => gloss.replace(/\s+/gu, " ").trim())
+        .filter(Boolean),
+    ),
+  );
+  return [...new Set(glosses)].slice(0, 3).join("; ");
 }

@@ -1089,6 +1089,7 @@
   "words_result_count_few": "{{count}} слова",
   "words_result_count_many": "{{count}} слів",
   "words_result_count_other": "{{count}} слова",
+  "words_review_date": "Повторення {{date}}",
   "words_scope": "{{language}} · {{deck}}",
   "words_empty_deck": "Збережених слів немає. Збережіть їх під час читання або додайте частотну колоду в «Навчанні».",
   "words_no_matching_filters": "Змініть пошук або фільтр.",

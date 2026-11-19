@@ -12,7 +12,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { Filter } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { languageLabel, languageName } from "@/languages/codes";
 import type { Settings } from "@/settings/model";
@@ -150,6 +150,7 @@ export function WordsPage({
               type="search"
               aria-label={t("search_saved_words")}
               placeholder={t("search_words")}
+              leftSection={<Search aria-hidden size={18} />}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />

@@ -1044,6 +1044,7 @@
   "words_all_decks": "All decks",
   "words_result_count_one": "{{count}} word",
   "words_result_count_other": "{{count}} words",
+  "words_review_date": "Review {{date}}",
   "words_scope": "{{language}} · {{deck}}",
   "words_empty_deck": "No saved words. Save words while reading or add a frequency deck in Study.",
   "words_no_matching_filters": "Try another search or filter.",
