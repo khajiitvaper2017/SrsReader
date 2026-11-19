@@ -1,10 +1,19 @@
-import { ActionIcon, Box, Loader, Menu, Stack, Text } from "@mantine/core";
+import { ActionIcon, Box, Group, Loader, Menu, Text } from "@mantine/core";
+import type { AudioInfo } from "@/audio/model";
 import { usePronunciation } from "@/audio/hooks/usePronunciation";
 import type { preparePronunciation } from "@/audio/prepare";
 import type { LookupWord } from "@/dictionaries/model";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
-import { Volume2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Volume2 } from "lucide-react";
+import { useState } from "react";
+
+function recordingProvider(source: AudioInfo) {
+  if (source.page.startsWith("https://forvo.com/")) return "Forvo";
+  if (source.creator === "LanguagePod101") return "LanguagePod101";
+  return source.name.startsWith("LL-") ? "Lingua Libre" : "Wikimedia Commons";
+}
+
 export function AudioButton({
   word,
   form,
@@ -54,6 +63,60 @@ export function AudioButton({
     prepareRecording,
     recording,
   });
+  const [showRecordings, setShowRecordings] = useState(false);
+  const [showVoices, setShowVoices] = useState(false);
+  const providers = new Set<string>();
+  const firstRecordings: AudioInfo[] = [];
+  const moreRecordings: AudioInfo[] = [];
+  for (const source of sources) {
+    const provider = recordingProvider(source);
+    if (providers.has(provider)) moreRecordings.push(source);
+    else {
+      firstRecordings.push(source);
+      providers.add(provider);
+    }
+  }
+  const speaker = <Volume2 aria-hidden size={16} />;
+  const recordingItem = (source: AudioInfo) => (
+    <Group key={source.url} gap={0} wrap="nowrap" role="presentation">
+      <Menu.Item
+        flex={1}
+        miw={0}
+        title={source.name}
+        leftSection={
+          busy && active === source.url ? (
+            <Loader size={16} aria-hidden />
+          ) : (
+            speaker
+          )
+        }
+        onClick={() => void play(source)}
+      >
+        <Text span inherit fw={600}>
+          {recordingProvider(source)}
+        </Text>
+        {showRecordings && (
+          <Text variant="supporting" component="span" display="block">
+            {source.name}
+          </Text>
+        )}
+      </Menu.Item>
+      {!settings.hideDictionarySources && (
+        <Menu.Item
+          component="a"
+          href={source.page}
+          target="_blank"
+          rel="noopener noreferrer"
+          w="auto"
+          px="xs"
+          title={[source.creator, source.license].filter(Boolean).join(", ")}
+          aria-label={t("audio_recording_source", { name: source.name })}
+        >
+          <ExternalLink aria-hidden size={14} />
+        </Menu.Item>
+      )}
+    </Group>
+  );
   return (
     <Text data-srs-reader="" component="span" inherit>
       <Menu
@@ -61,6 +124,24 @@ export function AudioButton({
         opened={open}
         onChange={setOpen}
         closeOnItemClick={false}
+        width="min(20rem, calc(100vw - 16px))"
+        middlewares={{
+          flip: { padding: 8 },
+          shift: { padding: 8 },
+          size: { padding: 8 },
+        }}
+        preventPositionChangeWhenVisible={false}
+        styles={{
+          dropdown: {
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            overflowWrap: "anywhere",
+          },
+        }}
+        onExitTransitionEnd={() => {
+          setShowRecordings(false);
+          setShowVoices(false);
+        }}
       >
         <Menu.Target>
           <Box component="span" display="inline-flex">
@@ -119,11 +200,7 @@ export function AudioButton({
                 }
               }}
             >
-              {busy ? (
-                <Loader size={14} aria-hidden="true" />
-              ) : (
-                <Volume2 aria-hidden="true" size={16} />
-              )}
+              {busy ? <Loader size={14} aria-hidden="true" /> : speaker}
             </ActionIcon>
           </Box>
         </Menu.Target>
@@ -134,68 +211,48 @@ export function AudioButton({
               <Menu.Label>{t("recordings")}</Menu.Label>
               {cardRecording && (
                 <Menu.Item
-                  leftSection={<Volume2 aria-hidden="true" size={16} />}
+                  leftSection={speaker}
                   onClick={() => void play("card")}
                 >
                   {t("audio_card_recording")}
-                  <Text variant="supporting" component="span" display="block">
-                    {cardRecording}
-                  </Text>
                 </Menu.Item>
               )}
-              {loading && <Text role="status">{t("finding_recordings")}</Text>}
-              {sources.map((source) => (
-                <Stack key={source.url}>
-                  <Menu.Item
-                    onClick={(event) => {
-                      event.preventDefault();
-                      void play(source);
-                    }}
-                  >
-                    {busy && active === source.url ? (
-                      <Loader size={14} aria-hidden="true" />
+              {firstRecordings.map(recordingItem)}
+              {!!moreRecordings.length && (
+                <Menu.Item
+                  leftSection={
+                    showRecordings ? (
+                      <ChevronUp aria-hidden size={16} />
                     ) : (
-                      <Volume2 aria-hidden="true" size={16} />
-                    )}
-                    <span>
-                      <strong>
-                        {source.page.startsWith("https://forvo.com/")
-                          ? "Forvo"
-                          : source.creator === "LanguagePod101"
-                            ? "LanguagePod101"
-                            : source.name.startsWith("LL-")
-                              ? "Lingua Libre"
-                              : "Wikimedia Commons"}
-                      </strong>
-                      <Text
-                        variant="supporting"
-                        component="span"
-                        display="block"
-                      >
-                        {source.name}
-                      </Text>
-                    </span>
-                  </Menu.Item>
-                  {!settings.hideDictionarySources && (
-                    <Menu.Item
-                      component="a"
-                      href={source.page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {[source.creator, source.license]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </Menu.Item>
+                      <ChevronDown aria-hidden size={16} />
+                    )
+                  }
+                  aria-expanded={showRecordings}
+                  onClick={() => setShowRecordings((value) => !value)}
+                >
+                  {t(
+                    showRecordings
+                      ? "audio_fewer_recordings"
+                      : "audio_more_recordings",
                   )}
-                </Stack>
-              ))}
+                </Menu.Item>
+              )}
+              {showRecordings && moreRecordings.map(recordingItem)}
+              {loading && (
+                <Text variant="supporting" px="xs" py={4} role="status">
+                  {t("finding_recordings")}
+                </Text>
+              )}
               {!loading &&
                 !cardRecording &&
                 !sources.length &&
-                !discoveryError && <Text>{t("no_recordings_found")}</Text>}
+                !discoveryError && (
+                  <Text variant="supporting" px="xs" py={4}>
+                    {t("no_recordings_found")}
+                  </Text>
+                )}
               {discoveryError && (
-                <Text role="alert" c="red">
+                <Text role="alert" c="red" px="xs" py={4}>
                   {discoveryError}
                 </Text>
               )}
@@ -204,24 +261,36 @@ export function AudioButton({
           )}
           <Menu.Label>{t("system_tts")}</Menu.Label>
           <Menu.Item
-            onClick={(event) => {
-              event.preventDefault();
-              void play({ voice: settings.voice });
-            }}
+            leftSection={speaker}
+            onClick={() => void play({ voice: settings.voice })}
           >
-            <Volume2 aria-hidden="true" size={16} /> {t("default_voice")}
+            {t("default_voice")}
           </Menu.Item>
-          {voices.map((voice) => (
+          {!!voices.length && (
             <Menu.Item
-              key={voice.voiceURI}
-              onClick={(event) => {
-                event.preventDefault();
-                void play({ voice: voice.voiceURI });
-              }}
+              leftSection={
+                showVoices ? (
+                  <ChevronUp aria-hidden size={16} />
+                ) : (
+                  <ChevronDown aria-hidden size={16} />
+                )
+              }
+              aria-expanded={showVoices}
+              onClick={() => setShowVoices((value) => !value)}
             >
-              <Volume2 aria-hidden="true" size={16} /> {voice.name}
+              {t(showVoices ? "audio_fewer_voices" : "audio_more_voices")}
             </Menu.Item>
-          ))}
+          )}
+          {showVoices &&
+            voices.map((voice) => (
+              <Menu.Item
+                key={voice.voiceURI}
+                leftSection={speaker}
+                onClick={() => void play({ voice: voice.voiceURI })}
+              >
+                {voice.name}
+              </Menu.Item>
+            ))}
         </Menu.Dropdown>
       </Menu>
     </Text>
