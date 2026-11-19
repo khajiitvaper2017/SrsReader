@@ -4,7 +4,8 @@ import { buildQueue } from "@/srs/queue-policy";
 import { dailyCounts } from "@/srs/workload";
 import { reviewCards } from "@/vocabulary/storage";
 import { db } from "@/platform/database/db";
-import { studyGroups, wordsInDeck } from "@/srs/deck-words";
+import { studyGroups } from "@/srs/deck-words";
+import { deckQueueScope } from "@/srs/deck-queue";
 import { deckIdsInTree } from "@/srs/deck-tree";
 import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
@@ -18,9 +19,8 @@ export async function reviewQueue(
   limits?: Pick<SchedulingPreferences, "newLimit" | "reviewLimit">,
   currentCardId?: string,
 ) {
-  const settings = {
+  const defaults = {
     ...(await getSettings()),
-    ...limits,
     studyLanguage: language,
   };
   const now = Date.now();
@@ -29,15 +29,14 @@ export async function reviewQueue(
     deckId && deckId !== "mined" ? deckIdsInTree(decks, deckId) : undefined;
   const saved = await queueEntries(language, selectedDecks);
   const groups = studyGroups(saved, decks);
-  const included = wordsInDeck(groups, deckId);
-  const counts = await dailyCounts(settings, now);
-  const words = included.filter(
-    (word) =>
-      word.card &&
-      !word.known &&
-      !word.suspended &&
-      (word.buriedUntil ?? 0) <= now &&
-      !counts.buried.has(word.id),
+  const daily = await dailyCounts(defaults, now);
+  const { settings, counts, words, withinDeckLimit } = deckQueueScope(
+    defaults,
+    groups,
+    daily,
+    now,
+    deckId,
+    limits,
   );
   const deckOrder = new Map(
     [
@@ -71,7 +70,15 @@ export async function reviewQueue(
         ? await orderNewWords(newWords, settings)
         : newWords.sort(gatherOrder[settings.newGatherOrder])
       : [];
-  const queue = buildQueue(words, counts, settings, now, orderedNew, deckOrder);
+  const queue = buildQueue(
+    words,
+    counts,
+    settings,
+    now,
+    orderedNew,
+    deckOrder,
+    withinDeckLimit,
+  );
   const current =
     currentCardId && queue.words.find((word) => word.id === currentCardId);
   const upcoming = current
@@ -100,13 +107,6 @@ export async function reviewQueue(
           ? null
           : Math.max(settings.reviewLimit, counts.reviews),
     },
-    canStudyMore:
-      newWords.length > 0 ||
-      words.some(
-        (word) =>
-          (word.card!.state === 2 || word.card!.interday) &&
-          word.card!.dueAt <= now,
-      ),
     forecast: [1, 2, 3].map((days) => ({
       days,
       count: words.filter(

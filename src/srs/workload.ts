@@ -43,6 +43,24 @@ export async function dailyCounts(
     settings.rolloverHour,
   );
   const history = await historyForDay(settings.studyLanguage, start, now);
+  const byCard = new Map<string, { introduced: number; reviews: number }>();
+  let introduced = 0;
+  let reviews = 0;
+  for (const review of history) {
+    const counts = byCard.get(review.cardId) ?? { introduced: 0, reviews: 0 };
+    if (!review.before?.schedule?.reps && !counts.introduced) {
+      counts.introduced = 1;
+      introduced++;
+    }
+    if (
+      review.before?.schedule?.state === 2 ||
+      review.before?.schedule?.interday
+    ) {
+      counts.reviews++;
+      reviews++;
+    }
+    byCard.set(review.cardId, counts);
+  }
   return {
     buried: new Set(
       settings.autoBuryFailed
@@ -52,15 +70,8 @@ export async function dailyCounts(
         : [],
     ),
     today: history.length,
-    introduced: new Set(
-      history
-        .filter((review) => !review.before?.schedule?.reps)
-        .map((review) => review.cardId),
-    ).size,
-    reviews: history.filter(
-      (review) =>
-        review.before?.schedule?.state === 2 ||
-        review.before?.schedule?.interday,
-    ).length,
+    introduced,
+    reviews,
+    byCard,
   };
 }

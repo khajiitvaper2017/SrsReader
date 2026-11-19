@@ -51,6 +51,19 @@ export class Proto {
     const value = this.values(field)[0];
     return typeof value === "bigint" ? Number(value) : fallback;
   }
+  floats(field: number) {
+    return this.values(field).flatMap((value) => {
+      if (!(value instanceof Uint8Array) || value.byteLength % 4) return [];
+      const view = new DataView(
+        value.buffer,
+        value.byteOffset,
+        value.byteLength,
+      );
+      return Array.from({ length: value.byteLength / 4 }, (_, index) =>
+        view.getFloat32(index * 4, true),
+      );
+    });
+  }
   integer(field: number) {
     const value = this.values(field)[0];
     return typeof value === "bigint"

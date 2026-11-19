@@ -8,11 +8,12 @@ import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { buildQueue } from "@/srs/queue-policy";
 import { dailyCounts } from "@/srs/workload";
-import { queueEntries, type QueueEntry } from "@/srs/queue-entries";
+import { queueEntries } from "@/srs/queue-entries";
+import { deckQueueScope } from "@/srs/deck-queue";
 import type { Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { snapshot } from "@/vocabulary/snapshot";
-import { isFrequencyWord, studyGroups, wordsInDeck } from "@/srs/deck-words";
+import { isFrequencyWord, studyGroups } from "@/srs/deck-words";
 import {
   allReviewCards,
   replaceMeanings,
@@ -27,6 +28,8 @@ import {
   type DeckNode,
 } from "@/srs/deck-tree";
 import type { Deck } from "@/srs/deck-model";
+import type { Card } from "@/cards/model";
+import type { DeckReviewSettings } from "@/srs/preferences";
 
 async function keepParentDecks(
   decks: Deck[],
@@ -63,35 +66,31 @@ export async function studyOverview(settings: Settings) {
         await queueEntries(language),
         decks.filter((deck) => deck.language === language),
       );
-      function summary(entries: QueueEntry[]) {
-        const active = entries.filter(
-          (word) =>
-            word.card &&
-            !word.known &&
-            !word.suspended &&
-            (word.buriedUntil ?? 0) <= now &&
-            !counts.buried.has(word.id),
-        );
+      function summary(deckId?: string) {
+        const scope = deckQueueScope(preferences, groups, counts, now, deckId);
         const queue = buildQueue(
-          active,
-          counts,
-          preferences,
+          scope.words,
+          scope.counts,
+          scope.settings,
           now,
-          active.filter((word) => word.card!.state === 0),
+          scope.words.filter((word) => word.card!.state === 0),
+          undefined,
+          scope.withinDeckLimit,
         );
         return {
           fresh: queue.fresh,
           learning: queue.learning + queue.relearning,
           due: queue.reviews,
-          total: active.length,
-          wordCount: new Set(entries.map((word) => word.wordId || word.noteId))
-            .size,
+          total: scope.words.length,
+          wordCount: new Set(
+            scope.entries.map((word) => word.wordId || word.noteId),
+          ).size,
         };
       }
       return {
         language,
-        ...summary(wordsInDeck(groups)),
-        mined: summary(wordsInDeck(groups, "mined")),
+        ...summary(),
+        mined: summary("mined"),
         decks: groups.decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
@@ -99,7 +98,8 @@ export async function studyOverview(settings: Settings) {
           depth: deck.depth,
           parentId: deck.parentId,
           dictionaryId: deck.dictionaryId,
-          ...summary(deck.words),
+          reviewSettings: deck.reviewSettings,
+          ...summary(deck.id),
         })),
       };
     }),
@@ -179,6 +179,35 @@ export async function saveStudyDeck(
       legacyPath: current?.legacyPath,
     });
   });
+}
+
+export async function saveDeckReviewSettings(
+  language: string,
+  id: string,
+  reviewSettings: DeckReviewSettings | null,
+) {
+  await db.transaction("rw", db.decks, async () => {
+    const decks = await db.decks.where("language").equals(language).toArray();
+    const nodes = deckTree(decks);
+    if (!nodes.some((deck) => deck.id === id))
+      throw new Error(t("study_deck_not_found"));
+    await keepParentDecks(decks, nodes, id);
+    await db.decks.update(id, { reviewSettings: reviewSettings ?? undefined });
+  });
+}
+
+export async function deckReviewSettingsForCards(
+  cards: Pick<Card, "deckId">[],
+) {
+  const ids = [
+    ...new Set(cards.flatMap((card) => (card.deckId ? [card.deckId] : []))),
+  ];
+  const decks = await db.decks.bulkGet(ids);
+  return new Map(
+    decks.flatMap((deck) =>
+      deck?.reviewSettings ? [[deck.id, deck.reviewSettings] as const] : [],
+    ),
+  );
 }
 
 async function frequencyDeckWords(dictionaryId: string, limit: number) {

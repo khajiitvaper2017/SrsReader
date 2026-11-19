@@ -1,4 +1,5 @@
 import {
+  Checkbox,
   Accordion,
   ActionIcon,
   Alert,
@@ -68,6 +69,7 @@ export function AnkiTransfer({
     deckIds: [],
     duplicates: "keep",
     mergeNoteTypes: false,
+    importReviewSettings: false,
     bindings: {},
     omitFields: {},
   });
@@ -110,6 +112,7 @@ export function AnkiTransfer({
         deckIds: result.decks.map((deck) => deck.id),
         duplicates: "keep",
         mergeNoteTypes: false,
+        importReviewSettings: false,
         bindings: Object.fromEntries(
           result.noteTypes.map((type) => [type.id, type.suggestedBindings]),
         ),
@@ -307,6 +310,31 @@ export function AnkiTransfer({
                     disabled={busy}
                   />
                 </SimpleGrid>
+                {preview.decks.some(
+                  (deck) => deck.preset && options.deckIds.includes(deck.id),
+                ) && (
+                  <Checkbox
+                    label={t("anki_review_settings")}
+                    description={t("anki_review_settings_help", {
+                      presets: [
+                        ...new Set(
+                          preview.decks.flatMap((deck) =>
+                            deck.preset && options.deckIds.includes(deck.id)
+                              ? [deck.preset]
+                              : [],
+                          ),
+                        ),
+                      ].join(", "),
+                    })}
+                    checked={options.importReviewSettings}
+                    onChange={(event) =>
+                      setOptions({
+                        ...options,
+                        importReviewSettings: event.currentTarget.checked,
+                      })
+                    }
+                  />
+                )}
                 <SimpleGrid cols={{ base: 1, sm: 2 }}>
                   <Stack gap="xs">
                     <Select

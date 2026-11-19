@@ -9,6 +9,7 @@ import {
   type AnkiModel,
   type AnkiRevlog,
   type AnkiImportOptions,
+  type AnkiCollection,
 } from "@/anki/model";
 import {
   assetId,
@@ -236,6 +237,36 @@ async function mergeConverted(
   for (const event of retainedEvents) events.push(event);
   for (const review of retainedReviews) reviews.push(review);
   return skipped;
+}
+
+async function applyImportedDeckSettings(
+  source: AnkiCollection,
+  options: AnkiImportOptions,
+) {
+  if (!options.importReviewSettings || !source.deckPresets.size) return;
+  const selected = new Set(options.deckIds);
+  const paths = new Set<string>();
+  for (const deck of source.decks) {
+    if (selected.size && !selected.has(deck.id)) continue;
+    const parts = deck.name.split("::");
+    for (let length = 1; length <= parts.length; length++)
+      paths.add(parts.slice(0, length).join("::"));
+  }
+  const saved = await db.decks
+    .where("language")
+    .equals(options.language)
+    .toArray();
+  const nodes = deckTree(saved);
+  const byPath = new Map(nodes.map((deck) => [deck.name, deck.id]));
+  const savedIds = new Set(saved.map((deck) => deck.id));
+  for (const deck of source.decks) {
+    const preset = source.deckPresets.get(deck.id);
+    if (!preset || !paths.has(deck.name)) continue;
+    const sourceId = `anki:deck:${options.language}:${deck.id}`;
+    const id = savedIds.has(sourceId) ? sourceId : byPath.get(deck.name);
+    if (id && savedIds.has(id))
+      await db.decks.update(id, { reviewSettings: preset.settings });
+  }
 }
 
 export async function importPackage(
@@ -519,7 +550,15 @@ export async function importPackage(
         options,
         snapshotAssets,
       );
-    if (!notes.length) return { notes: 0, cards: 0, skipped };
+    if (!notes.length) {
+      if (options.importReviewSettings)
+        await srsWrite(() =>
+          db.transaction("rw", db.decks, () =>
+            applyImportedDeckSettings(source, options),
+          ),
+        );
+      return { notes: 0, cards: 0, skipped };
+    }
     const usedTypes = new Set(notes.map((note) => note.noteTypeId));
     const usedWords = new Set(notes.map((note) => note.wordId));
     const retainedTypes = [...types.values()].filter((type) =>
@@ -748,6 +787,7 @@ export async function importPackage(
                 }
                 targets.set(node.id, { id, name });
               }
+              await applyImportedDeckSettings(source, options);
               for (const card of cards) {
                 const target = card.deckId && targets.get(card.deckId);
                 if (target) card.deckId = target.id;

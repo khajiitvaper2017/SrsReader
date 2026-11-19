@@ -194,7 +194,14 @@ export function useReviewSession({
     return () => {
       alive = false;
     };
-  }, [word?.id, word?.srsVersion, settings, revealed, duration]);
+  }, [
+    word?.id,
+    word?.srsVersion,
+    queue?.document,
+    settings,
+    revealed,
+    duration,
+  ]);
   useEffect(() => {
     if (!queue?.wakeAt) return;
     const timer = setTimeout(

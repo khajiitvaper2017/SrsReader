@@ -8,6 +8,7 @@ import type { ReadingContext, ReviewWord } from "@/vocabulary/model";
 import { cacheContext } from "@/examples/sentences";
 import { reviewCard } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
+import { deckPreferences } from "@/srs/preferences";
 
 export async function grade(
   word: ReviewWord,
@@ -18,13 +19,14 @@ export async function grade(
   durationMs: number | null = null,
   now = Date.now(),
 ) {
-  const settings = await getSettings();
   const before = await db.cards.get(word.id);
   if (!before || before.srsVersion !== expectedVersion)
     throw new Error(t("this_word_changed_in_another_tab_reopen_it"));
   if (word.known) throw new Error(t("unmaster_this_word_before_reviewing_it"));
   if (before.suspended)
     throw new Error(t("resume_this_word_before_grading_it"));
+  const deck = before.deckId ? await db.decks.get(before.deckId) : undefined;
+  const settings = deckPreferences(await getSettings(), deck?.reviewSettings);
   const saved = structuredClone(before);
   if (source === "reading" && word.wordId)
     await db.vocabulary.update(word.wordId, { mined: true });

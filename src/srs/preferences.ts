@@ -41,9 +41,10 @@ export const srsPreferencesSchema = z.object({
   learningSteps: learningStepsSchema.default(["10m"]),
   relearningSteps: learningStepsSchema.default(["10m"]),
   minimumInterval: z.number().int().min(1).max(36500).default(1),
+  maximumInterval: z.number().int().min(1).max(36500).default(36500),
   rolloverHour: z.number().int().min(0).max(23).default(4),
   learnAheadMinutes: z.number().nonnegative().finite().default(20),
-  reviewLimit: z.number().int().positive().nullable().default(null),
+  reviewLimit: z.number().int().nonnegative().nullable().default(null),
   newGatherOrder: z
     .enum(["frequency", "deck", "deck_random", "oldest", "newest", "random"])
     .default("frequency"),
@@ -93,3 +94,35 @@ export const srsPreferencesSchema = z.object({
   missingFrequency: z.enum(["last", "random"]).default("last"),
 });
 export type SchedulingPreferences = z.infer<typeof srsPreferencesSchema>;
+
+const preferences = srsPreferencesSchema.shape;
+export const deckReviewSettingsSchema = z.object({
+  newLimit: preferences.newLimit.unwrap().optional(),
+  reviewLimit: preferences.reviewLimit.unwrap().optional(),
+  learningSteps: preferences.learningSteps.unwrap().optional(),
+  relearningSteps: preferences.relearningSteps.unwrap().optional(),
+  retention: preferences.retention.unwrap().optional(),
+  maximumInterval: preferences.maximumInterval.unwrap().optional(),
+  leechThreshold: preferences.leechThreshold.unwrap().optional(),
+  leechAction: preferences.leechAction.unwrap().optional(),
+  newGatherOrder: preferences.newGatherOrder.unwrap().optional(),
+  newSortOrder: preferences.newSortOrder.unwrap().optional(),
+  newReviewOrder: preferences.newReviewOrder.unwrap().optional(),
+  interdayReviewOrder: preferences.interdayReviewOrder.unwrap().optional(),
+  reviewSortOrder: preferences.reviewSortOrder.unwrap().optional(),
+});
+export type DeckReviewSettings = z.infer<typeof deckReviewSettingsSchema>;
+
+export function deckPreferences<T extends SchedulingPreferences>(
+  defaults: T,
+  overrides: DeckReviewSettings | undefined,
+): T {
+  return overrides
+    ? {
+        ...defaults,
+        ...overrides,
+        dynamicRetention:
+          overrides.retention === undefined && defaults.dynamicRetention,
+      }
+    : defaults;
+}

@@ -378,7 +378,13 @@ export function useLookupWord({
       pending.current++;
     };
   }, [reload]);
-  useChanges(reload, ["vocabulary", "srs", "settings", "dictionaries"]);
+  useChanges(reload, [
+    "vocabulary",
+    "srs",
+    "settings",
+    "dictionaries",
+    "collection",
+  ]);
   useEffect(() => {
     setReviewed(false);
     setLastReview("");

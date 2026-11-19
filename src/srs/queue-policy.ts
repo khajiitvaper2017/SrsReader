@@ -10,6 +10,11 @@ export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
   now: number,
   orderedNew: T[],
   deckOrder: ReadonlyMap<string, number> = new Map(),
+  withinDeckLimit?: (
+    id: string,
+    kind: "fresh" | "reviews",
+    consume: boolean,
+  ) => boolean,
 ) {
   const available = Math.max(
     0,
@@ -44,14 +49,27 @@ export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
         word.card!.dueAt <= now,
     )
     .sort(byDue);
-  const interday = words
+  function take(entries: T[], limit: number, kind: "fresh" | "reviews") {
+    if (!withinDeckLimit) return entries.slice(0, limit);
+    const selected: T[] = [];
+    for (const word of entries) {
+      if (selected.length === limit) break;
+      if (withinDeckLimit(word.id, kind, true)) selected.push(word);
+    }
+    return selected;
+  }
+  const interdayDue = words
     .filter((word) => word.card!.interday && word.card!.dueAt <= now)
-    .sort(byDue)
-    .slice(0, available);
-  const reviews = words
+    .sort(byDue);
+  const interday = take(interdayDue, available, "reviews");
+  const reviewsDue = words
     .filter((word) => word.card!.state === 2 && word.card!.dueAt <= now)
-    .sort(reviewOrder[settings.reviewSortOrder])
-    .slice(0, Math.max(0, available - interday.length));
+    .sort(reviewOrder[settings.reviewSortOrder]);
+  const reviews = take(
+    reviewsDue,
+    Math.max(0, available - interday.length),
+    "reviews",
+  );
   const scheduled = mergeQueues(
     interday,
     reviews,
@@ -61,7 +79,11 @@ export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
   const due = [...learning, ...scheduled];
   const fresh =
     available > 0
-      ? orderedNew.slice(0, Math.max(0, settings.newLimit - counts.introduced))
+      ? take(
+          orderedNew,
+          Math.max(0, settings.newLimit - counts.introduced),
+          "fresh",
+        )
       : [];
   if (settings.newSortOrder === "random")
     fresh.sort(
@@ -112,5 +134,12 @@ export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
     fresh: fresh.length,
     waiting: future.length ? waiting : null,
     wakeAt: waiting,
+    canStudyMore: words.some((word) =>
+      word.card!.state === 0
+        ? (withinDeckLimit?.(word.id, "fresh", false) ?? true)
+        : (word.card!.state === 2 || word.card!.interday) &&
+          word.card!.dueAt <= now &&
+          (withinDeckLimit?.(word.id, "reviews", false) ?? true),
+    ),
   };
 }

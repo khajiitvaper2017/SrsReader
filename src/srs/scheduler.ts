@@ -129,8 +129,11 @@ export function createScheduler(
     learningSteps: settings.learningSteps,
     relearningSteps: settings.relearningSteps,
     enableFuzz: settings.intervalFuzz,
-    maximumInterval: 36500,
-    graduatingInterval: settings.minimumInterval,
+    maximumInterval: settings.maximumInterval,
+    graduatingInterval: Math.min(
+      settings.minimumInterval,
+      settings.maximumInterval,
+    ),
     allowModelOverride: false,
     clearStatsOnForget: false,
   };

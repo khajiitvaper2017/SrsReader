@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { languageSchema } from "@/languages/model";
+import { deckReviewSettingsSchema } from "@/srs/preferences";
 
 export const deckSchema = z.object({
   id: z.string(),
@@ -11,6 +12,7 @@ export const deckSchema = z.object({
   limit: z.number().int().min(1).max(10000).optional(),
   sourceId: z.string().optional(),
   source: z.record(z.string(), z.unknown()).optional(),
+  reviewSettings: deckReviewSettingsSchema.optional(),
   created: z.number().finite(),
 });
 export type Deck = z.infer<typeof deckSchema>;

@@ -7,6 +7,8 @@ import { loadRwkvState } from "@/srs/engines/rwkv/state";
 import { emptySchedule } from "@/srs/model";
 import { effectiveRetention } from "@/srs/retention";
 import type { ReviewWord } from "@/vocabulary/model";
+import { db } from "@/platform/database/db";
+import { deckPreferences } from "@/srs/preferences";
 
 export type SchedulingCard = Pick<
   ReviewWord,
@@ -51,11 +53,14 @@ export async function candidates(
 }
 
 export async function preview(
-  word: SchedulingCard | undefined,
+  word: (SchedulingCard & Partial<Pick<ReviewWord, "document">>) | undefined,
   durationMs: number | null = null,
 ) {
   if (!word) return [];
+  const deckId = word.document?.card.deckId;
+  const deck = deckId ? await db.decks.get(deckId) : undefined;
+  const settings = deckPreferences(await getSettings(), deck?.reviewSettings);
   return (
-    await candidates(word, await getSettings(), Date.now(), durationMs)
+    await candidates(word, settings, Date.now(), durationMs)
   ).schedules.map((card) => card.dueAt);
 }

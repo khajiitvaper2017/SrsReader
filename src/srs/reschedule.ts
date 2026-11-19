@@ -1,4 +1,6 @@
 import { db } from "@/platform/database/db";
+import { deckPreferences } from "@/srs/preferences";
+import { deckReviewSettingsForCards } from "@/srs/decks";
 import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import { rwkvInterval } from "@/srs/engines/rwkv/interval";
@@ -242,8 +244,13 @@ export async function rescheduleExisting(
   const words = (await reviewCards(cards)).filter(
     (word) => allCards || !word.known,
   );
+  const options = await deckReviewSettingsForCards(cards);
   for (const word of words) {
-    const retention = await effectiveRetention(word, settings);
+    const preferences = deckPreferences(
+      settings,
+      options.get(word.document.card.deckId ?? ""),
+    );
+    const retention = await effectiveRetention(word, preferences);
     let intervals: number[] | undefined;
     if (settings.algorithm === "rwkv") {
       const state = await loadRwkvState(word.id, word.language, settings);
@@ -253,21 +260,21 @@ export async function rescheduleExisting(
         { ...state, card: state.card },
         word.language,
         retention,
-        settings,
+        preferences,
         now,
       );
       intervals = [interval, interval, interval, interval];
     }
     const card = word.card!;
     const scheduler = createScheduler(
-      { ...settings, learningSteps: [], relearningSteps: [] },
+      { ...preferences, learningSteps: [], relearningSteps: [] },
       retention,
       card.fsrs,
       intervals,
     );
     const input = toFsrsCard(word.id, card, card.fsrs);
     const days = Math.max(
-      settings.minimumInterval,
+      Math.min(preferences.minimumInterval, preferences.maximumInterval),
       scheduler.nextInterval(input, retention, {
         card: input,
         grade: 1,

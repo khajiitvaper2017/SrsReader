@@ -35,6 +35,7 @@ import {
   manageStudyDeck,
   studyOverview,
   saveStudyDeck,
+  saveDeckReviewSettings,
 } from "@/srs/decks";
 import { sentenceExamples } from "@/examples/sentences";
 
@@ -43,6 +44,7 @@ import { queueMetadata } from "@/srs/queue-entries";
 export function handleSrs(request: Request, settings: Settings) {
   return request.action === "createFrequencyDeck" ||
     request.action === "saveDeck" ||
+    request.action === "saveDeckReviewSettings" ||
     request.action === "manageDeck" ||
     request.action === "grade" ||
     request.action === "undo" ||
@@ -79,6 +81,14 @@ async function execute(request: Request, settings: Settings) {
         request.name,
         request.parentId,
         request.id,
+      );
+      await notify(undefined, "collection");
+      return;
+    case "saveDeckReviewSettings":
+      await saveDeckReviewSettings(
+        request.language,
+        request.deckId,
+        request.reviewSettings,
       );
       await notify(undefined, "collection");
       return;

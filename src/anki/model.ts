@@ -5,6 +5,7 @@ import {
 } from "@/cards/model";
 import { z } from "zod";
 import { languageSchema } from "@/languages/model";
+import type { DeckReviewSettings } from "@/srs/preferences";
 
 export const importOptionsSchema = z.object({
   mode: z.enum(["preserve", "convert"]),
@@ -12,6 +13,7 @@ export const importOptionsSchema = z.object({
   deckIds: z.array(z.string()).default([]),
   duplicates: z.enum(["keep", "update"]).default("keep"),
   mergeNoteTypes: z.boolean().default(false),
+  importReviewSettings: z.boolean().default(false),
   bindings: z.record(z.string(), fieldBindingsSchema).default({}),
   omitFields: z
     .record(z.string(), z.array(z.number().int().nonnegative()))
@@ -38,7 +40,7 @@ export type AnkiPreview = {
     sampleDocument: (cardId: string) => CardDocument;
     deckIds: string[];
   }[];
-  decks: { id: string; name: string; cards: number }[];
+  decks: { id: string; name: string; cards: number; preset?: string }[];
   notes: number;
   cards: number;
   media: number;
@@ -52,6 +54,7 @@ export type AnkiPreview = {
 };
 
 export type RawObject = Record<string, unknown>;
+export type AnkiDeckPreset = { name?: string; settings: DeckReviewSettings };
 export type AnkiModel = RawObject & {
   id: string;
   name: string;
@@ -113,6 +116,7 @@ export type AnkiCollection = {
   created: number;
   models: AnkiModel[];
   decks: (RawObject & { id: string; name: string })[];
+  deckPresets: Map<string, AnkiDeckPreset>;
   notes: AnkiNote[];
   cards: AnkiCard[];
   reviews: AnkiRevlog[];

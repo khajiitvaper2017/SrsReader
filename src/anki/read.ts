@@ -30,6 +30,7 @@ import { matchesNoteType, previousFields, sameAnkiItem } from "@/anki/merge";
 import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
 import { fieldText, templateWarnings } from "@/cards/template";
+import { legacyPreset, modernPreset, presetForDeck } from "@/anki/deck-config";
 
 const invalid = () => new Error(t("anki_invalid_package"));
 const text = (value: unknown) => {
@@ -207,6 +208,11 @@ function modernDeck(row: Record<string, unknown>) {
     conf: normal.integer(1) || "1",
     extendNew: normal.number(2),
     extendRev: normal.number(3),
+    ...(normal.values(6).length ? { reviewLimit: normal.number(6) } : {}),
+    ...(normal.values(7).length ? { newLimit: normal.number(7) } : {}),
+    ...(normal.values(10).length
+      ? { desiredRetention: (normal.floats(10)[0] ?? 0) * 100 }
+      : {}),
     dyn: kind.values(2).length ? 1 : 0,
   };
 }
@@ -257,7 +263,7 @@ async function collectionFromBytes(
       : Object.entries(object(parseJson(text(col.models)))).map(([id, value]) =>
           legacyModel(value, id),
         );
-    const decks = modern
+    const decks: AnkiCollection["decks"] = modern
       ? rows("decks").map(modernDeck)
       : Object.entries(object(parseJson(text(col.decks)))).map(
           ([id, value]) => ({
@@ -266,6 +272,25 @@ async function collectionFromBytes(
             name: text(object(value).name),
           }),
         );
+    const presets = new Map(
+      modern
+        ? rows("deck_config").map(
+            (row) =>
+              [
+                integer(row.id),
+                modernPreset(text(row.name), new Proto(blob(row.config))),
+              ] as const,
+          )
+        : Object.entries(object(parseJson(text(col.dconf) || "{}"))).map(
+            ([id, preset]) => [id, legacyPreset(object(preset))] as const,
+          ),
+    );
+    const deckPresets = new Map(
+      decks.flatMap((deck) => {
+        const preset = presetForDeck(deck, presets.get(String(deck.conf ?? 1)));
+        return preset ? [[deck.id, preset] as const] : [];
+      }),
+    );
     const notes = mapRows("notes", (row): AnkiNote => ({
       id: integer(row.id),
       guid: text(row.guid),
@@ -327,7 +352,15 @@ async function collectionFromBytes(
       )
         throw invalid();
     }
-    return { created: number(col.crt), models, decks, notes, cards, reviews };
+    return {
+      created: number(col.crt),
+      models,
+      decks,
+      deckPresets,
+      notes,
+      cards,
+      reviews,
+    };
   } finally {
     database.close();
   }
@@ -628,6 +661,10 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
         .map((deck) => ({
           id: deck.id,
           name: deck.name,
+          preset: collection.deckPresets.has(deck.id)
+            ? (collection.deckPresets.get(deck.id)?.name ??
+              t("anki_unnamed_preset"))
+            : undefined,
           cards: collection.cards.filter((card) => cardDeckId(card) === deck.id)
             .length,
         }))

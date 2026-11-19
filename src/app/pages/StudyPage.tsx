@@ -29,6 +29,7 @@ import { TaskAlerts } from "@/shared/ui/TaskAlerts";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { srsClient } from "@/srs/client";
 import { DeckEditor } from "@/srs/components/DeckEditor";
+import { DeckReviewEditor } from "@/srs/components/DeckReviewEditor";
 import { deckPathLabel } from "@/srs/deck-tree";
 import { StudyStatistics } from "@/srs/components/StudyStatistics";
 import type { StatisticsScope } from "@/srs/statistics";
@@ -50,6 +51,7 @@ import {
   Trash2,
   Languages,
   ListOrdered,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -94,6 +96,10 @@ export function StudyPage({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [statistics, setStatistics] = useState<string>();
+  const [reviewDeck, setReviewDeck] = useState<{
+    language: string;
+    id: string;
+  }>();
   const [busy, setBusy] = useState(false);
   const [modal, setModal] = useState<"language" | "deck" | null>(null);
   const [deckEditor, setDeckEditor] = useState<{
@@ -240,6 +246,7 @@ export function StudyPage({
       busy={busy}
       start={start}
       showStatistics={(scope) => setStatistics(JSON.stringify(scope))}
+      editReview={(id) => setReviewDeck({ language: row.language, id })}
       edit={(id, parentId) =>
         setDeckEditor({ language: row.language, id, parentId })
       }
@@ -249,6 +256,9 @@ export function StudyPage({
       }}
     />
   ));
+  const reviewDeckOptions = languages
+    ?.find((row) => row.language === reviewDeck?.language)
+    ?.decks.find((deck) => deck.id === reviewDeck?.id);
   return (
     <Stack>
       <PageHeader
@@ -384,6 +394,17 @@ export function StudyPage({
           onClose={() => setDeckEditor(null)}
           onSaved={() => {
             setDeckEditor(null);
+            load();
+          }}
+        />
+      )}
+      {reviewDeck && reviewDeckOptions && (
+        <DeckReviewEditor
+          deck={{ ...reviewDeckOptions, language: reviewDeck.language }}
+          defaults={settings}
+          onClose={() => setReviewDeck(undefined)}
+          onSaved={() => {
+            setReviewDeck(undefined);
             load();
           }}
         />
@@ -544,6 +565,7 @@ function StudyRows({
   start,
   manage,
   edit,
+  editReview,
   showStatistics,
 }: {
   showStatistics: (scope: StatisticsScope) => void;
@@ -552,6 +574,7 @@ function StudyRows({
   start: (language: string, deckId?: string) => Promise<void>;
   manage: (action: DeckAction) => void;
   edit: (id: string | undefined, parentId: string | null) => void;
+  editReview: (id: string) => void;
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const visible = row.decks.filter((deck) => {
@@ -650,6 +673,12 @@ function StudyRows({
               </Menu.Item>
               {deck.id !== "mined" && (
                 <>
+                  <Menu.Item
+                    leftSection={<SlidersHorizontal size={16} />}
+                    onClick={() => editReview(deck.id!)}
+                  >
+                    {t("deck_review_settings")}
+                  </Menu.Item>
                   <Menu.Item
                     leftSection={<Pencil size={16} />}
                     onClick={() => edit(deck.id, deck.parentId)}

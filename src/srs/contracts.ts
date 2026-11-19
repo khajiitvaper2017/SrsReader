@@ -8,7 +8,7 @@ import type { studyOverview } from "@/srs/decks";
 import type { Deck } from "@/srs/deck-model";
 import { z } from "zod";
 import { languageSchema } from "@/languages/model";
-import { fsrsVersionSchema } from "@/srs/preferences";
+import { deckReviewSettingsSchema, fsrsVersionSchema } from "@/srs/preferences";
 
 export const requests = [
   z.object({
@@ -49,6 +49,12 @@ export const requests = [
       .max(200)
       .refine((name) => !name.includes("::") && !/\p{Cc}/u.test(name)),
     parentId: z.string().min(1).nullable(),
+  }),
+  z.object({
+    action: z.literal("saveDeckReviewSettings"),
+    language: languageSchema,
+    deckId: z.string().min(1),
+    reviewSettings: deckReviewSettingsSchema.nullable(),
   }),
   z.object({
     action: z.literal("manageDeck"),
@@ -108,6 +114,7 @@ export type Responses = {
   createFrequencyDeck: Deck;
   manageDeck: void;
   saveDeck: void;
+  saveDeckReviewSettings: void;
   sentenceExamples: SentenceExample[];
   grade: { word: ReviewWord; reviewId: string; autoBuried: boolean };
   undo: void;

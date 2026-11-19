@@ -21,6 +21,8 @@ import {
 import { rwkvInterval } from "@/srs/engines/rwkv/interval";
 import { effectiveRetention } from "@/srs/retention";
 import { reviewCards } from "@/vocabulary/storage";
+import { deckPreferences } from "@/srs/preferences";
+import { deckReviewSettingsForCards } from "@/srs/decks";
 
 export type HistoricalAnswer = {
   id: string;
@@ -46,11 +48,21 @@ export async function replayHistoricalAnswers(
   );
   if (cards.length !== targets.size) throw new Error(t("card_not_found"));
   const projected = await reviewCards(cards);
+  const decks = await deckReviewSettingsForCards(cards);
+  const preferences = new Map(
+    projected.map((word) => [
+      word.id,
+      deckPreferences(settings, decks.get(word.document.card.deckId ?? "")),
+    ]),
+  );
   const retentions = new Map(
     await Promise.all(
       projected.map(
         async (word) =>
-          [word.id, await effectiveRetention(word, settings)] as const,
+          [
+            word.id,
+            await effectiveRetention(word, preferences.get(word.id)!),
+          ] as const,
       ),
     ),
   );
@@ -155,14 +167,15 @@ export async function replayHistoricalAnswers(
     };
     const schedule = card.schedule || emptySchedule(review.time);
     const retention = retentions.get(card.id)!;
+    const options = preferences.get(card.id)!;
     const answers = scheduleAnswers(
       card.id,
       schedule,
       review.time,
       retention,
-      settings,
+      options,
       neural?.answers.map((answer) =>
-        rwkvInterval(neural.model, answer, card.language, retention, settings),
+        rwkvInterval(neural.model, answer, card.language, retention, options),
       ),
     );
     const answer = answers[review.rating - 1]!;

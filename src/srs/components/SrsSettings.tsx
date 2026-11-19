@@ -318,7 +318,7 @@ export function SrsSettings({
               {number(
                 "srs_review_limit",
                 "reviewLimit",
-                1,
+                0,
                 undefined,
                 "srs_limit_help",
               )}
