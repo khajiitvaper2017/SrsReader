@@ -25,6 +25,11 @@ export const requests = [
   }),
   z.object({ action: z.literal("undo"), id: z.string() }),
   z.object({
+    action: z.literal("bury"),
+    cardId: z.string(),
+    siblings: z.boolean().optional(),
+  }),
+  z.object({
     action: z.literal("queue"),
     currentCardId: z.string().optional(),
     language: languageSchema,
@@ -110,6 +115,7 @@ export type Responses = {
   sentenceExamples: SentenceExample[];
   grade: { word: ReviewWord; reviewId: string };
   undo: void;
+  bury: void;
   queue: Awaited<ReturnType<typeof reviewQueue>>;
   preview: number[];
   rwkvStatus: {

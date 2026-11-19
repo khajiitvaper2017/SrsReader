@@ -31,6 +31,7 @@ import type { Settings } from "@/settings/model";
 import { number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Ratings } from "@/srs/components/Ratings";
+import { srsClient } from "@/srs/client";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { useReviewSession } from "@/srs/hooks/useReviewSession";
 import { SessionProgress } from "@/srs/components/SessionProgress";
@@ -304,6 +305,23 @@ export function ReviewPage({
                 >
                   {t("suspend")}
                 </Menu.Item>
+                {[false, true].map((siblings) => (
+                  <Menu.Item
+                    key={String(siblings)}
+                    disabled={busy}
+                    onClick={() =>
+                      void srsClient({
+                        action: "bury",
+                        cardId: word.id,
+                        siblings,
+                      })
+                        .then(load)
+                        .catch((error: Error) => setError(error.message))
+                    }
+                  >
+                    {t(siblings ? "bury_note" : "bury_card")}
+                  </Menu.Item>
+                ))}
               </Menu.Dropdown>
             </Menu>
           </Group>
@@ -478,6 +496,7 @@ export function ReviewPage({
                         />
                         <AudioButton
                           noteId={word.noteId}
+                          cardId={word.id}
                           word={{ ...word, id: word.wordId }}
                           settings={settings}
                           onError={setError}

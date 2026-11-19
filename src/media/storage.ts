@@ -2,7 +2,7 @@ import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import { t } from "@/shared/i18n/i18n";
 import { cardMediaId, cardMediaSchema, type CardMedia } from "@/media/model";
-import { assetId } from "@/cards/model";
+import { assetId, type Card } from "@/cards/model";
 import {
   ensureReaderCard,
   fieldText,
@@ -26,6 +26,54 @@ async function mediaDocument(wordId: string, noteId?: string) {
     : await readingCard(wordId);
   const document = card && (await getCardDocument(card.id));
   return document?.note.wordId === wordId ? document : undefined;
+}
+
+export async function preferredCardAudio(cardId: string) {
+  const card = await db.cards.get(cardId);
+  const preference = card?.preferredAudio;
+  if (!preference) return;
+  if ("voice" in preference) return preference;
+  const note = await db.notes.get(card!.noteId);
+  if (!note) return;
+  const asset = await db.cardAssets.get(
+    assetId(note.mediaNamespace, preference.recording),
+  );
+  return asset && { blob: asset.blob };
+}
+
+export function chooseCardAudio(cardId: string, choice?: Blob | string) {
+  return srsWrite(() =>
+    db.transaction("rw", [db.cards, db.notes, db.cardAssets], async () => {
+      const card = await db.cards.get(cardId);
+      if (!card) return;
+      const note = await db.notes.get(card.noteId);
+      if (!note) return;
+      let preferredAudio: Card["preferredAudio"] =
+        typeof choice === "string" ? { voice: choice } : undefined;
+      if (choice instanceof Blob) {
+        const name = `_srs_pronunciation_${crypto.randomUUID()}`;
+        await db.cardAssets.put({
+          id: assetId(note.mediaNamespace, name),
+          namespace: note.mediaNamespace,
+          name,
+          mime: choice.type,
+          blob: choice,
+        });
+        preferredAudio = { recording: name };
+      }
+      if (preferredAudio || card.preferredAudio) {
+        await db.cards.update(cardId, {
+          preferredAudio,
+          updated: Date.now(),
+          version: card.version + 1,
+        });
+      }
+      if (card.preferredAudio && "recording" in card.preferredAudio)
+        await db.cardAssets.delete(
+          assetId(note.mediaNamespace, card.preferredAudio.recording),
+        );
+    }),
+  );
 }
 
 export async function getCardMedia(

@@ -25,6 +25,7 @@ import { reviewStatistics } from "@/srs/statistics";
 import { clearUndo } from "@/srs/storage";
 import { undoReview } from "@/srs/undo";
 import { dailyCounts } from "@/srs/workload";
+import { dayStart, studyDay } from "@/srs/study-day";
 import { snapshot } from "@/vocabulary/snapshot";
 import { getWord, mine, reviewCard } from "@/vocabulary/storage";
 import { freshWord } from "@/vocabulary/service";
@@ -45,6 +46,7 @@ export function handleSrs(request: Request, settings: Settings) {
     request.action === "manageDeck" ||
     request.action === "grade" ||
     request.action === "undo" ||
+    request.action === "bury" ||
     request.action === "preview" ||
     request.action === "resetRwkv" ||
     request.action === "prepareRwkv" ||
@@ -59,6 +61,22 @@ async function execute(request: Request, settings: Settings) {
   if (["queue", "preview", "grade"].includes(request.action))
     await requireScheduledModel(settings);
   switch (request.action) {
+    case "bury": {
+      const card = await db.cards.get(request.cardId);
+      if (!card) return;
+      const now = Date.now();
+      const buriedUntil = dayStart(
+        studyDay(now, settings.rolloverHour) + 1,
+        settings.rolloverHour,
+      );
+      await (
+        request.siblings
+          ? db.cards.where("noteId").equals(card.noteId)
+          : db.cards.where("id").equals(card.id)
+      ).modify({ buriedUntil });
+      await notify(undefined, "collection");
+      return;
+    }
     case "studyOverview":
       return studyOverview(settings);
     case "saveDeck":

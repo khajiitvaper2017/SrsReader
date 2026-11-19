@@ -1,4 +1,8 @@
-import { getCardMedia } from "@/media/storage";
+import {
+  chooseCardAudio,
+  getCardMedia,
+  preferredCardAudio,
+} from "@/media/storage";
 import { audioClient } from "@/audio/client";
 import type { AudioInfo } from "@/audio/model";
 import { localVoices, playBlob, speak, stopAudio } from "@/audio/playback";
@@ -14,6 +18,7 @@ export function usePronunciation({
   form,
   sentence,
   noteId,
+  cardId,
   settings,
   onError,
   prepareRecording,
@@ -24,6 +29,7 @@ export function usePronunciation({
   form?: string;
   sentence?: string;
   noteId?: string;
+  cardId?: string;
   settings: Settings;
   onError: (message: string) => void;
   /** Reuse recordings prepared by the review session. */
@@ -38,6 +44,7 @@ export function usePronunciation({
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [discoveryError, setDiscoveryError] = useState("");
   const [active, setActive] = useState("");
+  const [cardRecording, setCardRecording] = useState("");
   const hold = useRef<number | undefined>(undefined);
   const held = useRef(false);
   const playback = useRef(0);
@@ -69,13 +76,14 @@ export function usePronunciation({
     setOpen(false);
     setSources([]);
     setActive("");
+    setCardRecording("");
     setBusy(false);
     setLoading(false);
     return () => {
       clearTimeout(hold.current);
       playback.current++;
     };
-  }, [word?.id, pronunciationForm, sentence, noteId, recording]);
+  }, [word?.id, pronunciationForm, sentence, noteId, cardId, recording]);
   useEffect(() => {
     if (!open || !word) return;
     let alive = true;
@@ -87,6 +95,13 @@ export function usePronunciation({
         );
     });
     if (!sentence) {
+      void getCardMedia(word.id, "wordAudio", "", noteId)
+        .then((media) => {
+          if (alive) setCardRecording(media?.name ?? "");
+        })
+        .catch((error: Error) => {
+          if (alive) setDiscoveryError(error.message);
+        });
       setLoading(true);
       void audioClient({
         action: "audio",
@@ -127,20 +142,11 @@ export function usePronunciation({
     word?.language,
     pronunciationForm,
     sentence,
+    noteId,
     settings.audioSources,
     settings.audioDialects,
   ]);
-  function playVoice(voice: string) {
-    if (!word) return;
-    void speak(
-      sentence || pronunciationForm || word.lemma,
-      word.language,
-      voice,
-    ).catch((error) =>
-      onError(error instanceof Error ? error.message : String(error)),
-    );
-  }
-  async function play(source?: AudioInfo | { voice: string }) {
+  async function play(source?: AudioInfo | { voice: string } | "card") {
     if (!word && !recording) return;
     const attempt = ++playback.current;
     stopAudio();
@@ -152,12 +158,32 @@ export function usePronunciation({
         return;
       }
       if (!word) return;
-      if (source && "voice" in source) {
+      const playVoice = (voice: string) =>
+        speak(
+          sentence || pronunciationForm || word.lemma,
+          word.language,
+          voice,
+        );
+      const remember = async (choice?: Blob | string) => {
+        if (cardId && !sentence && attempt === playback.current)
+          await chooseCardAudio(cardId, choice);
+      };
+      if (source && source !== "card" && "voice" in source) {
         setActive(`tts:${source.voice}`);
-        playVoice(source.voice);
+        await playVoice(source.voice);
+        await remember(source.voice);
         return;
       }
-      if (!source) {
+      if (!source || source === "card") {
+        if (!source && cardId && !sentence) {
+          const preferred = await preferredCardAudio(cardId);
+          if (attempt !== playback.current) return;
+          if (preferred) {
+            if ("voice" in preferred) await playVoice(preferred.voice);
+            else await playBlob(preferred.blob, settings.normalizeAudio);
+            return;
+          }
+        }
         const media = await getCardMedia(
           word.id,
           sentence ? "audio" : "wordAudio",
@@ -168,12 +194,14 @@ export function usePronunciation({
         if (media) {
           setActive(media.id);
           await playBlob(media.blob, settings.normalizeAudio);
+          if (source === "card") await remember();
           return;
         }
+        if (source === "card") throw new Error(t("audio_source_unavailable"));
       }
       if (sentence) {
         setActive(`tts:${settings.voice}`);
-        playVoice(settings.voice);
+        await playVoice(settings.voice);
         return;
       }
       if (source) {
@@ -183,6 +211,7 @@ export function usePronunciation({
         if (!record || record.url !== source.url)
           throw new Error(t("audio_source_unavailable"));
         await playBlob(record.blob, settings.normalizeAudio);
+        await remember(record.blob);
         return;
       }
       const record = await prepare();
@@ -198,7 +227,7 @@ export function usePronunciation({
       }
       if (attempt !== playback.current) return;
       setActive(`tts:${settings.voice}`);
-      playVoice(settings.voice);
+      await playVoice(settings.voice);
     } catch (error) {
       if (attempt === playback.current)
         onError(error instanceof Error ? error.message : String(error));
@@ -218,6 +247,7 @@ export function usePronunciation({
     voices,
     discoveryError,
     active,
+    cardRecording,
     hold,
     held,
     play,

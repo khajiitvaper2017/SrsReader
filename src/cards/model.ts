@@ -63,6 +63,13 @@ export const cardSchema = z.object({
   language: z.string(),
   schedule: scheduleSchema.nullable(),
   suspended: z.boolean(),
+  preferredAudio: z
+    .union([
+      z.object({ voice: z.string() }),
+      z.object({ recording: z.string() }),
+    ])
+    .optional(),
+  buriedUntil: z.number().finite().optional(),
   leech: z.boolean(),
   retentionOverride: z.number().min(0.7).max(0.99).nullable(),
   srsVersion: z.number().int().nonnegative(),

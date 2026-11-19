@@ -34,6 +34,8 @@ import { readMergeFrontier, writeMergeFrontier } from "./metadata";
 const cardFields = {
   deckId: cardSchema.shape.deckId,
   suspended: cardSchema.shape.suspended,
+  buriedUntil: cardSchema.shape.buriedUntil,
+  preferredAudio: cardSchema.shape.preferredAudio,
   leech: cardSchema.shape.leech,
   retentionOverride: cardSchema.shape.retentionOverride,
 };

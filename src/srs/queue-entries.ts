@@ -88,6 +88,7 @@ export async function queueEntries(language: string, deckIds?: string[]) {
             created: card.created,
             card: card.schedule,
             suspended: card.suspended,
+            buriedUntil: card.buriedUntil,
           },
         ]
       : [];

@@ -102,6 +102,14 @@ export function ReviewSettings({
       </Stack>
 
       <TimedReviewSettings settings={settings} onChange={update} />
+      <Switch
+        label={t("auto_bury_failed")}
+        description={t("auto_bury_failed_help")}
+        checked={settings.autoBuryFailed}
+        onChange={(event) =>
+          void update({ autoBuryFailed: event.currentTarget.checked })
+        }
+      />
 
       <Stack>
         <Title order={2}>{t("settings_daily_study")}</Title>

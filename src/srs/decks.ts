@@ -57,20 +57,26 @@ export async function studyOverview(settings: Settings) {
   return Promise.all(
     settings.studyLanguages.map(async (language) => {
       const preferences = { ...settings, studyLanguage: language };
-      const counts = await dailyCounts(preferences);
+      const now = Date.now();
+      const counts = await dailyCounts(preferences, now);
       const groups = studyGroups(
         await queueEntries(language),
         decks.filter((deck) => deck.language === language),
       );
       function summary(entries: QueueEntry[]) {
         const active = entries.filter(
-          (word) => word.card && !word.known && !word.suspended,
+          (word) =>
+            word.card &&
+            !word.known &&
+            !word.suspended &&
+            (word.buriedUntil ?? 0) <= now &&
+            !counts.buried.has(word.id),
         );
         const queue = buildQueue(
           active,
           counts,
           preferences,
-          Date.now(),
+          now,
           active.filter((word) => word.card!.state === 0),
         );
         return {

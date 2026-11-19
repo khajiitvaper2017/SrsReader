@@ -30,10 +30,15 @@ export async function reviewQueue(
   const saved = await queueEntries(language, selectedDecks);
   const groups = studyGroups(saved, decks);
   const included = wordsInDeck(groups, deckId);
-  const words = included.filter(
-    (word) => word.card && !word.known && !word.suspended,
-  );
   const counts = await dailyCounts(settings, now);
+  const words = included.filter(
+    (word) =>
+      word.card &&
+      !word.known &&
+      !word.suspended &&
+      (word.buriedUntil ?? 0) <= now &&
+      !counts.buried.has(word.id),
+  );
   const deckOrder = new Map(
     [
       groups.mined,

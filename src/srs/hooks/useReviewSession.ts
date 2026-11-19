@@ -66,6 +66,7 @@ export function useReviewSession({
   const preload = useReviewPreload(settings, queue);
   const { play: playAudio } = usePronunciation({
     noteId: word?.noteId,
+    cardId: word?.id,
     word: word?.wordId ? { ...word, id: word.wordId } : undefined,
     settings,
     onError: setError,

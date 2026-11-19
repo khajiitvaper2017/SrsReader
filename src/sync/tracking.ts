@@ -46,6 +46,8 @@ const resources: Record<string, true> = {
 const cardFields = [
   "deckId",
   "suspended",
+  "buriedUntil",
+  "preferredAudio",
   "leech",
   "retentionOverride",
 ] as const;
@@ -419,6 +421,7 @@ async function recordChange(
       await author(core, trans, kind, id, base ?? null, time, current);
     if (next)
       for (const field of cardFields) {
+        if (!old && next[field] === undefined) continue;
         const answerField =
           beforeAnswer &&
           (field === "suspended" || field === "leech") &&

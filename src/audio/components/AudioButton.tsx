@@ -10,6 +10,7 @@ export function AudioButton({
   form,
   sentence,
   noteId,
+  cardId,
   settings,
   onError,
   prepareRecording,
@@ -22,6 +23,7 @@ export function AudioButton({
   form?: string;
   sentence?: string;
   noteId?: string;
+  cardId?: string;
   settings: Settings;
   onError: (message: string) => void;
   /** Reuse the review session's prepared recording. */
@@ -36,6 +38,7 @@ export function AudioButton({
     voices,
     discoveryError,
     active,
+    cardRecording,
     hold,
     held,
     play,
@@ -45,6 +48,7 @@ export function AudioButton({
     form,
     sentence,
     noteId,
+    cardId,
     settings,
     onError,
     prepareRecording,
@@ -128,6 +132,17 @@ export function AudioButton({
           {!sentence && (
             <>
               <Menu.Label>{t("recordings")}</Menu.Label>
+              {cardRecording && (
+                <Menu.Item
+                  leftSection={<Volume2 aria-hidden="true" size={16} />}
+                  onClick={() => void play("card")}
+                >
+                  {t("audio_card_recording")}
+                  <Text variant="supporting" component="span" display="block">
+                    {cardRecording}
+                  </Text>
+                </Menu.Item>
+              )}
               {loading && <Text role="status">{t("finding_recordings")}</Text>}
               {sources.map((source) => (
                 <Stack key={source.url}>
@@ -175,9 +190,10 @@ export function AudioButton({
                   )}
                 </Stack>
               ))}
-              {!loading && !sources.length && !discoveryError && (
-                <Text>{t("no_recordings_found")}</Text>
-              )}
+              {!loading &&
+                !cardRecording &&
+                !sources.length &&
+                !discoveryError && <Text>{t("no_recordings_found")}</Text>}
               {discoveryError && (
                 <Text role="alert" c="red">
                   {discoveryError}

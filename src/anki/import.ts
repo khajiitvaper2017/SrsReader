@@ -676,6 +676,7 @@ export async function importPackage(
                   card.schedule = current.schedule;
                   card.retentionOverride = current.retentionOverride;
                   card.suspended = current.suspended;
+                  card.buriedUntil = current.buriedUntil;
                   card.leech = current.leech;
                   if (current.language === card.language)
                     card.deckId = current.deckId;

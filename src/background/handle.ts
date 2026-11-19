@@ -85,6 +85,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
       return handleVocabulary(request, settings);
     case "grade":
     case "undo":
+    case "bury":
     case "queue":
     case "studyOverview":
     case "manageDeck":
