@@ -32,6 +32,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "syncNow":
     case "syncAutomatic":
     case "syncAppOpened":
+    case "syncReviewEnded":
     case "syncOnline":
     case "syncEdited":
       return handleSync(request);

@@ -11,6 +11,8 @@ import { useReviewControls } from "@/srs/hooks/useReviewControls";
 import { useReviewPreload } from "@/srs/hooks/useReviewPreload";
 import { useTimedReview } from "@/srs/hooks/useTimedReview";
 import { studyDay } from "@/srs/study-day";
+import { syncClient } from "@/sync/client";
+import { reviewSyncLock } from "@/sync/contracts";
 import { startReader } from "@/reader/controller";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ContentScriptContext } from "wxt/utils/content-script-context";
@@ -48,6 +50,26 @@ export function useReviewSession({
   const [example, setExample] = useState(0);
   const readingRef = useRef<HTMLDivElement>(null);
   const word = queue?.words[0];
+  const reviewing = !!word || busy || (!queue && !error);
+  useEffect(() => {
+    if (!reviewing) return;
+    const pending = new AbortController();
+    const { promise, resolve } = Promise.withResolvers<void>();
+    void navigator.locks
+      .request(
+        reviewSyncLock,
+        { mode: "shared", signal: pending.signal },
+        () => promise,
+      )
+      .then(() => syncClient({ action: "syncReviewEnded" }))
+      .catch((error) => {
+        if (!pending.signal.aborted) console.warn(error);
+      });
+    return () => {
+      pending.abort();
+      resolve();
+    };
+  }, [reviewing]);
   const times =
     preview?.id === word?.id && preview?.version === word?.srsVersion
       ? preview?.times || []

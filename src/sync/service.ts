@@ -58,6 +58,7 @@ import {
   pendingStudyChanges,
   withoutSyncTracking,
 } from "@/sync/tracking";
+import { reviewSyncLock } from "@/sync/contracts";
 
 const storageKey = "syncTransfer";
 const periodicAlarm = "srs-reader-sync";
@@ -700,7 +701,13 @@ export async function automaticSync() {
     return;
   const auth = await authStatus();
   if (!auth.account) return;
-  await syncNow().catch(() => {});
+  await navigator.locks.request(
+    reviewSyncLock,
+    { ifAvailable: true },
+    async (lock) => {
+      if (lock) await syncNow().catch(() => {});
+    },
+  );
 }
 export async function scheduleEdits() {
   await initialize();
