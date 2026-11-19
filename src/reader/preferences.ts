@@ -27,7 +27,7 @@ export const readerPreferencesSchema = z.object({
   udpipeModels: z.record(z.string(), z.string()).default({}),
   ignoreProperNames: z.boolean().default(false),
   wordColorsEnabled: z.boolean().default(true),
-  wordColorOpacity: z.number().int().min(0).max(100).default(15),
+  wordColorOpacity: z.number().int().min(0).max(100).default(30),
   wordStyles: wordStylesSchema,
   matureIntervalDays: z.number().int().min(1).default(28),
 });
