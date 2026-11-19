@@ -55,6 +55,7 @@ import {
   markPublished,
   onSyncEdit,
   pendingCount,
+  pendingStudyChanges,
   withoutSyncTracking,
 } from "@/sync/tracking";
 
@@ -95,7 +96,7 @@ function refreshPending() {
   pendingRequest ??= (async () => {
     while (pendingDirty) {
       pendingDirty = false;
-      const count = await pendingCount();
+      const count = await pendingStudyChanges();
       if (pending !== count) {
         pending = count;
         await changed();

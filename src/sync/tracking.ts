@@ -704,6 +704,43 @@ export async function pendingCount(): Promise<number> {
     return count || (current.counter > current.published ? 1 : 0);
   });
 }
+
+export async function pendingStudyChanges(): Promise<number> {
+  await initializeTracking();
+  return db.transaction("r", [db.syncMeta, db.syncAuthored], async () => {
+    const current = (await db.syncMeta.get("identity")) as SyncIdentity;
+    const keys = await db.syncAuthored
+      .where("counter")
+      .above(current.published)
+      .primaryKeys();
+    const changes = new Set<string>();
+    for (const key of keys) {
+      const [kind, id] = JSON.parse(key) as [SyncKind, string];
+      if (kind === "cards") {
+        if (id.startsWith("[")) {
+          try {
+            const field = JSON.parse(id) as unknown[];
+            if (
+              typeof field[0] === "string" &&
+              (cardFields as readonly string[]).includes(String(field[1]))
+            ) {
+              if (field.length === 3) continue;
+              if (field.length === 2) {
+                changes.add(recordKey(kind, field[0]));
+                continue;
+              }
+            }
+          } catch {
+            /* Old card IDs can be arbitrary strings. */
+          }
+        }
+        changes.add(key);
+      } else if (kind === "reviews" || kind === "notes" || kind === "decks")
+        changes.add(key);
+    }
+    return changes.size;
+  });
+}
 export async function captureSnapshot(): Promise<SyncSnapshot> {
   await initializeTracking();
   return srsWrite(() =>
