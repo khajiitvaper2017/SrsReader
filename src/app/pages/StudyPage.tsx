@@ -256,9 +256,18 @@ export function StudyPage({
       }}
     />
   ));
-  const reviewDeckOptions = languages
-    ?.find((row) => row.language === reviewDeck?.language)
-    ?.decks.find((deck) => deck.id === reviewDeck?.id);
+  const reviewDeckRow = languages?.find(
+    (row) => row.language === reviewDeck?.language,
+  );
+  const reviewDeckOptions =
+    reviewDeckRow &&
+    (reviewDeck?.id === "mined"
+      ? {
+          id: "mined",
+          name: t("study_mined_words"),
+          reviewSettings: reviewDeckRow.mined.reviewSettings,
+        }
+      : reviewDeckRow.decks.find((deck) => deck.id === reviewDeck?.id));
   return (
     <Stack>
       <PageHeader
@@ -671,14 +680,14 @@ function StudyRows({
               >
                 {t("study_reschedule_deck")}
               </Menu.Item>
+              <Menu.Item
+                leftSection={<SlidersHorizontal size={16} />}
+                onClick={() => editReview(deck.id!)}
+              >
+                {t("deck_review_settings")}
+              </Menu.Item>
               {deck.id !== "mined" && (
                 <>
-                  <Menu.Item
-                    leftSection={<SlidersHorizontal size={16} />}
-                    onClick={() => editReview(deck.id!)}
-                  >
-                    {t("deck_review_settings")}
-                  </Menu.Item>
                   <Menu.Item
                     leftSection={<Pencil size={16} />}
                     onClick={() => edit(deck.id, deck.parentId)}

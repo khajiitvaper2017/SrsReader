@@ -85,6 +85,17 @@ async function execute(request: Request, settings: Settings) {
       await notify(undefined, "collection");
       return;
     case "saveDeckReviewSettings":
+      if (request.deckId === "mined") {
+        if (!settings.studyLanguages.includes(request.language))
+          throw new Error(t("study_deck_not_found"));
+        const minedReviewSettings = { ...settings.minedReviewSettings };
+        if (request.reviewSettings === null)
+          delete minedReviewSettings[request.language];
+        else minedReviewSettings[request.language] = request.reviewSettings;
+        await saveSettings({ ...settings, minedReviewSettings });
+        await notify(undefined, "settings");
+        return;
+      }
       await saveDeckReviewSettings(
         request.language,
         request.deckId,

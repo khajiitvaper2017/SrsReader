@@ -17,7 +17,9 @@ export function deckQueueScope(
   limits?: Pick<SchedulingPreferences, "newLimit" | "reviewLimit">,
 ) {
   const index = groups.decks.findIndex((deck) => deck.id === deckId);
-  const overrides = groups.decks[index]?.reviewSettings;
+  const minedSettings = defaults.minedReviewSettings[defaults.studyLanguage];
+  const overrides =
+    deckId === "mined" ? minedSettings : groups.decks[index]?.reviewSettings;
   const settings = { ...deckPreferences(defaults, overrides), ...limits };
   const entries = wordsInDeck(groups, deckId);
   const words = entries.filter(
@@ -55,7 +57,10 @@ export function deckQueueScope(
       ? deckBranch(groups.decks, index).slice(1)
       : deckId
         ? []
-        : groups.decks;
+        : [
+            ...groups.decks,
+            { words: groups.mined, reviewSettings: minedSettings },
+          ];
   const budgets = new Map<string, Budget[]>();
   for (const deck of children) {
     const options = deck.reviewSettings;

@@ -2,7 +2,11 @@ import { audioPreferencesSchema } from "@/audio/preferences";
 import { dictionariesPreferencesSchema } from "@/dictionaries/preferences";
 import { languagesPreferencesSchema } from "@/languages/preferences";
 import { readerPreferencesSchema } from "@/reader/preferences";
-import { srsPreferencesSchema } from "@/srs/preferences";
+import {
+  deckReviewSettingsSchema,
+  srsPreferencesSchema,
+} from "@/srs/preferences";
+import { languageSchema } from "@/languages/model";
 import { translationPreferencesSchema } from "@/translation/preferences";
 import { z } from "zod";
 
@@ -11,6 +15,9 @@ export const uiSettingsCacheKey = "uiSettingsSnapshot";
 export const settingsSchema = z
   .object({
     ...srsPreferencesSchema.shape,
+    minedReviewSettings: z
+      .record(languageSchema, deckReviewSettingsSchema)
+      .default({}),
     ...readerPreferencesSchema.shape,
     ...audioPreferencesSchema.shape,
     ...languagesPreferencesSchema.shape,

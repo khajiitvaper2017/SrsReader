@@ -1,5 +1,5 @@
 import { db } from "@/platform/database/db";
-import { deckPreferences } from "@/srs/preferences";
+import { cardDeckPreferences } from "@/srs/preferences";
 import { deckReviewSettingsForCards } from "@/srs/decks";
 import { getSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
@@ -246,8 +246,9 @@ export async function rescheduleExisting(
   );
   const options = await deckReviewSettingsForCards(cards);
   for (const word of words) {
-    const preferences = deckPreferences(
+    const preferences = cardDeckPreferences(
       settings,
+      word.document.card,
       options.get(word.document.card.deckId ?? ""),
     );
     const retention = await effectiveRetention(word, preferences);

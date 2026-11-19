@@ -21,7 +21,7 @@ import {
 import { rwkvInterval } from "@/srs/engines/rwkv/interval";
 import { effectiveRetention } from "@/srs/retention";
 import { reviewCards } from "@/vocabulary/storage";
-import { deckPreferences } from "@/srs/preferences";
+import { cardDeckPreferences } from "@/srs/preferences";
 import { deckReviewSettingsForCards } from "@/srs/decks";
 
 export type HistoricalAnswer = {
@@ -52,7 +52,11 @@ export async function replayHistoricalAnswers(
   const preferences = new Map(
     projected.map((word) => [
       word.id,
-      deckPreferences(settings, decks.get(word.document.card.deckId ?? "")),
+      cardDeckPreferences(
+        settings,
+        word.document.card,
+        decks.get(word.document.card.deckId ?? ""),
+      ),
     ]),
   );
   const retentions = new Map(

@@ -8,7 +8,7 @@ import { emptySchedule } from "@/srs/model";
 import { effectiveRetention } from "@/srs/retention";
 import type { ReviewWord } from "@/vocabulary/model";
 import { db } from "@/platform/database/db";
-import { deckPreferences } from "@/srs/preferences";
+import { cardDeckPreferences } from "@/srs/preferences";
 
 export type SchedulingCard = Pick<
   ReviewWord,
@@ -57,9 +57,13 @@ export async function preview(
   durationMs: number | null = null,
 ) {
   if (!word) return [];
-  const deckId = word.document?.card.deckId;
-  const deck = deckId ? await db.decks.get(deckId) : undefined;
-  const settings = deckPreferences(await getSettings(), deck?.reviewSettings);
+  const card = word.document?.card ?? { language: word.language, deckId: null };
+  const deck = card.deckId ? await db.decks.get(card.deckId) : undefined;
+  const settings = cardDeckPreferences(
+    await getSettings(),
+    card,
+    deck?.reviewSettings,
+  );
   return (
     await candidates(word, settings, Date.now(), durationMs)
   ).schedules.map((card) => card.dueAt);

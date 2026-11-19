@@ -2,6 +2,8 @@ import { t } from "@/shared/i18n/i18n";
 import { reviewBindingsSchema } from "@/srs/controls";
 import { z } from "zod";
 import type { StepUnit } from "ts-fsrs";
+import type { Settings } from "@/settings/model";
+import type { Card } from "@/cards/model";
 
 export const fsrsVersionSchema = z.enum(["7", "6"]);
 
@@ -125,4 +127,15 @@ export function deckPreferences<T extends SchedulingPreferences>(
           overrides.retention === undefined && defaults.dynamicRetention,
       }
     : defaults;
+}
+
+export function cardDeckPreferences(
+  defaults: Settings,
+  { language, deckId }: Pick<Card, "language" | "deckId">,
+  overrides?: DeckReviewSettings,
+) {
+  return deckPreferences(
+    defaults,
+    deckId === null ? defaults.minedReviewSettings[language] : overrides,
+  );
 }

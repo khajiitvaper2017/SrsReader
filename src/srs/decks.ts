@@ -90,7 +90,10 @@ export async function studyOverview(settings: Settings) {
       return {
         language,
         ...summary(),
-        mined: summary("mined"),
+        mined: {
+          ...summary("mined"),
+          reviewSettings: preferences.minedReviewSettings[language],
+        },
         decks: groups.decks.map((deck) => ({
           id: deck.id,
           name: deck.name,
