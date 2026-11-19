@@ -5,6 +5,7 @@ import { rwkvStatus } from "@/srs/engines/rwkv/cache";
 import { replayBatch } from "@/srs/engines/rwkv/replay";
 import { mergeSnapshots } from "@/sync/merge";
 import {
+  discardStagedMergeMedia,
   migrateSyncFrontier,
   outgoingId,
   outgoingMedia,
@@ -60,6 +61,7 @@ self.onmessage = async (
           await db.syncMeta.where("id").startsWith("sync-worker-").delete();
           await db.syncMeta.bulkDelete(["captured", "drive-index"]);
         });
+        await discardStagedMergeMedia();
         await migrateSyncFrontier();
         await initializeTracking();
         break;
@@ -88,12 +90,15 @@ self.onmessage = async (
             await db.syncMeta.delete(key);
             return loaded.blob;
           },
+          (done, total) =>
+            send({ progress: { phase: "download_media", done, total } }),
         );
         if (
           snapshot.device !== request.device ||
           snapshot.revision !== request.revision
         )
           throw new Error("sync_invalid_snapshot");
+        send({ progress: { phase: "prepare", done: 0, total: 0 } });
         await stageSnapshot(request.key, snapshot);
         break;
       }
@@ -101,8 +106,8 @@ self.onmessage = async (
         const snapshots = [];
         for (const key of request.keys)
           snapshots.push(await readStagedSnapshot(key));
-        await mergeSnapshots(snapshots, (done, total) =>
-          send({ progress: { phase: "merge", done, total } }),
+        await mergeSnapshots(snapshots, () =>
+          send({ progress: { phase: "apply", done: 0, total: 0 } }),
         );
         break;
       }
@@ -130,17 +135,20 @@ self.onmessage = async (
         let status = await rwkvStatus(settings);
         // Sync transfers neither models nor model-download consent.
         if (!status.downloaded) break;
-        while (!status.ready) {
-          settings = await getSettings();
-          if (settings.algorithm !== "rwkv") break;
-          status = await srsWrite(() => replayBatch(settings));
+        const report = () =>
           send({
             progress: {
-              phase: "merge",
+              phase: "rebuild",
               done: status.processed,
               total: status.total,
             },
           });
+        if (!status.ready) report();
+        while (!status.ready) {
+          settings = await getSettings();
+          if (settings.algorithm !== "rwkv") break;
+          status = await srsWrite(() => replayBatch(settings));
+          report();
         }
         break;
       }

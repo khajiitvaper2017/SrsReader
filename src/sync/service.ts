@@ -150,13 +150,14 @@ async function report(
   phase: SyncProgress["phase"],
   done: number,
   total: number,
+  unit?: SyncProgress["unit"],
 ) {
   const now = performance.now();
   const announce =
     progress?.phase !== phase ||
     done === total ||
     now - lastProgressReport >= 100;
-  progress = { phase, done, total };
+  progress = { phase, done, total, unit };
   if (announce) {
     lastProgressReport = now;
     await changed();
@@ -170,7 +171,9 @@ async function processWork(
   await processSync(
     request,
     (value) => {
-      void report(value.phase, value.done, value.total).catch(console.warn);
+      void report(value.phase, value.done, value.total, value.unit).catch(
+        console.warn,
+      );
     },
     loadMedia,
   );
@@ -281,14 +284,17 @@ async function synchronize() {
         device === localIdentity.device ? localIdentity.published : 0,
       ) < revision(file),
   );
-  if (downloads.length) await report("download", 0, downloads.length);
-  for (const [index, [device, file]] of downloads.entries()) {
+  for (const [device, file] of downloads) {
     checkCancelled();
     const key = `sync-work-${crypto.randomUUID()}`;
+    await report("download", 0, 0, "bytes");
     await db.syncMeta.put({
       id: key,
-      blob: await downloadFile(file.id, account.id),
+      blob: await downloadFile(file.id, account.id, (done, total) => {
+        void report("download", done, total, "bytes").catch(console.warn);
+      }),
     });
+    await report("prepare", 0, 0);
     await processWork(
       {
         action: "unpack",
@@ -300,17 +306,15 @@ async function synchronize() {
     );
     incoming.push(key);
     received[device] = revision(file);
-    await report("download", index + 1, downloads.length);
   }
   checkCancelled();
   if (incoming.length) {
-    await report("merge", 0, 5);
+    await report("merge", 0, 0);
     await processWork({ action: "merge", keys: incoming });
     transfer.received = received;
     await persist();
     await notify();
     await notify(undefined, "settings");
-    await report("merge", 5, 5);
   }
   await processWork({ action: "rebuild" });
   checkCancelled();

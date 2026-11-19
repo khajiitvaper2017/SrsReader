@@ -75,6 +75,7 @@ export async function packSnapshot(snapshot: SyncSnapshot) {
 export async function unpackSnapshot(
   blob: Blob,
   loadMedia: (hash: string, record: SyncRecord) => Promise<Blob>,
+  reportMedia: (done: number, total: number) => void,
 ): Promise<SyncSnapshot> {
   let packed: z.infer<typeof packedSchema>;
   try {
@@ -119,6 +120,8 @@ export async function unpackSnapshot(
     if (group) group.push({ record, reference });
     else mediaGroups.set(reference.hash, [{ record, reference }]);
   }
+  let downloaded = 0;
+  if (mediaGroups.size) reportMedia(0, mediaGroups.size);
   await transferConcurrently(mediaGroups, async ([hash, group]) => {
     const first = group[0]!;
     const media = await loadMedia(hash, first.record);
@@ -132,6 +135,7 @@ export async function unpackSnapshot(
         media.type === reference.mime
           ? media
           : new Blob([media], { type: reference.mime });
+    reportMedia(++downloaded, mediaGroups.size);
   });
   for (const collection of ["records", "dependencies"] as const) {
     for (const record of packed.snapshot[collection]) {

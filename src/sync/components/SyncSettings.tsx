@@ -173,6 +173,7 @@ export function SyncSettings() {
                   phase: progressLabel,
                   done: progress?.done ?? 0,
                   total: progress?.total ?? 0,
+                  unit: progress?.unit,
                 }}
               />
             )}

@@ -60,9 +60,20 @@ export type SyncMeta =
     };
 export type SyncAccount = { id: string; email: string };
 export type SyncProgress = {
-  phase: "check" | "download" | "merge" | "media" | "upload" | "storage";
+  phase:
+    | "check"
+    | "download"
+    | "download_media"
+    | "prepare"
+    | "merge"
+    | "apply"
+    | "rebuild"
+    | "media"
+    | "upload"
+    | "storage";
   done: number;
   total: number;
+  unit?: "bytes";
 };
 export type SyncStorage = {
   bytes: number | null;

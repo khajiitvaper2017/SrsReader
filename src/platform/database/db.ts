@@ -11,6 +11,10 @@ import type {
   Tag,
 } from "@/dictionaries/model";
 import { installMigrations } from "@/platform/database/migrations";
+import {
+  installMediaLinks,
+  type MediaLink,
+} from "@/platform/database/media-links";
 import type { AnalysisRecord } from "@/languages/analysis";
 import type { CachedSentence } from "@/examples/sentence-model";
 import type { Deck } from "@/srs/deck-model";
@@ -34,6 +38,8 @@ import type { SyncMeta, SyncRecord } from "@/sync/model";
 import { installSyncTracking } from "@/sync/tracking";
 import Dexie, { type Table } from "dexie";
 
+type StoredMedia<T> = Omit<T, "blob"> & { blob: Blob | MediaLink };
+
 class ReaderDatabase extends Dexie {
   syncRecords!: Table<SyncRecord, string>;
   syncAuthored!: Table<SyncRecord, string>;
@@ -42,7 +48,7 @@ class ReaderDatabase extends Dexie {
   noteTypes!: Table<NoteType, string>;
   notes!: Table<Note, string>;
   cards!: Table<Card, string>;
-  cardAssets!: Table<CardAsset, string>;
+  cardAssets!: Table<CardAsset, string, StoredMedia<CardAsset>>;
   ankiReviews!: Table<AnkiReview, string>;
   importTasks!: Table<ImportTask, string>;
   importFiles!: Table<{ id: string; blob: Blob }, string>;
@@ -64,7 +70,7 @@ class ReaderDatabase extends Dexie {
   phrases!: Table<Phrase, string>;
   vocabulary!: Table<Vocabulary, string>;
   reviews!: Table<Review, string>;
-  audio!: Table<AudioRecord, string>;
+  audio!: Table<AudioRecord, string, StoredMedia<AudioRecord>>;
   settings!: Table<
     { id: string; value: Omit<Settings, "studyLanguage" | "nativeLanguage"> },
     string
@@ -83,6 +89,7 @@ class ReaderDatabase extends Dexie {
   constructor() {
     super("srs-reader");
     installMigrations(this);
+    installMediaLinks(this);
     installSyncTracking(this);
   }
 }

@@ -331,7 +331,11 @@ export async function listChanges(
   }
 }
 
-export async function downloadFile(id: string, account: string): Promise<Blob> {
+export async function downloadFile(
+  id: string,
+  account: string,
+  report?: (done: number, total: number) => void,
+): Promise<Blob> {
   const signal = controller.signal;
   const response = await request(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`,
@@ -340,7 +344,21 @@ export async function downloadFile(id: string, account: string): Promise<Blob> {
     signal,
   );
   try {
-    return await response.blob();
+    if (!report || !response.body) return await response.blob();
+    const total = response.headers.has("content-encoding")
+      ? 0
+      : Number(response.headers.get("content-length")) || 0;
+    let done = 0;
+    const stream = response.body.pipeThrough(
+      new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+          done += chunk.byteLength;
+          report(done, total);
+          controller.enqueue(chunk);
+        },
+      }),
+    );
+    return await new Response(stream, { headers: response.headers }).blob();
   } catch {
     if (signal.aborted) throw new GoogleAuthError("SYNC_AUTH_CANCELLED");
     throw new DriveError(0, 0, "SYNC_NETWORK");
