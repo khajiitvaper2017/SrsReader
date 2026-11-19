@@ -3,6 +3,7 @@ import {
   Anchor,
   Badge,
   Box,
+  Button,
   Container,
   Drawer,
   NavLink,
@@ -47,6 +48,11 @@ const StudyPage = React.lazy(() =>
 const SettingsPage = React.lazy(() =>
   import("@/app/pages/SettingsPage").then((module) => ({
     default: module.SettingsPage,
+  })),
+);
+const ChangelogPage = React.lazy(() =>
+  import("@/app/pages/ChangelogPage").then((module) => ({
+    default: module.ChangelogPage,
   })),
 );
 const WordsPage = React.lazy(() =>
@@ -159,6 +165,17 @@ export function App() {
           )}
         </React.Fragment>
       ))}
+      <Button
+        component="a"
+        href="https://github.com/khajiitvaper2017/SrsReader/issues/new"
+        target="_blank"
+        rel="noopener noreferrer"
+        variant="subtle"
+        w="fit-content"
+        onClick={() => setNavigationOpen(false)}
+      >
+        {t("report_issue")}
+      </Button>
     </Stack>
   );
   return (
@@ -241,6 +258,8 @@ export function App() {
                   dictionaryTab={params.get("dictionary") || undefined}
                   setup
                 />
+              ) : page === "settings/changelog" ? (
+                <ChangelogPage />
               ) : page === "settings" || page.startsWith("settings/") ? (
                 <SettingsPage
                   settings={settings}

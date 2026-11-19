@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.1 (2026-11-19)
+
+### Changes
+
+- Highlight text on a revealed review card and save it as the short answer. You can also edit the answer manually. Converted Anki cards use the mapped translation or definition as their short answer. [#15](https://github.com/khajiitvaper2017/SrsReader/issues/15)
+- Show genitive singular forms on German review cards when the dictionary supplies them.
+- Choose separate autoplay settings for the front and back of review cards. Enable automatic pronunciation in dictionary popups from Audio settings. [#16](https://github.com/khajiitvaper2017/SrsReader/issues/16)
+- Read the changelog in the extension under Settings and on the website. The website also includes the terms of service.
+- Report an issue on GitHub from the extension’s main navigation.
+
+### Fixes
+
+- Show definitions from newly installed dictionaries on existing review cards alongside the saved short answer. [#15](https://github.com/khajiitvaper2017/SrsReader/issues/15)
+- Wait until reviews finish before starting automatic Google Drive sync. [#15](https://github.com/khajiitvaper2017/SrsReader/issues/15)
+- Keep the Google Drive sign-in configuration for Chrome Web Store builds separate from unpacked builds.
+
 ## 0.3.0 (2026-11-19)
 
 ### Changes

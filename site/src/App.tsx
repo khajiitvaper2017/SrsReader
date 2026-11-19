@@ -16,33 +16,35 @@ import { Code } from "lucide-react";
 import Markdown from "react-markdown";
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
+import changelog from "../../CHANGELOG.md?raw";
 import privacy from "../../PRIVACY.md?raw";
 import terms from "../../TERMS.md?raw";
 import icon from "../../public/icons/128.png";
 import { Home, githubUrl } from "./Home";
 import { theme } from "./theme";
 
-const policies = {
+const articles = {
   "/privacy": { name: "Privacy policy", content: privacy },
   "/terms": { name: "Terms of service", content: terms },
+  "/changelog": { name: "Changelog", content: changelog },
 };
 
-export const paths = ["/", ...Object.keys(policies)];
+export const paths = ["/", ...Object.keys(articles)];
 
-function policyFor(path: string) {
-  return policies[path as keyof typeof policies];
+function articleFor(path: string) {
+  return articles[path as keyof typeof articles];
 }
 
 export function titleFor(path: string) {
-  const policy = policyFor(path);
-  if (policy) return `${policy.name} | SrsReader`;
+  const article = articleFor(path);
+  if (article) return `${article.name} | SrsReader`;
   return path === "/" ? "SrsReader" : "Page not found | SrsReader";
 }
 
 export function App() {
   const [location] = useLocation();
   const path = location.replace(/\/$/, "") || "/";
-  const policy = policyFor(path);
+  const article = articleFor(path);
   const main = useRef<HTMLElement>(null);
   const previousPath = useRef(path);
 
@@ -91,10 +93,10 @@ export function App() {
           style={{ flex: 1, outline: "none" }}
         >
           <Container
-            size={policy ? "sm" : "lg"}
+            size={article ? "sm" : "lg"}
             py={{ base: "xl", sm: "3rem" }}
           >
-            {policy ? (
+            {article ? (
               <Typography style={{ overflowWrap: "anywhere" }}>
                 <Markdown
                   components={{
@@ -114,7 +116,7 @@ export function App() {
                       ),
                   }}
                 >
-                  {policy.content}
+                  {article.content}
                 </Markdown>
               </Typography>
             ) : path === "/" ? (
@@ -154,6 +156,14 @@ export function App() {
               </Anchor>
               <Anchor href={`${githubUrl}/issues`} size="sm">
                 Support
+              </Anchor>
+              <Anchor
+                component={Link}
+                href="/changelog"
+                aria-current={path === "/changelog" ? "page" : undefined}
+                size="sm"
+              >
+                Changelog
               </Anchor>
             </Group>
           </Container>

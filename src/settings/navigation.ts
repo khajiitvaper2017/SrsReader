@@ -6,6 +6,7 @@ import {
   Keyboard,
   Languages,
   LibraryBig,
+  ScrollText,
   SlidersHorizontal,
   Volume2,
 } from "lucide-react";
@@ -20,4 +21,5 @@ export const settingsSections = [
   { value: "translation", label: "translation", icon: Languages },
   { value: "sync", label: "sync_title", icon: Cloud },
   { value: "backups", label: "settings_backups", icon: DatabaseBackup },
+  { value: "changelog", label: "changelog", icon: ScrollText },
 ] as const;

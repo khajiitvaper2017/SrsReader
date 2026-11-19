@@ -592,6 +592,8 @@
   "settings_reading": "Reading",
   "settings_audio": "Audio",
   "settings_backups": "Data",
+  "changelog": "Changelog",
+  "report_issue": "Report an issue",
   "settings_no_languages": "No matching languages",
   "settings_page_reading": "Websites",
   "settings_review_session": "Cards",
