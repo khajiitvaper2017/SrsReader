@@ -56,6 +56,11 @@
 - Do not create user guides or documentation pages before version 1.0.0.
 - Keep agent-only workflows in this file. Read and reuse existing instructions instead of duplicating them in README or adding another guide.
 
+## Changelog
+
+- Update `CHANGELOG.md` only when the version in `package.json` changes. Add the new version at the top and summarize user-visible changes and fixes since the previous version bump. Use Git history to prepare the entry at release time.
+- Check GitHub issues and merged pull requests against the commits in the release. Link the issues and pull requests that the release addresses.
+
 ## Google Drive build configuration
 
 - For Drive-enabled builds, enable the Drive API and register both OAuth clients in one Google Cloud project. Keep these build-time values in an untracked `.env.local`:
