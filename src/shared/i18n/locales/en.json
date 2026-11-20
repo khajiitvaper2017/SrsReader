@@ -266,6 +266,7 @@
   "binding_capture_input": "Set shortcut…",
   "binding_press_input": "Press a key or mouse button…",
   "review_controls": "Review controls",
+  "review_gesture_help": "Tap the front of a card or swipe up to show the answer. After revealing, swipe left for Again or right for Good.",
   "review_flip_good": "Show answer / Grade Good",
   "binding_used_by": "Already used for {{action}}.",
   "review_binding_conflict": "Each review action needs a different shortcut.",

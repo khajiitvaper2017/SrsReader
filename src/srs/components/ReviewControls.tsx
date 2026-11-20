@@ -1,4 +1,4 @@
-import { SimpleGrid, Stack, Title } from "@mantine/core";
+import { SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
 import { BindingInput } from "@/shared/ui/BindingInput";
@@ -23,6 +23,7 @@ export function ReviewControls({
   return (
     <Stack>
       <Title order={2}>{t("review_controls")}</Title>
+      <Text variant="supporting">{t("review_gesture_help")}</Text>
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         {reviewActions.map((action) => (
           <BindingInput

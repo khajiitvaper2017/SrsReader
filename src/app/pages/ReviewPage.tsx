@@ -1,9 +1,18 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { browser } from "wxt/browser";
 import { lookupClient } from "@/lookup/client";
 import { escapeHtml } from "@/cards/defaults";
 import { useCardMedia } from "@/media/hooks/useCardMedia";
 import { CardViewer } from "@/cards/components/CardViewer";
+import { installCardGestures } from "@/cards/sandbox/input";
+import type { CardGesture } from "@/cards/sandbox/protocol";
 import { fieldText } from "@/cards/template";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
 import type { ReadingContext } from "@/vocabulary/model";
@@ -87,6 +96,23 @@ export function ReviewPage({
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [savingAnswer, setSavingAnswer] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
+  function handleGesture(gesture: CardGesture) {
+    if (busy || lookupSession || toolsNote) return;
+    if (gesture === "reveal") {
+      if (!revealed) reveal();
+    } else void gradeWord(gesture === "again" ? 1 : 3);
+  }
+  const handleViewportGesture = useEffectEvent(handleGesture);
+  useEffect(() => {
+    const target = viewport.current;
+    if (!target || !word?.id) return;
+    return installCardGestures(
+      target,
+      revealed ? "back" : "front",
+      handleViewportGesture,
+      () => target.scrollTop + target.clientHeight >= target.scrollHeight - 1,
+    );
+  }, [word?.id, revealed]);
   const displayedCard = useRef("");
   const cardReady = useCallback((id: string) => {
     if (displayedCard.current !== id && viewport.current)
@@ -544,12 +570,7 @@ export function ReviewPage({
                   settings={settings}
                   onError={setError}
                   onLookup={openLookup}
-                  onGesture={(gesture) => {
-                    if (busy || lookupSession || toolsNote) return;
-                    if (gesture === "reveal") {
-                      if (!revealed) reveal();
-                    } else void gradeWord(gesture === "again" ? 1 : 3);
-                  }}
+                  onGesture={handleGesture}
                   onAutoplayFallback={() => void playAudio(undefined, true)}
                   onSelectionChange={setSelectedAnswer}
                 />

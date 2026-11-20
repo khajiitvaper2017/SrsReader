@@ -1,7 +1,7 @@
 import type { CardFrameMessage } from "@/cards/sandbox/protocol";
 import { cardBootstrap } from "@/cards/sandbox/render";
 import { cardRuntime } from "@/cards/sandbox/runtime";
-import { installCardInput } from "@/cards/sandbox/input";
+import { installCardGestures, installCardInput } from "@/cards/sandbox/input";
 import { matchesReviewBinding } from "@/srs/controls";
 
 document.documentElement.style.cssText =
@@ -153,7 +153,7 @@ window.addEventListener("message", (event: MessageEvent) => {
   const bootstrap = cardBootstrap
     .toString()
     .replace(/<\/script/gi, "<\\/script");
-  next.srcdoc = `<!doctype html><html><head><meta charset="utf-8"></head><body><script>(${bootstrap})(${cardRuntime.toString()},${installCardInput.toString()},${matchesReviewBinding.toString()});</script></body></html>`;
+  next.srcdoc = `<!doctype html><html><head><meta charset="utf-8"></head><body><script>(${bootstrap})(${cardRuntime.toString()},${installCardInput.toString()},${matchesReviewBinding.toString()},${installCardGestures.toString()});</script></body></html>`;
   document.body.append(next);
   frame = next;
 });
