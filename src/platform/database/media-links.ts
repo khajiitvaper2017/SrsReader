@@ -1,7 +1,7 @@
 import type { DBCoreTransaction, Dexie } from "dexie";
 
 export const mediaLinkPrefix = "sync-merge-media:";
-export type MediaLink = { syncMedia: string };
+export type MediaLink = { syncMedia: string; mime?: string };
 
 export function isMediaLink(value: unknown): value is MediaLink {
   return (
@@ -13,8 +13,6 @@ export function isMediaLink(value: unknown): value is MediaLink {
   );
 }
 
-export const mediaLinkFor = new WeakMap<Blob, MediaLink>();
-
 export function resolveMediaLink(link: MediaLink, row: unknown): Blob {
   if (
     !row ||
@@ -23,13 +21,14 @@ export function resolveMediaLink(link: MediaLink, row: unknown): Blob {
     !(row.blob instanceof Blob)
   )
     throw new Error("sync_invalid_media");
-  mediaLinkFor.set(row.blob, link);
-  return row.blob;
+  return link.mime === undefined || link.mime === row.blob.type
+    ? row.blob
+    : row.blob.slice(0, row.blob.size, link.mime);
 }
 
 // Keep existing media readers and backup exports working with ordinary Blobs.
 export function installMediaLinks(db: Dexie) {
-  const tables = new Set(["cardAssets", "audio", "syncRecords"]);
+  const tables = new Set(["cardAssets", "audio"]);
   db.use({
     stack: "dbcore",
     name: "sync-media-links",
@@ -52,20 +51,14 @@ export function installMediaLinks(db: Dexie) {
         table(name) {
           const table = core.table(name);
           if (!tables.has(name)) return table;
-          const payload = name === "syncRecords";
           function hydrate(
-            row: { blob?: unknown; value?: { blob?: unknown } } | undefined,
+            row: { blob?: unknown } | undefined,
             trans: DBCoreTransaction,
           ) {
-            const value = payload ? row?.value : row;
-            const link = value?.blob;
+            const link = row?.blob;
             if (!isMediaLink(link)) return;
             return media.get({ trans, key: link.syncMedia }).then((backing) => {
-              const hydrated = {
-                ...value,
-                blob: resolveMediaLink(link, backing),
-              };
-              return payload ? { ...row, value: hydrated } : hydrated;
+              return { ...row, blob: resolveMediaLink(link, backing) };
             });
           }
           return {

@@ -5,29 +5,27 @@ import { srsWrite } from "@/platform/locks";
 import { settingsSchema } from "@/settings/model";
 import { srsClient } from "@/srs/client";
 import { invalidateRwkv } from "@/srs/engines/rwkv/storage";
-import { discardStagedAnkiMedia, withRestoredTracking } from "@/sync/tracking";
+import { discardStagedAnkiMedia } from "@/sync/tracking";
 import type { Table } from "dexie";
 
 export async function restoreSettings(
   settings: ReturnType<typeof settingsSchema.parse>,
 ) {
   await srsWrite(() =>
-    db.transaction("rw", [db.settings, db.dictionaries], () =>
-      withRestoredTracking(async () => {
-        const current = (await db.settings.get("main"))?.value;
-        await saveSettings({
-          ...settings,
-          algorithm: current?.algorithm ?? "fsrs",
+    db.transaction("rw", [db.settings, db.dictionaries], async () => {
+      const current = (await db.settings.get("main"))?.value;
+      await saveSettings({
+        ...settings,
+        algorithm: current?.algorithm ?? "fsrs",
+      });
+      for (const [id, preference] of Object.entries(
+        settings.dictionaryPreferences,
+      ))
+        await db.dictionaries.update(id, {
+          enabled: preference.enabled,
+          order: preference.order,
         });
-        for (const [id, preference] of Object.entries(
-          settings.dictionaryPreferences,
-        ))
-          await db.dictionaries.update(id, {
-            enabled: preference.enabled,
-            order: preference.order,
-          });
-      }),
-    ),
+    }),
   );
   if (settings.algorithm === "rwkv") {
     while (!(await srsClient({ action: "rwkvStatus" })).ready)
@@ -62,27 +60,28 @@ export async function restoreLearning(
         db.rwkvEntities,
         db.rwkvCards,
       ],
-      () =>
-        withRestoredTracking(async () => {
-          await invalidateRwkv();
-          await db.srsMeta.put({
-            id: "main",
-            sequence: data.reviews.reduce(
-              (max, review) => Math.max(max, review.sequence),
-              0,
-            ),
-          });
-          await replaceLearningRows(db.vocabulary, data.vocabulary);
-          await replaceLearningRows(db.reviews, data.reviews);
-          await replaceLearningRows(db.audio, data.audio);
-          await replaceLearningRows(db.noteTypes, data.noteTypes);
-          await replaceLearningRows(db.notes, data.notes);
-          await replaceLearningRows(db.cards, data.cards);
-          await replaceLearningRows(db.cardAssets, data.cardAssets);
-          await replaceLearningRows(db.ankiReviews, data.ankiReviews);
-          await replaceLearningRows(db.decks, data.decks);
-          await replaceLearningRows(db.sentences, data.sentences);
-        }),
+      async () => {
+        await invalidateRwkv();
+        await db.srsMeta.put({
+          id: "main",
+          sequence: data.reviews.reduce(
+            (max, review) => Math.max(max, review.sequence),
+            0,
+          ),
+        });
+        await replaceLearningRows(db.vocabulary, data.vocabulary);
+        await replaceLearningRows(db.reviews, data.reviews);
+        await db.audio.clear();
+        await db.audio.bulkPut(data.audio);
+        await replaceLearningRows(db.noteTypes, data.noteTypes);
+        await replaceLearningRows(db.notes, data.notes);
+        await replaceLearningRows(db.cards, data.cards);
+        await db.cardAssets.clear();
+        await db.cardAssets.bulkPut(data.cardAssets);
+        await replaceLearningRows(db.ankiReviews, data.ankiReviews);
+        await replaceLearningRows(db.decks, data.decks);
+        await replaceLearningRows(db.sentences, data.sentences);
+      },
     );
   });
 }

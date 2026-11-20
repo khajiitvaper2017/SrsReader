@@ -4,7 +4,7 @@ import { RpcError } from "@/platform/messaging/send";
 import { useChanges } from "@/shared/hooks/useChanges";
 import { syncClient } from "@/sync/client";
 import type { Request } from "@/sync/contracts";
-import type { SyncStatus } from "@/sync/model";
+import type { SyncDecision, SyncStatus } from "@/sync/model";
 
 type Operation = "connect" | "disconnect" | "sync" | "automatic" | "storage";
 
@@ -174,7 +174,8 @@ export function useSync({ refreshStorageOnMount = false } = {}) {
     connect: (replaceAccount = false) =>
       execute("connect", { action: "syncConnect", replaceAccount }),
     disconnect: () => execute("disconnect", { action: "syncDisconnect" }),
-    syncNow: () => execute("sync", { action: "syncNow" }),
+    syncNow: (decision?: SyncDecision) =>
+      execute("sync", { action: "syncNow", decision }),
     setAutomatic: (enabled: boolean) =>
       execute("automatic", { action: "syncAutomatic", enabled }),
     refreshStorage: () => execute("storage", { action: "syncStorage" }),

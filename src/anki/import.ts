@@ -23,11 +23,7 @@ import {
 import { readerNote } from "@/cards/defaults";
 import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
-import {
-  discardStagedAnkiMedia,
-  stagedAnkiMediaId,
-  withoutSyncTracking,
-} from "@/sync/tracking";
+import { discardStagedAnkiMedia, stagedAnkiMediaId } from "@/sync/tracking";
 import { getSettings, saveSettings } from "@/settings/store";
 import { t } from "@/shared/i18n/i18n";
 import type { ImportProgress } from "@/shared/download";
@@ -844,7 +840,7 @@ export async function importPackage(
                   .where("namespace")
                   .equals(oldNamespace)
                   .primaryKeys();
-                await withoutSyncTracking(() => db.cardAssets.bulkDelete(ids));
+                await db.cardAssets.bulkDelete(ids);
               }
               await db.syncMeta.delete(stagedAnkiMediaId);
             })(),

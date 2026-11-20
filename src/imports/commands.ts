@@ -27,7 +27,7 @@ const syncJobs = new Map<
     resolve: () => void;
     reject: (error: Error) => void;
     report: (progress: SyncProgress) => void;
-    loadMedia?: (hash: string) => Promise<Blob>;
+    loadMedia?: (hash: string) => Promise<Blob | undefined>;
   }
 >();
 let syncUsers = 0;
@@ -49,7 +49,7 @@ export async function retainSyncHost() {
 export async function processSync(
   request: SyncWork,
   report: (progress: SyncProgress) => void = () => {},
-  loadMedia?: (hash: string) => Promise<Blob>,
+  loadMedia?: (hash: string) => Promise<Blob | undefined>,
 ) {
   const id = crypto.randomUUID();
   const pending = Promise.withResolvers<void>();
@@ -119,10 +119,11 @@ export function connectImportHost(port: Browser.runtime.Port) {
             if (!job.loadMedia) throw new Error("sync_invalid_media");
             const blob = await job.loadMedia(hash);
             if (syncJobs.get(result.id) !== job || job.cancelled) return;
-            await db.syncMeta.put({
-              id: `sync-worker-${result.id}-${hash}`,
-              blob,
-            });
+            if (blob)
+              await db.syncMeta.put({
+                id: `sync-worker-${result.id}-${hash}`,
+                blob,
+              });
             port.postMessage({
               type: "sync-media",
               id: result.id,

@@ -1,25 +1,26 @@
-import type { SyncProgress, SyncScope } from "@/sync/model";
+import type { CollectionBase, SyncProgress } from "@/sync/model";
 
 export type SyncWork =
-  | { action: "initialize" }
-  | { action: "prepare"; replaceAccount: boolean }
   | {
-      action: "unpack";
-      key: string;
-      source: string;
-      device: string;
-      revision: number;
-      scope: SyncScope;
+      action: "capture";
+      account: string;
+      parents: string[];
+      generation: number;
+      mediaGeneration: number;
+      includeMediaHashes: boolean;
     }
-  | { action: "merge"; keys: string[]; scope: SyncScope }
-  | { action: "pack"; account: string; scope: SyncScope }
+  | { action: "apply"; source: string; hash: string; base: CollectionBase }
+  | { action: "media" }
   | { action: "rebuild" };
 
 export type PackedSync = {
   id: string;
   account: string;
-  device: string;
-  revision: number;
+  parents: string[];
+  generation: number;
+  mediaGeneration: number;
+  name: string;
+  hash: string;
   blob: Blob;
 };
 

@@ -7,6 +7,7 @@ import {
   Group,
   Modal,
   Menu,
+  Radio,
   Stack,
   Switch,
   Text,
@@ -21,6 +22,10 @@ export function SyncSettings() {
   const sync = useSync({ refreshStorageOnMount: true });
   const { status, operation, loading, canceling, error } = sync;
   const [replaceAccount, setReplaceAccount] = useState(false);
+  const [dismissed, setDismissed] = useState<string>();
+  const [selected, setSelected] = useState("");
+  const choice = status?.choice;
+  useEffect(() => setSelected(""), [choice?.token]);
   const errorKey = error?.toLowerCase();
   const accountChanged = errorKey === "sync_account_changed";
   const cancelled =
@@ -89,7 +94,9 @@ export function SyncSettings() {
             />
             <Stack gap={4} aria-live="polite" role="status">
               <Text variant="supporting">
-                {t("sync_pending", { count: status.pending })}
+                {t(
+                  status.pending ? "sync_local_pending" : "sync_local_current",
+                )}
               </Text>
               <Text variant="supporting">
                 {status.lastSuccess
@@ -102,6 +109,11 @@ export function SyncSettings() {
                   : t("sync_never_synced")}
               </Text>
             </Stack>
+            {status.mediaPending && (
+              <Text variant="supporting" role="status">
+                {t("sync_media_pending")}
+              </Text>
+            )}
             {status.connected && (
               <Accordion>
                 <Accordion.Item value="storage">
@@ -205,9 +217,11 @@ export function SyncSettings() {
             disabled={
               !status?.connected || !status.configured || busy || loading
             }
-            onClick={() => void sync.syncNow()}
+            onClick={() =>
+              choice ? setDismissed(undefined) : void sync.syncNow()
+            }
           >
-            {t("sync_now")}
+            {t(choice ? "sync_choose_copy" : "sync_now")}
           </Button>
           {status?.account && (
             <Menu>
@@ -259,6 +273,93 @@ export function SyncSettings() {
           <Text variant="supporting">{t("sync_disconnect_help")}</Text>
         )}
       </Stack>
+      {choice && (
+        <Modal
+          opened={choice.token !== dismissed && !replaceAccount}
+          onClose={() => setDismissed(choice.token)}
+          title={t(
+            choice.kind === "upgrade"
+              ? "sync_upgrade_title"
+              : "sync_choose_copy",
+          )}
+          withCloseButton={false}
+          centered
+          data-srs-reader
+        >
+          <Stack gap="sm">
+            <Text variant="supporting">
+              {t(
+                choice.kind === "upgrade"
+                  ? choice.canUpload
+                    ? "sync_upgrade_help"
+                    : "sync_upgrade_empty"
+                  : "sync_choice_help",
+              )}
+            </Text>
+            {choice.copies.length > 1 && (
+              <Radio.Group
+                value={selected}
+                onChange={setSelected}
+                label={t("sync_drive_copies")}
+              >
+                <Stack gap="xs" mt="xs">
+                  {choice.copies.map((copy, index) => (
+                    <Radio
+                      key={copy.id}
+                      value={copy.id}
+                      label={t("sync_copy_label", {
+                        count: index + 1,
+                        time: copy.created
+                          ? new Date(copy.created).toLocaleString(
+                              i18n.resolvedLanguage,
+                            )
+                          : t("sync_unknown_time"),
+                      })}
+                    />
+                  ))}
+                </Stack>
+              </Radio.Group>
+            )}
+            <Group gap="xs" wrap="wrap">
+              <Button
+                variant="default"
+                data-autofocus
+                onClick={() => setDismissed(choice.token)}
+              >
+                {t("sync_cancel")}
+              </Button>
+              {choice.canUpload && (
+                <Button
+                  variant="default"
+                  disabled={busy}
+                  onClick={() =>
+                    void sync.syncNow({ token: choice.token, keep: "local" })
+                  }
+                >
+                  {t("sync_upload_device")}
+                </Button>
+              )}
+              {choice.copies.length > 0 && (
+                <Button
+                  variant="default"
+                  disabled={busy || (choice.copies.length > 1 && !selected)}
+                  onClick={() =>
+                    void sync.syncNow({
+                      token: choice.token,
+                      keep:
+                        choice.copies.length === 1
+                          ? choice.copies[0]!.id
+                          : selected,
+                    })
+                  }
+                >
+                  {t("sync_download_drive")}
+                </Button>
+              )}
+            </Group>
+          </Stack>
+        </Modal>
+      )}
       <Modal
         opened={replaceAccount}
         onClose={() => setReplaceAccount(false)}

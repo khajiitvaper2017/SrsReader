@@ -23,7 +23,7 @@ export async function handleSync(request: Request) {
       await disconnectSync();
       break;
     case "syncNow":
-      void syncNow().catch(console.warn);
+      void syncNow(request.decision).catch(console.warn);
       break;
     case "syncAutomatic":
       await setAutomaticSync(request.enabled);

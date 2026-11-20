@@ -373,6 +373,28 @@ export function installMigrations(database: Dexie, through = Infinity) {
   database.version(27).stores({
     ipa: "id, revisionId, [revisionId+folded]",
   });
+  if (through < 28) return;
+  database
+    .version(28)
+    .stores({
+      syncRecords: null,
+      syncAuthored: null,
+      syncDependencies: null,
+      syncMedia: "key, table, hash, missing, generation",
+    })
+    .upgrade(async (tx) => {
+      const meta = tx.table("syncMeta");
+      // Older card and audio rows can still point to these stored blobs.
+      const keys = await meta.toCollection().primaryKeys();
+      await meta.bulkDelete(
+        keys.filter(
+          (key) =>
+            typeof key === "string" &&
+            !key.startsWith("sync-merge-media:") &&
+            key !== "staged-anki-media",
+        ),
+      );
+    });
 }
 
 async function migrateCards(tx: Transaction, hasLegacyMedia: boolean) {

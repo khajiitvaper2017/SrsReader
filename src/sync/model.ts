@@ -1,67 +1,42 @@
-import { z } from "zod";
+import type { AudioRecord } from "@/audio/model";
+import type { CardAsset } from "@/cards/model";
 
-export const syncKinds = [
-  "vocabulary",
-  "notes",
-  "noteTypes",
-  "cards",
-  "schedules",
-  "reviews",
-  "ankiReviews",
-  "decks",
-  "sentences",
-  "settings",
-  "cardAssets",
-  "audio",
-] as const;
-export const vectorSchema = z.record(
-  z.string(),
-  z.number().int().nonnegative(),
+export type SyncMeta = { id: string; [key: string]: unknown };
+export type MediaTable = "audio" | "cardAssets";
+export const mediaKey = (table: MediaTable, id: string) =>
+  JSON.stringify([table, id]);
+export type MediaItem = {
+  hash: string;
+  bytes: number;
+  mime: string;
+} & (
+  | { table: "audio"; data: Omit<AudioRecord, "blob"> }
+  | { table: "cardAssets"; data: Omit<CardAsset, "blob"> }
 );
-export type SyncVector = z.infer<typeof vectorSchema>;
-export const syncRecordSchema = z.object({
-  key: z.string(),
-  kind: z.enum(syncKinds),
-  id: z.string(),
-  device: z.string().min(1),
-  counter: z.number().int().positive(),
-  observed: vectorSchema,
-  time: z.number().finite(),
-  deleted: z.boolean(),
-  value: z.record(z.string(), z.unknown()).nullable(),
-});
-export type SyncRecord = z.infer<typeof syncRecordSchema>;
-export type SyncKind = SyncRecord["kind"];
-export type SyncScope = "study" | "media";
-export const syncScope = (kind: SyncKind): SyncScope =>
-  kind === "cardAssets" || kind === "audio" ? "media" : "study";
-export const recordKey = (kind: SyncKind, id: string) =>
-  JSON.stringify([kind, id]);
-
-export const snapshotSchema = z.object({
-  format: z.literal("srs-reader-sync"),
-  version: z.literal(1),
-  device: z.string().min(1),
-  revision: z.number().int().positive(),
-  observed: vectorSchema,
-  records: z.array(syncRecordSchema),
-  dependencies: z.array(syncRecordSchema).default([]),
-});
-export type SyncSnapshot = z.infer<typeof snapshotSchema>;
-export type SyncIdentity = {
-  id: "identity";
-  device: string;
-  counter: number;
-  observed: SyncVector;
-  mediaObserved?: SyncVector;
-  published: number;
+export type MediaIndexRow = {
+  key: string;
+  table: MediaTable;
+  id: string;
+  generation?: number;
+  item?: MediaItem;
+  hash?: string;
+  missing?: 1;
 };
-export type SyncMeta =
-  | SyncIdentity
-  | {
-      id: string;
-      [key: string]: unknown;
-    };
+export type SyncChoice = {
+  token: string;
+  kind: "conflict" | "upgrade";
+  canUpload: boolean;
+  copies: { id: string; created?: string }[];
+};
+export type CollectionBase = {
+  id: "collection-base";
+  account: string;
+  file: string;
+  generation: number;
+  mediaGeneration: number;
+};
+export type SyncDecision = { token: string; keep: string };
+
 export type SyncAccount = { id: string; email: string };
 export type SyncProgress = {
   phase:
@@ -69,7 +44,6 @@ export type SyncProgress = {
     | "download"
     | "download_media"
     | "prepare"
-    | "merge"
     | "apply"
     | "rebuild"
     | "media"
@@ -91,6 +65,8 @@ export type SyncStatus = {
   automatic: boolean;
   lastSuccess: number | null;
   pending: number;
+  choice: SyncChoice | null;
+  mediaPending: boolean;
   progress: SyncProgress | null;
   error: string | null;
   authorizationRequired: boolean;
@@ -105,7 +81,5 @@ export type SyncTransferState = {
   authorizationRequired: boolean;
   failures: number;
   retryAt: number;
-  received: Record<string, number>;
-  receivedMedia: Record<string, number>;
   storage: SyncStorage | null;
 };

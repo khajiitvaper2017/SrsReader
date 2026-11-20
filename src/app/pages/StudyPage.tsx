@@ -2,6 +2,7 @@ import { AnkiTransfer } from "@/anki/components/AnkiTransfer";
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Box,
   Button,
   Group,
@@ -80,7 +81,7 @@ export function StudyPage({
       : status.authorizationRequired
         ? t("sync_auth_required")
         : status.pending
-          ? t("sync_pending", { count: status.pending })
+          ? t("sync_local_pending")
           : !status.lastSuccess
             ? t("sync_never_synced")
             : ""
@@ -281,7 +282,7 @@ export function StudyPage({
                 title={t(canSync ? "sync_now" : "sync_title")}
                 loading={syncBusy}
                 onClick={() => {
-                  if (canSync) void sync.syncNow();
+                  if (canSync && !status?.choice) void sync.syncNow();
                   else location.hash = "settings/sync";
                 }}
               >
@@ -344,7 +345,13 @@ export function StudyPage({
           </>
         }
       />
-      {syncWarning && <Alert color="yellow">{syncWarning}</Alert>}
+      {status?.choice ? (
+        <Alert color="yellow">
+          <Anchor href="#settings/sync">{t("sync_choose_copy")}</Anchor>
+        </Alert>
+      ) : (
+        syncWarning && <Alert color="yellow">{syncWarning}</Alert>
+      )}
       <ErrorBox error={syncError} />
       <TaskAlerts
         busy={busy}

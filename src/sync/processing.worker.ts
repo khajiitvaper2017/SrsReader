@@ -3,35 +3,17 @@ import { srsWrite } from "@/platform/locks";
 import { getSettings } from "@/settings/store";
 import { rwkvStatus } from "@/srs/engines/rwkv/cache";
 import { replayBatch } from "@/srs/engines/rwkv/replay";
-import { createLocalMediaFinder } from "@/sync/media";
-import { mergeSnapshots } from "@/sync/merge";
-import {
-  discardStagedMergeMedia,
-  migrateSyncFrontier,
-  outgoingId,
-  outgoingMedia,
-  readStagedSnapshot,
-  replaceSyncRows,
-  stageSnapshot,
-} from "@/sync/metadata";
+import { applyCollection, captureCollection } from "@/sync/collection";
+import { installDownloadedMedia } from "@/sync/media";
+import { transferConcurrently } from "@/sync/concurrency";
 import {
   syncWorkError,
-  type PackedSync,
   type SyncWork,
   type SyncWorkError,
   type SyncWorkMessage,
 } from "@/sync/processing";
-import {
-  captureSnapshot,
-  initializeTracking,
-  prepareAccountSync,
-} from "@/sync/tracking";
-import { packSnapshot, unpackSnapshot } from "@/sync/transfer";
 
-const mediaRequests = new Map<
-  string,
-  { resolve: () => void; reject: (error: Error) => void }
->();
+const mediaRequests = new Map<string, PromiseWithResolvers<void>>();
 
 self.onmessage = async (
   event: MessageEvent<{
@@ -53,82 +35,46 @@ self.onmessage = async (
   const send = (message: Omit<SyncWorkMessage, "id">) =>
     self.postMessage({ id, ...message });
   try {
-    await getSettings();
     switch (request.action) {
-      case "initialize":
-        // Tracking starts before sync jobs; discard payloads left by interrupted jobs.
-        await db.transaction("rw", db.syncMeta, async () => {
-          await db.syncMeta.where("id").startsWith("sync-work-").delete();
-          await db.syncMeta.where("id").startsWith("sync-worker-").delete();
-          await db.syncMeta.bulkDelete(["captured", "drive-index"]);
-        });
-        await discardStagedMergeMedia();
-        await migrateSyncFrontier();
-        await initializeTracking();
+      case "capture":
+        await captureCollection(
+          request.account,
+          request.parents,
+          request.generation,
+          request.mediaGeneration,
+          request.includeMediaHashes,
+        );
         break;
-      case "prepare":
-        await prepareAccountSync(request.replaceAccount);
+      case "apply": {
+        const source = (await db.syncMeta.get(request.source))?.blob;
+        if (!(source instanceof Blob)) throw new Error("sync_invalid_snapshot");
+        await applyCollection(source, request.hash, request.base);
         break;
-      case "unpack": {
-        const input = await db.syncMeta.get(request.source);
-        if (!input || !("blob" in input) || !(input.blob instanceof Blob))
-          throw new Error("sync_invalid_snapshot");
-        const snapshot = await unpackSnapshot(
-          input.blob,
-          request.scope,
-          createLocalMediaFinder(),
-          async (hash) => {
-            const key = `sync-worker-${id}-${hash}`;
-            const pending = Promise.withResolvers<void>();
-            mediaRequests.set(hash, pending);
-            send({ media: hash });
-            await pending.promise;
-            const loaded = await db.syncMeta.get(key);
-            if (
-              !loaded ||
-              !("blob" in loaded) ||
-              !(loaded.blob instanceof Blob)
-            )
-              throw new Error("sync_invalid_media");
+      }
+      case "media": {
+        const refs = await db.syncMedia.where("missing").equals(1).toArray();
+        const hashes = new Set(
+          refs.flatMap((row) => (row.hash ? [row.hash] : [])),
+        );
+        let done = 0;
+        await transferConcurrently(hashes, async (hash) => {
+          const pending = Promise.withResolvers<void>();
+          mediaRequests.set(hash, pending);
+          send({ media: hash });
+          await pending.promise;
+          const key = `sync-worker-${id}-${hash}`;
+          const blob = (await db.syncMeta.get(key))?.blob;
+          if (blob instanceof Blob) {
+            await installDownloadedMedia(hash, blob);
             await db.syncMeta.delete(key);
-            return loaded.blob;
-          },
-          (done, total) =>
-            send({ progress: { phase: "download_media", done, total } }),
-        );
-        if (
-          snapshot.device !== request.device ||
-          snapshot.revision !== request.revision
-        )
-          throw new Error("sync_invalid_snapshot");
-        send({ progress: { phase: "prepare", done: 0, total: 0 } });
-        await stageSnapshot(request.key, snapshot);
-        break;
-      }
-      case "merge": {
-        const snapshots = [];
-        for (const key of request.keys)
-          snapshots.push(await readStagedSnapshot(key));
-        await mergeSnapshots(snapshots, request.scope, () =>
-          send({ progress: { phase: "apply", done: 0, total: 0 } }),
-        );
-        break;
-      }
-      case "pack": {
-        const key = outgoingId(request.scope);
-        const outgoing = (await db.syncMeta.get(key)) as PackedSync | undefined;
-        if (outgoing?.account === request.account) break;
-        const snapshot = await captureSnapshot(request.scope);
-        const { blob, media } = await packSnapshot(snapshot);
-        // A fresh media stage commits each batch. The header makes it reusable.
-        if (request.scope === "media")
-          await replaceSyncRows(outgoingMedia, [...media]);
-        await db.syncMeta.put({
-          id: key,
-          account: request.account,
-          device: snapshot.device,
-          revision: snapshot.revision,
-          blob,
+          }
+          send({
+            progress: {
+              phase: "download_media",
+              done: ++done,
+              total: hashes.size,
+            },
+          });
         });
         break;
       }

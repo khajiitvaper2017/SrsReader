@@ -6,6 +6,8 @@ export type DriveFile = {
   name: string;
   appProperties?: Record<string, string>;
   createdTime?: string;
+  description?: string;
+  sha256Checksum?: string;
   size?: string;
   quotaBytesUsed?: string;
   trashed?: boolean;
@@ -47,13 +49,15 @@ type Upload = {
   name: string;
   hash: string;
   properties: Record<string, string>;
+  description?: string;
   blob: Blob;
   session?: string;
   fileId?: string;
   offset: number;
   updated: number;
 };
-const FIELDS = "id,name,appProperties,createdTime,size,quotaBytesUsed,trashed";
+const FIELDS =
+  "id,name,appProperties,createdTime,size,quotaBytesUsed,trashed,description,sha256Checksum";
 const CHUNK = 8 * 1024 * 1024;
 const SMALL_UPLOAD = 1024 * 1024;
 let fileIds:
@@ -113,17 +117,25 @@ async function readUpload(key: string): Promise<Upload | undefined> {
   return promise;
 }
 
-async function persistUpload(upload: Upload, remove = false): Promise<void> {
+async function writeUpload(
+  write: (store: IDBObjectStore) => void,
+): Promise<void> {
   const db = await uploadsDB();
   const { promise, resolve, reject } = Promise.withResolvers<void>();
   const transaction = db.transaction("uploads", "readwrite");
-  const store = transaction.objectStore("uploads");
-  if (remove) store.delete(upload.key);
-  else store.put(upload);
+  write(transaction.objectStore("uploads"));
   transaction.oncomplete = () => resolve();
   transaction.onerror = () => reject(transaction.error);
   transaction.onabort = () => reject(transaction.error);
   await promise;
+}
+
+function persistUpload(upload: Upload) {
+  return writeUpload((store) => store.put(upload));
+}
+
+export function discardDriveUpload(account: string, name: string) {
+  return writeUpload((store) => store.delete(JSON.stringify([account, name])));
 }
 
 async function delay(milliseconds: number, signal: AbortSignal) {
@@ -395,12 +407,16 @@ async function completed(
     upload.fileId &&
     (file.id !== upload.fileId ||
       file.size !== String(upload.blob.size) ||
+      (upload.description !== undefined &&
+        file.description !== upload.description) ||
+      (file.sha256Checksum !== undefined &&
+        file.sha256Checksum !== upload.hash) ||
       Object.entries(upload.properties).some(
         ([key, value]) => file.appProperties?.[key] !== value,
       ))
   )
     throw new DriveError(409);
-  await persistUpload(upload, true);
+  await discardDriveUpload(upload.account, upload.name);
   return file;
 }
 
@@ -441,6 +457,7 @@ export async function uploadFile(
   blob: Blob,
   properties: Record<string, string>,
   account: string,
+  description?: string,
 ): Promise<DriveFile> {
   const signal = controller.signal;
   const hash =
@@ -456,6 +473,7 @@ export async function uploadFile(
   if (
     upload &&
     (upload.hash !== hash ||
+      upload.description !== description ||
       JSON.stringify(Object.entries(upload.properties).sort()) !==
         JSON.stringify(Object.entries(properties).sort()))
   ) {
@@ -468,6 +486,7 @@ export async function uploadFile(
     name,
     hash,
     properties,
+    description,
     blob,
     offset: 0,
     updated: Date.now(),
@@ -499,6 +518,7 @@ export async function uploadFile(
             name,
             parents: ["appDataFolder"],
             appProperties: properties,
+            description,
           }),
           `\r\n--${boundary}\r\nContent-Type: ${blob.type || "application/octet-stream"}\r\n\r\n`,
           blob,
@@ -539,6 +559,7 @@ export async function uploadFile(
             name,
             parents: ["appDataFolder"],
             appProperties: properties,
+            description,
           }),
         },
         account,

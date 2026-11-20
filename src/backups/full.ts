@@ -15,7 +15,7 @@ import { srsWrite } from "@/platform/locks";
 import { getSettings } from "@/settings/store";
 import { saveBlob, type ImportProgress } from "@/shared/download";
 import { t } from "@/shared/i18n/i18n";
-import { discardStagedAnkiMedia, withRestoredTracking } from "@/sync/tracking";
+import { discardStagedAnkiMedia } from "@/sync/tracking";
 import {
   fullManifestSchema,
   fullRowSchemas,
@@ -25,14 +25,7 @@ import {
 
 // Device identity, revision clocks, authored records and account transfer state
 // are installation-local, just like a running import's temporary payload.
-const transientTables = [
-  "importTasks",
-  "importFiles",
-  "syncRecords",
-  "syncAuthored",
-  "syncMeta",
-  "syncDependencies",
-];
+const transientTables = ["importTasks", "importFiles", "syncMedia", "syncMeta"];
 const learningTables: Record<string, true> = {
   vocabulary: true,
   reviews: true,
@@ -321,29 +314,29 @@ export async function restoreFull(
     const previousModels = await cacheSnapshot();
     try {
       await replaceCaches(backup.models);
-      await db.transaction("rw", db.tables, () =>
-        withRestoredTracking(async () => {
-          await idleImports();
-          for (const table of db.tables)
-            if (!table.name.startsWith("sync") && !learningTables[table.name])
-              await table.clear();
-          let done = 0;
-          const restoredTables = tables().sort(
-            (a, b) =>
-              (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
-              (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
-          );
-          for (const table of restoredTables)
-            await copyTable(backup.staged.table(table.name), table, (rows) => {
-              done += rows;
-              report({
-                phase: t("full_backup_restoring"),
-                done,
-                total: backup.rows,
-              });
+      await db.transaction("rw", db.tables, async () => {
+        await idleImports();
+        for (const table of db.tables)
+          if (!table.name.startsWith("sync") && !learningTables[table.name])
+            await table.clear();
+        await db.audio.clear();
+        await db.cardAssets.clear();
+        let done = 0;
+        const restoredTables = tables().sort(
+          (a, b) =>
+            (a.name === "cards" ? 2 : a.name === "reviews" ? 0 : 1) -
+            (b.name === "cards" ? 2 : b.name === "reviews" ? 0 : 1),
+        );
+        for (const table of restoredTables)
+          await copyTable(backup.staged.table(table.name), table, (rows) => {
+            done += rows;
+            report({
+              phase: t("full_backup_restoring"),
+              done,
+              total: backup.rows,
             });
-        }),
-      );
+          });
+      });
     } catch (error) {
       await replaceCaches(previousModels);
       throw error;

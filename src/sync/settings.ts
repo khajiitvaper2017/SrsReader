@@ -23,14 +23,12 @@ export async function applyPortableSettings(
   current: Settings,
   value: Record<string, unknown>,
 ): Promise<Settings> {
-  // Older snapshots include theme; read them without changing local appearance.
-  const { theme: _theme, ...portable } = value;
   const allowed = portableSettings(current);
-  for (const key of Object.keys(portable)) {
+  for (const key of Object.keys(value)) {
     if (!Object.hasOwn(allowed, key)) throw new Error("sync_invalid_data");
   }
   // Keep preferences for unavailable dictionaries: installations are local, IDs are portable.
-  const next = settingsSchema.parse({ ...current, ...portable });
+  const next = settingsSchema.parse({ ...current, ...value });
   if (next.algorithm === "rwkv" && !(await rwkvStatus(next)).ready) {
     next.algorithm = current.algorithm;
   }

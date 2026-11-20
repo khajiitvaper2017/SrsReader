@@ -34,16 +34,14 @@ import type {
   AnkiReview,
 } from "@/cards/model";
 import type { ImportTask } from "@/imports/model";
-import type { SyncMeta, SyncRecord } from "@/sync/model";
+import type { MediaIndexRow, SyncMeta } from "@/sync/model";
 import { installSyncTracking } from "@/sync/tracking";
 import Dexie, { type Table } from "dexie";
 
 type StoredMedia<T> = Omit<T, "blob"> & { blob: Blob | MediaLink };
 
 class ReaderDatabase extends Dexie {
-  syncRecords!: Table<SyncRecord, string>;
-  syncAuthored!: Table<SyncRecord, string>;
-  syncDependencies!: Table<SyncRecord, [string, number]>;
+  syncMedia!: Table<MediaIndexRow, string>;
   syncMeta!: Table<SyncMeta, string>;
   noteTypes!: Table<NoteType, string>;
   notes!: Table<Note, string>;

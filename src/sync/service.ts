@@ -9,7 +9,6 @@ import { db } from "@/platform/database/db";
 import { srsWrite } from "@/platform/locks";
 import { t } from "@/shared/i18n/i18n";
 import {
-  accessToken,
   authStatus,
   cancelGoogle,
   connectGoogle,
@@ -20,6 +19,7 @@ import {
   cancelDriveTransfers,
   clearDriveUploads,
   deleteFile,
+  discardDriveUpload,
   downloadFile,
   driveTransferSignal,
   listFiles,
@@ -29,10 +29,11 @@ import {
 import { readDriveFiles, saveDriveFiles } from "@/sync/drive-index";
 import {
   clearOutgoing,
+  collectionIsEmpty,
   outgoingId,
-  outgoingMedia,
-  readSyncRows,
-} from "@/sync/metadata";
+} from "@/sync/collection";
+import { cleanupMedia, contentPrefix, uploadPrefix } from "@/sync/media";
+import { outgoingHashes, putSyncBatches } from "@/sync/metadata";
 import { transferConcurrently } from "@/sync/concurrency";
 import {
   batchMedia,
@@ -42,22 +43,16 @@ import {
   packMediaBundle,
 } from "@/sync/media-bundles";
 import {
-  type SyncIdentity,
+  type CollectionBase,
+  type SyncChoice,
+  type SyncDecision,
   type SyncProgress,
-  type SyncScope,
   type SyncStatus,
   type SyncStorage,
   type SyncTransferState,
 } from "@/sync/model";
 import { isLargeValueReadError, type PackedSync } from "@/sync/processing";
-import {
-  markPublished,
-  hasPendingMedia,
-  onSyncEdit,
-  pendingCount,
-  pendingStudyChanges,
-  withoutSyncTracking,
-} from "@/sync/tracking";
+import { localVersions, withoutSyncTracking } from "@/sync/tracking";
 import { reviewSyncLock } from "@/sync/contracts";
 
 const storageKey = "syncTransfer";
@@ -72,8 +67,6 @@ const emptyTransfer = (): SyncTransferState => ({
   authorizationRequired: false,
   failures: 0,
   retryAt: 0,
-  received: {},
-  receivedMedia: {},
   storage: null,
 });
 let transfer = emptyTransfer();
@@ -87,38 +80,21 @@ let progress: SyncProgress | null = null;
 let lastProgressReport = 0;
 let started = false;
 let stateWrites = Promise.resolve();
-let trackingReady: Promise<void> | undefined;
 let pending = 0;
-let pendingRequest: Promise<void> | undefined;
-let pendingDirty = false;
+let choice: SyncChoice | null = null;
+let mediaPending = false;
+let retainedHost: ReturnType<typeof retainSyncHost> | undefined;
 
-function refreshPending() {
-  if (!trackingReady) return Promise.resolve();
-  pendingDirty = true;
-  pendingRequest ??= (async () => {
-    while (pendingDirty) {
-      pendingDirty = false;
-      const count = await pendingStudyChanges();
-      if (pending !== count) {
-        pending = count;
-        await changed();
-      }
-    }
-  })().finally(() => {
-    pendingRequest = undefined;
-    if (pendingDirty) void refreshPending().catch(console.warn);
-  });
-  return pendingRequest;
-}
-
-function prepareTracking() {
-  trackingReady ??= processSync({ action: "initialize" })
-    .then(() => refreshPending())
-    .catch((error) => {
-      trackingReady = undefined;
-      throw error;
-    });
-  return trackingReady;
+async function refreshPending() {
+  const base = await db.syncMeta.get("collection-base");
+  pending = Number(
+    (await localVersions()).generation !==
+      (base?.account === transfer.account ? (base?.generation ?? 0) : 0),
+  );
+  mediaPending = Boolean(
+    (await db.syncMedia.where("missing").equals(1).count()) ||
+    (await db.syncMeta.where("id").startsWith(uploadPrefix).count()),
+  );
 }
 
 async function changed() {
@@ -138,8 +114,11 @@ async function initialize() {
       Partial<SyncTransferState> | undefined;
     transfer = {
       ...emptyTransfer(),
-      ...stored,
-      receivedMedia: { ...(stored?.receivedMedia ?? stored?.received) },
+      ...Object.fromEntries(
+        Object.entries(stored ?? {}).filter(([key]) =>
+          Object.hasOwn(transfer, key),
+        ),
+      ),
     };
     initializeAuth();
   })();
@@ -173,6 +152,8 @@ async function processWork(
   loadMedia?: Parameters<typeof processSync>[2],
 ) {
   checkCancelled();
+  await (retainedHost ??= retainSyncHost());
+  checkCancelled();
   await processSync(
     request,
     (value) => {
@@ -193,10 +174,6 @@ function errorCode(error: unknown) {
     return error.code;
   return error instanceof Error ? error.message : String(error);
 }
-function revision(file: DriveFile) {
-  const value = Number(file.appProperties?.revision);
-  return Number.isSafeInteger(value) && value > 0 ? value : 0;
-}
 function driveStorageUsage(files: DriveFile[]): SyncStorage {
   let bytes: number | null = 0;
   for (const file of files) {
@@ -211,44 +188,16 @@ function driveStorageUsage(files: DriveFile[]): SyncStorage {
   }
   return { bytes, files: files.length, updated: Date.now() };
 }
-const snapshotKind = (scope: SyncScope) => `${scope}-snapshot`;
-function snapshotScope(file: DriveFile) {
-  const properties = file.appProperties;
-  if (properties?.srsKind === "media-snapshot") return "media";
-  if (properties?.srsKind === "snapshot")
-    return properties.scope === "study" ? "study" : "legacy";
-}
-function latestSnapshots(files: DriveFile[], scope: SyncScope) {
-  const latest = new Map<string, DriveFile>();
-  for (const file of files) {
-    const device = file.appProperties?.device;
-    const source = snapshotScope(file);
-    if ((source !== "legacy" && source !== scope) || !device || !revision(file))
-      continue;
-    const current = latest.get(device);
-    if (
-      !current ||
-      revision(file) > revision(current) ||
-      (revision(file) === revision(current) &&
-        (source === snapshotScope(current)
-          ? file.id.localeCompare(current.id) < 0
-          : source === scope))
-    )
-      latest.set(device, file);
-  }
-  return latest;
-}
 async function bindAccount(account: string) {
   if (transfer.account === account) return;
-  await processWork({
-    action: "prepare",
-    replaceAccount: transfer.account !== null,
-  });
   await clearOutgoing();
   await clearDriveUploads();
+  await db.syncMeta.where("id").startsWith(uploadPrefix).delete();
+  choice = null;
   transfer = { ...emptyTransfer(), account, automatic: transfer.automatic };
   await persist();
 }
+
 async function assertAccount() {
   const auth = await authStatus();
   if (!auth.account)
@@ -261,198 +210,315 @@ async function assertAccount() {
     });
   return auth.account;
 }
-async function uploadSnapshotMedia(account: string, files: DriveFile[]) {
-  const known = new Set(files.flatMap(mediaHashes));
-  const missingMedia = (
-    await readSyncRows<[string, Blob]>(outgoingMedia)
-  ).filter(([hash]) => !known.has(hash));
-  await report("media", 0, missingMedia.length);
-  let done = 0;
-  await transferConcurrently(batchMedia(missingMedia), async (batch) => {
-    checkCancelled();
-    let file: DriveFile;
-    if (batch.length === 1) {
-      const [hash, blob] = batch[0]!;
-      file = await uploadFile(
-        `media.${hash}`,
-        blob,
-        { srsKind: "media", hash },
-        account,
-      );
-    } else {
-      const blob = await packMediaBundle(batch, driveTransferSignal());
-      checkCancelled();
-      file = await uploadFile(
-        await mediaBundleName(batch),
-        blob,
-        {
-          srsKind: "media-bundle",
-          ...Object.fromEntries(batch.map(([hash]) => [`m${hash}`, "1"])),
-        },
-        account,
-      );
-    }
-    files.push(file);
-    done += batch.length;
-    await report("media", done, missingMedia.length);
-  });
-  checkCancelled();
+const collectionKind = "collection";
+const collectionProperties = (hash: string) => ({
+  srsKind: collectionKind,
+  hash,
+});
+
+function supersededBy(file: DriveFile) {
+  let ids: unknown;
+  try {
+    ids = JSON.parse(file.description ?? "[]");
+  } catch {
+    throw new Error("sync_invalid_snapshot");
+  }
+  if (
+    !Array.isArray(ids) ||
+    ids.some((id) => typeof id !== "string" || id === file.id)
+  )
+    throw new Error("sync_invalid_snapshot");
+  return ids as string[];
 }
 
-async function synchronize() {
+function collectionHeads(copies: DriveFile[]) {
+  const replaced = new Set(copies.flatMap(supersededBy));
+  const heads = copies.filter(({ id }) => !replaced.has(id));
+  if (copies.length && !heads.length) throw new Error("sync_invalid_snapshot");
+  return { heads, replaced };
+}
+
+function mediaFiles(files: DriveFile[]) {
+  const indexed = new Map<string, DriveFile>();
+  for (const file of files)
+    for (const hash of mediaHashes(file)) indexed.set(hash, file);
+  return indexed;
+}
+
+async function transferMedia(account: string, files: DriveFile[]) {
+  const uploads = await db.syncMeta
+    .where("id")
+    .startsWith(uploadPrefix)
+    .primaryKeys();
+  const missing = await db.syncMedia.where("missing").equals(1).count();
+  if (!uploads.length && !missing) return;
+  const existing = mediaFiles(files);
+  const toUpload: [string, Blob][] = [];
+  for (const key of uploads) {
+    const hash = key.slice(uploadPrefix.length);
+    if (existing.has(hash)) {
+      await db.syncMeta.delete(key);
+      continue;
+    }
+    const blob = (await db.syncMeta.get(contentPrefix + hash))?.blob;
+    if (!(blob instanceof Blob)) throw new Error("sync_invalid_media");
+    toUpload.push([hash, blob]);
+  }
+  if (toUpload.length) {
+    await report("media", 0, toUpload.length);
+    let done = 0;
+    await transferConcurrently(batchMedia(toUpload), async (batch) => {
+      checkCancelled();
+      const [hash, blob] = batch[0]!;
+      const file =
+        batch.length === 1
+          ? await uploadFile(
+              `media.${hash}`,
+              blob,
+              { srsKind: "media", hash },
+              account,
+            )
+          : await uploadFile(
+              await mediaBundleName(batch),
+              await packMediaBundle(batch, driveTransferSignal()),
+              {
+                srsKind: "media-bundle",
+                ...Object.fromEntries(batch.map(([hash]) => [`m${hash}`, "1"])),
+              },
+              account,
+            );
+      for (const [hash] of batch) existing.set(hash, file);
+      files.push(file);
+      // Persist confirmed uploads before dropping their retry markers.
+      done += batch.length;
+      await report("media", done, toUpload.length);
+    });
+    await saveDriveFiles(account, files);
+    await db.syncMeta.bulkDelete(toUpload.map(([hash]) => uploadPrefix + hash));
+  }
+  if (missing) {
+    const download = createMediaDownloader(account, driveTransferSignal());
+    await processWork({ action: "media" }, (hash) => {
+      const file = existing.get(hash);
+      return file ? download(file, hash) : Promise.resolve(undefined);
+    });
+  }
+}
+
+async function acknowledgeUpload(
+  outgoing: PackedSync,
+  file: DriveFile,
+  files: DriveFile[],
+) {
+  const hashes = await db.syncMeta
+    .where("id")
+    .startsWith(outgoingHashes)
+    .primaryKeys();
+  const existing = hashes.length
+    ? mediaFiles(files)
+    : new Map<string, DriveFile>();
+  await db.transaction("rw", db.syncMeta, async () => {
+    const uploads = [];
+    for (const key of hashes) {
+      const hash = key.slice(outgoingHashes.length);
+      if (
+        !existing.has(hash) &&
+        (await db.syncMeta
+          .where("id")
+          .equals(contentPrefix + hash)
+          .count())
+      )
+        uploads.push({ id: uploadPrefix + hash });
+    }
+    await putSyncBatches(db.syncMeta, uploads);
+    await db.syncMeta.put({
+      id: "collection-base",
+      account: outgoing.account,
+      file: file.id,
+      generation: outgoing.generation,
+      mediaGeneration: outgoing.mediaGeneration,
+    });
+    await clearOutgoing();
+  });
+}
+
+async function publishCollection(outgoing: PackedSync, files: DriveFile[]) {
+  await report("upload", 0, 1);
+  const file = await uploadFile(
+    outgoing.name,
+    outgoing.blob,
+    collectionProperties(outgoing.hash),
+    outgoing.account,
+    JSON.stringify(outgoing.parents),
+  );
+  files.push(file);
+  await saveDriveFiles(outgoing.account, files);
+  await report("upload", 1, 1);
+  return file;
+}
+
+async function synchronize(decision?: SyncDecision) {
   const account = (await assertAccount()).id;
   await report("check", 0, 0);
-  await prepareTracking();
-  await accessToken(account);
-  checkCancelled();
   const files = await readDriveFiles(account);
+  checkCancelled();
   transfer.storage = driveStorageUsage(files);
-  let filesChanged = false;
-  const downloaded = new Map<string, string>();
-
-  async function exchange(scope: SyncScope) {
-    const latest = latestSnapshots(files, scope);
-    const received = {
-      ...(scope === "study" ? transfer.received : transfer.receivedMedia),
-    };
-    const identity = (await db.syncMeta.get("identity")) as SyncIdentity;
-    const incoming: string[] = [];
-    const mediaFiles = new Map<string, DriveFile>();
-    if (scope === "media")
-      for (const file of files)
-        for (const hash of mediaHashes(file)) mediaFiles.set(hash, file);
-    const downloadMedia = createMediaDownloader(account, driveTransferSignal());
-    const loadMedia = async (hash: string) => {
-      checkCancelled();
-      const file = mediaFiles.get(hash);
-      if (!file) throw new Error(t("sync_invalid_media"));
-      return downloadMedia(file, hash);
-    };
-    for (const [device, file] of latest) {
-      const version = revision(file);
-      const published =
-        scope === "study" && device === identity.device
-          ? identity.published
-          : 0;
-      if (version <= Math.max(received[device] ?? 0, published)) continue;
-      checkCancelled();
-      let source = downloaded.get(file.id);
-      if (!source) {
-        source = `sync-work-${crypto.randomUUID()}`;
-        await report("download", 0, 0, "bytes");
-        await db.syncMeta.put({
-          id: source,
-          blob: await downloadFile(file.id, account, (done, total) => {
-            void report("download", done, total, "bytes").catch(console.warn);
-          }),
-        });
-        downloaded.set(file.id, source);
-      }
-      const key = `${source}:${scope}`;
-      await report("prepare", 0, 0);
-      await processWork(
-        { action: "unpack", key, source, device, revision: version, scope },
-        loadMedia,
-      );
-      incoming.push(key);
-      received[device] = version;
-    }
-    if (incoming.length) {
-      await report("merge", 0, 0);
-      await processWork({ action: "merge", keys: incoming, scope });
-      if (scope === "study") transfer.received = received;
-      else transfer.receivedMedia = received;
-      await persist();
-      await notify();
-      if (scope === "study") await notify(undefined, "settings");
-    }
-
-    const own = latest.get(identity.device);
-    const outgoing = await db.syncMeta
-      .where("id")
-      .equals(outgoingId(scope))
-      .count();
-    const pending =
-      scope === "study"
-        ? !identity.published || !own || (await pendingCount()) > 0
-        : await hasPendingMedia(own ? revision(own) : 0);
-    if (!outgoing && !pending) return;
-    await report("upload", 0, 0);
-    await processWork({ action: "pack", account, scope });
-    const snapshot = (await db.syncMeta.get(outgoingId(scope))) as PackedSync;
-    const existing = files.find(
+  let outgoing = (await db.syncMeta.get(outgoingId)) as PackedSync | undefined;
+  if (outgoing?.account === account) {
+    const committed = files.find(
       (file) =>
-        snapshotScope(file) === scope &&
-        file.appProperties?.device === snapshot.device &&
-        revision(file) === snapshot.revision,
+        file.name === outgoing!.name &&
+        file.appProperties?.srsKind === collectionKind &&
+        file.appProperties.hash === outgoing!.hash &&
+        file.description === JSON.stringify(outgoing!.parents) &&
+        file.size === String(outgoing!.blob.size),
     );
-    if (!existing) {
-      if (scope === "media") await uploadSnapshotMedia(account, files);
-      checkCancelled();
-      await assertAccount();
-      await report("upload", 0, 1);
-      files.push(
-        await uploadFile(
-          `${snapshotKind(scope)}.${snapshot.device}.${snapshot.revision}.json.gz`,
-          snapshot.blob,
-          {
-            ...(scope === "study"
-              ? { srsKind: "snapshot", scope: "study" }
-              : { srsKind: "media-snapshot" }),
-            device: snapshot.device,
-            revision: String(snapshot.revision),
-            format: "1",
-          },
+    if (committed) {
+      await acknowledgeUpload(outgoing, committed, files);
+      outgoing = undefined;
+    }
+  }
+  const copies = files.filter(
+    (file) => file.appProperties?.srsKind === collectionKind,
+  );
+  const { heads, replaced } = collectionHeads(copies);
+  const base = (await db.syncMeta.get("collection-base")) as
+    CollectionBase | undefined;
+  const { generation, mediaGeneration } = await localVersions();
+  const current = base?.account === account ? base : undefined;
+  const empty = !current && (await collectionIsEmpty());
+  const dirty = current ? generation !== current.generation : !empty;
+  const legacy =
+    !heads.length &&
+    files.some(
+      (file) =>
+        file.appProperties?.srsKind === "snapshot" ||
+        file.appProperties?.srsKind === "media-snapshot",
+    );
+  const parents = copies.map(({ id }) => id).sort();
+  const head = heads[0];
+  const conflict =
+    heads.length > 1 || (head && dirty && head.id !== current?.file);
+  const kind = legacy ? "upgrade" : conflict ? "conflict" : undefined;
+  const canUpload = legacy ? !(await collectionIsEmpty()) : !empty;
+  const token = JSON.stringify([account, generation, kind, parents, canUpload]);
+  if (
+    kind &&
+    (decision?.token !== token ||
+      !(decision.keep === "local"
+        ? canUpload
+        : heads.some(({ id }) => id === decision.keep)))
+  ) {
+    choice = {
+      kind,
+      token,
+      canUpload,
+      copies: heads.map(({ id, createdTime }) => ({
+        id,
+        created: createdTime,
+      })),
+    };
+    return;
+  }
+  if (!kind && decision) {
+    choice = null;
+    return;
+  }
+  choice = null;
+
+  const selected = kind ? heads.find(({ id }) => id === decision?.keep) : head;
+  const uploadLocal = kind ? decision?.keep === "local" : dirty;
+  const remove = new Set(replaced);
+  if (uploadLocal) {
+    if (
+      !outgoing ||
+      outgoing.account !== account ||
+      outgoing.generation !== generation ||
+      JSON.stringify(outgoing.parents) !== JSON.stringify(parents)
+    ) {
+      if (outgoing) await discardDriveUpload(outgoing.account, outgoing.name);
+      await report("prepare", 0, 0);
+      await processWork({
+        action: "capture",
+        account,
+        generation,
+        parents,
+        mediaGeneration,
+        includeMediaHashes: mediaGeneration !== current?.mediaGeneration,
+      });
+      outgoing = (await db.syncMeta.get(outgoingId)) as PackedSync;
+    }
+    if (generation !== (await localVersions()).generation)
+      throw new Error("sync_collection_changed");
+    const file = await publishCollection(outgoing, files);
+    await acknowledgeUpload(outgoing, file, files);
+    for (const id of parents) remove.add(id);
+  } else if (selected && (selected.id !== current?.file || kind)) {
+    const hash = selected.appProperties?.hash;
+    if (!hash || !/^[a-f0-9]{64}$/.test(hash))
+      throw new Error("sync_invalid_snapshot");
+    await report("download", 0, 0, "bytes");
+    const blob = await downloadFile(selected.id, account, (done, total) => {
+      void report("download", done, total, "bytes").catch(console.warn);
+    });
+    const source = "sync-work-collection";
+    await db.syncMeta.put({ id: source, blob });
+    await report("apply", 0, 0);
+    await processWork({
+      action: "apply",
+      source,
+      hash,
+      base: {
+        id: "collection-base",
+        account,
+        file: selected.id,
+        generation,
+        mediaGeneration,
+      },
+    });
+    if (outgoing) {
+      await discardDriveUpload(outgoing.account, outgoing.name);
+      await clearOutgoing();
+    }
+    await notify();
+    await notify(undefined, "settings");
+    if (heads.length > 1) {
+      const pinned = await publishCollection(
+        {
+          id: outgoingId,
           account,
-        ),
+          parents,
+          generation,
+          mediaGeneration,
+          hash,
+          blob,
+          name: `collection.${crypto.randomUUID()}.json.gz`,
+        },
+        files,
       );
-      await saveDriveFiles(account, files);
+      await db.syncMeta.put({
+        id: "collection-base",
+        account,
+        file: pinned.id,
+        generation,
+        mediaGeneration,
+      });
+      for (const id of parents) remove.add(id);
     }
-    // Acknowledge only the durable captured revision, never later edits.
-    if (scope === "study") await markPublished(snapshot.revision);
-    const acknowledged =
-      scope === "study" ? transfer.received : transfer.receivedMedia;
-    acknowledged[snapshot.device] = Math.max(
-      acknowledged[snapshot.device] ?? 0,
-      snapshot.revision,
-    );
-    await persist();
-    await clearOutgoing(scope);
-    await report("upload", 1, 1);
+    await processWork({ action: "rebuild" });
   }
 
-  await exchange("study");
-  await refreshPending();
-  await processWork({ action: "rebuild" });
-  await exchange("media");
-
-  // Keep a recovery copy for each stream. Legacy snapshots may still hold
-  // the only copy of media from before the streams were split.
-  const identity = (await db.syncMeta.get("identity")) as SyncIdentity;
-  for (const scope of ["legacy", "study", "media"]) {
-    const own = files
-      .filter(
-        (file) =>
-          snapshotScope(file) === scope &&
-          file.appProperties?.device === identity.device,
-      )
-      .sort((a, b) => revision(b) - revision(a) || a.id.localeCompare(b.id));
-    const retained = new Set<number>();
-    for (const file of own) {
-      if (retained.size < 2 && !retained.has(revision(file))) {
-        retained.add(revision(file));
-        continue;
-      }
-      checkCancelled();
-      await deleteFile(file.id, account);
-      files.splice(files.indexOf(file), 1);
-      filesChanged = true;
-    }
+  const obsolete = copies.filter(({ id }) => remove.has(id));
+  for (const file of obsolete) {
+    checkCancelled();
+    await deleteFile(file.id, account);
+    files.splice(files.indexOf(file), 1);
   }
-  if (filesChanged) await saveDriveFiles(account, files);
-  await clearDriveUploads();
-  transfer.storage = driveStorageUsage(files);
+  if (obsolete.length) await saveDriveFiles(account, files);
   transfer.lastSuccess = Date.now();
+  await transferMedia(account, files);
+  await cleanupMedia();
+  transfer.storage = driveStorageUsage(files);
   transfer.failures = 0;
   transfer.retryAt = 0;
   transfer.error = null;
@@ -460,6 +526,7 @@ async function synchronize() {
   await browser.alarms.clear(retryAlarm);
   await persist();
 }
+
 async function recordFailure(error: unknown, reportError = true) {
   const code = errorCode(error);
   const status =
@@ -514,6 +581,8 @@ export async function syncStatus(): Promise<SyncStatus> {
     automatic: transfer.automatic,
     lastSuccess: transfer.lastSuccess,
     pending,
+    choice,
+    mediaPending,
     progress,
     error: transfer.error,
     authorizationRequired:
@@ -534,7 +603,6 @@ export async function refreshSyncStorage() {
       try {
         const account = await assertAccount();
         await report("storage", 0, 0);
-        await accessToken(account.id);
         const files = await readDriveFiles(account.id);
         checkCancelled();
         await assertAccount();
@@ -558,7 +626,7 @@ export async function refreshSyncStorage() {
     await changed();
   }
 }
-export async function syncNow() {
+export async function syncNow(decision?: SyncDecision) {
   await initialize();
   if (storageRequest) await storageRequest.catch(() => {});
   if (active) return active;
@@ -568,17 +636,20 @@ export async function syncNow() {
     try {
       transfer.error = null;
       await changed();
-      const release = await retainSyncHost();
       try {
-        await synchronize();
-      } finally {
-        release();
+        await synchronize(decision);
+      } catch (error) {
+        if (errorCode(error) !== "sync_collection_changed") throw error;
+        await synchronize({ token: "", keep: "" });
       }
     } catch (error) {
       await recordFailure(error);
       throw error;
     } finally {
       progress = null;
+      const release = await retainedHost?.catch(() => undefined);
+      retainedHost = undefined;
+      release?.();
       await db.syncMeta.where("id").startsWith("sync-work-").delete();
       await refreshPending();
     }
@@ -588,11 +659,7 @@ export async function syncNow() {
   } finally {
     active = undefined;
     await changed();
-    if (
-      !cancelled &&
-      !transfer.authorizationRequired &&
-      (await pendingCount()) > 0
-    )
+    if (!cancelled && !transfer.authorizationRequired && !choice && pending > 0)
       await scheduleEdits();
   }
 }
@@ -637,6 +704,7 @@ export async function disconnectSync() {
   try {
     await cancelSync();
     await disconnectGoogle();
+    choice = null;
     await clearDriveUploads();
     transfer.error = null;
     transfer.authorizationRequired = false;
@@ -662,7 +730,6 @@ export async function resetExtension(confirmedAccount: string | null) {
     throw new Error(t("reset_extension_sync_busy"));
   disconnecting = true;
   try {
-    await Promise.allSettled([trackingReady, pendingRequest]);
     await srsWrite(async () => {
       if ((await db.importTasks.get("current"))?.status === "running")
         throw new Error(t("reset_extension_import_busy"));
@@ -675,7 +742,6 @@ export async function resetExtension(confirmedAccount: string | null) {
         // A partial Drive wipe must not prompt the automatic uploader to refill it.
         transfer.automatic = false;
         await persist();
-        await accessToken(auth.account.id);
         const { id } = auth.account;
         await transferConcurrently(await listFiles(id), (file) =>
           deleteFile(file.id, id),
@@ -695,7 +761,8 @@ export async function resetExtension(confirmedAccount: string | null) {
       await browser.storage.session.clear();
       transfer = emptyTransfer();
       pending = 0;
-      trackingReady = undefined;
+      choice = null;
+      mediaPending = false;
     });
     await notify();
   } finally {
@@ -739,8 +806,8 @@ export async function automaticSync() {
 export async function scheduleEdits() {
   await initialize();
   if (disconnecting) return;
+  await refreshPending();
   await changed();
-  void prepareTracking().then(refreshPending).catch(console.warn);
   if (
     transfer.automatic &&
     !transfer.authorizationRequired &&
@@ -755,15 +822,12 @@ export function startSync() {
     if ([periodicAlarm, editAlarm, retryAlarm].includes(alarm.name))
       void automaticSync().catch(console.warn);
   });
-  onSyncEdit(() => {
-    void scheduleEdits().catch(console.warn);
-  });
   globalThis.addEventListener("online", () => {
     void automaticSync().catch(console.warn);
   });
   void initialize()
     .then(async () => {
-      void prepareTracking().catch(recordFailure).catch(console.warn);
+      await refreshPending();
       if (!(await browser.alarms.get(periodicAlarm)))
         await browser.alarms.create(periodicAlarm, { periodInMinutes: 5 });
       if (transfer.retryAt > Date.now())

@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import type { Request, Responses } from "../src/background/contracts";
 
 declare const chrome: {
+  storage: { session: { remove(key: string): Promise<void> } };
   runtime: {
     sendMessage(request: unknown): Promise<{ value: unknown; error?: string }>;
   };
@@ -283,5 +284,9 @@ export async function seedLegacy(page: Page) {
       request.onerror = () => reject(request.error);
     });
   }, data);
+  // The fixture replaces IndexedDB directly, so the old UI settings cache is stale.
+  await page.evaluate(() =>
+    chrome.storage.session.remove("uiSettingsSnapshot"),
+  );
   return data;
 }

@@ -73,9 +73,7 @@ export async function readSettings(file: File) {
   return settings;
 }
 
-const learningSchema = z.object({
-  format: z.literal("srs-reader-learning"),
-  version: z.union([z.literal(5), z.literal(6)]),
+export const learningRowsSchema = z.object({
   vocabulary: z.array(vocabularySchema),
   noteTypes: z.array(noteTypeSchema),
   notes: z.array(noteSchema),
@@ -84,6 +82,10 @@ const learningSchema = z.object({
   sentences: z.array(sentenceSchema),
   reviews: z.array(reviewSchema),
   ankiReviews: z.array(ankiReviewSchema),
+});
+const learningSchema = learningRowsSchema.extend({
+  format: z.literal("srs-reader-learning"),
+  version: z.union([z.literal(5), z.literal(6)]),
   cardAssets: z.array(
     cardAssetSchema.omit({ blob: true }).extend({ path: z.string() }),
   ),
@@ -171,45 +173,7 @@ export async function readLearning(file: File) {
     const data = learningSchema.parse(
       JSON.parse(await json.getData(new TextWriter())),
     );
-    if (
-      new Set(data.vocabulary.map((word) => word.id)).size !==
-        data.vocabulary.length ||
-      data.vocabulary.some(
-        (word) => word.id !== wordId(word.language, word.lemma, word.reading),
-      )
-    )
-      throw new Error(t("invalid_word_identities_in_learning_archive"));
-    for (const deck of data.decks) detachRetiredDictionary(deck);
-    validateCardReferences(
-      data.noteTypes,
-      data.notes,
-      data.cards,
-      data.decks,
-      data.vocabulary,
-    );
-    if (
-      new Set(data.reviews.map((review) => review.id)).size !==
-        data.reviews.length ||
-      new Set(data.reviews.map((review) => review.sequence)).size !==
-        data.reviews.length ||
-      data.reviews.some(
-        (review) =>
-          review.sequence < 1 ||
-          (review.before && review.before.id !== review.cardId),
-      )
-    )
-      throw new Error(t("invalid_review_references_in_learning_archive"));
-    if (
-      data.sentences.some(
-        (sentence) =>
-          sentence.id !== sentenceId(sentence.language, sentence.sentence) ||
-          sentence.tokens.some(
-            (token) =>
-              token.end <= token.start || token.end > sentence.sentence.length,
-          ),
-      )
-    )
-      throw new Error(t("study_invalid_sentences"));
+    validateLearningRows(data);
     const audio = [];
     for (const item of data.audio) {
       const entry = files.get(item.path);
@@ -240,4 +204,46 @@ export async function readLearning(file: File) {
   } finally {
     await zip.close();
   }
+}
+
+export function validateLearningRows(data: z.infer<typeof learningRowsSchema>) {
+  if (
+    new Set(data.vocabulary.map((word) => word.id)).size !==
+      data.vocabulary.length ||
+    data.vocabulary.some(
+      (word) => word.id !== wordId(word.language, word.lemma, word.reading),
+    )
+  )
+    throw new Error(t("invalid_word_identities_in_learning_archive"));
+  for (const deck of data.decks) detachRetiredDictionary(deck);
+  validateCardReferences(
+    data.noteTypes,
+    data.notes,
+    data.cards,
+    data.decks,
+    data.vocabulary,
+  );
+  if (
+    new Set(data.reviews.map((review) => review.id)).size !==
+      data.reviews.length ||
+    new Set(data.reviews.map((review) => review.sequence)).size !==
+      data.reviews.length ||
+    data.reviews.some(
+      (review) =>
+        review.sequence < 1 ||
+        (review.before && review.before.id !== review.cardId),
+    )
+  )
+    throw new Error(t("invalid_review_references_in_learning_archive"));
+  if (
+    data.sentences.some(
+      (sentence) =>
+        sentence.id !== sentenceId(sentence.language, sentence.sentence) ||
+        sentence.tokens.some(
+          (token) =>
+            token.end <= token.start || token.end > sentence.sentence.length,
+        ),
+    )
+  )
+    throw new Error(t("study_invalid_sentences"));
 }
