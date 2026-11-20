@@ -441,13 +441,45 @@ export function cardRuntime(config: RuntimeConfig) {
         speechSynthesis.speak(utterance);
       }),
     );
-    document.addEventListener("dblclick", lookup);
     const selectionLimit = config.selectionLimit;
-    if (selectionLimit)
+    if (selectionLimit) {
+      let selectionTimer: ReturnType<typeof setTimeout> | undefined;
+      const reportSelection = () => {
+        const selection = window.getSelection();
+        const text = selection?.toString().trim() || "";
+        const rect =
+          text && selection?.rangeCount
+            ? selection.getRangeAt(0).getBoundingClientRect()
+            : undefined;
+        send(
+          "selection",
+          rect
+            ? {
+                text: text.slice(0, selectionLimit + 1),
+                x: (rect.left + rect.right) / 2,
+                y: rect.bottom,
+              }
+            : null,
+        );
+        return !!rect;
+      };
       document.addEventListener("selectionchange", () => {
-        const text = window.getSelection()?.toString().trim() || "";
-        send("selection", text.slice(0, selectionLimit + 1));
+        clearTimeout(selectionTimer);
+        selectionTimer = setTimeout(reportSelection, 140);
       });
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        clearTimeout(selectionTimer);
+        send("selection", null);
+      });
+      document.addEventListener("contextmenu", (event) => {
+        if (!event.isTrusted || event.defaultPrevented) return;
+        if (reportSelection()) {
+          clearTimeout(selectionTimer);
+          event.preventDefault();
+        }
+      });
+    } else document.addEventListener("dblclick", lookup);
     document.addEventListener("click", (event) => {
       const target = (event.target as Element).closest<HTMLElement>(
         "[data-srs-sound]",

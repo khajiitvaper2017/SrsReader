@@ -57,7 +57,13 @@ export function UIProvider({
   const [settings, setSettings] = useState<Settings>(initialSettings);
   useEffect(() => {
     const load = () => {
-      void getUISettings().then(setSettings).catch(console.error);
+      void getUISettings()
+        .then((next) =>
+          setSettings((current) =>
+            JSON.stringify(current) === JSON.stringify(next) ? current : next,
+          ),
+        )
+        .catch(console.error);
     };
     const changed = (message: ChangeMessage) => {
       if (

@@ -2,6 +2,7 @@ import type { CardAsset } from "@/cards/model";
 import type { Settings } from "@/settings/model";
 
 export type CardGesture = "reveal" | "again" | "good";
+export type CardSelection = { text: string; x: number; y: number };
 
 export type CardStorageState = {
   local: Record<string, string>;

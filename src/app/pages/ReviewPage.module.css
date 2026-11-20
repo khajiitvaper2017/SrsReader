@@ -12,17 +12,17 @@
 }
 
 .swipeCard[data-review-swipe="again"] {
-  --swipe-x: -10px;
-  --swipe-angle: -1.5deg;
+  --swipe-x: -44px;
+  --swipe-angle: -5deg;
 }
 
 .swipeCard[data-review-swipe="good"] {
-  --swipe-x: 10px;
-  --swipe-angle: 1.5deg;
+  --swipe-x: 44px;
+  --swipe-angle: 5deg;
 }
 
 .swipeCard[data-review-swipe="reveal"] {
-  --swipe-y: -10px;
+  --swipe-y: -30px;
 }
 
 .swipeCue {
@@ -51,4 +51,7 @@
   .swipeCue {
     transition: none;
   }
+}
+.swipeViewport {
+  overflow: clip;
 }

@@ -11,8 +11,9 @@ import { lookupClient } from "@/lookup/client";
 import { escapeHtml } from "@/cards/defaults";
 import { useCardMedia } from "@/media/hooks/useCardMedia";
 import { CardViewer } from "@/cards/components/CardViewer";
+import { reviewAnswerMaxLength } from "@/cards/model";
 import { installCardGestures } from "@/cards/sandbox/input";
-import type { CardGesture } from "@/cards/sandbox/protocol";
+import type { CardGesture, CardSelection } from "@/cards/sandbox/protocol";
 import { fieldText } from "@/cards/template";
 import { SentenceTranslation } from "@/translation/components/SentenceTranslation";
 import type { ReadingContext } from "@/vocabulary/model";
@@ -94,7 +95,7 @@ export function ReviewPage({
   } = useReviewSession({ settings, deckId });
   const [lookupSession, setLookupSession] = useState("");
   const [toolsNote, setToolsNote] = useState("");
-  const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [selection, setSelection] = useState<CardSelection>();
   const [savingAnswer, setSavingAnswer] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
   function handleGesture(gesture: CardGesture, progress?: number) {
@@ -236,13 +237,13 @@ export function ReviewPage({
         : "";
     return { ...queue!.document!, note: { ...queue!.document!.note, fields } };
   }, [queue?.document, context, translationText, sentenceAudio?.media]);
-  async function useSelectedAnswer() {
-    if (!word || !revealed || !selectedAnswer || savingAnswer) return;
+  async function useSelectedAnswer(text: string) {
+    if (!word || !revealed || savingAnswer) return;
+    setSelection(undefined);
     setSavingAnswer(true);
     setError("");
     try {
-      await saveNoteFields(word.noteId, { reviewAnswer: selectedAnswer });
-      setSelectedAnswer((text) => (text === selectedAnswer ? "" : text));
+      await saveNoteFields(word.noteId, { reviewAnswer: text });
       await rpc({ action: "invalidate" });
     } catch (error) {
       setError((error as Error).message);
@@ -250,6 +251,11 @@ export function ReviewPage({
       setSavingAnswer(false);
     }
   }
+  const canSaveSelection =
+    revealed &&
+    selection &&
+    selection.text.length <= reviewAnswerMaxLength &&
+    selection.text !== viewerDocument?.note.reviewAnswer;
   const back = (
     <ActionIcon
       component="a"
@@ -476,175 +482,198 @@ export function ReviewPage({
       <ErrorBox error={error} />
       {word ? (
         <>
-          <Paper
-            data-review-card
-            className={classes.swipeCard}
-            ref={readingRef}
-            p={0}
-            flex={1}
-            mih={0}
-            pos="relative"
-          >
-            <ScrollArea
-              viewportRef={viewport}
+          <Box flex={1} mih={0} className={classes.swipeViewport}>
+            <Paper
+              data-review-card
+              className={classes.swipeCard}
+              ref={readingRef}
+              p={0}
               h="100%"
-              type="auto"
-              scrollbars="y"
-              offsetScrollbars="y"
-              overscrollBehavior="contain"
-              viewportProps={{ tabIndex: 0 }}
-              styles={{ content: { minHeight: "100%" } }}
+              mih={0}
+              pos="relative"
             >
-              <Stack gap="xs">
-                <Box
-                  data-review-card-header
-                  display="grid"
-                  data-srs-reader
-                  px="md"
-                  pt="md"
-                  style={{
-                    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-                    alignItems: "center",
-                  }}
-                >
-                  <Badge style={{ gridColumn: 2 }}>
-                    {t(
-                      [
-                        "new",
-                        "srs_queue_learning",
-                        "review",
-                        "srs_queue_relearning",
-                      ][word.card!.state]!,
-                    )}
-                  </Badge>
-                  <Group
-                    gap={4}
-                    justify="flex-end"
-                    miw={0}
-                    style={{ gridColumn: 3 }}
-                  >
-                    {revealed &&
-                      translationContext &&
-                      settings.showSentenceTranslation && (
-                        <SentenceTranslation
-                          key={translationKey}
-                          compact
-                          context={translationContext}
-                          language={word.language}
-                          settings={settings}
-                          autoTranslate={settings.autoTranslateSentences}
-                          onDisplayChange={(value) =>
-                            setDisplayTranslation({
-                              key: translationKey,
-                              value,
-                            })
-                          }
-                        >
-                          {(button, _translation, failure) => (
-                            <>
-                              {button}
-                              {failure}
-                            </>
-                          )}
-                        </SentenceTranslation>
-                      )}
-                    {word.wordId && (
-                      <>
-                        <FrequencyBadge
-                          word={{ ...word, id: word.wordId, forms: [] }}
-                          loadFrequencies={preload.loadFrequencies}
-                        />
-                        <AudioButton
-                          noteId={word.noteId}
-                          cardId={word.id}
-                          word={{ ...word, id: word.wordId }}
-                          settings={settings}
-                          onError={setError}
-                          prepareRecording={preload.loadAudio}
-                        />
-                      </>
-                    )}
-                    {contexts.length > 1 && (
-                      <ActionIcon
-                        onClick={() =>
-                          setExample((example + 1) % contexts.length)
-                        }
-                        title={t("another_example")}
-                        aria-label={t("another_example")}
-                      >
-                        <ChevronRight aria-hidden size={16} />
-                      </ActionIcon>
-                    )}
-                  </Group>
-                </Box>
-                <CardViewer
-                  document={viewerDocument!}
-                  wordAudio={word.wordId ? "toolbar" : undefined}
-                  loadAssets={preload.loadAssets}
-                  onReady={cardReady}
-                  loading={
-                    !!viewerDocument?.noteType.id.startsWith("reader:") &&
-                    ((settings.front === "sentence" && sentenceLoading) ||
-                      (revealed && !!context && !sentenceAudio))
-                  }
-                  revealed={revealed}
-                  settings={settings}
-                  onError={setError}
-                  onLookup={openLookup}
-                  onGesture={handleGesture}
-                  onAutoplayFallback={() => void playAudio(undefined, true)}
-                  onSelectionChange={setSelectedAnswer}
-                />
-              </Stack>
-            </ScrollArea>
-            {revealed ? (
-              <>
-                <Badge
-                  color="red"
-                  data-swipe-cue="again"
-                  aria-hidden="true"
-                  className={classes.swipeCue}
-                >
-                  {t("again")}
-                </Badge>
-                <Badge
-                  color="green"
-                  data-swipe-cue="good"
-                  aria-hidden="true"
-                  className={classes.swipeCue}
-                >
-                  {t("good")}
-                </Badge>
-              </>
-            ) : (
-              <Badge
-                data-swipe-cue="reveal"
-                aria-hidden="true"
-                className={classes.swipeCue}
+              <ScrollArea
+                viewportRef={viewport}
+                h="100%"
+                type="auto"
+                scrollbars="y"
+                offsetScrollbars="y"
+                overscrollBehavior="contain"
+                onScrollPositionChange={() => setSelection(undefined)}
+                viewportProps={{ tabIndex: 0 }}
+                styles={{ content: { minHeight: "100%" } }}
               >
-                {t("show_answer")}
-              </Badge>
-            )}
-          </Paper>
-          {revealed &&
-            selectedAnswer &&
-            selectedAnswer !== viewerDocument?.note.reviewAnswer && (
-              <Group data-srs-reader gap="xs" wrap="nowrap">
-                <Text variant="supporting" truncate flex={1}>
-                  {selectedAnswer}
-                </Text>
-                <Button
-                  variant="light"
-                  size="compact-sm"
-                  loading={savingAnswer}
-                  disabled={busy}
-                  onPointerDown={(event) => event.preventDefault()}
-                  onClick={() => void useSelectedAnswer()}
+                <Stack gap="xs">
+                  <Box
+                    data-review-card-header
+                    display="grid"
+                    data-srs-reader
+                    px="md"
+                    pt="md"
+                    style={{
+                      gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Badge style={{ gridColumn: 2 }}>
+                      {t(
+                        [
+                          "new",
+                          "srs_queue_learning",
+                          "review",
+                          "srs_queue_relearning",
+                        ][word.card!.state]!,
+                      )}
+                    </Badge>
+                    <Group
+                      gap={4}
+                      justify="flex-end"
+                      miw={0}
+                      style={{ gridColumn: 3 }}
+                    >
+                      {revealed &&
+                        translationContext &&
+                        settings.showSentenceTranslation && (
+                          <SentenceTranslation
+                            key={translationKey}
+                            compact
+                            context={translationContext}
+                            language={word.language}
+                            settings={settings}
+                            autoTranslate={settings.autoTranslateSentences}
+                            onDisplayChange={(value) =>
+                              setDisplayTranslation({
+                                key: translationKey,
+                                value,
+                              })
+                            }
+                          >
+                            {(button, _translation, failure) => (
+                              <>
+                                {button}
+                                {failure}
+                              </>
+                            )}
+                          </SentenceTranslation>
+                        )}
+                      {word.wordId && (
+                        <>
+                          <FrequencyBadge
+                            word={{ ...word, id: word.wordId, forms: [] }}
+                            loadFrequencies={preload.loadFrequencies}
+                          />
+                          <AudioButton
+                            noteId={word.noteId}
+                            cardId={word.id}
+                            word={{ ...word, id: word.wordId }}
+                            settings={settings}
+                            onError={setError}
+                            prepareRecording={preload.loadAudio}
+                          />
+                        </>
+                      )}
+                      {contexts.length > 1 && (
+                        <ActionIcon
+                          onClick={() =>
+                            setExample((example + 1) % contexts.length)
+                          }
+                          title={t("another_example")}
+                          aria-label={t("another_example")}
+                        >
+                          <ChevronRight aria-hidden size={16} />
+                        </ActionIcon>
+                      )}
+                    </Group>
+                  </Box>
+                  <CardViewer
+                    document={viewerDocument!}
+                    wordAudio={word.wordId ? "toolbar" : undefined}
+                    loadAssets={preload.loadAssets}
+                    onReady={cardReady}
+                    loading={
+                      !!viewerDocument?.noteType.id.startsWith("reader:") &&
+                      ((settings.front === "sentence" && sentenceLoading) ||
+                        (revealed && !!context && !sentenceAudio))
+                    }
+                    revealed={revealed}
+                    settings={settings}
+                    onError={setError}
+                    onLookup={openLookup}
+                    onGesture={handleGesture}
+                    onAutoplayFallback={() => void playAudio(undefined, true)}
+                    onSelectionChange={setSelection}
+                  />
+                </Stack>
+              </ScrollArea>
+              {revealed ? (
+                <>
+                  <Badge
+                    color="red"
+                    data-swipe-cue="again"
+                    aria-hidden="true"
+                    className={classes.swipeCue}
+                  >
+                    {t("again")}
+                  </Badge>
+                  <Badge
+                    color="green"
+                    data-swipe-cue="good"
+                    aria-hidden="true"
+                    className={classes.swipeCue}
+                  >
+                    {t("good")}
+                  </Badge>
+                </>
+              ) : (
+                <Badge
+                  data-swipe-cue="reveal"
+                  aria-hidden="true"
+                  className={classes.swipeCue}
                 >
-                  {t("review_answer_use_selection")}
-                </Button>
-              </Group>
-            )}
+                  {t("show_answer")}
+                </Badge>
+              )}
+            </Paper>
+          </Box>
+          {selection?.text && (
+            <Menu
+              opened
+              onChange={(opened) => {
+                if (!opened) setSelection(undefined);
+              }}
+              position="bottom"
+              floatingStrategy="fixed"
+              trapFocus={false}
+              returnFocus={false}
+              menuItemTabIndex={0}
+            >
+              <Menu.Target>
+                <Box
+                  pos="fixed"
+                  left={selection.x}
+                  top={selection.y}
+                  w={0}
+                  h={0}
+                  aria-hidden
+                />
+              </Menu.Target>
+              <Menu.Dropdown onMouseDown={(event) => event.preventDefault()}>
+                <Menu.Item
+                  onClick={() => openLookup(selection.text.slice(0, 256))}
+                >
+                  {t("dictionary_lookup")}
+                </Menu.Item>
+                {canSaveSelection && (
+                  <Menu.Item
+                    disabled={busy || savingAnswer}
+                    onClick={() => void useSelectedAnswer(selection.text)}
+                  >
+                    {t("review_answer_use_selection")}
+                  </Menu.Item>
+                )}
+              </Menu.Dropdown>
+            </Menu>
+          )}
           <Group component="footer" wrap="nowrap" align="center" gap={4}>
             <ActionIcon
               size="input-md"

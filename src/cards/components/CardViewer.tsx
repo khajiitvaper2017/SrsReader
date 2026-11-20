@@ -5,7 +5,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { reviewAnswerMaxLength, type CardDocument } from "@/cards/model";
 import { fieldText, renderCard, templateWarnings } from "@/cards/template";
 import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
-import type { CardFrameMessage, CardGesture } from "@/cards/sandbox/protocol";
+import type {
+  CardFrameMessage,
+  CardGesture,
+  CardSelection,
+} from "@/cards/sandbox/protocol";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -72,7 +76,7 @@ export function CardViewer({
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
   onGesture?: (gesture: CardGesture, progress?: number) => void;
-  onSelectionChange?: (text: string) => void;
+  onSelectionChange?: (selection?: CardSelection) => void;
   onAutoplayFallback?: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
@@ -185,12 +189,14 @@ export function CardViewer({
     settings.showGenderedArticle,
   ]);
   const scan = settings.scanPopups && !!onLookup;
-  const selectionLimit =
-    revealed && onSelectionChange ? reviewAnswerMaxLength : undefined;
+  const selectionLimit = onSelectionChange ? reviewAnswerMaxLength : undefined;
+  const dictionaryAssetsKey = JSON.stringify(
+    cardDocument.study?.dictionaryAssets ?? null,
+  );
   const gesture = onGesture ? (revealed ? "back" : "front") : undefined;
   useEffect(() => {
     activeRender.current = undefined;
-    callbacks.current.onSelectionChange?.("");
+    callbacks.current.onSelectionChange?.();
     const id = ++renderId.current;
     if (loading || (previewDeckName === undefined && deck.id !== card.deckId))
       return;
@@ -204,7 +210,7 @@ export function CardViewer({
         html,
         noteType.css,
         undefined,
-        cardDocument.study?.dictionaryAssets,
+        (JSON.parse(dictionaryAssetsKey) as string[] | null) ?? undefined,
       )
         .then((assets) => {
           if (!cancelled) {
@@ -270,7 +276,7 @@ export function CardViewer({
     note.mediaNamespace,
     note.language,
     noteType.css,
-    cardDocument.study?.dictionaryAssets,
+    dictionaryAssetsKey,
     revealed,
     deckName,
     deck.id,
@@ -378,14 +384,20 @@ export function CardViewer({
               ? new MouseEvent("mousedown", { ...input.data, bubbles: true })
               : new KeyboardEvent("keydown", { ...input.data, bubbles: true }),
           );
-      } else if (
-        type === "selection" &&
-        activeRender.current?.revealed &&
-        typeof value === "string"
-      ) {
-        callbacks.current.onSelectionChange?.(
-          value.length <= reviewAnswerMaxLength ? value.trim() : "",
-        );
+      } else if (type === "selection") {
+        if (value === null) callbacks.current.onSelectionChange?.();
+        else if (
+          typeof value?.text === "string" &&
+          Number.isFinite(value.x) &&
+          Number.isFinite(value.y)
+        ) {
+          const rect = frame.current!.getBoundingClientRect();
+          callbacks.current.onSelectionChange?.({
+            text: value.text.slice(0, reviewAnswerMaxLength + 1).trim(),
+            x: Math.max(0, Math.min(innerWidth, rect.left + value.x)),
+            y: Math.max(0, Math.min(innerHeight, rect.top + value.y)),
+          });
+        }
       } else if (type === "ready") setReady(true);
       else if (
         type === "rendered" &&

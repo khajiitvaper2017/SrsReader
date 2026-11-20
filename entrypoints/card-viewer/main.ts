@@ -75,11 +75,20 @@ window.addEventListener("message", (event: MessageEvent) => {
     else if (
       type === "selection" &&
       frame === displayed &&
-      current?.selectionLimit &&
-      typeof value === "string"
-    )
-      send("selection", value.slice(0, current.selectionLimit + 1));
-    else if (
+      current?.selectionLimit
+    ) {
+      if (value === null) send("selection", null);
+      else if (
+        typeof value?.text === "string" &&
+        Number.isFinite(value.x) &&
+        Number.isFinite(value.y)
+      )
+        send("selection", {
+          text: value.text.slice(0, current.selectionLimit + 1),
+          x: value.x,
+          y: value.y,
+        });
+    } else if (
       type === "storage" &&
       current &&
       value &&
