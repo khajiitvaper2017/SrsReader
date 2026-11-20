@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- Tap a review card or swipe up to reveal the answer. Swipe left for Again or right for Good. The card follows the swipe and shows the action it will take. [#19](https://github.com/khajiitvaper2017/SrsReader/issues/19)
+- Select text on a review card to open a dictionary lookup. On a revealed card, you can also save the selection as the short answer.
+- Sync one shared collection through Google Drive. If both copies have changes, choose whether to keep the collection on this device or the copy on Drive. To switch to the new sync format, upload first from the device that has your complete collection.
+- Sync study data before attachments and transfer only attachment files that are missing from the receiving side. [#18](https://github.com/khajiitvaper2017/SrsReader/issues/18)
+
+### Fixes
+
+- Keep review card swipes inside the page so they do not cause horizontal scrolling.
+
 ## 0.3.2 (2026-11-19)
 
 ### Fixes
