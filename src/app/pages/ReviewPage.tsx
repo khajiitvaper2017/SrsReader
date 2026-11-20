@@ -47,6 +47,7 @@ import { useReviewSession } from "@/srs/hooks/useReviewSession";
 import { SessionProgress } from "@/srs/components/SessionProgress";
 import { SessionSummary } from "@/srs/components/SessionSummary";
 import { vocabularyClient } from "@/vocabulary/client";
+import classes from "./ReviewPage.module.css";
 import {
   ArrowLeft,
   CalendarClock,
@@ -96,8 +97,20 @@ export function ReviewPage({
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [savingAnswer, setSavingAnswer] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
-  function handleGesture(gesture: CardGesture) {
+  function handleGesture(gesture: CardGesture, progress?: number) {
+    const panel = readingRef.current;
+    if (panel && progress === 0) {
+      delete panel.dataset.reviewSwipe;
+      return;
+    }
     if (busy || lookupSession || toolsNote) return;
+    if (progress !== undefined) {
+      if (panel) {
+        panel.dataset.reviewSwipe = gesture;
+        panel.style.setProperty("--review-swipe-progress", String(progress));
+      }
+      return;
+    }
     if (gesture === "reveal") {
       if (!revealed) reveal();
     } else void gradeWord(gesture === "again" ? 1 : 3);
@@ -106,12 +119,19 @@ export function ReviewPage({
   useEffect(() => {
     const target = viewport.current;
     if (!target || !word?.id) return;
-    return installCardGestures(
+    const panel = readingRef.current;
+    const stop = installCardGestures(
       target,
       revealed ? "back" : "front",
       handleViewportGesture,
       () => target.scrollTop + target.clientHeight >= target.scrollHeight - 1,
+      false,
+      handleViewportGesture,
     );
+    return () => {
+      stop();
+      if (panel) delete panel.dataset.reviewSwipe;
+    };
   }, [word?.id, revealed]);
   const displayedCard = useRef("");
   const cardReady = useCallback((id: string) => {
@@ -458,6 +478,7 @@ export function ReviewPage({
         <>
           <Paper
             data-review-card
+            className={classes.swipeCard}
             ref={readingRef}
             p={0}
             flex={1}
@@ -576,6 +597,34 @@ export function ReviewPage({
                 />
               </Stack>
             </ScrollArea>
+            {revealed ? (
+              <>
+                <Badge
+                  color="red"
+                  data-swipe-cue="again"
+                  aria-hidden="true"
+                  className={classes.swipeCue}
+                >
+                  {t("again")}
+                </Badge>
+                <Badge
+                  color="green"
+                  data-swipe-cue="good"
+                  aria-hidden="true"
+                  className={classes.swipeCue}
+                >
+                  {t("good")}
+                </Badge>
+              </>
+            ) : (
+              <Badge
+                data-swipe-cue="reveal"
+                aria-hidden="true"
+                className={classes.swipeCue}
+              >
+                {t("show_answer")}
+              </Badge>
+            )}
           </Paper>
           {revealed &&
             selectedAnswer &&

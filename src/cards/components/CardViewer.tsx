@@ -71,7 +71,7 @@ export function CardViewer({
   onError?: (message: string) => void;
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
-  onGesture?: (gesture: CardGesture) => void;
+  onGesture?: (gesture: CardGesture, progress?: number) => void;
   onSelectionChange?: (text: string) => void;
   onAutoplayFallback?: () => void;
 }) {
@@ -363,7 +363,12 @@ export function CardViewer({
             ? value.gesture === "again" || value.gesture === "good"
             : value.gesture === "reveal"
         ) {
-          callbacks.current.onGesture?.(value.gesture);
+          const progress = value.progress;
+          if (
+            progress === undefined ||
+            (typeof progress === "number" && progress >= 0 && progress <= 1)
+          )
+            callbacks.current.onGesture?.(value.gesture, progress);
           return;
         }
         const input = reviewInputSchema.safeParse(value);

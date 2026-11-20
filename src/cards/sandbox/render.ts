@@ -169,6 +169,7 @@ export function cardBootstrap(
           (gesture) => sendInput({ gesture }),
           () => canSwipeUp,
           data.scan,
+          (gesture, progress) => sendInput({ gesture, progress }),
         );
       }
     }

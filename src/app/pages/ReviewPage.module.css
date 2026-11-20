@@ -1,0 +1,54 @@
+.swipeCard {
+  transition: transform 180ms cubic-bezier(0.2, 0.75, 0.3, 1);
+}
+
+.swipeCard[data-review-swipe] {
+  transform: translate(
+      calc(var(--swipe-x, 0px) * var(--review-swipe-progress)),
+      calc(var(--swipe-y, 0px) * var(--review-swipe-progress))
+    )
+    rotate(calc(var(--swipe-angle, 0deg) * var(--review-swipe-progress)));
+  transition: none;
+}
+
+.swipeCard[data-review-swipe="again"] {
+  --swipe-x: -10px;
+  --swipe-angle: -1.5deg;
+}
+
+.swipeCard[data-review-swipe="good"] {
+  --swipe-x: 10px;
+  --swipe-angle: 1.5deg;
+}
+
+.swipeCard[data-review-swipe="reveal"] {
+  --swipe-y: -10px;
+}
+
+.swipeCue {
+  position: absolute;
+  inset-block-start: calc(var(--mantine-spacing-md) * 2.75);
+  inset-inline: 0;
+  margin-inline: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease-out;
+}
+
+.swipeCard[data-review-swipe="again"] .swipeCue[data-swipe-cue="again"],
+.swipeCard[data-review-swipe="good"] .swipeCue[data-swipe-cue="good"],
+.swipeCard[data-review-swipe="reveal"] .swipeCue[data-swipe-cue="reveal"] {
+  opacity: var(--review-swipe-progress);
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeCard[data-review-swipe] {
+    transform: none;
+  }
+
+  .swipeCard,
+  .swipeCue {
+    transition: none;
+  }
+}

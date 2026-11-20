@@ -71,6 +71,7 @@ export function installCardGestures(
   send: (gesture: CardGesture) => void,
   canSwipeUp: () => boolean,
   scan = false,
+  preview?: (gesture: CardGesture, progress: number) => void,
 ) {
   const listeners = new AbortController();
   const capture = { capture: true, signal: listeners.signal };
@@ -114,14 +115,20 @@ export function installCardGestures(
   let start: Touch | undefined;
   let direction: CardGesture | undefined;
   const displacement = (touch: Touch, origin: Touch) => ({
-    x: touch.clientX - origin.clientX,
-    y: touch.clientY - origin.clientY,
+    // The review panel moves during a swipe, including its iframe viewport.
+    x: touch.screenX - origin.screenX,
+    y: touch.screenY - origin.screenY,
   });
+  const reset = () => {
+    start = undefined;
+    if (direction) preview?.(direction, 0);
+    direction = undefined;
+  };
   target.addEventListener(
     "touchstart",
     (input) => {
       const event = input as TouchEvent;
-      direction = undefined;
+      reset();
       start =
         event.isTrusted &&
         event.touches.length === 1 &&
@@ -145,7 +152,13 @@ export function installCardGestures(
           direction = x < 0 ? "again" : "good";
         else start = undefined;
       }
-      if (direction && event.cancelable) event.preventDefault();
+      if (!direction) return;
+      if (event.cancelable) event.preventDefault();
+      if (side === "back") direction = x < 0 ? "again" : "good";
+      preview?.(
+        direction,
+        Math.min(1, Math.max(0, (side === "front" ? -y : Math.abs(x)) / 56)),
+      );
     },
     { ...capture, passive: false },
   );
@@ -155,24 +168,21 @@ export function installCardGestures(
       const event = input as TouchEvent;
       if (!event.isTrusted || !start) return;
       const { x, y } = displacement(event.changedTouches[0]!, start);
-      start = undefined;
+      const swipe = direction;
+      reset();
       if (selected()) return;
       if (
-        (direction === "reveal" && -y >= 56 && -y > Math.abs(x)) ||
-        (direction === "again" && -x >= 56 && -x > Math.abs(y)) ||
-        (direction === "good" && x >= 56 && x > Math.abs(y))
+        (swipe === "reveal" && -y >= 56 && -y > Math.abs(x)) ||
+        (swipe &&
+          swipe !== "reveal" &&
+          Math.abs(x) >= 56 &&
+          Math.abs(x) > Math.abs(y))
       )
-        send(direction);
+        send(swipe === "reveal" ? swipe : x < 0 ? "again" : "good");
     },
     capture,
   );
-  target.addEventListener(
-    "touchcancel",
-    () => {
-      start = undefined;
-    },
-    capture,
-  );
+  target.addEventListener("touchcancel", reset, capture);
   return () => {
     listeners.abort();
     clearTimeout(click);
