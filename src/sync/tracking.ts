@@ -13,9 +13,11 @@ import { portableSettings } from "@/sync/settings";
 import { readMergeFrontier } from "@/sync/metadata";
 import {
   recordKey,
+  syncScope,
   type SyncIdentity,
   type SyncKind,
   type SyncRecord,
+  type SyncScope,
   type SyncSnapshot,
 } from "@/sync/model";
 
@@ -269,18 +271,23 @@ async function author(
   )
     time = previous.time;
   const counter = ++current.counter;
+  const observed =
+    syncScope(kind) === "media"
+      ? (current.mediaObserved ?? current.observed)
+      : current.observed;
   const record: SyncRecord = {
     key: recordKey(kind, id),
     kind,
     id,
     device: current.device,
     counter,
-    observed: { ...current.observed },
+    observed: { ...observed },
     time,
     deleted: value === null,
     value,
   };
   current.observed[current.device] = counter;
+  if (current.mediaObserved) current.mediaObserved[current.device] = counter;
   await put(core, "syncAuthored", trans, [record]);
   await put(core, "syncRecords", trans, [record]);
   stateFor(trans).changed = true;
@@ -744,7 +751,19 @@ export async function pendingStudyChanges(): Promise<number> {
     return changes.size;
   });
 }
-export async function captureSnapshot(): Promise<SyncSnapshot> {
+function keyScope(key: string) {
+  return syncScope((JSON.parse(key) as [SyncKind, string])[0]);
+}
+
+export async function hasPendingMedia(revision: number) {
+  const keys = await db.syncAuthored
+    .where("counter")
+    .above(revision)
+    .primaryKeys();
+  return keys.some((key) => keyScope(key) === "media");
+}
+
+export async function captureSnapshot(scope: SyncScope): Promise<SyncSnapshot> {
   await initializeTracking();
   return srsWrite(() =>
     db.transaction(
@@ -766,22 +785,31 @@ export async function captureSnapshot(): Promise<SyncSnapshot> {
           current.observed[current.device] = ++current.counter;
           await db.syncMeta.put(current);
         }
-        const records = await db.syncAuthored.toArray();
+        const recordsFor = async (table: typeof db.syncRecords) => {
+          const keys = (await table.toCollection().primaryKeys()).filter(
+            (key) => keyScope(key) === scope,
+          );
+          return (await table.bulkGet(keys)).filter(
+            (record) => record !== undefined,
+          );
+        };
+        const records = await recordsFor(db.syncAuthored);
         const authored = new Set(
           records.map((record) =>
             JSON.stringify([record.device, record.counter]),
           ),
         );
         const dependencies = new Map<string, SyncRecord>();
-        const { retained } = await readMergeFrontier();
+        const { retained } = await readMergeFrontier(scope);
         for (const source of [
-          await db.syncRecords.toArray(),
+          await recordsFor(db.syncRecords),
           await db.syncDependencies.toArray(),
           retained,
         ])
           for (const record of source) {
             if (
               record.deleted ||
+              syncScope(record.kind) !== scope ||
               !dependencyKinds[record.kind] ||
               record.value?.field
             )

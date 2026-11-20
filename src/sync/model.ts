@@ -32,6 +32,9 @@ export const syncRecordSchema = z.object({
 });
 export type SyncRecord = z.infer<typeof syncRecordSchema>;
 export type SyncKind = SyncRecord["kind"];
+export type SyncScope = "study" | "media";
+export const syncScope = (kind: SyncKind): SyncScope =>
+  kind === "cardAssets" || kind === "audio" ? "media" : "study";
 export const recordKey = (kind: SyncKind, id: string) =>
   JSON.stringify([kind, id]);
 
@@ -50,6 +53,7 @@ export type SyncIdentity = {
   device: string;
   counter: number;
   observed: SyncVector;
+  mediaObserved?: SyncVector;
   published: number;
 };
 export type SyncMeta =
@@ -102,5 +106,6 @@ export type SyncTransferState = {
   failures: number;
   retryAt: number;
   received: Record<string, number>;
+  receivedMedia: Record<string, number>;
   storage: SyncStorage | null;
 };

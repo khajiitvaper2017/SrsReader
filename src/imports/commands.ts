@@ -8,7 +8,7 @@ import {
   type SyncWork,
   type SyncWorkMessage,
 } from "@/sync/processing";
-import type { SyncProgress, SyncRecord } from "@/sync/model";
+import type { SyncProgress } from "@/sync/model";
 
 let firefoxHost: HTMLIFrameElement | undefined;
 const hosts = new Set<Browser.runtime.Port>();
@@ -27,7 +27,7 @@ const syncJobs = new Map<
     resolve: () => void;
     reject: (error: Error) => void;
     report: (progress: SyncProgress) => void;
-    loadMedia?: (hash: string, record: SyncRecord) => Promise<Blob>;
+    loadMedia?: (hash: string) => Promise<Blob>;
   }
 >();
 let syncUsers = 0;
@@ -49,7 +49,7 @@ export async function retainSyncHost() {
 export async function processSync(
   request: SyncWork,
   report: (progress: SyncProgress) => void = () => {},
-  loadMedia?: (hash: string, record: SyncRecord) => Promise<Blob>,
+  loadMedia?: (hash: string) => Promise<Blob>,
 ) {
   const id = crypto.randomUUID();
   const pending = Promise.withResolvers<void>();
@@ -113,11 +113,11 @@ export function connectImportHost(port: Browser.runtime.Port) {
       }
       if (result.progress) job.report(result.progress);
       if (result.media) {
-        const { hash, record } = result.media;
+        const hash = result.media;
         void (async () => {
           try {
             if (!job.loadMedia) throw new Error("sync_invalid_media");
-            const blob = await job.loadMedia(hash, record);
+            const blob = await job.loadMedia(hash);
             if (syncJobs.get(result.id) !== job || job.cancelled) return;
             await db.syncMeta.put({
               id: `sync-worker-${result.id}-${hash}`,

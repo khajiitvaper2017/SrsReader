@@ -1,11 +1,18 @@
-import type { SyncProgress, SyncRecord } from "@/sync/model";
+import type { SyncProgress, SyncScope } from "@/sync/model";
 
 export type SyncWork =
   | { action: "initialize" }
   | { action: "prepare"; replaceAccount: boolean }
-  | { action: "unpack"; key: string; device: string; revision: number }
-  | { action: "merge"; keys: string[] }
-  | { action: "pack"; account: string }
+  | {
+      action: "unpack";
+      key: string;
+      source: string;
+      device: string;
+      revision: number;
+      scope: SyncScope;
+    }
+  | { action: "merge"; keys: string[]; scope: SyncScope }
+  | { action: "pack"; account: string; scope: SyncScope }
   | { action: "rebuild" };
 
 export type PackedSync = {
@@ -47,7 +54,7 @@ export function syncWorkError(error: unknown): SyncWorkError {
 export type SyncWorkMessage = {
   id: string;
   progress?: SyncProgress;
-  media?: { hash: string; record: SyncRecord };
+  media?: string;
   error?: SyncWorkError;
   done?: boolean;
   cancelled?: boolean;

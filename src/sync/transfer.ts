@@ -1,7 +1,9 @@
 import { z } from "zod";
 import {
   snapshotSchema,
+  syncScope,
   type SyncRecord,
+  type SyncScope,
   type SyncSnapshot,
 } from "@/sync/model";
 import { t } from "@/shared/i18n/i18n";
@@ -16,12 +18,25 @@ const mediaReferenceSchema = z.object({
 });
 const packedSchema = z.object({
   snapshot: snapshotSchema,
-  media: z.array(mediaReferenceSchema),
+  media: z.unknown(),
 });
+const collections = ["records", "dependencies"] as const;
+type MediaReference = z.infer<typeof mediaReferenceSchema>;
+type MediaGroup = { record: SyncRecord; reference: MediaReference }[];
 const mediaKey = (record: SyncRecord) =>
   JSON.stringify([record.key, record.device, record.counter]);
 
-export async function mediaHash(blob: Blob) {
+const blobHashes = new WeakMap<Blob, Promise<string>>();
+export function mediaHash(blob: Blob) {
+  let hash = blobHashes.get(blob);
+  if (!hash) {
+    hash = hashBytes(blob);
+    blobHashes.set(blob, hash);
+  }
+  return hash;
+}
+
+async function hashBytes(blob: Blob) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     await blob.arrayBuffer(),
@@ -33,10 +48,9 @@ export async function mediaHash(blob: Blob) {
 
 export async function packSnapshot(snapshot: SyncSnapshot) {
   const media = new Map<string, Blob>();
-  const references: z.infer<typeof mediaReferenceSchema>[] = [];
-  const hashes = new WeakMap<Blob, string>();
+  const references: MediaReference[] = [];
   const packed = { ...snapshot };
-  for (const collection of ["records", "dependencies"] as const) {
+  for (const collection of collections) {
     const records = [];
     for (const record of snapshot[collection]) {
       if (
@@ -45,11 +59,7 @@ export async function packSnapshot(snapshot: SyncSnapshot) {
       ) {
         const blob = record.value?.blob;
         if (!(blob instanceof Blob)) throw new Error(t("sync_invalid_media"));
-        let hash = hashes.get(blob);
-        if (!hash) {
-          hash = await mediaHash(blob);
-          hashes.set(blob, hash);
-        }
+        const hash = await mediaHash(blob);
         media.set(hash, blob);
         references.push({
           collection,
@@ -74,7 +84,13 @@ export async function packSnapshot(snapshot: SyncSnapshot) {
 
 export async function unpackSnapshot(
   blob: Blob,
-  loadMedia: (hash: string, record: SyncRecord) => Promise<Blob>,
+  scope: SyncScope,
+  findLocalMedia: (
+    hash: string,
+    record: SyncRecord,
+    bytes: number,
+  ) => Promise<Blob | undefined>,
+  loadMedia: (hash: string) => Promise<Blob>,
   reportMedia: (done: number, total: number) => void,
 ): Promise<SyncSnapshot> {
   let packed: z.infer<typeof packedSchema>;
@@ -86,6 +102,14 @@ export async function unpackSnapshot(
   } catch {
     throw new Error(t("sync_invalid_snapshot"));
   }
+  for (const collection of collections)
+    packed.snapshot[collection] = packed.snapshot[collection].filter(
+      (record) => syncScope(record.kind) === scope,
+    );
+  if (scope === "study") return packed.snapshot;
+
+  const references = mediaReferenceSchema.array().safeParse(packed.media);
+  if (!references.success) throw new Error(t("sync_invalid_media"));
   const byCollection = {
     records: new Map(
       packed.snapshot.records.map((record) => [mediaKey(record), record]),
@@ -94,23 +118,19 @@ export async function unpackSnapshot(
       packed.snapshot.dependencies.map((record) => [mediaKey(record), record]),
     ),
   };
-  for (const collection of ["records", "dependencies"] as const) {
+  for (const collection of collections) {
     if (byCollection[collection].size !== packed.snapshot[collection].length)
       throw new Error(t("sync_invalid_snapshot"));
   }
   const supplied = new Set<string>();
-  const mediaGroups = new Map<
-    string,
-    { record: SyncRecord; reference: (typeof packed.media)[number] }[]
-  >();
-  for (const reference of packed.media) {
+  const mediaGroups = new Map<string, MediaGroup>();
+  for (const reference of references.data) {
     const record = byCollection[reference.collection].get(reference.key);
     const referenceKey = JSON.stringify([reference.collection, reference.key]);
     if (
       !record ||
       record.deleted ||
       !record.value ||
-      (record.kind !== "cardAssets" && record.kind !== "audio") ||
       supplied.has(referenceKey) ||
       record.value.blob !== null
     )
@@ -120,11 +140,16 @@ export async function unpackSnapshot(
     if (group) group.push({ record, reference });
     else mediaGroups.set(reference.hash, [{ record, reference }]);
   }
-  let downloaded = 0;
-  if (mediaGroups.size) reportMedia(0, mediaGroups.size);
-  await transferConcurrently(mediaGroups, async ([hash, group]) => {
-    const first = group[0]!;
-    const media = await loadMedia(hash, first.record);
+  for (const collection of collections) {
+    for (const record of packed.snapshot[collection]) {
+      if (
+        !record.deleted &&
+        !supplied.has(JSON.stringify([collection, mediaKey(record)]))
+      )
+        throw new Error(t("sync_invalid_media"));
+    }
+  }
+  const assign = async (media: Blob, hash: string, group: MediaGroup) => {
     if (
       group.some(({ reference }) => media.size !== reference.bytes) ||
       (await mediaHash(media)) !== hash
@@ -135,17 +160,20 @@ export async function unpackSnapshot(
         media.type === reference.mime
           ? media
           : new Blob([media], { type: reference.mime });
-    reportMedia(++downloaded, mediaGroups.size);
+  };
+  const missing = new Set<string>();
+  await transferConcurrently(mediaGroups, async ([hash, group]) => {
+    const { record, reference } = group[0]!;
+    const local = await findLocalMedia(hash, record, reference.bytes);
+    if (local) await assign(local, hash, group);
+    else missing.add(hash);
   });
-  for (const collection of ["records", "dependencies"] as const) {
-    for (const record of packed.snapshot[collection]) {
-      if (
-        !record.deleted &&
-        (record.kind === "cardAssets" || record.kind === "audio") &&
-        !supplied.has(JSON.stringify([collection, mediaKey(record)]))
-      )
-        throw new Error(t("sync_invalid_media"));
-    }
-  }
+  let downloaded = 0;
+  const pending = [...mediaGroups].filter(([hash]) => missing.has(hash));
+  if (pending.length) reportMedia(0, pending.length);
+  await transferConcurrently(pending, async ([hash, group]) => {
+    await assign(await loadMedia(hash), hash, group);
+    reportMedia(++downloaded, pending.length);
+  });
   return packed.snapshot;
 }

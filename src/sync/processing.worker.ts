@@ -3,6 +3,7 @@ import { srsWrite } from "@/platform/locks";
 import { getSettings } from "@/settings/store";
 import { rwkvStatus } from "@/srs/engines/rwkv/cache";
 import { replayBatch } from "@/srs/engines/rwkv/replay";
+import { createLocalMediaFinder } from "@/sync/media";
 import { mergeSnapshots } from "@/sync/merge";
 import {
   discardStagedMergeMedia,
@@ -69,16 +70,18 @@ self.onmessage = async (
         await prepareAccountSync(request.replaceAccount);
         break;
       case "unpack": {
-        const input = await db.syncMeta.get(request.key);
+        const input = await db.syncMeta.get(request.source);
         if (!input || !("blob" in input) || !(input.blob instanceof Blob))
           throw new Error("sync_invalid_snapshot");
         const snapshot = await unpackSnapshot(
           input.blob,
-          async (hash, record) => {
+          request.scope,
+          createLocalMediaFinder(),
+          async (hash) => {
             const key = `sync-worker-${id}-${hash}`;
             const pending = Promise.withResolvers<void>();
             mediaRequests.set(hash, pending);
-            send({ media: { hash, record } });
+            send({ media: hash });
             await pending.promise;
             const loaded = await db.syncMeta.get(key);
             if (
@@ -106,26 +109,26 @@ self.onmessage = async (
         const snapshots = [];
         for (const key of request.keys)
           snapshots.push(await readStagedSnapshot(key));
-        await mergeSnapshots(snapshots, () =>
+        await mergeSnapshots(snapshots, request.scope, () =>
           send({ progress: { phase: "apply", done: 0, total: 0 } }),
         );
         break;
       }
       case "pack": {
-        const outgoing = (await db.syncMeta.get(outgoingId)) as
-          PackedSync | undefined;
+        const key = outgoingId(request.scope);
+        const outgoing = (await db.syncMeta.get(key)) as PackedSync | undefined;
         if (outgoing?.account === request.account) break;
-        const snapshot = await captureSnapshot();
+        const snapshot = await captureSnapshot(request.scope);
         const { blob, media } = await packSnapshot(snapshot);
-        await db.transaction("rw", db.syncMeta, async () => {
+        // A fresh media stage commits each batch. The header makes it reusable.
+        if (request.scope === "media")
           await replaceSyncRows(outgoingMedia, [...media]);
-          await db.syncMeta.put({
-            id: outgoingId,
-            account: request.account,
-            device: snapshot.device,
-            revision: snapshot.revision,
-            blob,
-          });
+        await db.syncMeta.put({
+          id: key,
+          account: request.account,
+          device: snapshot.device,
+          revision: snapshot.revision,
+          blob,
         });
         break;
       }

@@ -8,8 +8,10 @@ import {
   type MediaLink,
 } from "@/platform/database/media-links";
 import {
+  syncScope,
   syncRecordSchema,
   type SyncRecord,
+  type SyncScope,
   type SyncSnapshot,
 } from "@/sync/model";
 
@@ -72,8 +74,10 @@ export async function readStagedSnapshot(key: string): Promise<SyncSnapshot> {
 const mergeRows = "merge-frontier:";
 type MergeEntry = { record: SyncRecord; current: boolean; retained: boolean };
 
-export async function readMergeFrontier() {
-  const entries = await readSyncRows<MergeEntry>(mergeRows);
+export async function readMergeFrontier(scope?: SyncScope) {
+  const entries = (await readSyncRows<MergeEntry>(mergeRows)).filter(
+    ({ record }) => !scope || syncScope(record.kind) === scope,
+  );
   for (const { record } of entries) {
     const link = record.value?.blob;
     if (isMediaLink(link))
@@ -171,13 +175,23 @@ export function mergeMediaLink(
   return link;
 }
 
-export const outgoingId = "sync-outgoing";
-export const outgoingMedia = "sync-outgoing:media:";
+export const outgoingId = (scope: SyncScope) => `sync-outgoing-${scope}`;
+export const outgoingMedia = "sync-outgoing-media:blobs:";
 
-export async function clearOutgoing() {
+export async function clearOutgoing(scope?: SyncScope) {
   await db.transaction("rw", db.syncMeta, async () => {
-    await db.syncMeta.bulkDelete(["outgoing", outgoingId]);
-    await db.syncMeta.where("id").startsWith(outgoingMedia).delete();
+    if (scope !== "media") {
+      await db.syncMeta.bulkDelete([
+        "outgoing",
+        "sync-outgoing",
+        outgoingId("study"),
+      ]);
+      await db.syncMeta.where("id").startsWith("sync-outgoing:media:").delete();
+    }
+    if (scope !== "study") {
+      await db.syncMeta.delete(outgoingId("media"));
+      await db.syncMeta.where("id").startsWith(outgoingMedia).delete();
+    }
   });
 }
 

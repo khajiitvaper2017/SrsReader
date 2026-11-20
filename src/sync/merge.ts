@@ -25,6 +25,7 @@ import {
   recordKey,
   type SyncIdentity,
   type SyncRecord,
+  type SyncScope,
   type SyncSnapshot,
 } from "./model";
 import { discardStagedAnkiMedia, withoutSyncTracking } from "./tracking";
@@ -209,6 +210,7 @@ async function replaceRows<T, Insert>(
 
 export async function mergeSnapshots(
   incoming: SyncSnapshot[],
+  scope: SyncScope,
   reportApplying: () => void,
 ): Promise<void> {
   try {
@@ -779,7 +781,11 @@ export async function mergeSnapshots(
                 (card) => !same(oldCards.get(card.id)?.schedule, card.schedule),
               ) ||
               oldCards.size !== mergedCards.length;
-            const observed = { ...identity.observed };
+            // Applying study data must not make unread attachments causally visible.
+            const mediaObserved = identity.mediaObserved ?? identity.observed;
+            const observed = {
+              ...(scope === "study" ? identity.observed : mediaObserved),
+            };
             for (const snapshot of incoming) {
               for (const [device, counter] of Object.entries(snapshot.observed))
                 observed[device] = Math.max(observed[device] ?? 0, counter);
@@ -825,7 +831,11 @@ export async function mergeSnapshots(
               retainedFrontiers.map(compact),
             );
             await publishMergeMedia(usedMedia);
-            await db.syncMeta.put({ ...identity, observed });
+            await db.syncMeta.put({
+              ...identity,
+              observed: scope === "study" ? observed : identity.observed,
+              mediaObserved: scope === "media" ? observed : mediaObserved,
+            });
             return true;
           }),
       );
