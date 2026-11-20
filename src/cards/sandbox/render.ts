@@ -139,7 +139,14 @@ export function cardBootstrap(
     }).replace(/</g, "\\u003c");
     const sendInput = inputPort?.postMessage.bind(inputPort);
     document.open();
-    if (sendInput) installInput(data.reviewBindings, sendInput, matchesBinding);
+    if (sendInput)
+      installInput(
+        data.reviewBindings,
+        sendInput,
+        matchesBinding,
+        data.gesture,
+        data.scan,
+      );
     document.write(
       `<!doctype html><html style="overflow:hidden" lang="${data.language.replace(/[^\w-]/g, "")}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${data.theme}html,body{margin:0;min-width:0;overflow-wrap:anywhere}body{padding:12px;box-sizing:border-box;color:var(--mantine-color-text);background:var(--mantine-color-body)}img,video,audio{max-width:100%}.typeBad{text-decoration:line-through}.typeGood{font-weight:bold}.srs-hide-pos .srs-tags{display:none}</style><script>(${runtime.toString()})(${config});</script><style>${rewriteCss(data.css)}</style>${parsed.head.innerHTML}</head><body class="card card${data.ordinal + 1}${data.dark ? " nightMode night_mode" : ""}${data.hideSources ? " srs-hide-sources" : ""}${data.showPartOfSpeech ? "" : " srs-hide-pos"}">${parsed.body.innerHTML}</body></html>`,
     );

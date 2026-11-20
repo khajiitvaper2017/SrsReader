@@ -544,6 +544,12 @@ export function ReviewPage({
                   settings={settings}
                   onError={setError}
                   onLookup={openLookup}
+                  onGesture={(gesture) => {
+                    if (busy || lookupSession || toolsNote) return;
+                    if (gesture === "reveal") {
+                      if (!revealed) reveal();
+                    } else void gradeWord(gesture === "again" ? 1 : 3);
+                  }}
                   onAutoplayFallback={() => void playAudio(undefined, true)}
                   onSelectionChange={setSelectedAnswer}
                 />

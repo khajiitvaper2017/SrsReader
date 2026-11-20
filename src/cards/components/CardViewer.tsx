@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { reviewAnswerMaxLength, type CardDocument } from "@/cards/model";
 import { fieldText, renderCard, templateWarnings } from "@/cards/template";
 import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
-import type { CardFrameMessage } from "@/cards/sandbox/protocol";
+import type { CardFrameMessage, CardGesture } from "@/cards/sandbox/protocol";
 import { db } from "@/platform/database/db";
 import type { Settings } from "@/settings/model";
 import { t } from "@/shared/i18n/i18n";
@@ -55,6 +55,7 @@ export function CardViewer({
   onError,
   onLookup,
   onReady,
+  onGesture,
   onSelectionChange,
   onAutoplayFallback,
 }: {
@@ -70,6 +71,7 @@ export function CardViewer({
   onError?: (message: string) => void;
   onLookup?: (text: string, point?: { x: number; y: number }) => void;
   onReady?: (cardId: string) => void;
+  onGesture?: (gesture: CardGesture) => void;
   onSelectionChange?: (text: string) => void;
   onAutoplayFallback?: () => void;
 }) {
@@ -78,6 +80,7 @@ export function CardViewer({
     onError,
     onLookup,
     onReady,
+    onGesture,
     onSelectionChange,
     onAutoplayFallback,
     requestAsset,
@@ -86,6 +89,7 @@ export function CardViewer({
     onError,
     onLookup,
     onReady,
+    onGesture,
     onSelectionChange,
     onAutoplayFallback,
     requestAsset,
@@ -183,6 +187,7 @@ export function CardViewer({
   const scan = settings.scanPopups && !!onLookup;
   const selectionLimit =
     revealed && onSelectionChange ? reviewAnswerMaxLength : undefined;
+  const gesture = onGesture ? (revealed ? "back" : "front") : undefined;
   useEffect(() => {
     activeRender.current = undefined;
     callbacks.current.onSelectionChange?.("");
@@ -224,6 +229,7 @@ export function CardViewer({
               language: note.language,
               scan,
               selectionLimit,
+              gesture,
               theme: themeVariables() + dictionaryCss + mediaCss,
               hideSources: settings.hideDictionarySources,
               showPartOfSpeech: settings.showPartOfSpeech,
@@ -283,6 +289,7 @@ export function CardViewer({
     dark,
     scan,
     selectionLimit,
+    gesture,
   ]);
   useEffect(() => {
     function receive(event: MessageEvent) {
@@ -351,6 +358,14 @@ export function CardViewer({
               );
           });
       } else if (type === "input" && value?.cardId === activeCard.current.id) {
+        if (
+          activeRender.current?.revealed
+            ? value.gesture === "again" || value.gesture === "good"
+            : value.gesture === "reveal"
+        ) {
+          callbacks.current.onGesture?.(value.gesture);
+          return;
+        }
         const input = reviewInputSchema.safeParse(value);
         if (input.success)
           document.body.dispatchEvent(

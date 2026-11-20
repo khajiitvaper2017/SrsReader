@@ -1,6 +1,8 @@
 import type { CardAsset } from "@/cards/model";
 import type { Settings } from "@/settings/model";
 
+export type CardGesture = "reveal" | "again" | "good";
+
 export type CardStorageState = {
   local: Record<string, string>;
   session: Record<string, string>;
@@ -18,6 +20,7 @@ export type CardFrameMessage = {
   language: string;
   scan: boolean;
   selectionLimit?: number;
+  gesture?: "front" | "back";
   theme: string;
   hideSources: boolean;
   showPartOfSpeech: boolean;
