@@ -75,23 +75,26 @@ export function StudyPage({
   const status = sync.status;
   const canSync = !!status?.connected && !status.authorizationRequired;
   const syncBusy = !!status?.running || !!sync.operation;
-  const syncWarning = status?.configured
-    ? !status.connected
-      ? t("sync_not_connected")
-      : status.authorizationRequired
-        ? t("sync_auth_required")
-        : status.pending
-          ? t("sync_local_pending")
-          : !status.lastSuccess
-            ? t("sync_never_synced")
-            : ""
-    : "";
+  const syncWarning =
+    status?.configured && !syncBusy
+      ? !status.connected
+        ? t("sync_not_connected")
+        : status.authorizationRequired
+          ? t("sync_auth_required")
+          : status.pending
+            ? t("sync_local_pending")
+            : !status.lastSuccess
+              ? t("sync_never_synced")
+              : ""
+      : "";
   const syncErrorKey = sync.error?.toLowerCase();
-  const syncError = sync.error
-    ? syncErrorKey && i18n.exists(syncErrorKey)
-      ? t(syncErrorKey)
-      : t("sync_error_detail", { detail: sync.error })
-    : "";
+  const syncError =
+    sync.error &&
+    !(status?.authorizationRequired && syncErrorKey === "sync_auth_required")
+      ? syncErrorKey && i18n.exists(syncErrorKey)
+        ? t(syncErrorKey)
+        : t("sync_error_detail", { detail: sync.error })
+      : "";
   const [languages, setLanguages] = useState<Responses["studyOverview"]>();
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");

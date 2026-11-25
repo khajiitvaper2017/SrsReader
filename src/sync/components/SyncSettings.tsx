@@ -45,11 +45,13 @@ export function SyncSettings() {
             ? "sync_progress_storage"
             : "sync_in_progress",
       );
-  const errorMessage = error
-    ? errorKey && i18n.exists(errorKey)
-      ? t(errorKey)
-      : t("sync_error_detail", { detail: error })
-    : "";
+  const errorMessage =
+    error &&
+    !(status?.authorizationRequired && errorKey === "sync_auth_required")
+      ? errorKey && i18n.exists(errorKey)
+        ? t(errorKey)
+        : t("sync_error_detail", { detail: error })
+      : "";
 
   return (
     <>
@@ -74,7 +76,7 @@ export function SyncSettings() {
                     })
                   : t("sync_not_connected")}
             </Text>
-            {status.authorizationRequired && (
+            {status.authorizationRequired && !busy && (
               <Text variant="supporting">{t("sync_auth_required")}</Text>
             )}
             <Switch

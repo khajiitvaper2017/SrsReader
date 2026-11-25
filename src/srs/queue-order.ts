@@ -33,3 +33,17 @@ export function mergeQueues<T extends { id: string }>(
   }
   return [...mixed, ...cards.slice(card), ...reviews.slice(review)];
 }
+
+export function interleaveNewAndReviews<T>(
+  fresh: T[],
+  reviews: T[],
+  previous?: "fresh" | "reviews",
+) {
+  const first = previous === "reviews" ? fresh : reviews;
+  const second = previous === "reviews" ? reviews : fresh;
+  const pairs = Math.min(first.length, second.length);
+  const mixed: T[] = [];
+  for (let index = 0; index < pairs; index++)
+    mixed.push(first[index]!, second[index]!);
+  return [...mixed, ...first.slice(pairs), ...second.slice(pairs)];
+}

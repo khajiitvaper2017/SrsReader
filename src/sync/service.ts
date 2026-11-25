@@ -635,6 +635,7 @@ export async function syncNow(decision?: SyncDecision) {
   active = navigator.locks.request("srs-reader-google-sync", async () => {
     try {
       transfer.error = null;
+      transfer.authorizationRequired = false;
       await changed();
       try {
         await synchronize(decision);
@@ -776,17 +777,19 @@ export async function setAutomaticSync(enabled: boolean) {
   if (disconnecting) return;
   transfer.automatic = enabled;
   await persist();
-  if (enabled) void automaticSync().catch(console.warn);
+  if (enabled) void automaticSync(true).catch(console.warn);
   else {
     await browser.alarms.clear(editAlarm);
     await browser.alarms.clear(retryAlarm);
   }
 }
-export async function automaticSync() {
+export async function automaticSync(reconnect = false) {
   await initialize();
   if (
     !transfer.automatic ||
-    transfer.authorizationRequired ||
+    (transfer.authorizationRequired &&
+      !(reconnect && transfer.error === "SYNC_AUTH_REQUIRED")) ||
+    active ||
     transfer.retryAt > Date.now() ||
     connecting ||
     storageRequest ||
@@ -823,7 +826,7 @@ export function startSync() {
       void automaticSync().catch(console.warn);
   });
   globalThis.addEventListener("online", () => {
-    void automaticSync().catch(console.warn);
+    void automaticSync(true).catch(console.warn);
   });
   void initialize()
     .then(async () => {

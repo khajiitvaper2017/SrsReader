@@ -8,7 +8,8 @@ import type { studyOverview } from "@/srs/decks";
 import type { Deck } from "@/srs/deck-model";
 import { z } from "zod";
 import { languageSchema } from "@/languages/model";
-import { deckReviewSettingsSchema, fsrsVersionSchema } from "@/srs/preferences";
+import { deckReviewSettingsSchema } from "@/srs/preferences";
+import { fsrsConfigSchema, fsrsVersionSchema } from "@/srs/fsrs-config";
 
 export const requests = [
   z.object({
@@ -28,6 +29,7 @@ export const requests = [
   z.object({
     action: z.literal("queue"),
     currentCardId: z.string().optional(),
+    previous: z.enum(["fresh", "reviews"]).optional(),
     language: languageSchema,
     deckId: z.string().optional(),
     limits: z
@@ -93,6 +95,11 @@ export const requests = [
   }),
   z.object({ action: z.literal("rescheduleModel") }),
   z.object({
+    action: z.literal("saveFsrsOptimization"),
+    model: fsrsConfigSchema,
+    rolloverHour: z.number().int().min(0).max(23),
+  }),
+  z.object({
     action: z.literal("reschedule"),
     language: languageSchema,
     deckId: z.string().optional(),
@@ -131,6 +138,7 @@ export type Responses = {
   resetRwkv: void;
   activateAlgorithm: Settings;
   rescheduleModel: { count: number; skipped: number; cursor: string | null };
+  saveFsrsOptimization: Settings;
   previewFsrsMigration: { eligible: number; skipped: number };
   reschedule: { count: number; cursor: string | null };
   reviewStats: ReviewStatistics;

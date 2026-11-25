@@ -23,7 +23,7 @@ export async function notify(
 ) {
   clearWordLists();
   if (scope !== "sync") scanCache.results = new Map();
-  if (!wordId) clearLookupCache();
+  if (!wordId && scope !== "srs") clearLookupCache();
   if (
     scope === "settings" ||
     scope === "collection" ||

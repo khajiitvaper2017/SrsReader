@@ -28,7 +28,11 @@ export async function srsClient<R extends Request>(
   while (true) {
     try {
       const result = await rpc(request);
-      if (request.action === "activateAlgorithm") await rescheduleModel();
+      if (
+        request.action === "activateAlgorithm" ||
+        request.action === "saveFsrsOptimization"
+      )
+        await rescheduleModel();
       return result;
     } catch (error) {
       if (

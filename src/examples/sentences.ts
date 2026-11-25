@@ -111,7 +111,7 @@ export async function sentenceExamples(
           (part) => part.isWordLike,
         );
         const length = parts.length;
-        if (length <= 4) return [];
+        if (!length) return [];
         const targets = record.tokens.filter((token) =>
           token.ids.includes(word.id),
         );
@@ -133,6 +133,7 @@ export async function sentenceExamples(
       })
       .sort(
         (a, b) =>
+          Math.max(0, a.length - 12) - Math.max(0, b.length - 12) ||
           a.unknown - b.unknown ||
           a.length - b.length ||
           b.record.mined - a.record.mined,
@@ -140,6 +141,7 @@ export async function sentenceExamples(
   );
   return pools
     .flat()
+    .sort((a, b) => Math.max(0, a.length - 12) - Math.max(0, b.length - 12))
     .slice(0, 20)
     .map(({ record, targets }) => {
       const target = targets[0]!;

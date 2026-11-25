@@ -1,9 +1,11 @@
 import { cardAssetReferences } from "@/cards/sandbox/assets";
 import { fieldText } from "@/cards/template";
 
-export function fieldMediaNames(value: string) {
+export function fieldMediaReferences(value: string) {
   return cardAssetReferences(value).flatMap((reference) => {
     const name = reference.replace(/^\.\//, "");
+    if (/^(?:[a-z][a-z0-9+.-]*:|[/#])/i.test(name) || name.includes("{{"))
+      return [];
     const text = fieldText(name);
     let decoded = text;
     try {
@@ -11,8 +13,12 @@ export function fieldMediaNames(value: string) {
     } catch {
       /* Filenames can contain literal percent signs. */
     }
-    return [name, text, decoded, decoded.split(/[?#]/)[0]!];
+    return [[name, text, decoded, decoded.split(/[?#]/)[0]!]];
   });
+}
+
+export function fieldMediaNames(value: string) {
+  return fieldMediaReferences(value).flat();
 }
 
 export function mediaType(name: string) {

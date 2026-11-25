@@ -1,11 +1,11 @@
-import { parseHTML } from "linkedom";
+import { ankiFieldText as plain } from "@/anki/field-text";
 import { readerNote } from "@/cards/defaults";
+import { lookupCardWord } from "@/cards/dictionary-word";
 import { reviewAnswerMaxLength, type FieldBindings } from "@/cards/model";
 import { germanNounField } from "@/cards/noun-article";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { fieldText as noteFieldText } from "@/cards/storage";
 import { fieldText } from "@/cards/template";
-import { lookup } from "@/dictionaries/resolve";
 import {
   matchesImportedGender,
   meaningsForImportedParts,
@@ -15,24 +15,6 @@ import type { Settings } from "@/settings/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 import { wordId, type Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
-
-function plain(value: string, reading = false) {
-  const { document } = parseHTML(`<html><body>${value}</body></html>`);
-  document
-    .querySelectorAll("script,style")
-    .forEach((element) => element.remove());
-  for (const ruby of document.querySelectorAll("ruby")) {
-    if (reading)
-      ruby.replaceWith(
-        ruby.querySelector("rt")?.textContent ?? ruby.textContent ?? "",
-      );
-    else ruby.querySelectorAll("rt,rp").forEach((element) => element.remove());
-  }
-  return (document.body.textContent ?? "")
-    .replace(/\[sound:[^\]]*\]/g, "")
-    .replace(/ ?([^ >]+?)\[(?!sound:)(.+?)\]/g, reading ? "$2" : "$1")
-    .trim();
-}
 
 export async function ankiWord(
   values: string[],
@@ -52,15 +34,12 @@ export async function ankiWord(
     bindings.reading === undefined
       ? ""
       : plain(values[bindings.reading]!, true);
-  const candidates = convert
-    ? (await lookup(lemma, settings, { reading })).words.filter(
-        (word) => word.lemma.normalize() === lemma.normalize(),
-      )
-    : [];
-  const found =
-    candidates.find(
-      (word) => word.reading.normalize() === reading.normalize(),
-    ) ?? candidates.find((word) => !word.reading);
+  const found = convert
+    ? await lookupCardWord(lemma, reading, settings, {
+        imported: ankiPartOfSpeech(values, bindings),
+        localOnly: false,
+      })
+    : undefined;
   const legacyId = gender && wordId(language, text, reading);
   const legacyNote =
     convert && legacyId ? await db.notes.get(legacyId) : undefined;

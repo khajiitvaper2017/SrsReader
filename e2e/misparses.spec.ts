@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { displayedWords } from "../src/dictionaries/display";
 import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
+import { ankiFieldText } from "../src/anki/field-text";
 import { germanNounField, nounArticle } from "../src/cards/noun-article";
+import { germanReflexiveBase } from "../src/languages/text";
+
 import { cardEncounterKey } from "../src/cards/encounter-key";
 import { stateOf, stateForEncounter } from "../src/vocabulary/state";
 import {
@@ -19,6 +22,17 @@ import {
   occurrenceGrammar,
   type AnalysisToken,
 } from "../src/languages/analysis";
+
+test("Anki field markup preserves German reflexive infinitives", () => {
+  expect(ankiFieldText("<div>sich</div><div>hinlegen</div>")).toBe(
+    "sich hinlegen",
+  );
+  expect(ankiFieldText("sich<br>erinnern[sound:word.mp3]")).toBe(
+    "sich erinnern",
+  );
+  expect(germanReflexiveBase("de", "sich hinlegen")).toBe("hinlegen");
+  expect(germanReflexiveBase("de", "sich erinnern")).toBe("erinnern");
+});
 
 const examples = [
   [

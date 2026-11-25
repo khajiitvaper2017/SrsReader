@@ -13,7 +13,7 @@ import { effectiveRetention } from "@/srs/retention";
 import { rescheduleCard } from "@/srs/storage";
 import { scheduleSchema, type Schedule } from "@/srs/model";
 import {
-  fsrsConfig,
+  preferredFsrsConfig,
   createScheduler,
   toFsrsCard,
   fsrsScheduler,
@@ -25,7 +25,10 @@ import { recalculateLapses } from "@/srs/lapses";
 
 const schedulingModel = (settings: Settings) =>
   settings.algorithm === "fsrs"
-    ? fsrsScheduler(settings.fsrsVersion)
+    ? fsrsScheduler(settings.fsrsVersion) +
+      (settings.fsrsOptimization?.version === settings.fsrsVersion
+        ? `:${settings.fsrsOptimization.weights.join(",")}`
+        : "")
     : `${weightHash}:${specHash}:${settings.rwkvMode}`;
 
 async function fsrsHistory(id: string, schedule: Schedule) {
@@ -104,13 +107,18 @@ export async function requireScheduledModel(settings: Settings) {
 }
 
 async function migrateFsrsBatch(after: string, settings: Settings) {
+  const model = preferredFsrsConfig(settings);
   const cards = await db.cards
     .where("id")
     .above(after)
     .filter(
       (card) =>
         card.schedule !== null &&
-        card.schedule.fsrs.version !== settings.fsrsVersion,
+        (card.schedule.fsrs.version !== model.version ||
+          card.schedule.fsrs.weights.length !== model.weights.length ||
+          card.schedule.fsrs.weights.some(
+            (weight, index) => weight !== model.weights[index],
+          )),
     )
     .limit(100)
     .toArray();
@@ -124,7 +132,7 @@ async function migrateFsrsBatch(after: string, settings: Settings) {
         stability: 0,
         difficulty: 0,
         stabilityFast: settings.fsrsVersion === "7" ? 0 : undefined,
-        fsrs: fsrsConfig(settings.fsrsVersion),
+        fsrs: model,
       });
       count++;
       continue;
@@ -141,7 +149,7 @@ async function migrateFsrsBatch(after: string, settings: Settings) {
     await rescheduleCard(card.id, {
       ...before,
       ...memory,
-      fsrs: fsrsConfig(settings.fsrsVersion),
+      fsrs: model,
     });
     count++;
   }

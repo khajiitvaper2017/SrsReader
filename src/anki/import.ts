@@ -590,6 +590,19 @@ export async function importPackage(
     const mediaToImport = reader.media.filter(
       ({ name }) => !omittedMedia.has(name),
     );
+    const mediaReferences = new Set<string>();
+    const retainReferences = (text: string) => {
+      for (const name of fieldMediaNames(text)) mediaReferences.add(name);
+    };
+    for (const type of retainedTypes) {
+      retainReferences(type.css);
+      for (const { front, back } of type.templates) {
+        retainReferences(front);
+        retainReferences(back);
+      }
+    }
+    for (const note of notes)
+      for (const field of note.fields) retainReferences(field);
     await srsWrite(async () => {
       await discardStagedAnkiMedia();
       await db.importFiles.where("id").startsWith("anki:").delete();
@@ -606,6 +619,14 @@ export async function importPackage(
         for (const note of previous)
           if (note && note.mediaNamespace !== namespace)
             oldNamespaces.add(note.mediaNamespace);
+      }
+      for (let offset = 0; offset < cards.length; offset += batchSize) {
+        const previous = await db.cards.bulkGet(
+          cards.slice(offset, offset + batchSize).map((card) => card.id),
+        );
+        for (const card of previous)
+          if (card?.preferredAudio && "recording" in card.preferredAudio)
+            mediaReferences.add(card.preferredAudio.recording);
       }
       const stageMedia = async () => {
         await db.syncMeta.put({ id: stagedAnkiMediaId, namespace });
@@ -643,47 +664,54 @@ export async function importPackage(
           });
         }
         for (const asset of snapshotAssets) await store(asset);
-        if (options.mergeNoteTypes && options.mode === "preserve") {
-          const names = new Set(reader.media.map((media) => media.name));
-          const related = await db.notes
-            .where("noteTypeId")
-            .anyOf(
-              existingTypes
-                .filter((type) =>
-                  [...models.values()].some(({ model }) =>
-                    matchesNoteType(model, type),
-                  ),
+        const preserve = options.mode === "preserve";
+        const names = new Set([
+          ...mediaToImport.map((media) => media.name),
+          ...snapshotAssets
+            .filter((asset) => asset.namespace === namespace)
+            .map((asset) => asset.name),
+        ]);
+        const related =
+          preserve && options.mergeNoteTypes
+            ? await db.notes
+                .where("noteTypeId")
+                .anyOf(
+                  existingTypes
+                    .filter((type) =>
+                      [...models.values()].some(({ model }) =>
+                        matchesNoteType(model, type),
+                      ),
+                    )
+                    .map((type) => type.id),
                 )
-                .map((type) => type.id),
+                .toArray()
+            : [];
+        const assetNamespaces = new Set([
+          ...oldNamespaces,
+          ...related.map((note) => note.mediaNamespace),
+        ]);
+        for (const oldNamespace of assetNamespaces) {
+          const keys = await db.cardAssets
+            .where("[namespace+name]")
+            .between([oldNamespace, Dexie.minKey], [oldNamespace, Dexie.maxKey])
+            .keys();
+          for (const key of keys) {
+            if (!Array.isArray(key) || typeof key[1] !== "string") continue;
+            const name = key[1];
+            if (
+              names.has(name) ||
+              omittedMedia.has(name) ||
+              (!preserve && !mediaReferences.has(name))
             )
-            .toArray();
-          const assetNamespaces = new Set([
-            ...oldNamespaces,
-            ...related.map((note) => note.mediaNamespace),
-          ]);
-          for (const oldNamespace of assetNamespaces) {
-            const keys = await db.cardAssets
-              .where("[namespace+name]")
-              .between(
-                [oldNamespace, Dexie.minKey],
-                [oldNamespace, Dexie.maxKey],
-              )
-              .keys();
-            for (const key of keys) {
-              if (!Array.isArray(key) || typeof key[1] !== "string") continue;
-              const name = key[1];
-              if (names.has(name)) continue;
-              const asset = await db.cardAssets.get(
-                assetId(oldNamespace, name),
-              );
-              if (!asset) throw new Error(t("anki_invalid_package"));
-              await store({
-                ...asset,
-                id: assetId(namespace, name),
-                namespace,
-              });
-              names.add(name);
-            }
+              continue;
+            const asset = await db.cardAssets.get(assetId(oldNamespace, name));
+            if (!asset) throw new Error(t("anki_invalid_package"));
+            await store({
+              ...asset,
+              id: assetId(namespace, name),
+              namespace,
+            });
+            names.add(name);
           }
         }
         await flush();
@@ -724,6 +752,7 @@ export async function importPackage(
                   card.buriedUntil = current.buriedUntil;
                   card.minedAt = current.minedAt;
                   card.leech = current.leech;
+                  card.preferredAudio = current.preferredAudio;
                   if (current.language === card.language)
                     card.deckId = current.deckId;
                   if (card.source && current.source?.flags !== undefined)

@@ -6,6 +6,11 @@ export const folded = (text: string, language: string) =>
 
 export const swissGermanSpelling = (text: string) => text.replaceAll("ß", "ss");
 
+export function germanReflexiveBase(language: string, lemma: string) {
+  if (language === "de")
+    return /^sich\s+(\p{L}[\p{L}\p{M}-]*n)$/iu.exec(lemma)?.[1]?.toLowerCase();
+}
+
 export const germanHyphenatedCompounds = (text: string) =>
   text.matchAll(
     /(?<![\p{L}\p{M}\p{N}])(?=\(?[\p{L}\p{M}]+(?:\[(?:s|es|n|en)\])?\)?[-‐‑])\(?\p{L}[\p{L}\p{M}]*(?:\[(?:s|es|n|en)\])?\)?(?:[-‐‑]\)?\(?\p{L}[\p{L}\p{M}]*(?:\[(?:s|es|n|en)\])?\)?)*[-‐‑]?\)?(?![\p{L}\p{M}\p{N}])/gu,

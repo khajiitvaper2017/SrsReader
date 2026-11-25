@@ -184,13 +184,12 @@ async function request(
       // before resending, rather than blindly replaying a media chunk.
       throw new DriveError(0, 0, "SYNC_NETWORK");
     }
-    if (response.status === 401 && !renewed) {
-      renewed = true;
+    if (response.status === 401) {
       await invalidateAccessToken(token);
+      if (renewed) throw new GoogleAuthError("SYNC_AUTH_REQUIRED", 401);
+      renewed = true;
       continue;
     }
-    if (response.status === 401)
-      throw new GoogleAuthError("SYNC_AUTH_REQUIRED", 401);
     if (response.ok || accepted.includes(response.status)) return response;
     const retryHeader = response.headers.get("Retry-After");
     const seconds = Number(retryHeader);

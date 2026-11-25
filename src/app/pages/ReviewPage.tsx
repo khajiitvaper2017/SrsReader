@@ -42,7 +42,6 @@ import type { Settings } from "@/settings/model";
 import { number, t } from "@/shared/i18n/i18n";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { Ratings } from "@/srs/components/Ratings";
-import { srsClient } from "@/srs/client";
 import { SrsProgress } from "@/srs/components/SrsProgress";
 import { useReviewSession } from "@/srs/hooks/useReviewSession";
 import { SessionProgress } from "@/srs/components/SessionProgress";
@@ -89,6 +88,7 @@ export function ReviewPage({
     sentenceLoading,
     load,
     gradeWord,
+    bury,
     playAudio,
     reveal,
     undo,
@@ -379,11 +379,7 @@ export function ReviewPage({
                 <Menu.Item
                   leftSection={<CalendarClock aria-hidden size={16} />}
                   disabled={busy}
-                  onClick={() =>
-                    void srsClient({ action: "bury", cardId: word.id })
-                      .then(load)
-                      .catch((error: Error) => setError(error.message))
-                  }
+                  onClick={() => void bury()}
                 >
                   {t("bury_card")}
                 </Menu.Item>
@@ -504,18 +500,15 @@ export function ReviewPage({
                 styles={{ content: { minHeight: "100%" } }}
               >
                 <Stack gap="xs">
-                  <Box
+                  <Group
                     data-review-card-header
-                    display="grid"
                     data-srs-reader
                     px="md"
                     pt="md"
-                    style={{
-                      gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
-                      alignItems: "center",
-                    }}
+                    gap="xs"
+                    wrap="nowrap"
                   >
-                    <Badge style={{ gridColumn: 2 }}>
+                    <Badge>
                       {t(
                         [
                           "new",
@@ -525,12 +518,7 @@ export function ReviewPage({
                         ][word.card!.state]!,
                       )}
                     </Badge>
-                    <Group
-                      gap={4}
-                      justify="flex-end"
-                      miw={0}
-                      style={{ gridColumn: 3 }}
-                    >
+                    <Group gap={4} flex={1} justify="flex-end" miw={0}>
                       {revealed &&
                         translationContext &&
                         settings.showSentenceTranslation && (
@@ -584,7 +572,7 @@ export function ReviewPage({
                         </ActionIcon>
                       )}
                     </Group>
-                  </Box>
+                  </Group>
                   <CardViewer
                     document={viewerDocument!}
                     wordAudio={word.wordId ? "toolbar" : undefined}
@@ -592,8 +580,8 @@ export function ReviewPage({
                     onReady={cardReady}
                     loading={
                       !!viewerDocument?.noteType.id.startsWith("reader:") &&
-                      ((settings.front === "sentence" && sentenceLoading) ||
-                        (revealed && !!context && !sentenceAudio))
+                      settings.front === "sentence" &&
+                      sentenceLoading
                     }
                     revealed={revealed}
                     settings={settings}

@@ -5,7 +5,7 @@ import type { StepUnit } from "ts-fsrs";
 import type { Settings } from "@/settings/model";
 import type { Card } from "@/cards/model";
 
-export const fsrsVersionSchema = z.enum(["7", "6"]);
+import { fsrsConfigSchema, fsrsVersionSchema } from "@/srs/fsrs-config";
 
 export const learningStepsSchema = z.array(
   z
@@ -41,6 +41,7 @@ export const srsPreferencesSchema = z.object({
   retention: z.number().min(0.7).max(0.99).default(0.8),
   algorithm: z.enum(["fsrs", "rwkv"]).default("fsrs"),
   fsrsVersion: fsrsVersionSchema.default("7"),
+  fsrsOptimization: fsrsConfigSchema.nullable().default(null),
   rwkvMode: z.enum(["curve", "instant"]).default("curve"),
   learningSteps: learningStepsSchema.default(["10m"]),
   relearningSteps: learningStepsSchema.default(["10m"]),

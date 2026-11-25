@@ -267,7 +267,7 @@ export function renderCard(
   const reader = noteType.id.startsWith("reader:");
   const answer =
     revealed && note.reviewAnswer
-      ? `<section class="srs-study-section"><h3>${escapeHtml(t("review_answer"))}</h3><div style="white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(note.reviewAnswer)}</div></section>`
+      ? `<div class="srs-study-section" style="text-align:center;white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(note.reviewAnswer)}</div>`
       : "";
   if (reader) {
     const study = document.study;
@@ -282,6 +282,7 @@ export function renderCard(
     fields.SrsForms = study?.forms.length
       ? `<dl class="srs-forms">${study.forms.map(({ label, value }) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl>`
       : "";
+    fields.SrsAudio = (fields.WordAudio ?? "") + (fields.SentenceAudio ?? "");
     const reading = fieldText(fields.Reading ?? "");
     if (isPhoneticReading(reading)) {
       fields.SrsIpa = escapeHtml(reading);
@@ -325,7 +326,6 @@ export function renderCard(
           }
         fields[name] = document.body.innerHTML;
       }
-      fields[name] = answer + fields[name]!;
     }
   }
   const hintIndex = noteType.bindings.hint;
@@ -335,14 +335,28 @@ export function renderCard(
   const front = renderTemplate(template.front, fields, context);
   const side = revealed
     ? renderTemplate(
-        template.back,
+        reader
+          ? template.back
+              .replace(/<h3>{{Srs(?:Forms|Examples|Ipa)Label}}<\/h3>/g, "")
+              .replace(
+                "<div>{{WordAudio}}{{SentenceAudio}}</div>",
+                "{{#SrsAudio}}<div data-srs-media>{{SrsAudio}}</div>{{/SrsAudio}}",
+              )
+          : template.back,
         { FrontSide: front.html, ...fields },
         { ...context, revealed: true, frontHasHint: front.hasHint },
       )
     : front;
+  const separator =
+    /<hr\b[^>]*\bid\s*=\s*(?:"answer"|'answer'|answer(?=\s|\/?>))[^>]*>/i;
+  const withAnswer = !answer
+    ? side.html
+    : separator.test(side.html)
+      ? side.html.replace(separator, (match) => match + answer)
+      : answer + side.html;
   const html =
-    side.html +
-    (revealed && !reader ? answer + (document.study?.definitions ?? "") : "");
+    withAnswer +
+    (revealed && !reader ? (document.study?.definitions ?? "") : "");
   if (side.hasHint) return html;
   const hint = hintField ? fieldText(fields[hintField] ?? "") : note.hint;
   return hint ? cardHintHtml(escapeHtml(hint)) + html : html;

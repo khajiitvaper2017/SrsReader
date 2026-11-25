@@ -1,7 +1,7 @@
 {
   "name": "srs-reader",
   "private": true,
-  "version": "0.3.3",
+  "version": "0.3.4",
   "type": "module",
   "packageManager": "pnpm@12.15.0",
   "scripts": {
@@ -29,6 +29,7 @@
     "@mantine/core": "9.7.4",
     "@mantine/hooks": "9.7.4",
     "@mantine/notifications": "9.7.4",
+    "@open-spaced-repetition/binding-wasm32-wasip1": "0.6.3",
     "@pointnet/cldr-spellout": "48.2.0",
     "@sqlite.org/sqlite-wasm": "3.54.1-build1",
     "@zip.js/zip.js": "^2.24.0",

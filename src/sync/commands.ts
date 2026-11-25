@@ -29,9 +29,9 @@ export async function handleSync(request: Request) {
       await setAutomaticSync(request.enabled);
       break;
     case "syncAppOpened":
-    case "syncReviewEnded":
     case "syncOnline":
-      void automaticSync().catch(console.warn);
+    case "syncReviewEnded":
+      void automaticSync(true).catch(console.warn);
       break;
     case "syncEdited":
       await scheduleEdits();

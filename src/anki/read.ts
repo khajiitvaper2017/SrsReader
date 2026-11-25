@@ -25,7 +25,7 @@ import {
   type NoteType,
 } from "@/cards/model";
 import { loadCardAssets, requestedCardAsset } from "@/cards/sandbox/assets";
-import { mediaType } from "@/anki/media";
+import { fieldMediaReferences, mediaType } from "@/anki/media";
 import { matchesNoteType, previousFields, sameAnkiItem } from "@/anki/merge";
 import { t } from "@/shared/i18n/i18n";
 import { db } from "@/platform/database/db";
@@ -371,6 +371,7 @@ export class PackageReader {
   private entries = new Map<string, Entry>();
   compressed = false;
   media: { name: string; entry: string; size?: number }[] = [];
+  missingMedia = new Set<string>();
 
   constructor(file: Blob) {
     this.archive = new ZipReader(new BlobReader(file));
@@ -416,12 +417,15 @@ export class PackageReader {
           !item.name ||
           /[/\\\0]/.test(item.name) ||
           !/^\d+$/.test(item.entry) ||
-          !this.entries.has(item.entry) ||
           names.has(item.name)
         )
           throw invalid();
         names.add(item.name);
+        if (!this.entries.has(item.entry)) this.missingMedia.add(item.name);
       }
+      this.media = this.media.filter(
+        (item) => !this.missingMedia.has(item.name),
+      );
     }
     return collection;
   }
@@ -508,6 +512,19 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
     const notes = new Map(collection.notes.map((note) => [note.id, note]));
     const namespace = `anki-preview:${crypto.randomUUID()}`;
     const media = new Map(reader.media.map((item) => [item.name, item]));
+    const missing = new Set(reader.missingMedia);
+    const checkMedia = (value: string) => {
+      for (const names of fieldMediaReferences(value))
+        if (!names.some((name) => media.has(name))) missing.add(names.at(-1)!);
+    };
+    for (const note of collection.notes) checkMedia(note.flds);
+    for (const model of collection.models) {
+      checkMedia(model.css);
+      for (const template of model.tmpls) {
+        checkMedia(template.qfmt);
+        checkMedia(template.afmt);
+      }
+    }
     const assets = new Map<string, Promise<CardAsset | undefined>>();
     function getAsset(name: string) {
       let result = assets.get(name);
@@ -680,36 +697,41 @@ export async function inspectPackage(file: Blob): Promise<AnkiPreview> {
       media: reader.media.length,
       reviews: collection.reviews.length,
       suspended: collection.cards.filter((card) => card.queue === -1).length,
-      warnings: collection.models.flatMap((model) => {
-        const templates = model.tmpls.map((template) => ({
-          name: template.name,
-          front: template.qfmt,
-          back: template.afmt,
-        }));
-        const filters = templateWarnings({ templates });
-        const unsupported = [
-          ...new Set(
-            JSON.stringify(model).match(
-              /MathJax|image[-_ ]occlusion|AnkiConnect|HyperTTS/gi,
-            ) ?? [],
-          ),
-        ];
-        return [
-          ...(filters.length
-            ? [
-                `${model.name}: ${t("card_template_unsupported", { filters: filters.join(", ") })}`,
-              ]
-            : []),
-          ...(unsupported.length
-            ? [
-                t("anki_unsupported_features", {
-                  name: model.name,
-                  features: unsupported.join(", "),
-                }),
-              ]
-            : []),
-        ];
-      }),
+      warnings: [
+        ...(missing.size
+          ? [t("anki_missing_media", { count: missing.size })]
+          : []),
+        ...collection.models.flatMap((model) => {
+          const templates = model.tmpls.map((template) => ({
+            name: template.name,
+            front: template.qfmt,
+            back: template.afmt,
+          }));
+          const filters = templateWarnings({ templates });
+          const unsupported = [
+            ...new Set(
+              JSON.stringify(model).match(
+                /MathJax|image[-_ ]occlusion|AnkiConnect|HyperTTS/gi,
+              ) ?? [],
+            ),
+          ];
+          return [
+            ...(filters.length
+              ? [
+                  `${model.name}: ${t("card_template_unsupported", { filters: filters.join(", ") })}`,
+                ]
+              : []),
+            ...(unsupported.length
+              ? [
+                  t("anki_unsupported_features", {
+                    name: model.name,
+                    features: unsupported.join(", "),
+                  }),
+                ]
+              : []),
+          ];
+        }),
+      ],
       incompatibleNoteTypes: await incompatibleNoteTypeIds(collection.models),
     };
   } catch (error) {

@@ -1,4 +1,5 @@
-import type { FsrsConfig, Schedule } from "@/srs/model";
+import type { FsrsConfig } from "@/srs/fsrs-config";
+import type { Schedule } from "@/srs/model";
 import type { SchedulingPreferences as Settings } from "@/srs/preferences";
 import { DAY, dayStart, studyDay } from "@/srs/study-day";
 import {
@@ -112,10 +113,16 @@ export const fsrsConfig = (version: Settings["fsrsVersion"]): FsrsConfig => ({
   weights: [...weights[version]],
 });
 
+export function preferredFsrsConfig(settings: Settings) {
+  return settings.fsrsOptimization?.version === settings.fsrsVersion
+    ? settings.fsrsOptimization
+    : fsrsConfig(settings.fsrsVersion);
+}
+
 export function createScheduler(
   settings: Settings,
   retention: number,
-  model = fsrsConfig(settings.fsrsVersion),
+  model = preferredFsrsConfig(settings),
   rwkvIntervals?: number[],
 ): AnySchedulerCore {
   const config = {
@@ -210,7 +217,7 @@ export function scheduleAnswers(
   settings: Settings,
   rwkvIntervals?: number[],
 ) {
-  const model = card.state === 0 ? fsrsConfig(settings.fsrsVersion) : card.fsrs;
+  const model = card.state === 0 ? preferredFsrsConfig(settings) : card.fsrs;
   const scheduler = createScheduler(settings, retention, model, rwkvIntervals);
   const input =
     card.state === 0

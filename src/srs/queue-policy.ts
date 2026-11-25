@@ -1,7 +1,11 @@
 import type { SchedulingPreferences } from "@/srs/preferences";
 import { dayStart, studyDay } from "@/srs/study-day";
 import type { ReviewWord } from "@/vocabulary/model";
-import { mergeQueues, queueRandom } from "@/srs/queue-order";
+import {
+  interleaveNewAndReviews,
+  mergeQueues,
+  queueRandom,
+} from "@/srs/queue-order";
 
 export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
   words: T[],
@@ -15,6 +19,7 @@ export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
     kind: "fresh" | "reviews",
     consume: boolean,
   ) => boolean,
+  previous?: "fresh" | "reviews",
 ) {
   const available = Math.max(
     0,
@@ -96,38 +101,44 @@ export function buildQueue<T extends Pick<ReviewWord, "id" | "card">>(
       (word) =>
         (word.card!.state === 1 || word.card!.state === 3) &&
         !word.card!.interday &&
-        word.card!.dueAt > now,
+        word.card!.dueAt > now &&
+        studyDay(word.card!.dueAt, settings.rolloverHour) === day,
     )
     .sort(byDue);
-  const ahead =
-    due.length || fresh.length
-      ? []
-      : future.filter(
-          (word) =>
-            word.card!.dueAt <= now + settings.learnAheadMinutes * 60000,
-        );
+  const hasReadyCards = due.length > 0 || fresh.length > 0;
+  const learnAhead = settings.learnAheadMinutes * 60000;
+  const ahead = hasReadyCards
+    ? []
+    : future.filter((word) => word.card!.dueAt <= now + learnAhead);
   const rollover = dayStart(
     studyDay(now, settings.rolloverHour) + 1,
     settings.rolloverHour,
   );
   const waiting = Math.min(
     rollover,
-    ...future.map((word) =>
-      Math.max(
-        now + 500,
-        word.card!.dueAt - settings.learnAheadMinutes * 60000,
-      ),
-    ),
+    ...future.map((word) => {
+      const dueAt = word.card!.dueAt;
+      // Learn-ahead cannot affect the queue while other cards are ready.
+      return hasReadyCards || dueAt <= now + learnAhead
+        ? dueAt
+        : dueAt - learnAhead;
+    }),
   );
   const queued = [
     ...learning,
-    ...mergeQueues(fresh, scheduled, settings.newReviewOrder, day + 1),
+    ...(settings.newReviewOrder === "mix"
+      ? interleaveNewAndReviews(fresh, scheduled, previous)
+      : mergeQueues(fresh, scheduled, settings.newReviewOrder, day + 1)),
     ...ahead,
   ];
   return {
     words: queued,
-    learning: queued.filter((word) => word.card!.state === 1).length,
-    relearning: queued.filter((word) => word.card!.state === 3).length,
+    learning: [...learning, ...interday, ...future].filter(
+      (word) => word.card!.state === 1,
+    ).length,
+    relearning: [...learning, ...interday, ...future].filter(
+      (word) => word.card!.state === 3,
+    ).length,
     reviews: queued.filter((word) => word.card!.state === 2).length,
     ahead: ahead.length,
     due: due.length,

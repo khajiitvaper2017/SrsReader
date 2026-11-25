@@ -91,14 +91,24 @@ export function cardBootstrap(
     urls = nextUrls;
     let audioIndex = 0;
     const html = data.html.replace(/\[sound:([^\]]+)\]/g, (_, name: string) => {
+      const decoded =
+        new DOMParser().parseFromString(
+          name.replaceAll("<", "&lt;"),
+          "text/html",
+        ).body.textContent ?? name;
+      const source = resolve(decoded);
+      if (source === decoded && !/^(?:blob:|data:)/i.test(decoded)) return "";
       const id = `srs-audio-${audioIndex++}`;
       const tag = /\.(?:webm|mp4|mov|mkv)(?:[?#]|$)/i.test(name)
         ? "video"
         : "audio";
       const label = tag === "video" ? data.videoLabel : data.audioLabel;
-      return `<button type="button" class="replay-button soundLink" data-srs-sound="${id}" aria-label="${label.replaceAll('"', "&quot;")}">▶</button><${tag} data-srs-audio id="${id}" src="${resolve(name).replaceAll('"', "%22")}"${tag === "video" ? " controls playsinline" : ""}></${tag}>`;
+      return `<button type="button" class="replay-button soundLink" data-srs-sound="${id}" aria-label="${label.replaceAll('"', "&quot;")}">▶</button><${tag} data-srs-audio id="${id}" src="${source.replaceAll('"', "%22")}"${tag === "video" ? " controls playsinline" : ""}></${tag}>`;
     });
     const parsed = new DOMParser().parseFromString(html, "text/html");
+    parsed
+      .querySelectorAll("[data-srs-media]:empty")
+      .forEach((row) => row.remove());
     parsed.querySelectorAll(".srs-meaning").forEach((element) => {
       element.classList.add("dictionary-content");
       element.toggleAttribute("data-hide-sources", data.hideSources);

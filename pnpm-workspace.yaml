@@ -3,5 +3,7 @@ packages:
 
 allowBuilds:
   fsevents: true
+minimumReleaseAgeExclude:
+  - '@open-spaced-repetition/binding-wasm32-wasip1@0.6.3'
 patchedDependencies:
   dexie-export-import@4.4.2: patches/dexie-export-import@4.4.2.patch

@@ -20,7 +20,8 @@ import { t } from "@/shared/i18n/i18n";
 import { srsClient } from "@/srs/client";
 import { useSrsSettings } from "@/srs/hooks/useSrsSettings";
 import { SrsProgress } from "@/srs/components/SrsProgress";
-import { fsrsVersionSchema, learningStepsSchema } from "@/srs/preferences";
+import { fsrsVersionSchema } from "@/srs/fsrs-config";
+import { learningStepsSchema } from "@/srs/preferences";
 import { useState } from "react";
 import { notifications } from "@mantine/notifications";
 function NumberSetting({
@@ -70,10 +71,11 @@ export function SrsSettings({
   onChange: (patch: Partial<Settings>) => Promise<void>;
   onError: (message: string) => void;
 }) {
-  const { busy, status, bands, setBands, task, prepare } = useSrsSettings({
-    settings,
-    onError,
-  });
+  const { busy, status, bands, setBands, task, prepare, optimize } =
+    useSrsSettings({
+      settings,
+      onError,
+    });
   type ModelSelection = {
     algorithm: Settings["algorithm"];
     fsrsVersion: Settings["fsrsVersion"];
@@ -153,6 +155,7 @@ export function SrsSettings({
                     await srsClient({ action: "activateAlgorithm", ...next }),
                   );
                   notifications.show({
+                    id: `srs-${next.algorithm}-ready`,
                     message: t(
                       next.algorithm === "fsrs"
                         ? "srs_fsrs_ready"
@@ -196,28 +199,49 @@ export function SrsSettings({
         }}
       />
       {settings.algorithm === "fsrs" && (
-        <Select
-          label={t("srs_fsrs_version")}
-          description={t("srs_fsrs_version_help")}
-          value={settings.fsrsVersion}
-          disabled={busy}
-          data={fsrsVersionSchema.options.map((version) => ({
-            value: version,
-            label:
-              version === "7"
-                ? t("srs_fsrs_latest", { version: "FSRS-7" })
-                : `FSRS-${version}`,
-          }))}
-          onChange={(value) => {
-            const version = fsrsVersionSchema.safeParse(value);
-            if (version.success && version.data !== settings.fsrsVersion)
-              previewModel({
-                algorithm: settings.algorithm,
-                fsrsVersion: version.data,
-                rwkvMode: settings.rwkvMode,
-              });
-          }}
-        />
+        <Stack gap="xs">
+          <Select
+            label={t("srs_fsrs_version")}
+            description={t("srs_fsrs_version_help")}
+            value={settings.fsrsVersion}
+            disabled={busy}
+            data={fsrsVersionSchema.options.map((version) => ({
+              value: version,
+              label:
+                version === "7"
+                  ? t("srs_fsrs_latest", { version: "FSRS-7" })
+                  : `FSRS-${version}`,
+            }))}
+            onChange={(value) => {
+              const version = fsrsVersionSchema.safeParse(value);
+              if (version.success && version.data !== settings.fsrsVersion)
+                previewModel({
+                  algorithm: settings.algorithm,
+                  fsrsVersion: version.data,
+                  rwkvMode: settings.rwkvMode,
+                });
+            }}
+          />
+          <Text variant="supporting">{t("srs_fsrs_optimize_help")}</Text>
+          <Group>
+            <Button
+              disabled={busy}
+              onClick={() =>
+                void task(async () => {
+                  await optimize();
+                  notifications.show({
+                    id: "srs-fsrs-optimized",
+                    message: t("srs_fsrs_optimized"),
+                    color: "green",
+                    role: "status",
+                  });
+                })
+              }
+            >
+              {t("srs_fsrs_optimize")}
+            </Button>
+          </Group>
+        </Stack>
       )}
       {settings.algorithm === "rwkv" && (
         <Select

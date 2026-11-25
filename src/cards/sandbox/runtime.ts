@@ -118,7 +118,7 @@ export function cardRuntime(config: RuntimeConfig) {
     requests.delete(event.data.requestId);
     if (event.data.blob instanceof Blob)
       request.resolve(URL.createObjectURL(event.data.blob));
-    else request.reject(new Error(String(event.data.error)));
+    else request.reject(new Error(event.data.error ?? ""));
   });
   const local = (value: string) =>
     value.length > 0 && !/^(?:[a-z][a-z0-9+.-]*:|[/#])/i.test(value);
@@ -139,7 +139,7 @@ export function cardRuntime(config: RuntimeConfig) {
           return url;
         })
         .catch((error: Error) => {
-          send("error", error.message);
+          if (error.message) send("error", error.message);
           throw error;
         });
       requested.set(value, result);

@@ -11,13 +11,14 @@ import { queueRandom } from "@/srs/queue-order";
 import { studyDay } from "@/srs/study-day";
 import { queueEntries, type QueueEntry } from "@/srs/queue-entries";
 import type { SchedulingPreferences } from "@/srs/preferences";
-import { prepareStudyDocument } from "@/cards/study";
+import { lookupGermanCompoundParts } from "@/dictionaries/lookup";
 
 export async function reviewQueue(
   language: string,
   deckId?: string,
   limits?: Pick<SchedulingPreferences, "newLimit" | "reviewLimit">,
   currentCardId?: string,
+  previous?: "fresh" | "reviews",
 ) {
   const defaults = {
     ...(await getSettings()),
@@ -72,7 +73,33 @@ export async function reviewQueue(
     orderedNew,
     deckOrder,
     withinDeckLimit,
+    previous,
   );
+  const nextNew = queue.words.findIndex((word) => word.card!.state === 0);
+  const compound = queue.words[nextNew];
+  if (language === "de" && compound && compound.id !== currentCardId) {
+    const head = compound.lemma.toLowerCase();
+    const candidates = orderedNew.filter((word) => {
+      const part = word.lemma.toLowerCase();
+      return (
+        word.deckId === compound.deckId &&
+        part.length >= 2 &&
+        part.length < head.length &&
+        (head.startsWith(part) || head.endsWith(part))
+      );
+    });
+    if (candidates.length) {
+      const parts = await lookupGermanCompoundParts(compound.lemma);
+      const first = parts
+        .map((part) => candidates.find((word) => word.lemma === part))
+        .find(Boolean);
+      if (first) {
+        const position = queue.words.indexOf(first);
+        if (position >= 0) queue.words[position] = compound;
+        queue.words[nextNew] = first;
+      }
+    }
+  }
   const current =
     currentCardId && queue.words.find((word) => word.id === currentCardId);
   const upcoming = current
@@ -86,11 +113,9 @@ export async function reviewQueue(
   return {
     ...queue,
     deferredMined,
-    remaining: queue.words.length,
+    remaining: queue.fresh + queue.reviews + queue.learning + queue.relearning,
     words: details.map(({ document: _document, ...word }) => word),
-    document: details[0]
-      ? await prepareStudyDocument(details[0].document, details[0])
-      : undefined,
+    document: details[0]?.document,
     today: counts.today,
     total: selectedDecks
       ? await db.cards.where("language").equals(language).count()

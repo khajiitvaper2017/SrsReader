@@ -6,7 +6,6 @@ import { commitReview } from "@/srs/storage";
 import { autoBuriesAfterAgain } from "@/srs/workload";
 import type { ReadingContext, ReviewWord } from "@/vocabulary/model";
 import { cacheContext } from "@/examples/sentences";
-import { reviewCard } from "@/vocabulary/storage";
 import type { Grade } from "ts-fsrs";
 import { cardDeckPreferences } from "@/srs/preferences";
 import { minedCardDeferredUntil } from "@/srs/study-day";
@@ -85,5 +84,19 @@ export async function grade(
     settings,
     result,
   });
-  return { word: (await reviewCard(saved.id))!, reviewId: id, autoBuried };
+  return {
+    word: {
+      ...word,
+      document: { ...word.document, card: saved },
+      card: saved.schedule,
+      linkedCards: [saved],
+      srsVersion: saved.srsVersion,
+      suspended: saved.suspended,
+      leech: saved.leech,
+      updated: saved.updated,
+      ...(source === "reading" && word.wordId ? { mined: true } : {}),
+    },
+    reviewId: id,
+    autoBuried,
+  };
 }

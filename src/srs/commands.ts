@@ -55,6 +55,7 @@ export function handleSrs(request: Request, settings: Settings) {
     request.action === "activateAlgorithm" ||
     request.action === "previewFsrsMigration" ||
     request.action === "rescheduleModel" ||
+    request.action === "saveFsrsOptimization" ||
     request.action === "reschedule"
     ? srsWrite(async () => execute(request, await getSettings()))
     : execute(request, settings);
@@ -70,7 +71,7 @@ async function execute(request: Request, settings: Settings) {
         settings.rolloverHour,
       );
       if (await db.cards.update(request.cardId, { buriedUntil }))
-        await notify(undefined, "collection");
+        void notify(undefined, "srs").catch(console.warn);
       return;
     }
     case "studyOverview":
@@ -168,10 +169,12 @@ async function execute(request: Request, settings: Settings) {
         request.time,
       );
       if (word.wordId) cacheAudio({ ...word, id: word.wordId, forms: [] });
-      await notify(
+      const notification = notify(
         word.wordId,
         request.source === "review" ? "srs" : "vocabulary",
       );
+      if (request.source === "reading") await notification;
+      else void notification.catch(console.warn);
       return result;
     }
     case "undo":
@@ -183,6 +186,7 @@ async function execute(request: Request, settings: Settings) {
         request.deckId,
         request.limits,
         request.currentCardId,
+        request.previous,
       );
     case "preview": {
       const encounter = await resolveCardEncounter(
@@ -278,6 +282,18 @@ async function execute(request: Request, settings: Settings) {
       const result = await rescheduleModel();
       if (result.cursor === null) await notify(undefined, "srs");
       return result;
+    }
+    case "saveFsrsOptimization": {
+      if (
+        settings.algorithm !== "fsrs" ||
+        settings.fsrsVersion !== request.model.version ||
+        settings.rolloverHour !== request.rolloverHour
+      )
+        throw new Error(t("srs_fsrs_optimization_settings_changed"));
+      const value = { ...settings, fsrsOptimization: request.model };
+      await saveSettings(value);
+      await notify(undefined, "settings");
+      return value;
     }
     case "reschedule": {
       const result = await rescheduleExisting(

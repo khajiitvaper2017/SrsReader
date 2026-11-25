@@ -22,13 +22,11 @@ export function useReviewPreload(
   );
   useEffect(() => {
     const start = () => {
-      if (document.hidden) preload.stop();
-      else preload.start(queue?.words || []);
+      if (!document.hidden) preload.start(queue?.words || []);
     };
     start();
     document.addEventListener("visibilitychange", start);
     return () => {
-      preload.stop();
       document.removeEventListener("visibilitychange", start);
     };
   }, [preload, queue]);

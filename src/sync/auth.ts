@@ -623,6 +623,7 @@ export async function disconnectGoogle(): Promise<void> {
 
 export async function accessToken(expectedAccount: string): Promise<string> {
   await ready();
+  await credentialWrites;
   const credentials = await storedCredentials();
   const config = configuration();
   if (!config) throw new GoogleAuthError("SYNC_NOT_CONFIGURED");
@@ -658,11 +659,15 @@ export async function accessToken(expectedAccount: string): Promise<string> {
 
 /** A rejected token is invalidated once; the next request renews without UI. */
 export async function invalidateAccessToken(token: string): Promise<void> {
-  const credentials = await storedCredentials();
-  if (credentials?.token === token)
+  const invalidate = credentialWrites.then(async () => {
+    const credentials = await storedCredentials();
+    if (credentials?.token !== token || credentials.expires === 0) return;
+    if (!firefox)
+      await nativeIdentity()
+        .removeCachedAuthToken({ token })
+        .catch(() => {});
     await saveCredentials({ ...credentials, expires: 0 });
-  if (!firefox)
-    await nativeIdentity()
-      .removeCachedAuthToken({ token })
-      .catch(() => {});
+  });
+  credentialWrites = invalidate.catch(() => {});
+  await invalidate;
 }

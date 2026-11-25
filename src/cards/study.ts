@@ -6,10 +6,11 @@ import type {
 } from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
+import { lookupCardWord } from "@/cards/dictionary-word";
+import { germanReflexiveBase } from "@/languages/text";
 import { readingCardIdentity } from "@/cards/encounter-key";
 import { prepareDictionarySnapshot } from "@/cards/snapshot";
 import { dictionaryDisplay } from "@/dictionaries/display";
-import { lookup } from "@/dictionaries/resolve";
 import { getSettings } from "@/settings/store";
 import { dictionaryIpa } from "@/dictionaries/ipa";
 import { dictionaryPronunciations } from "@/dictionaries/pronunciation";
@@ -32,8 +33,10 @@ import type { Vocabulary } from "@/vocabulary/model";
 import { applyDefinitionOverrides } from "@/vocabulary/definitions";
 
 function lexicalClass(meanings: Meaning[], imported: string[]) {
-  const parts = imported.length
-    ? imported
+  if (imported.some((part) => /^phrase$/i.test(part))) return undefined;
+  const supplied = importedPartValues(imported);
+  const parts = supplied.length
+    ? supplied
     : dictionaryTagValues(meanings, "UPOS");
   const noun = parts.some((part) => part === "NOUN" || part === "PROPN");
   const verb = parts.some((part) => part === "VERB" || part === "AUX");
@@ -87,7 +90,7 @@ export function cardStudyDetails(
             })}: ${translated}`;
       });
   }
-  const kind = lexicalClass(meanings, importedPartValues(imported));
+  const kind = lexicalClass(meanings, imported);
   if (
     kind === "noun" ||
     encounter?.pos.split(",").some((pos) => pos === "NOUN" || pos === "PROPN")
@@ -192,19 +195,9 @@ export async function prepareStudyDocument(
   const matchesGender = (meaning: Pick<Meaning, "dictionaryId" | "tags">) =>
     !importedGenders?.length || matchesImportedGender(meaning, importedGenders);
   const settings = { ...(await getSettings()), studyLanguage: word.language };
-  const result = await lookup(word.lemma, settings, {
-    localOnly: true,
-    reading: word.reading,
-  });
   const live =
-    (
-      result.words.find((candidate) => candidate.id === document.note.wordId) ??
-      result.words.find(
-        (candidate) =>
-          !candidate.reading &&
-          candidate.lemma.normalize() === word.lemma.normalize(),
-      )
-    )?.meanings ?? [];
+    (await lookupCardWord(word.lemma, word.reading, settings, { imported }))
+      ?.meanings ?? [];
   const liveDictionaries = new Set(live.map((meaning) => meaning.dictionaryId));
   const visible = (id: string) =>
     !word.hiddenDictionaries?.includes(id) &&
@@ -241,8 +234,11 @@ export async function prepareStudyDocument(
     reader &&
     word.language === "de" &&
     !ambiguousGender &&
-    lexicalClass(meanings, importedPartValues(imported))
-      ? await dictionaryInflections(word.lemma, meanings)
+    lexicalClass(meanings, imported)
+      ? await dictionaryInflections(
+          germanReflexiveBase(word.language, word.lemma) ?? word.lemma,
+          meanings,
+        )
       : [];
   const study = cardStudyDetails(
     word.language,
@@ -251,8 +247,11 @@ export async function prepareStudyDocument(
     encounter,
     imported,
   );
-  if (importedGenders?.length)
+  if (imported.some((part) => /^phrase$/i.test(part)))
+    study.article = undefined;
+  else if (importedGenders?.length)
     study.article = nounArticle(word.language, undefined, importedGenders);
+  else if (/\s/u.test(word.lemma)) study.article = undefined;
   const field = document.noteType.bindings.definitions;
   let stored =
     reader && field !== undefined ? (document.note.fields[field] ?? "") : "";

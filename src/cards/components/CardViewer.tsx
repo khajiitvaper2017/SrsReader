@@ -340,9 +340,13 @@ export function CardViewer({
                 cardId: active.id,
                 requestId: value.requestId,
                 blob,
-                error: blob
-                  ? undefined
-                  : t("card_asset_unavailable", { name: value.name }),
+                error:
+                  blob ||
+                  /\.(?:mp3|ogg|opus|oga|wav|m4a|aac|flac|mp4|webm|png|jpe?g|gif|webp|avif|svg)(?:[?#].*)?$/i.test(
+                    value.name,
+                  )
+                    ? undefined
+                    : t("card_asset_unavailable", { name: value.name }),
               },
               "*",
             );

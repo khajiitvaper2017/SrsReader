@@ -103,6 +103,7 @@ export async function handle(request: Request, warn?: ScanWarning) {
     case "activateAlgorithm":
     case "previewFsrsMigration":
     case "rescheduleModel":
+    case "saveFsrsOptimization":
     case "reschedule":
       return handleSrs(request, settings);
     case "audio":

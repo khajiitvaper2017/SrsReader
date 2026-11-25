@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.4 (2026-11-25)
+
+### Changes
+
+- Optimize FSRS parameters in Review settings using your collection’s review history. Existing due dates are preserved. [#20](https://github.com/khajiitvaper2017/SrsReader/issues/20)
+- Study available German compound components before the full word in the same deck. For example, study _Last_ before _Lastwagen_. [#25](https://github.com/khajiitvaper2017/SrsReader/issues/25)
+
+### Fixes
+
+- Advance faster after grading or burying a card and start loading audio for upcoming cards sooner. Count learning cards while they wait for their timers, and alternate new cards and reviews while both are available. [#21](https://github.com/khajiitvaper2017/SrsReader/issues/21)
+- Move the short answer closer to the top of review cards, remove redundant headings, and prefer shorter examples. German phrases such as _Prost_ no longer get an automatic noun article. [#21](https://github.com/khajiitvaper2017/SrsReader/issues/21)
+- Preserve German reflexive headwords during Anki conversion and use the base verb’s dictionary entry when needed. [#22](https://github.com/khajiitvaper2017/SrsReader/issues/22)
+- Warn about missing media before importing an Anki package. Updates reuse saved media when available. [#23](https://github.com/khajiitvaper2017/SrsReader/issues/23)
+- Retry Google Drive authorization silently and show a single warning when reconnection needs your attention. [#24](https://github.com/khajiitvaper2017/SrsReader/issues/24)
+
 ## 0.3.3 (2026-11-20)
 
 ### Changes

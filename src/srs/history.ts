@@ -6,7 +6,7 @@ import type {
 import { scheduleSchema, timestampSchema } from "@/srs/model";
 import { cardSchema } from "@/cards/model";
 import { z } from "zod";
-import { fsrsVersionSchema } from "@/srs/preferences";
+import { fsrsVersionSchema } from "@/srs/fsrs-config";
 
 export const fsrsLogSchema = z.object({
   cardId: z.union([z.string(), z.number()]),

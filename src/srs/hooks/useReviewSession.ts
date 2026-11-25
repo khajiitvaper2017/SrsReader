@@ -46,6 +46,7 @@ export function useReviewSession({
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const queueRevision = useRef(0);
+  const previous = useRef<"fresh" | "reviews" | undefined>(undefined);
   const [last, setLast] = useState(sessionStorage.getItem("last-review") || "");
   const [example, setExample] = useState(0);
   const readingRef = useRef<HTMLDivElement>(null);
@@ -148,15 +149,24 @@ export function useReviewSession({
   }, [word?.id, word?.version, encounter, settings, sentenceRevision, preload]);
   const duration = useReviewClock(`${word?.id}:${word?.card?.reps}`);
   const fetchQueue = useCallback(
-    (currentCardId?: string) =>
-      srsClient({
+    async (currentCardId?: string) => {
+      const value = await srsClient({
         action: "queue",
         currentCardId,
+        previous: previous.current,
         language: settings.studyLanguage,
         deckId,
         limits: limits.current,
-      }),
-    [deckId, settings.studyLanguage],
+      });
+      const first = value.words[0];
+      if (first && value.document) {
+        const prepared = await preload.loadDocument(first, value.document);
+        if (prepared)
+          value.document = { ...value.document, study: prepared.study };
+      }
+      return value;
+    },
+    [deckId, settings.studyLanguage, preload],
   );
   const loadQueue = useCallback(
     (preserveCurrent: boolean) => {
@@ -180,6 +190,9 @@ export function useReviewSession({
   const load = useCallback(() => loadQueue(false), [loadQueue]);
   const refresh = useCallback(() => loadQueue(true), [loadQueue]);
   useEffect(() => {
+    previous.current = undefined;
+  }, [deckId, settings.studyLanguage]);
+  useEffect(() => {
     load();
     return () => {
       queueRevision.current++;
@@ -198,6 +211,7 @@ export function useReviewSession({
     setExample(0);
     stopAudio();
   }, [word?.id, word?.card?.reps]);
+  const revealedForPreview = settings.algorithm === "rwkv" && revealed;
   useEffect(() => {
     if (!word) return;
     let alive = true;
@@ -217,14 +231,7 @@ export function useReviewSession({
     return () => {
       alive = false;
     };
-  }, [
-    word?.id,
-    word?.srsVersion,
-    queue?.document,
-    settings,
-    revealed,
-    duration,
-  ]);
+  }, [word?.id, word?.srsVersion, settings, revealedForPreview, duration]);
   useEffect(() => {
     if (!queue?.wakeAt) return;
     const timer = setTimeout(
@@ -255,20 +262,8 @@ export function useReviewSession({
       });
       if (result.autoBuried) notifyAutoBury(result.reviewId);
       const card = word.card!;
-      setAnswers((answers) => [
-        ...answers,
-        {
-          id: result.reviewId,
-          rating,
-          introduced: card.state === 0,
-          recall:
-            card.state === 2 ||
-            (card.lastReviewAt !== null &&
-              studyDay(card.lastReviewAt, settings.rolloverHour) <
-                studyDay(time, settings.rolloverHour)),
-          durationMs,
-        },
-      ]);
+      if (card.state === 0) previous.current = "fresh";
+      else if (card.state === 2 || card.interday) previous.current = "reviews";
       setLast(result.reviewId);
       sessionStorage.setItem("last-review", result.reviewId);
       await fetchQueue()
@@ -285,6 +280,20 @@ export function useReviewSession({
             setError(error.message);
           }
         });
+      setAnswers((answers) => [
+        ...answers,
+        {
+          id: result.reviewId,
+          rating,
+          introduced: card.state === 0,
+          recall:
+            card.state === 2 ||
+            (card.lastReviewAt !== null &&
+              studyDay(card.lastReviewAt, settings.rolloverHour) <
+                studyDay(time, settings.rolloverHour)),
+          durationMs,
+        },
+      ]);
     } catch (error) {
       setError((error as Error).message);
     } finally {
@@ -295,6 +304,31 @@ export function useReviewSession({
   function reveal() {
     cancelAudio();
     setRevealed(true);
+  }
+  async function bury() {
+    if (!word || busyRef.current) return;
+    busyRef.current = true;
+    const revision = ++queueRevision.current;
+    setBusy(true);
+    setError("");
+    cancelAudio();
+    try {
+      await srsClient({ action: "bury", cardId: word.id });
+      const card = word.card!;
+      if (card.state === 0) previous.current = "fresh";
+      else if (card.state === 2 || card.interday) previous.current = "reviews";
+      const value = await fetchQueue();
+      if (revision === queueRevision.current) {
+        setRevealed(false);
+        setExample(0);
+        setQueue(value);
+      }
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
   }
   const timer = useTimedReview({
     settings: settings.timedReview,
@@ -330,6 +364,7 @@ export function useReviewSession({
     setError("");
     try {
       await srsClient({ action: "undo", id: last });
+      previous.current = undefined;
       notifications.hide(last);
       setAnswers((answers) => answers.filter((answer) => answer.id !== last));
       setLast("");
@@ -397,6 +432,7 @@ export function useReviewSession({
     sentenceLoading,
     load,
     gradeWord,
+    bury,
     playAudio,
     reveal,
     undo,

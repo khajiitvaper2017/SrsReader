@@ -113,6 +113,12 @@ export default defineConfig({
         ),
         relativeDest: "anki/sqlite3.wasm",
       });
+      files.push({
+        absoluteSrc: resolve(
+          "node_modules/@open-spaced-repetition/binding-wasm32-wasip1/LICENSE",
+        ),
+        relativeDest: "licenses/fsrs-optimizer.txt",
+      });
     },
   },
   manifest: ({ browser, mode }) => ({

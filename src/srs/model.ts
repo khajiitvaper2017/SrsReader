@@ -1,40 +1,14 @@
 import { z } from "zod";
-import {
-  checkFSRS6Parameters,
-  FSRS6_DEFAULT_WEIGHTS,
-} from "ts-fsrs/models/fsrs-6";
-import {
-  checkFSRS7Parameters,
-  FSRS7_DEFAULT_WEIGHTS,
-} from "ts-fsrs/models/fsrs-7";
+import { FSRS6_DEFAULT_WEIGHTS } from "ts-fsrs/models/fsrs-6";
+import { FSRS7_DEFAULT_WEIGHTS } from "ts-fsrs/models/fsrs-7";
 import { t } from "@/shared/i18n/i18n";
-import { fsrsVersionSchema } from "@/srs/preferences";
+import { fsrsConfigSchema } from "@/srs/fsrs-config";
 
 export const timestampSchema = z
   .number()
   .finite()
   .min(-8640000000000000)
   .max(8640000000000000);
-const weightChecks = {
-  "6": checkFSRS6Parameters,
-  "7": checkFSRS7Parameters,
-};
-export const fsrsConfigSchema = z
-  .object({
-    version: fsrsVersionSchema,
-    weights: z.array(z.number().finite()).min(1),
-  })
-  .superRefine((model, context) => {
-    try {
-      weightChecks[model.version](model.weights);
-    } catch {
-      context.addIssue({
-        code: "custom",
-        path: ["weights"],
-        message: t("srs_fsrs_invalid_parameters"),
-      });
-    }
-  });
 export const currentScheduleSchema = z
   .object({
     dueAt: timestampSchema,
@@ -121,7 +95,6 @@ export const scheduleSchema = z.union([
 ]);
 
 export type Schedule = z.infer<typeof currentScheduleSchema>;
-export type FsrsConfig = z.infer<typeof fsrsConfigSchema>;
 
 export function emptySchedule(now = Date.now()): Schedule {
   return {

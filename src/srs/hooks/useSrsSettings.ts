@@ -2,6 +2,8 @@ import type { Settings } from "@/settings/model";
 import { srsClient } from "@/srs/client";
 import type { Responses } from "@/srs/contracts";
 import { useEffect, useState } from "react";
+import OptimizeWorker from "@/srs/optimize.worker?worker";
+import { t } from "@/shared/i18n/i18n";
 
 export function useSrsSettings({
   settings,
@@ -38,5 +40,40 @@ export function useSrsSettings({
     }
   }
 
-  return { busy, status, bands, setBands, task, prepare };
+  async function optimize() {
+    const worker = new OptimizeWorker();
+    try {
+      const weights = await new Promise<number[]>((resolve, reject) => {
+        worker.onmessage = ({ data }) => {
+          if (data.type === "result") resolve(data.weights);
+          else
+            reject(
+              new Error(
+                t(
+                  data.type === "insufficient"
+                    ? "srs_fsrs_optimization_insufficient"
+                    : "srs_fsrs_optimization_failed",
+                ),
+              ),
+            );
+        };
+        worker.onerror = () =>
+          reject(new Error(t("srs_fsrs_optimization_failed")));
+        worker.postMessage({
+          fsrsVersion: settings.fsrsVersion,
+          rolloverHour: settings.rolloverHour,
+          relearningSteps: settings.relearningSteps,
+        });
+      });
+      return await srsClient({
+        action: "saveFsrsOptimization",
+        model: { version: settings.fsrsVersion, weights },
+        rolloverHour: settings.rolloverHour,
+      });
+    } finally {
+      worker.terminate();
+    }
+  }
+
+  return { busy, status, bands, setBands, task, prepare, optimize };
 }
