@@ -53,9 +53,11 @@ const noOmittedFields: number[] = [];
 export function AnkiTransfer({
   settings,
   onComplete,
+  onExportWordList,
 }: {
   settings: Settings;
   onComplete: () => void;
+  onExportWordList: () => void;
 }) {
   const theme = useMantineTheme();
   const narrow = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
@@ -220,6 +222,13 @@ export function AnkiTransfer({
                 leftSection={<ArrowUpFromLine aria-hidden size={16} />}
               >
                 {t("anki_export")}
+              </Menu.Item>
+              <Menu.Item
+                disabled={busy}
+                leftSection={<ArrowUpFromLine aria-hidden size={16} />}
+                onClick={onExportWordList}
+              >
+                {t("word_list_export")}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>

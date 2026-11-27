@@ -1,6 +1,6 @@
 import type { DictionaryRole } from "@/dictionaries/display";
 import { isOnlineDictionary } from "@/dictionaries/online";
-import { Button, Group, Select, Switch, Box, Text, Stack } from "@mantine/core";
+import { Box, Button, Group, Select, Switch, Text, Stack } from "@mantine/core";
 import { AudioSettings } from "@/audio/components/AudioSettings";
 import { audioClient } from "@/audio/client";
 import { BackupSettings } from "@/backups/components/BackupSettings";
@@ -27,6 +27,7 @@ import { settingsSections } from "@/settings/navigation";
 import { WordColors } from "@/settings/components/WordColors";
 import { AppearanceSettings } from "@/settings/components/AppearanceSettings";
 import {
+  Activity,
   useCallback,
   useEffect,
   useMemo,
@@ -50,12 +51,26 @@ export function SettingsPage({
   language?: string;
   dictionaryTab?: string;
 }) {
+  const sections = settingsSections;
+  const selected = sections.some((section) => section.value === tab)
+    ? tab
+    : "general";
+  const needsLanguageData = setup || selected === "dictionaries";
+  const needsDictionaries =
+    needsLanguageData || selected === "reading" || selected === "review";
+  const [visitedSections, setVisitedSections] = useState<string[]>([]);
+  useEffect(() => {
+    if (!setup)
+      setVisitedSections((visited) =>
+        visited.includes(selected) ? visited : [...visited, selected],
+      );
+  }, [setup, selected]);
   const [loadedDictionaries, setDictionaries] = useState<Dictionary[]>();
   const dictionaries = loadedDictionaries ?? [];
   const languages = [
     ...new Set([
       ...preferences.studyLanguages,
-      ...(setup || tab === "dictionaries"
+      ...(needsLanguageData
         ? dictionaries
             .filter((dictionary) => !isOnlineDictionary(dictionary.id))
             .map((dictionary) => dictionary.language)
@@ -70,14 +85,23 @@ export function SettingsPage({
     [preferences, selectedLanguage],
   );
   const { setError, busy, setBusy } = tasks;
-  const languageData = useLanguageData(settings.studyLanguage, tasks);
+  const languageData = useLanguageData(
+    needsLanguageData ? settings.studyLanguage : "",
+    tasks,
+  );
   const load = useCallback(() => {
     void dictionariesClient({ action: "dictionaries" })
       .then(setDictionaries)
       .catch((error) => setError(error.message));
-  }, []);
-  useEffect(load, [load]);
-  useChanges(load, ["dictionaries", "settings"]);
+  }, [setError]);
+  useEffect(() => {
+    if (needsDictionaries && !loadedDictionaries) load();
+  }, [needsDictionaries, loadedDictionaries, load]);
+  const dictionariesChanged = useCallback(() => {
+    if (needsDictionaries) load();
+    else setDictionaries(undefined);
+  }, [needsDictionaries, load]);
+  useChanges(dictionariesChanged, ["dictionaries", "settings"]);
   async function update(patch: Partial<Settings>) {
     const next = { ...preferences, ...patch };
     setSettings(next);
@@ -113,10 +137,6 @@ export function SettingsPage({
       setBusy(false);
     }
   }
-  const sections = settingsSections;
-  const selected = sections.some((section) => section.value === tab)
-    ? tab
-    : "general";
   const dictionaryRole: DictionaryRole =
     dictionaryTab === "frequency" ? "frequency" : "vocabulary";
   function navigate(
@@ -151,6 +171,15 @@ export function SettingsPage({
         )}
         {content}
       </Stack>
+    );
+  }
+  function panel(section: string, content: ReactNode) {
+    const active = selected === section;
+    if (!active && !visitedSections.includes(section)) return null;
+    return (
+      <Activity key={section} mode={active ? "visible" : "hidden"}>
+        {content}
+      </Activity>
     );
   }
   const dictionarySettings = loadedDictionaries && (
@@ -208,7 +237,8 @@ export function SettingsPage({
     </>
   ) : (
     <>
-      <Box style={{ display: selected === "general" ? undefined : "none" }}>
+      {panel(
+        "general",
         <Stack>
           <LanguageSettings settings={settings} onChange={update} />
           <AppearanceSettings settings={settings} onChange={update} />
@@ -217,10 +247,11 @@ export function SettingsPage({
               {t("open_setup")}
             </Button>
           </Group>
-        </Stack>
-      </Box>
-      <Box style={{ display: selected === "reading" ? undefined : "none" }}>
-        {withLanguagePicker(
+        </Stack>,
+      )}
+      {panel(
+        "reading",
+        withLanguagePicker(
           <Stack>
             {loadedDictionaries && (
               <ReadingSettings
@@ -231,15 +262,15 @@ export function SettingsPage({
             )}
             <WordColors settings={settings} onChange={update} />
           </Stack>,
-        )}
-      </Box>
-      <Box
-        style={{ display: selected === "dictionaries" ? undefined : "none" }}
-      >
-        {withLanguagePicker(<Stack>{dictionarySettings}</Stack>)}
-      </Box>
-      <Box style={{ display: selected === "review" ? undefined : "none" }}>
-        {withLanguagePicker(
+        ),
+      )}
+      {panel(
+        "dictionaries",
+        withLanguagePicker(<Stack>{dictionarySettings}</Stack>),
+      )}
+      {panel(
+        "review",
+        withLanguagePicker(
           loadedDictionaries && (
             <ReviewSettings
               settings={settings}
@@ -248,20 +279,23 @@ export function SettingsPage({
               onError={setError}
             />
           ),
-        )}
-      </Box>
-      <Box style={{ display: selected === "controls" ? undefined : "none" }}>
+        ),
+      )}
+      {panel(
+        "controls",
         <Stack>
           <LookupSettings settings={settings} onChange={update} />
           <ReviewControls settings={settings} onChange={update} />
-        </Stack>
-      </Box>
-      <Box style={{ display: selected === "audio" ? undefined : "none" }}>
-        {withLanguagePicker(
+        </Stack>,
+      )}
+      {panel(
+        "audio",
+        withLanguagePicker(
           <AudioSettings settings={settings} onChange={update} />,
-        )}
-      </Box>
-      <Box style={{ display: selected === "translation" ? undefined : "none" }}>
+        ),
+      )}
+      {panel(
+        "translation",
         <Stack>
           <Switch
             labelPosition="left"
@@ -298,14 +332,17 @@ export function SettingsPage({
           <Text variant="supporting">
             {t("translation_stays_on_your_device_models_download_on")}
           </Text>
-        </Stack>
-      </Box>
-      <Box style={{ display: selected === "sync" ? undefined : "none" }}>
-        <SyncSettings />
-      </Box>
-      <Box style={{ display: selected === "backups" ? undefined : "none" }}>
-        <BackupSettings setSettings={setSettings} tasks={tasks} />
-      </Box>
+        </Stack>,
+      )}
+      {(selected === "sync" || visitedSections.includes("sync")) && (
+        <Box hidden={selected !== "sync"}>
+          <SyncSettings />
+        </Box>
+      )}
+      {panel(
+        "backups",
+        <BackupSettings setSettings={setSettings} tasks={tasks} />,
+      )}
     </>
   );
   return (

@@ -41,6 +41,7 @@ function themeVariables() {
     "spacing-md",
     "radius-default",
     "font-size-md",
+    "font-size-xl",
     "font-size-xs",
   ];
   return `:root{${names.map((name) => `--mantine-${name}:${style.getPropertyValue(`--mantine-${name}`)}`).join(";")}}`;

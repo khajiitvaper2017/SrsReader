@@ -2,8 +2,11 @@ import { Stack } from "@mantine/core";
 import { ErrorBox } from "@/shared/ui/ErrorBox";
 import { ReviewCalendar } from "@/srs/components/ReviewCalendar";
 import { useReviewStatistics } from "@/srs/hooks/useReviewStatistics";
+import { memo } from "react";
+import { useTranslation } from "react-i18next";
 
-export function ReviewStatistics() {
+export const ReviewStatistics = memo(function ReviewStatistics() {
+  useTranslation();
   const { data, error, loading, setYear } = useReviewStatistics();
   return (
     <Stack>
@@ -18,4 +21,4 @@ export function ReviewStatistics() {
       )}
     </Stack>
   );
-}
+});

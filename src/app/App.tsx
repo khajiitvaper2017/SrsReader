@@ -17,12 +17,11 @@ import { stopAudio } from "@/audio/playback";
 import { useSettings } from "@/settings/hooks/useSettings";
 import { useSettingsTask } from "@/settings/hooks/useSettingsTask";
 import { settingsSections } from "@/settings/navigation";
-import { useChanges } from "@/shared/hooks/useChanges";
 import { t } from "@/shared/i18n/i18n";
 import { Logo } from "@/shared/ui/Logo";
 import { PageHeaderContext } from "@/shared/ui/PageHeader";
 import { TaskAlerts } from "@/shared/ui/TaskAlerts";
-import { srsClient } from "@/srs/client";
+import { useStudyOverview } from "@/srs/hooks/useStudyOverview";
 import { useSync, useSyncLifecycle } from "@/sync/hooks/useSync";
 import {
   BookMarked,
@@ -30,7 +29,7 @@ import {
   Search,
   Settings as SettingsIcon,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, type MouseEvent } from "react";
 const loadReviewPage = () => import("@/app/pages/ReviewPage");
 // Initial study navigation must not wait for Suspense's fallback minimum.
 const ReviewPage = location.hash.startsWith("#review/session")
@@ -40,31 +39,45 @@ const ReviewPage = location.hash.startsWith("#review/session")
         default: module.ReviewPage,
       })),
     );
-const StudyPage = React.lazy(() =>
+const loadStudyPage = () =>
   import("@/app/pages/StudyPage").then((module) => ({
     default: module.StudyPage,
-  })),
-);
-const SettingsPage = React.lazy(() =>
+  }));
+const loadSettingsPage = () =>
   import("@/app/pages/SettingsPage").then((module) => ({
     default: module.SettingsPage,
-  })),
-);
+  }));
+const loadWordsPage = () =>
+  import("@/app/pages/WordsPage").then((module) => ({
+    default: module.WordsPage,
+  }));
+const loadSearchPage = () =>
+  import("@/app/pages/SearchPage").then((module) => ({
+    default: module.SearchPage,
+  }));
+const StudyPage = React.lazy(loadStudyPage);
+const SettingsPage = React.lazy(loadSettingsPage);
+const WordsPage = React.lazy(loadWordsPage);
+const SearchPage = React.lazy(loadSearchPage);
 const ChangelogPage = React.lazy(() =>
   import("@/app/pages/ChangelogPage").then((module) => ({
     default: module.ChangelogPage,
   })),
 );
-const WordsPage = React.lazy(() =>
-  import("@/app/pages/WordsPage").then((module) => ({
-    default: module.WordsPage,
-  })),
-);
-const SearchPage = React.lazy(() =>
-  import("@/app/pages/SearchPage").then((module) => ({
-    default: module.SearchPage,
-  })),
-);
+const menuPages = {
+  review: loadStudyPage,
+  settings: loadSettingsPage,
+  words: loadWordsPage,
+  search: loadSearchPage,
+};
+const warmedMenuPages = new Set<keyof typeof menuPages>();
+
+function preloadMenuPage(page: keyof typeof menuPages) {
+  warmedMenuPages.add(page);
+  return menuPages[page]().catch(() => {
+    warmedMenuPages.delete(page);
+  });
+}
 export function App() {
   useSyncLifecycle();
   const sync = useSync();
@@ -80,21 +93,6 @@ export function App() {
   useEffect(() => {
     setNavigationOpen(false);
   }, [hash, desktop]);
-  const [stats, setStats] = useState<{
-    total: number;
-    due: number;
-    known: number;
-    today: number;
-  }>({ total: 0, due: 0, known: 0, today: 0 });
-  const loadStats = useCallback(() => {
-    void srsClient({ action: "stats" }).then(setStats).catch(console.error);
-  }, []);
-  useEffect(loadStats, [loadStats]);
-  useChanges(loadStats, ["vocabulary", "srs", "settings", "collection"]);
-  useEffect(() => {
-    const timer = setInterval(loadStats, 60000);
-    return () => clearInterval(timer);
-  }, [loadStats]);
   useEffect(() => {
     const hash = () => {
       React.startTransition(() => setHash(location.hash.slice(1) || "review"));
@@ -114,15 +112,67 @@ export function App() {
     ? decodeURIComponent(page.split("/")[3] || "") || undefined
     : undefined;
   const setup = page === "setup" || !settings.setupComplete;
-  const root = page.split("/")[0];
+  const root = page.split("/")[0] || "review";
+  const inReviewSession =
+    reviewing && settings.studyLanguages.includes(reviewLanguage);
+  const { overview, error: overviewError } = useStudyOverview(
+    !setup && !inReviewSession,
+  );
+  const due =
+    overview?.reduce(
+      (sum, row) => sum + row.fresh + row.learning + row.due,
+      0,
+    ) ?? 0;
+  useEffect(() => {
+    if (desktop || setup || reviewing) return;
+    let cancelled = false;
+    let idle: number | undefined;
+    const pages = (Object.keys(menuPages) as (keyof typeof menuPages)[]).filter(
+      (page) => page !== root,
+    );
+    function warmNext() {
+      if (cancelled || document.hidden) return;
+      const page = pages.shift();
+      if (!page) return;
+      if (warmedMenuPages.has(page)) {
+        warmNext();
+        return;
+      }
+      idle = requestIdleCallback(() => {
+        if (!document.hidden) void preloadMenuPage(page).then(warmNext);
+      });
+    }
+    const current = Object.hasOwn(menuPages, root)
+      ? menuPages[root as keyof typeof menuPages]()
+      : loadStudyPage();
+    void current.then(warmNext, () => {});
+    return () => {
+      cancelled = true;
+      if (idle !== undefined) cancelIdleCallback(idle);
+    };
+  }, [desktop, setup, reviewing, root]);
   const links = [
     { id: "review", label: t("study_languages"), icon: BookOpen },
     { id: "words", label: t("words"), icon: BookMarked },
     { id: "search", label: t("search"), icon: Search },
     { id: "settings", label: t("settings"), icon: SettingsIcon },
-  ];
+  ] as const;
   const settingsSection =
     root === "settings" ? page.split("/")[1] || "general" : "";
+  function followMenuLink(event: MouseEvent<HTMLAnchorElement>) {
+    if (
+      event.button ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    const destination = event.currentTarget.hash;
+    event.preventDefault();
+    if (destination !== location.hash) location.hash = destination;
+    setNavigationOpen(false);
+  }
   const navigation = () => (
     <Stack component="nav" aria-label={t("pages")} gap="xs">
       {links.map(({ id, label, icon: Icon }) => (
@@ -139,11 +189,9 @@ export function App() {
             }
             leftSection={<Icon aria-hidden size={20} />}
             rightSection={
-              id === "review" && stats.due > 0 ? (
-                <Badge>{stats.due}</Badge>
-              ) : undefined
+              id === "review" && due > 0 ? <Badge>{due}</Badge> : undefined
             }
-            onClick={() => setNavigationOpen(false)}
+            onClick={followMenuLink}
             mih={44}
           />
           {id === "settings" && (
@@ -157,7 +205,7 @@ export function App() {
                   leftSection={<Icon aria-hidden size={20} />}
                   active={settingsSection === value}
                   aria-current={settingsSection === value ? "page" : undefined}
-                  onClick={() => setNavigationOpen(false)}
+                  onClick={followMenuLink}
                   mih={44}
                 />
               ))}
@@ -204,46 +252,52 @@ export function App() {
         )}
         {!reviewing && !setup && (
           <>
-            <AppShell.Navbar visibleFrom="md">
-              <AppShell.Section
-                grow
-                component={ScrollArea}
-                type="auto"
-                scrollbars="y"
+            {desktop && (
+              <AppShell.Navbar visibleFrom="md">
+                <AppShell.Section
+                  grow
+                  component={ScrollArea}
+                  type="auto"
+                  scrollbars="y"
+                >
+                  <Stack p="md" gap={0}>
+                    <Anchor
+                      href="#review"
+                      underline="never"
+                      c="inherit"
+                      mb="md"
+                      mih={32}
+                    >
+                      <Logo small />
+                    </Anchor>
+                    {navigation()}
+                  </Stack>
+                </AppShell.Section>
+              </AppShell.Navbar>
+            )}
+            {!desktop && (
+              <Drawer
+                opened={navigationOpen && !desktop}
+                onClose={() => setNavigationOpen(false)}
+                keepMounted
+                transitionProps={{ duration: 150 }}
+                title={<Logo small />}
+                closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
+                scrollAreaComponent={ScrollArea.Autosize}
+                size="min(18rem, calc(100vw - 2.75rem))"
+                padding="md"
+                onExitTransitionEnd={() => {
+                  if (!desktop)
+                    headerTarget
+                      ?.querySelector<HTMLButtonElement>(
+                        "[data-navigation-trigger]",
+                      )
+                      ?.focus({ preventScroll: true });
+                }}
               >
-                <Stack p="md" gap={0}>
-                  <Anchor
-                    href="#review"
-                    underline="never"
-                    c="inherit"
-                    mb="md"
-                    mih={32}
-                  >
-                    <Logo small />
-                  </Anchor>
-                  {navigation()}
-                </Stack>
-              </AppShell.Section>
-            </AppShell.Navbar>
-            <Drawer
-              opened={navigationOpen && !desktop}
-              onClose={() => setNavigationOpen(false)}
-              title={<Logo small />}
-              closeButtonProps={{ "aria-label": t("close"), size: "xl" }}
-              scrollAreaComponent={ScrollArea.Autosize}
-              size="min(18rem, calc(100vw - 2.75rem))"
-              padding="md"
-              onExitTransitionEnd={() => {
-                if (!desktop)
-                  headerTarget
-                    ?.querySelector<HTMLButtonElement>(
-                      "[data-navigation-trigger]",
-                    )
-                    ?.focus({ preventScroll: true });
-              }}
-            >
-              {navigation()}
-            </Drawer>
+                {navigation()}
+              </Drawer>
+            )}
           </>
         )}
         <AppShell.Main>
@@ -281,8 +335,7 @@ export function App() {
                 />
               ) : page === "search" ? (
                 <SearchPage settings={settings} />
-              ) : reviewing &&
-                settings.studyLanguages.includes(reviewLanguage) ? (
+              ) : inReviewSession ? (
                 <ReviewPage
                   key={`${reviewLanguage}:${deckId || ""}`}
                   settings={reviewSettings}
@@ -293,6 +346,8 @@ export function App() {
                   settings={settings}
                   setSettings={setSettings}
                   sync={sync}
+                  overview={overview}
+                  overviewError={overviewError}
                 />
               )}
             </React.Suspense>

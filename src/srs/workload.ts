@@ -43,11 +43,19 @@ export async function dailyCounts(
     settings.rolloverHour,
   );
   const history = await historyForDay(settings.studyLanguage, start, now);
-  const byCard = new Map<string, { introduced: number; reviews: number }>();
+  const byCard = new Map<
+    string,
+    { introduced: number; reviews: number; failed: boolean }
+  >();
   let introduced = 0;
   let reviews = 0;
   for (const review of history) {
-    const counts = byCard.get(review.cardId) ?? { introduced: 0, reviews: 0 };
+    const counts = byCard.get(review.cardId) ?? {
+      introduced: 0,
+      reviews: 0,
+      failed: false,
+    };
+    if (review.rating === 1) counts.failed = true;
     if (!review.before?.schedule?.reps && !counts.introduced) {
       counts.introduced = 1;
       introduced++;

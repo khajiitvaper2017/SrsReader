@@ -3,6 +3,7 @@ import { displayedWords } from "../src/dictionaries/display";
 import { phraseMatchesPartOfSpeech } from "../src/reader/phrase-matching";
 import { ankiFieldText } from "../src/anki/field-text";
 import { germanNounField, nounArticle } from "../src/cards/noun-article";
+import { filterReflexiveSenses } from "../src/cards/reflexive-senses";
 import { germanReflexiveBase } from "../src/languages/text";
 
 import { cardEncounterKey } from "../src/cards/encounter-key";
@@ -32,6 +33,19 @@ test("Anki field markup preserves German reflexive infinitives", () => {
   );
   expect(germanReflexiveBase("de", "sich hinlegen")).toBe("hinlegen");
   expect(germanReflexiveBase("de", "sich erinnern")).toBe("erinnern");
+});
+
+test("sich leisten prefers the reflexive Wiktionary gloss when present", () => {
+  const sense = (tag: string, gloss: string) =>
+    `<li><div><div data-sc-content="tags"><span data-sc-content="tag">${tag}</span></div>${gloss}</div></li>`;
+  const ordinary = sense("vt", "to perform") + sense("vt", "to provide");
+  const reflexive = sense("vr", "to afford");
+  const glossary = (senses: string) =>
+    `<ol data-sc-content="glosses">${senses}</ol>`;
+  expect(filterReflexiveSenses(glossary(ordinary + reflexive))).toBe(
+    glossary(reflexive),
+  );
+  expect(filterReflexiveSenses(glossary(ordinary))).toBe(glossary(ordinary));
 });
 
 const examples = [

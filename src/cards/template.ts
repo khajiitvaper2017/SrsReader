@@ -267,7 +267,7 @@ export function renderCard(
   const reader = noteType.id.startsWith("reader:");
   const answer =
     revealed && note.reviewAnswer
-      ? `<div class="srs-study-section" style="text-align:center;white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(note.reviewAnswer)}</div>`
+      ? `<div class="srs-study-section" style="font-size:var(--mantine-font-size-xl,1.25rem);font-weight:600;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere">${escapeHtml(note.reviewAnswer)}</div>`
       : "";
   if (reader) {
     const study = document.study;

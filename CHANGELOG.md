@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.5 (2026-11-27)
+
+### Changes
+
+- Open menus and switch between screens faster on phones.
+- Export a plain-text word list from Study. Filter by deck or language and choose words you struggled with, failed today, or had automatically buried. [#26](https://github.com/khajiitvaper2017/SrsReader/issues/26)
+
+### Fixes
+
+- Make short answers larger on review cards. Prefer reflexive dictionary senses for German reflexive cards when the dictionary provides them. [#26](https://github.com/khajiitvaper2017/SrsReader/issues/26)
+- Refresh existing frequency decks using their saved dictionary even when the language is disabled for the reader. [#26](https://github.com/khajiitvaper2017/SrsReader/issues/26)
+
 ## 0.3.4 (2026-11-25)
 
 ### Changes

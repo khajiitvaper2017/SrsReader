@@ -109,6 +109,7 @@ async function execute(request: Request, settings: Settings) {
         request.language,
         request.deckId,
         request.operation,
+        request.dictionaryId,
       );
       await notify(undefined, "collection");
       return;

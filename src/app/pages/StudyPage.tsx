@@ -19,6 +19,7 @@ import {
 } from "@mantine/core";
 import { dictionariesClient } from "@/dictionaries/client";
 import type { Dictionary } from "@/dictionaries/model";
+import { frequencyDictionaries } from "@/dictionaries/storage";
 import { languageLabel, languageName } from "@/languages/codes";
 import { LanguageSelect } from "@/languages/components/LanguageSelect";
 import { settingsClient } from "@/settings/client";
@@ -35,6 +36,7 @@ import { deckPathLabel } from "@/srs/deck-tree";
 import { StudyStatistics } from "@/srs/components/StudyStatistics";
 import type { StatisticsScope } from "@/srs/statistics";
 import { ReviewStatistics } from "@/srs/components/ReviewStatistics";
+import { WordListExport } from "@/srs/components/WordListExport";
 import type { Responses } from "@/srs/contracts";
 import type { useSync } from "@/sync/hooks/useSync";
 import {
@@ -61,16 +63,21 @@ type DeckAction = {
   deckId: string;
   name: string;
   operation: "refresh" | "clear" | "delete" | "reschedule";
+  dictionaryId?: string;
 };
 
 export function StudyPage({
   settings,
   setSettings,
   sync,
+  overview: languages,
+  overviewError,
 }: {
   settings: Settings;
   setSettings: (settings: Settings) => void;
   sync: ReturnType<typeof useSync>;
+  overview: Responses["studyOverview"] | undefined;
+  overviewError: string;
 }) {
   const status = sync.status;
   const canSync = !!status?.connected && !status.authorizationRequired;
@@ -95,7 +102,6 @@ export function StudyPage({
         ? t(syncErrorKey)
         : t("sync_error_detail", { detail: sync.error })
       : "";
-  const [languages, setLanguages] = useState<Responses["studyOverview"]>();
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -112,35 +118,30 @@ export function StudyPage({
     parentId: string | null;
   } | null>(null);
   const [confirmation, setConfirmation] = useState<DeckAction | null>(null);
+  const [refreshSource, setRefreshSource] = useState<string | null>(null);
+  const [exportWords, setExportWords] = useState(false);
   const [language, setLanguage] = useState(settings.studyLanguage);
   const [dictionaryId, setDictionaryId] = useState("");
   const [limit, setLimit] = useState<string | number>(1000);
   const [name, setName] = useState("");
-  const load = useCallback(() => {
-    void Promise.all([
-      srsClient({ action: "studyOverview" }),
-      dictionariesClient({ action: "dictionaries" }),
-    ])
-      .then(([overview, rows]) => {
-        setLanguages(overview);
-        setDictionaries(rows);
-      })
+  const loadDictionaries = useCallback(() => {
+    void dictionariesClient({ action: "dictionaries" })
+      .then(setDictionaries)
       .catch((error) => setError(error.message));
   }, []);
-  useEffect(load, [load]);
-  useChanges(load, [
-    "vocabulary",
-    "srs",
-    "settings",
-    "dictionaries",
-    "collection",
-  ]);
-  const sources = dictionaries.filter(
-    (dictionary) =>
-      settings.frequencyPreferences[dictionary.id]?.enabled !== false &&
-      dictionary.language === language &&
-      dictionary.frequencyCount > 0,
+  useEffect(loadDictionaries, [loadDictionaries]);
+  useChanges(loadDictionaries, ["settings", "dictionaries"]);
+  const frequencySources = frequencyDictionaries(
+    dictionaries,
+    settings.frequencyPreferences,
+  ).filter((dictionary) => dictionary.enabled);
+  const sources = frequencySources.filter(
+    (dictionary) => dictionary.language === language,
   );
+  const refreshSources = frequencySources.filter(
+    (dictionary) => dictionary.language === confirmation?.language,
+  );
+  const confirmingRefresh = confirmation?.operation === "refresh";
   const source =
     sources.find((dictionary) => dictionary.id === dictionaryId) || sources[0];
   async function start(language: string, deckId?: string) {
@@ -175,14 +176,13 @@ export function StudyPage({
         });
       }
       setModal(null);
-      load();
     } catch (error) {
       setError((error as Error).message);
     } finally {
       setBusy(false);
     }
   }
-  async function manageDeck(action: DeckAction | null) {
+  async function manageDeck(action: DeckAction | null, dictionaryId?: string) {
     if (!action) return;
     setBusy(true);
     setError("");
@@ -208,6 +208,7 @@ export function StudyPage({
           language: action.language,
           deckId: action.deckId,
           operation: action.operation,
+          dictionaryId,
         });
       }
       setConfirmation(null);
@@ -218,7 +219,6 @@ export function StudyPage({
             ? t("study_deck_rescheduled", { count: rescheduled })
             : "",
       );
-      load();
     } catch (error) {
       setNotice("");
       setError((error as Error).message);
@@ -255,8 +255,20 @@ export function StudyPage({
         setDeckEditor({ language: row.language, id, parentId })
       }
       manage={(action) => {
-        if (action.operation === "refresh") void manageDeck(action);
-        else setConfirmation(action);
+        if (
+          action.operation === "refresh" &&
+          frequencySources.some(
+            (dictionary) =>
+              dictionary.id === action.dictionaryId &&
+              dictionary.language === action.language,
+          )
+        ) {
+          void manageDeck(action);
+          return;
+        }
+        setError("");
+        setRefreshSource(null);
+        setConfirmation(action);
       }}
     />
   ));
@@ -344,10 +356,21 @@ export function StudyPage({
             >
               <ChartNoAxesColumn size={16} aria-hidden />
             </ActionIcon>
-            <AnkiTransfer settings={settings} onComplete={load} />
+            <AnkiTransfer
+              settings={settings}
+              onComplete={loadDictionaries}
+              onExportWordList={() => setExportWords(true)}
+            />
           </>
         }
       />
+      {exportWords && (
+        <WordListExport
+          language={settings.studyLanguage}
+          languages={languages ?? []}
+          onClose={() => setExportWords(false)}
+        />
+      )}
       {status?.choice ? (
         <Alert color="yellow">
           <Anchor href="#settings/sync">{t("sync_choose_copy")}</Anchor>
@@ -358,7 +381,7 @@ export function StudyPage({
       <ErrorBox error={syncError} />
       <TaskAlerts
         busy={busy}
-        error={modal || confirmation ? "" : error}
+        error={modal || confirmation ? "" : error || overviewError}
         notice={notice}
         onDismissError={() => setError("")}
         onDismissNotice={() => setNotice("")}
@@ -411,10 +434,7 @@ export function StudyPage({
           selection={deckEditor}
           overview={languages}
           onClose={() => setDeckEditor(null)}
-          onSaved={() => {
-            setDeckEditor(null);
-            load();
-          }}
+          onSaved={() => setDeckEditor(null)}
         />
       )}
       {reviewDeck && reviewDeckOptions && (
@@ -422,10 +442,7 @@ export function StudyPage({
           deck={{ ...reviewDeckOptions, language: reviewDeck.language }}
           defaults={settings}
           onClose={() => setReviewDeck(undefined)}
-          onSaved={() => {
-            setReviewDeck(undefined);
-            load();
-          }}
+          onSaved={() => setReviewDeck(undefined)}
         />
       )}
       <Modal
@@ -529,11 +546,13 @@ export function StudyPage({
           if (!busy) setConfirmation(null);
         }}
         title={t(
-          confirmation?.operation === "reschedule"
-            ? "study_reschedule_deck_title"
-            : confirmation?.operation === "delete"
-              ? "study_delete_deck_title"
-              : "study_clear_deck_title",
+          confirmingRefresh
+            ? "study_refresh_deck"
+            : confirmation?.operation === "reschedule"
+              ? "study_reschedule_deck_title"
+              : confirmation?.operation === "delete"
+                ? "study_delete_deck_title"
+                : "study_clear_deck_title",
           { name: confirmation?.name },
         )}
         closeOnClickOutside={!busy}
@@ -542,33 +561,72 @@ export function StudyPage({
       >
         <Stack>
           <ErrorBox error={error} />
-          <Text>
-            {t(
-              confirmation?.operation === "reschedule"
-                ? "study_reschedule_deck_confirm"
-                : confirmation?.operation === "delete"
-                  ? "study_delete_deck_confirm"
-                  : "study_clear_deck_confirm",
-            )}
-          </Text>
+          {confirmingRefresh ? (
+            <>
+              <Text variant="supporting">
+                {t(
+                  refreshSources.length
+                    ? "frequency_deck_choose_replacement"
+                    : "frequency_deck_dictionary_missing",
+                )}
+              </Text>
+              {refreshSources.length > 0 && (
+                <Select
+                  label={t("frequency_deck_dictionary")}
+                  data={refreshSources.map((dictionary) => ({
+                    value: dictionary.id,
+                    label: dictionary.index.title,
+                  }))}
+                  value={refreshSource}
+                  onChange={setRefreshSource}
+                  disabled={busy}
+                />
+              )}
+            </>
+          ) : (
+            <Text>
+              {t(
+                confirmation?.operation === "reschedule"
+                  ? "study_reschedule_deck_confirm"
+                  : confirmation?.operation === "delete"
+                    ? "study_delete_deck_confirm"
+                    : "study_clear_deck_confirm",
+              )}
+            </Text>
+          )}
           <Group justify="flex-end">
             <Button onClick={() => setConfirmation(null)} disabled={busy}>
               {t("cancel")}
             </Button>
             <Button
               color={
-                confirmation?.operation === "reschedule" ? undefined : "red"
+                confirmingRefresh || confirmation?.operation === "reschedule"
+                  ? undefined
+                  : "red"
               }
               variant="filled"
-              onClick={() => void manageDeck(confirmation)}
+              onClick={() =>
+                void manageDeck(
+                  confirmation,
+                  confirmingRefresh ? (refreshSource ?? undefined) : undefined,
+                )
+              }
+              disabled={
+                confirmingRefresh &&
+                !refreshSources.some(
+                  (dictionary) => dictionary.id === refreshSource,
+                )
+              }
               loading={busy}
             >
               {t(
-                confirmation?.operation === "reschedule"
-                  ? "study_reschedule_deck"
-                  : confirmation?.operation === "delete"
-                    ? "study_delete_deck"
-                    : "study_clear_deck",
+                confirmingRefresh
+                  ? "study_refresh_deck"
+                  : confirmation?.operation === "reschedule"
+                    ? "study_reschedule_deck"
+                    : confirmation?.operation === "delete"
+                      ? "study_delete_deck"
+                      : "study_clear_deck",
               )}
             </Button>
           </Group>
@@ -670,6 +728,7 @@ function StudyRows({
                       deckId: deck.id!,
                       name: deckPathLabel(deck.name),
                       operation: "refresh",
+                      dictionaryId: deck.dictionaryId,
                     })
                   }
                 >

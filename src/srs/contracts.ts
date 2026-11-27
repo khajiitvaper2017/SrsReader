@@ -63,6 +63,7 @@ export const requests = [
     language: languageSchema,
     deckId: z.string().min(1),
     operation: z.enum(["refresh", "clear", "delete"]),
+    dictionaryId: z.string().min(1).optional(),
   }),
   z.object({ action: z.literal("sentenceExamples"), id: z.string() }),
   z.object({

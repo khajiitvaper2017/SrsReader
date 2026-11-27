@@ -113,8 +113,10 @@ export async function manageStudyDeck(
   language: string,
   deckId: string,
   operation: "refresh" | "clear" | "delete",
+  dictionaryId?: string,
 ) {
-  if (operation === "refresh") return refreshFrequencyDeck(language, deckId);
+  if (operation === "refresh")
+    return refreshFrequencyDeck(language, deckId, dictionaryId);
   const mined = deckId === "mined";
   if (mined && operation === "delete")
     throw new Error(t("study_deck_not_found"));
@@ -213,11 +215,15 @@ export async function deckReviewSettingsForCards(
   );
 }
 
-async function frequencyDeckWords(dictionaryId: string, limit: number) {
+async function frequencyDeckWords(
+  dictionaryId: string,
+  limit: number,
+  language?: string,
+) {
   const dictionary = (await listFrequencyDictionaries()).find(
     (dictionary) => dictionary.id === dictionaryId,
   );
-  if (!dictionary?.enabled || !dictionary.frequencyCount)
+  if (!dictionary?.enabled || (language && dictionary.language !== language))
     throw new Error(t("frequency_deck_dictionary_missing"));
   const entries = new Map<string, { key: string; reading: string | null }>();
   await db.frequencies
@@ -307,7 +313,11 @@ export async function createFrequencyDeck(
   return deck;
 }
 
-async function refreshFrequencyDeck(language: string, deckId: string) {
+async function refreshFrequencyDeck(
+  language: string,
+  deckId: string,
+  dictionaryId?: string,
+) {
   const deck = await db.decks.get(deckId);
   if (
     !deck ||
@@ -317,7 +327,12 @@ async function refreshFrequencyDeck(language: string, deckId: string) {
   )
     throw new Error(t("study_deck_not_found"));
   clearLookupCache();
-  const { words } = await frequencyDeckWords(deck.dictionaryId, deck.limit);
+  const { dictionary, words } = await frequencyDeckWords(
+    dictionaryId ?? deck.dictionaryId,
+    deck.limit,
+    language,
+  );
+  if (!words.length) throw new Error(t("frequency_deck_no_matching_words"));
   const [saved, cards] = await Promise.all([
     db.vocabulary.where("language").equals(language).toArray(),
     allReviewCards(language),
@@ -379,6 +394,8 @@ async function refreshFrequencyDeck(language: string, deckId: string) {
           )
           .map((card) => card.id),
       );
+      if (deck.dictionaryId !== dictionary.id)
+        await db.decks.update(deckId, { dictionaryId: dictionary.id });
     },
   );
 }

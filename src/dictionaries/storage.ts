@@ -141,10 +141,11 @@ export async function dictionaryImage(id: string, path: string) {
     : undefined;
 }
 
-export async function listFrequencyDictionaries(settings?: Settings) {
-  settings ??= await getSettings();
-  const preferences = settings.frequencyPreferences;
-  return (await listDictionaries(settings))
+export function frequencyDictionaries(
+  dictionaries: Dictionary[],
+  preferences: Settings["frequencyPreferences"],
+) {
+  return dictionaries
     .filter((dictionary) => dictionary.frequencyCount > 0)
     .map((dictionary) => ({
       ...dictionary,
@@ -152,4 +153,12 @@ export async function listFrequencyDictionaries(settings?: Settings) {
       order: preferences[dictionary.id]?.order ?? dictionary.order,
     }))
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+export async function listFrequencyDictionaries(settings?: Settings) {
+  settings ??= await getSettings();
+  return frequencyDictionaries(
+    await listDictionaries(settings),
+    settings.frequencyPreferences,
+  );
 }

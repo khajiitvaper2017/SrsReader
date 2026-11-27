@@ -6,6 +6,7 @@ import type {
 } from "@/cards/model";
 import { meaningsForEncounter } from "@/cards/encounter";
 import { nounArticle } from "@/cards/noun-article";
+import { filterReflexiveSenses } from "@/cards/reflexive-senses";
 import { lookupCardWord } from "@/cards/dictionary-word";
 import { germanReflexiveBase } from "@/languages/text";
 import { readingCardIdentity } from "@/cards/encounter-key";
@@ -283,6 +284,10 @@ export async function prepareStudyDocument(
     stored += html;
     study.dictionaryAssets = dictionaryAssets;
   }
-  study.definitions = stored;
+  study.definitions =
+    germanReflexiveBase(word.language, word.lemma) ||
+    encounter?.feats.Reflex?.split(",").includes("Yes")
+      ? filterReflexiveSenses(stored)
+      : stored;
   return { ...document, study };
 }
