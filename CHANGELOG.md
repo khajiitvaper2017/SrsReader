@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.6 (2026-11-28)
+
+### Fixes
+
+- Prefer examples that use the card’s exact word form. Skip partial words and unrelated abbreviations. [#27](https://github.com/khajiitvaper2017/SrsReader/issues/27)
+- Distinguish the German article _die_ from the capitalized noun _Die_ when creating or refreshing a frequency deck. [#27](https://github.com/khajiitvaper2017/SrsReader/issues/27)
+- Show the saved card’s color in the reader before lookup, including for cards without a saved sentence. [#27](https://github.com/khajiitvaper2017/SrsReader/issues/27)
+- Align the word and controls in the lookup popup on narrow screens. Use a configured touch hold to look up the selected label in a native dropdown. [#27](https://github.com/khajiitvaper2017/SrsReader/issues/27)
+
 ## 0.3.5 (2026-11-27)
 
 ### Changes
