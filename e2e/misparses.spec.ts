@@ -5,6 +5,8 @@ import { ankiFieldText } from "../src/anki/field-text";
 import { germanNounField, nounArticle } from "../src/cards/noun-article";
 import { filterReflexiveSenses } from "../src/cards/reflexive-senses";
 import { germanReflexiveBase } from "../src/languages/text";
+import { exampleFormRank } from "../src/examples/matching";
+import { frequencyHeadwordRank } from "../src/srs/frequency-headword";
 
 import { cardEncounterKey } from "../src/cards/encounter-key";
 import { stateOf, stateForEncounter } from "../src/vocabulary/state";
@@ -23,6 +25,56 @@ import {
   occurrenceGrammar,
   type AnalysisToken,
 } from "../src/languages/analysis";
+
+test("review examples require the whole word and prefer the card's exact form", () => {
+  const rank = (
+    sentence: string,
+    surface: string,
+    lemma: string,
+    verified = false,
+  ) => {
+    const start = sentence.indexOf(surface);
+    return exampleFormRank(
+      sentence,
+      start,
+      start + surface.length,
+      lemma,
+      "de",
+      verified,
+    );
+  };
+  expect(rank("400 g (CHF 0.30/100 g)", "g", "Gesetz")).toBeUndefined();
+  expect(
+    rank("»Es ist rührend, Eddie«, sagte er.", "die", "Die", true),
+  ).toBeUndefined();
+  expect(
+    rank("Wir sind nicht die Einzigen.", "die", "Die", true),
+  ).toBeUndefined();
+  expect(
+    rank(
+      "Deutsche Firmen können die Teile herstellen.",
+      "herstellen",
+      "herstellen",
+    ),
+  ).toBe(0);
+  expect(
+    rank(
+      "Firmen haben beim Herstellen mitgeholfen.",
+      "Herstellen",
+      "herstellen",
+    ),
+  ).toBe(1);
+  expect(
+    rank("Das gilt für alle neuen Gesetze.", "Gesetze", "Gesetz", true),
+  ).toBe(2);
+});
+
+test("frequency entries distinguish the article die from the noun Die", () => {
+  expect(frequencyHeadwordRank("die", "Die", "de")).toBeUndefined();
+  expect(frequencyHeadwordRank("die", "die", "de")).toBe(0);
+  expect(frequencyHeadwordRank("Die", "Die", "de")).toBe(0);
+  expect(frequencyHeadwordRank("hund", "Hund", "de")).toBe(1);
+});
 
 test("Anki field markup preserves German reflexive infinitives", () => {
   expect(ankiFieldText("<div>sich</div><div>hinlegen</div>")).toBe(
@@ -331,7 +383,7 @@ test("Anki nouns match reading encounters using the article's gender", () => {
   expect(stateOf(word, 28, ribbonKey)).toBe("unknown");
   expect(
     stateForEncounter(
-      { state: "new", encounterStates: {}, importedCards },
+      { state: "new", encounterStates: {}, nonEncounterCards: importedCards },
       musicKey,
       28,
     ),

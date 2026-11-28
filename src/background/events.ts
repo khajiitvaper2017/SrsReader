@@ -53,8 +53,8 @@ export async function notify(
           id: wordId,
           state: stateOf(word, matureIntervalDays),
           encounterStates,
-          importedCards: word?.linkedCards
-            .filter((card) => card.importedGenders !== undefined)
+          nonEncounterCards: word?.linkedCards
+            .filter((card) => card.encounterKey === undefined)
             .map(({ importedGenders, suspended, schedule }) => ({
               importedGenders,
               suspended,

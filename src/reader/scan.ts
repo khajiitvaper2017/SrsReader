@@ -542,7 +542,7 @@ export async function scanTexts(
         words,
         settings,
         ordered,
-        candidate.analysis?.terms.slice(0, -1) ?? [],
+        candidate.analysis?.terms ?? [candidate.term],
         vocabulary,
       );
       if (!words.length && !candidate.analysis) continue;
@@ -561,6 +561,16 @@ export async function scanTexts(
           !word.importedGenders ||
           cardsForEncounter([word], encounterKey).length,
       );
+      const partsOfSpeech = candidate.analysis?.partsOfSpeech;
+      if (partsOfSpeech?.length) {
+        const preferred = words.findIndex((word) => {
+          const tags = dictionaryTagValues(word.meanings, "UPOS");
+          return (
+            !tags.length || tags.some((tag) => partsOfSpeech.includes(tag))
+          );
+        });
+        if (preferred > 0) words.unshift(...words.splice(preferred, 1));
+      }
       const state = words.length
         ? stateOf(
             vocabulary.get(words[0]!.id),

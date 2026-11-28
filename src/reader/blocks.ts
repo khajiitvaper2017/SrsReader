@@ -5,6 +5,16 @@ export const blockSelector =
   "p,li,h1,h2,h3,h4,h5,h6,td,th,blockquote,pre,figcaption,div,section,article,main,body";
 export const excludedSelector =
   'script,style,noscript,textarea,input,select,button,nav,[role="menu"],[role="menubar"],[role="toolbar"],[role="navigation"],[role="button"],[role="slider"],[role="progressbar"],[role="scrollbar"],code,[contenteditable]:not([contenteditable="false"]),[aria-hidden="true"],[data-srs-reader],sup[rel~="dc:references"],sup[id^="cite_ref-"]';
+
+export function selectForLookup(target: EventTarget | null, excluded: string) {
+  const select = target instanceof Element && target.closest("select");
+  if (
+    select &&
+    !select.closest('[data-srs-reader],[aria-hidden="true"]') &&
+    !select.parentElement?.closest(excluded)
+  )
+    return select;
+}
 export function makeRange(parts: Part[], start: number, end: number) {
   const first = parts.find((p) => start >= p.start && start < p.end);
   const last = parts.find((p) => end > p.start && end <= p.end);

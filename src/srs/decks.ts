@@ -13,7 +13,11 @@ import { deckQueueScope } from "@/srs/deck-queue";
 import type { Vocabulary } from "@/vocabulary/model";
 import { freshWord } from "@/vocabulary/service";
 import { snapshot } from "@/vocabulary/snapshot";
-import { isFrequencyWord, studyGroups } from "@/srs/deck-words";
+import { studyGroups } from "@/srs/deck-words";
+import {
+  frequencyHeadwordRank,
+  isFrequencyWord,
+} from "@/srs/frequency-headword";
 import {
   allReviewCards,
   replaceMeanings,
@@ -260,13 +264,26 @@ async function frequencyDeckWords(
         )
       )
         continue;
-      const result = candidates.find(
-        (word) =>
-          isFrequencyWord(word.lemma) &&
-          folded(word.lemma, dictionary.language) === key &&
-          (entry.reading === null || word.reading === entry.reading),
-      );
-      if (result?.meanings.length) words.set(result.id, result);
+      let result: LookupWord | undefined;
+      for (const word of candidates) {
+        if (
+          !word.meanings.length ||
+          (entry.reading !== null && word.reading !== entry.reading)
+        )
+          continue;
+        const rank = frequencyHeadwordRank(
+          entry.key,
+          word.lemma,
+          dictionary.language,
+        );
+        if (rank === undefined) continue;
+        result ??= word;
+        if (rank === 0) {
+          result = word;
+          break;
+        }
+      }
+      if (result) words.set(result.id, result);
     }
   }
   return { dictionary, words: [...words.values()] };

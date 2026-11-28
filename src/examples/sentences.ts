@@ -9,6 +9,9 @@ import type { ScanSpan } from "@/reader/scan";
 import type { ReadingContext, Vocabulary } from "@/vocabulary/model";
 import { wordExamples } from "@/examples/query";
 import type { SentenceExample } from "@/examples/model";
+import { exampleFormRank } from "@/examples/matching";
+import { analyzeWords } from "@/languages/morphology";
+import { folded } from "@/languages/text";
 
 async function storeSentences(records: CachedSentence[]) {
   if (!records.length) return;
@@ -96,15 +99,23 @@ export async function sentenceExamples(
     db.vocabulary.where("language").equals(word.language).toArray(),
     wordExamples(word.lemma, word.language, word.lemma, 5),
   ]);
-  const cached = new Set(records.map((record) => record.sentence));
-  const tatoeba = corpus.examples
-    .filter(({ context }) => !cached.has(context.sentence))
-    .map(({ context }) => sentenceFromContext(word.language, context, word.id));
+  const tatoeba = corpus.examples.map(({ context }) =>
+    sentenceFromContext(word.language, context, word.id),
+  );
+  const forms = new Set<string>();
+  for (const record of records)
+    for (const { start, end, ids } of record.tokens)
+      if (ids.includes(word.id)) forms.add(record.sentence.slice(start, end));
+  const lemma = folded(word.lemma, word.language);
+  const analyses = await analyzeWords(
+    [...forms].filter((form) => folded(form, word.language) !== lemma),
+    word.language,
+  );
   const known = new Set(
     vocabulary.filter((entry) => entry.known).map((entry) => entry.id),
   );
   const segmenter = new Intl.Segmenter(word.language, { granularity: "word" });
-  const pools = [records, tatoeba].map((records) =>
+  const pools = [records, tatoeba].map((records, source) =>
     records
       .flatMap((record) => {
         const parts = [...segmenter.segment(record.sentence)].filter(
@@ -112,10 +123,23 @@ export async function sentenceExamples(
         );
         const length = parts.length;
         if (!length) return [];
-        const targets = record.tokens.filter((token) =>
-          token.ids.includes(word.id),
-        );
-        if (!targets.length) return [];
+        const target = record.tokens
+          .flatMap(({ ids, start, end }) => {
+            if (!ids.includes(word.id)) return [];
+            const analyzed = analyses.get(record.sentence.slice(start, end));
+            const rank = exampleFormRank(
+              record.sentence,
+              start,
+              end,
+              word.lemma,
+              word.language,
+              source === 1 ||
+                (!!analyzed && folded(analyzed, word.language) === lemma),
+            );
+            return rank === undefined ? [] : [{ start, end, rank }];
+          })
+          .sort((a, b) => a.rank - b.rank || a.start - b.start)[0];
+        if (!target) return [];
         const understood = record.tokens.filter(
           (token) =>
             token.ids.includes(word.id) ||
@@ -129,7 +153,7 @@ export async function sentenceExamples(
                 token.end > part.index,
             ),
         ).length;
-        return [{ record, targets, unknown, length }];
+        return [{ record, target, unknown, length }];
       })
       .sort(
         (a, b) =>
@@ -139,12 +163,21 @@ export async function sentenceExamples(
           b.record.mined - a.record.mined,
       ),
   );
+  const seen = new Set<string>();
   return pools
     .flat()
-    .sort((a, b) => Math.max(0, a.length - 12) - Math.max(0, b.length - 12))
+    .sort(
+      (a, b) =>
+        a.target.rank - b.target.rank ||
+        Math.max(0, a.length - 12) - Math.max(0, b.length - 12),
+    )
+    .filter(({ record }) => {
+      if (seen.has(record.sentence)) return false;
+      seen.add(record.sentence);
+      return true;
+    })
     .slice(0, 20)
-    .map(({ record, targets }) => {
-      const target = targets[0]!;
+    .map(({ record, target }) => {
       return {
         sentence: record.sentence,
         surface: record.sentence.slice(target.start, target.end),

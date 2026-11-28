@@ -1,4 +1,5 @@
 import type { Corpus, Example, ExamplesResult } from "@/examples/model";
+import { exampleFormRank } from "@/examples/matching";
 import { languageCode } from "@/languages/codes";
 import { analyzeWords } from "@/languages/morphology";
 import { folded } from "@/languages/text";
@@ -53,6 +54,10 @@ export async function wordExamples(
     .map((word) => folded(word.segment, language));
   const reflexive =
     language === "cs" && query.length === 2 && /^(se|si)$/u.test(query[1]!);
+  const capitalized =
+    language === "de" && query.length === 1 && /^\p{Lu}/u.test(lemma);
+  const foldForm = (word: string, form = word) =>
+    capitalized && !/^\p{Lu}/u.test(word) ? "" : folded(form, language);
   const findMatch = (words: string[], tokens: string[]) => {
     if (!tokens.length) return;
     if (!reflexive) {
@@ -82,7 +87,7 @@ export async function wordExamples(
     if (words.length < minimumWords) continue;
     if (
       findMatch(
-        words.map((word) => folded(word.segment, language)),
+        words.map((word) => foldForm(word.segment)),
         surfaceQuery,
       )
     )
@@ -109,7 +114,7 @@ export async function wordExamples(
       (word) => word.isWordLike,
     );
     if (words.length < minimumWords) continue;
-    const foldedWords = words.map((word) => folded(word.segment, language));
+    const foldedWords = words.map((word) => foldForm(word.segment));
     const surfaceMatch = findMatch(foldedWords, surfaceQuery);
     if (reflexive && !surfaceMatch && !foldedWords.includes(query[1]!))
       continue;
@@ -136,7 +141,7 @@ export async function wordExamples(
           );
           match = findMatch(
             words.map((word) =>
-              folded(analyses.get(word.segment) || word.segment, language),
+              foldForm(word.segment, analyses.get(word.segment)),
             ),
             query,
           );
@@ -147,6 +152,10 @@ export async function wordExamples(
     const start = words[match[0]!]!.index;
     const last = words[match[match.length - 1]!]!;
     const end = last.index + last.segment.length;
+    if (
+      exampleFormRank(sentence, start, end, lemma, language, true) === undefined
+    )
+      continue;
     result.push({
       id,
       author,

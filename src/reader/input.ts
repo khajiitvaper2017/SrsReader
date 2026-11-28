@@ -1,4 +1,5 @@
 import { matchesModifiers, readerKeysSchema } from "@/reader/controls";
+import { selectForLookup } from "@/reader/blocks";
 import type { ReaderPopup } from "@/reader/popup";
 import type { ReaderScanner } from "@/reader/scanner";
 import type {
@@ -235,7 +236,12 @@ export function installReaderInput(
         popup.close();
         return;
       }
-      if (!isActive() || (event.target as Element)?.closest(excluded)) return;
+      if (
+        !isActive() ||
+        ((event.target as Element)?.closest(excluded) &&
+          !selectForLookup(event.target, excluded))
+      )
+        return;
       heldKeys.add(event.code);
       relayKeys(event, true);
       if (
@@ -314,7 +320,8 @@ export function installReaderInput(
       if (
         !isActive() ||
         !root.contains(event.target as Node) ||
-        (event.target as Element)?.closest(excluded)
+        ((event.target as Element)?.closest(excluded) &&
+          !selectForLookup(event.target, excluded))
       ) {
         cancelTouch();
         return;
@@ -409,6 +416,10 @@ export function installReaderInput(
         touchEvent.touches.length ||
         Date.now() - touchStart > 500
       ) {
+        cancelTouch();
+        return;
+      }
+      if (selectForLookup(pointer.target, excluded)) {
         cancelTouch();
         return;
       }
@@ -512,7 +523,13 @@ export function installReaderInput(
         target: event.target,
       };
       if (
-        !(event.target as Element)?.closest(excluded) &&
+        (!(event.target as Element)?.closest(excluded) ||
+          (selectForLookup(event.target, excluded) &&
+            (event.button !== 0 ||
+              event.altKey ||
+              event.ctrlKey ||
+              event.metaKey ||
+              event.shiftKey))) &&
         getSettings().lookupBindings.some(
           (binding) =>
             binding.type === "mouse" &&
@@ -545,7 +562,8 @@ export function installReaderInput(
           touchClick &&
           event.target instanceof Element &&
           root.contains(event.target) &&
-          !event.target.closest(excluded) &&
+          (!event.target.closest(excluded) ||
+            selectForLookup(event.target, excluded)) &&
           !event.target.closest("[data-srs-reader]") &&
           Date.now() < touchClick.until &&
           Math.hypot(

@@ -17,7 +17,12 @@ import {
   hasGermanSuspensionHyphen,
   spacedGermanAbbreviation,
 } from "@/languages/text";
-import { blockSelector, createBlockReader, makeRange } from "@/reader/blocks";
+import {
+  blockSelector,
+  createBlockReader,
+  makeRange,
+  selectForLookup,
+} from "@/reader/blocks";
 import { readerClient } from "@/reader/client";
 import type { ReaderHighlights } from "@/reader/highlights";
 import { createScanScheduler } from "@/reader/scan-scheduler";
@@ -54,6 +59,7 @@ type LookupTarget = {
   range: Range;
   context: ReadingContext;
   pointerIndex?: number;
+  controlLabel?: true;
   requirePhrase?: boolean;
   refineContext?: boolean;
   compound?: LookupPage["compound"];
@@ -850,7 +856,44 @@ export function createScanner(
   ): LookupTarget | undefined {
     if (!isActive() || !pointer || !(pointer.target instanceof Element)) return;
     const target = pointer.target;
-    if (!root.contains(target) || target.closest(excluded)) return;
+    if (!root.contains(target)) return;
+    const select = selectForLookup(target, excluded);
+    if (select) {
+      const pointedOption = target.closest("option");
+      const option =
+        pointedOption ??
+        (select.multiple || select.size > 1
+          ? undefined
+          : select.selectedOptions[0]);
+      const term = option?.label.trim();
+      if (term && /\p{L}/u.test(term)) {
+        const range = new Range();
+        range.selectNode(pointedOption ?? select);
+        return {
+          term,
+          range,
+          controlLabel: true,
+          context: {
+            language:
+              readingLanguage(
+                languageTag(option ?? select) ||
+                  options.language ||
+                  knownLanguage(term) ||
+                  getSettings().studyLanguages[0],
+              ) ?? undefined,
+            sentence: term,
+            surface: term,
+            start: 0,
+            end: term.length,
+            url: options.source?.url || location.href,
+            title: options.source?.title || document.title,
+            mined: Date.now(),
+          },
+        };
+      }
+      return;
+    }
+    if (target.closest(excluded)) return;
     const caret = document.caretPositionFromPoint(
       pointer.clientX,
       pointer.clientY,
@@ -1124,6 +1167,7 @@ export function createScanner(
   ): Promise<LookupTarget | undefined> {
     const { context, range } = word;
     const fallback = word.requirePhrase ? undefined : word;
+    if (word.controlLabel && context.language) return fallback;
     const languages = getSettings().studyLanguages;
     if (
       !options.language &&

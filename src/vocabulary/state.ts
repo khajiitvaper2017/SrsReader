@@ -39,10 +39,17 @@ export function stateOf(
 ): WordState {
   if (!word) return "unknown";
   if (word.known) return "known";
-  const cards =
+  const linked = word.linkedCards ?? [];
+  const matches =
     encounterKey === undefined
-      ? word.linkedCards || []
-      : cardsForEncounter(word.linkedCards || [], encounterKey);
+      ? linked
+      : cardsForEncounter(linked, encounterKey);
+  const cards = matches.length
+    ? matches
+    : linked.filter(
+        (card) =>
+          card.encounterKey === undefined && card.importedGenders === undefined,
+      );
   if (!cards.length) return encounterKey === undefined ? "new" : "unknown";
   const active = cards.filter((card) => !card.suspended);
   if (!active.length) return "suspended";
@@ -69,7 +76,7 @@ export function stateOf(
 export type WordStateUpdate = {
   state: WordState;
   encounterStates: Record<string, WordState>;
-  importedCards?: LearningCard[];
+  nonEncounterCards?: LearningCard[];
 };
 
 export function stateForEncounter(
@@ -81,7 +88,7 @@ export function stateForEncounter(
     ? update.state
     : (update.encounterStates[encounterKey] ??
         stateOf(
-          { known: false, linkedCards: update.importedCards },
+          { known: false, linkedCards: update.nonEncounterCards },
           matureIntervalDays,
           encounterKey,
         ));

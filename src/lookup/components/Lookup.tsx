@@ -216,7 +216,7 @@ function LookupEntry({
           style={{ zIndex: 2 }}
           data-srs-reader
         >
-          <Group align="flex-start" gap="xs" wrap="nowrap">
+          <Group align="center" gap="xs" wrap="nowrap">
             {onBack && (
               <ActionIcon
                 onClick={onBack}
@@ -229,218 +229,184 @@ function LookupEntry({
                 <ArrowLeft aria-hidden size={16} />
               </ActionIcon>
             )}
-            <Stack miw={0} flex={1} gap="xs">
-              <Group gap={4} wrap="nowrap" align="flex-start">
-                <HoverCard
-                  disabled={
-                    !result?.grammar &&
-                    !compoundAnalysis &&
-                    folded(surface, word.language) ===
-                      folded(heading, word.language)
-                  }
-                  openDelay={650}
-                  events={{ hover: true, focus: true, touch: true }}
-                  position="bottom-start"
-                  width={360}
-                  middlewares={{
-                    shift: {
-                      boundary: contentRef.current ?? undefined,
-                      padding: 12,
-                    },
-                    size: {
-                      boundary: contentRef.current ?? undefined,
-                      padding: 12,
-                    },
-                  }}
-                  interactive
-                  role="tooltip"
+            <Group gap={4} wrap="nowrap" align="center" miw={0} flex={1}>
+              <HoverCard
+                disabled={
+                  !result?.grammar &&
+                  !compoundAnalysis &&
+                  folded(surface, word.language) ===
+                    folded(heading, word.language)
+                }
+                openDelay={650}
+                events={{ hover: true, focus: true, touch: true }}
+                position="bottom-start"
+                width={360}
+                middlewares={{
+                  shift: {
+                    boundary: contentRef.current ?? undefined,
+                    padding: 12,
+                  },
+                  size: {
+                    boundary: contentRef.current ?? undefined,
+                    padding: 12,
+                  },
+                }}
+                interactive
+                role="tooltip"
+              >
+                <HoverCard.Target>
+                  <Title
+                    lang={word.language}
+                    order={1}
+                    size="h2"
+                    tabIndex={0}
+                    style={{ minWidth: 0, overflowWrap: "anywhere" }}
+                  >
+                    {heading}
+                  </Title>
+                </HoverCard.Target>
+                <HoverCard.Dropdown
+                  data-srs-reader
+                  maw="calc(100vw - 24px)"
+                  mah="65dvh"
+                  display="flex"
                 >
-                  <HoverCard.Target>
-                    <Title
-                      lang={word.language}
-                      order={1}
-                      size="h2"
-                      tabIndex={0}
-                      style={{ minWidth: 0, overflowWrap: "anywhere" }}
+                  <ScrollArea.Autosize
+                    type="auto"
+                    scrollbars="y"
+                    offsetScrollbars="present"
+                    viewportProps={{ tabIndex: 0 }}
+                  >
+                    <Stack style={{ overflowWrap: "anywhere" }}>
+                      {surface !== heading &&
+                        (!result?.grammar || result.grammar.group) && (
+                          <Text lang={word.language} fw={500}>
+                            {surface}
+                          </Text>
+                        )}
+                      {result?.grammar ? (
+                        <Grammar grammar={result.grammar} heading={heading} />
+                      ) : (
+                        compoundAnalysis && (
+                          <Stack gap="xs">
+                            <Text variant="supporting">
+                              {t("compound_source_grammar", {
+                                word: compoundSource?.surface,
+                              })}
+                            </Text>
+                            <Grammar
+                              grammar={compoundAnalysis}
+                              heading={heading}
+                            />
+                          </Stack>
+                        )
+                      )}
+                    </Stack>
+                  </ScrollArea.Autosize>
+                </HoverCard.Dropdown>
+              </HoverCard>
+              {(compound ||
+                candidates.length > 1 ||
+                hiddenCandidateDictionaries.size > 0) && (
+                <Menu
+                  opened={candidateOpen}
+                  onChange={setCandidateOpen}
+                  position="bottom-end"
+                >
+                  <Menu.Target>
+                    <ActionIcon
+                      variant="subtle"
+                      disabled={busy}
+                      aria-label={`${t("choose_word")}: ${word.lemma}`}
+                      title={t("choose_word")}
+                      style={{ flexShrink: 0 }}
                     >
-                      {heading}
-                    </Title>
-                  </HoverCard.Target>
-                  <HoverCard.Dropdown
+                      <ChevronDown aria-hidden="true" size={16} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown
                     data-srs-reader
                     maw="calc(100vw - 24px)"
-                    mah="65dvh"
-                    display="flex"
+                    mah="50dvh"
+                    style={{
+                      overflowY: "auto",
+                      scrollbarGutter: "stable",
+                    }}
                   >
-                    <ScrollArea.Autosize
-                      type="auto"
-                      scrollbars="y"
-                      offsetScrollbars="present"
-                      viewportProps={{ tabIndex: 0 }}
-                    >
-                      <Stack style={{ overflowWrap: "anywhere" }}>
-                        {surface !== heading &&
-                          (!result?.grammar || result.grammar.group) && (
-                            <Text lang={word.language} fw={500}>
-                              {surface}
-                            </Text>
-                          )}
-                        {result?.grammar ? (
-                          <Grammar grammar={result.grammar} heading={heading} />
-                        ) : (
-                          compoundAnalysis && (
-                            <Stack gap="xs">
-                              <Text variant="supporting">
-                                {t("compound_source_grammar", {
-                                  word: compoundSource?.surface,
-                                })}
-                              </Text>
-                              <Grammar
-                                grammar={compoundAnalysis}
-                                heading={heading}
-                              />
-                            </Stack>
-                          )
-                        )}
-                      </Stack>
-                    </ScrollArea.Autosize>
-                  </HoverCard.Dropdown>
-                </HoverCard>
-                {(compound ||
-                  candidates.length > 1 ||
-                  hiddenCandidateDictionaries.size > 0) && (
-                  <Menu
-                    opened={candidateOpen}
-                    onChange={setCandidateOpen}
-                    position="bottom-end"
-                  >
-                    <Menu.Target>
-                      <ActionIcon
-                        variant="subtle"
-                        disabled={busy}
-                        aria-label={`${t("choose_word")}: ${word.lemma}`}
-                        title={t("choose_word")}
-                        style={{ flexShrink: 0 }}
+                    {candidates.map((candidate) => (
+                      <Menu.Item
+                        key={candidate.id}
+                        leftSection={
+                          candidate.id === word.id ? (
+                            <Check aria-hidden="true" size={14} />
+                          ) : undefined
+                        }
+                        aria-current={
+                          candidate.id === word.id ? "true" : undefined
+                        }
+                        onClick={() => {
+                          setSelected(candidate.id);
+                          setNotice("");
+                          setLastReview("");
+                        }}
+                        style={{
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
+                        }}
                       >
-                        <ChevronDown aria-hidden="true" size={16} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown
-                      data-srs-reader
-                      maw="calc(100vw - 24px)"
-                      mah="50dvh"
-                      style={{
-                        overflowY: "auto",
-                        scrollbarGutter: "stable",
-                      }}
-                    >
-                      {candidates.map((candidate) => (
-                        <Menu.Item
-                          key={candidate.id}
-                          leftSection={
-                            candidate.id === word.id ? (
-                              <Check aria-hidden="true" size={14} />
-                            ) : undefined
-                          }
-                          aria-current={
-                            candidate.id === word.id ? "true" : undefined
-                          }
-                          onClick={() => {
-                            setSelected(candidate.id);
-                            setNotice("");
-                            setLastReview("");
-                          }}
-                          style={{
-                            whiteSpace: "normal",
-                            overflowWrap: "anywhere",
-                          }}
-                        >
-                          {[candidate.lemma, candidate.reading]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </Menu.Item>
-                      ))}
-                      {compound && (
-                        <Menu.Item
-                          onClick={() =>
-                            openLookup({
-                              ...compound,
-                              occurrence:
-                                compound.term === compound.context.surface
-                                  ? compound.occurrence
-                                  : undefined,
-                              compoundSource,
-                              showCompoundParts: true,
-                            })
-                          }
-                          style={{
-                            whiteSpace: "normal",
-                            overflowWrap: "anywhere",
-                          }}
-                        >
-                          {t("choose_whole_compound", {
-                            word: compound.term,
-                          })}
-                        </Menu.Item>
-                      )}
-                      {[...hiddenCandidateDictionaries].map(([id, title]) => (
-                        <Menu.Item
-                          key={`more:${id}`}
-                          closeMenuOnClick={false}
-                          leftSection={
-                            expandedDictionaries.includes(id) ? (
-                              <ChevronUp size={14} aria-hidden="true" />
-                            ) : (
-                              <ChevronDown size={14} aria-hidden="true" />
-                            )
-                          }
-                          onClick={() => toggleDictionary(id)}
-                        >
-                          {t(
-                            expandedDictionaries.includes(id)
-                              ? "show_less"
-                              : "show_more",
-                          )}
-                          : {title}
-                        </Menu.Item>
-                      ))}
-                    </Menu.Dropdown>
-                  </Menu>
-                )}
-              </Group>
-              <Group gap="xs">
-                {ipa.map((pronunciation) => (
-                  <Text
-                    key={pronunciation}
-                    variant="supporting"
-                    component="span"
-                    maw="100%"
-                    style={{ overflowWrap: "anywhere" }}
-                  >
-                    {pronunciation}
-                  </Text>
-                ))}
-                {word.reading && !ipa.includes(word.reading) && (
-                  <Text variant="supporting" component="span" inherit>
-                    {word.reading}
-                  </Text>
-                )}
-                <FrequencyBadge word={word} />
-                {saved && (
-                  <Badge w="fit-content">
-                    {t(
-                      wordStateLabels[
-                        stateOf(
-                          saved,
-                          settings.matureIntervalDays,
-                          saved.encounterKey,
-                        )
-                      ],
+                        {[candidate.lemma, candidate.reading]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </Menu.Item>
+                    ))}
+                    {compound && (
+                      <Menu.Item
+                        onClick={() =>
+                          openLookup({
+                            ...compound,
+                            occurrence:
+                              compound.term === compound.context.surface
+                                ? compound.occurrence
+                                : undefined,
+                            compoundSource,
+                            showCompoundParts: true,
+                          })
+                        }
+                        style={{
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
+                        {t("choose_whole_compound", {
+                          word: compound.term,
+                        })}
+                      </Menu.Item>
                     )}
-                  </Badge>
-                )}
-              </Group>
-            </Stack>
+                    {[...hiddenCandidateDictionaries].map(([id, title]) => (
+                      <Menu.Item
+                        key={`more:${id}`}
+                        closeMenuOnClick={false}
+                        leftSection={
+                          expandedDictionaries.includes(id) ? (
+                            <ChevronUp size={14} aria-hidden="true" />
+                          ) : (
+                            <ChevronDown size={14} aria-hidden="true" />
+                          )
+                        }
+                        onClick={() => toggleDictionary(id)}
+                      >
+                        {t(
+                          expandedDictionaries.includes(id)
+                            ? "show_less"
+                            : "show_more",
+                        )}
+                        : {title}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Dropdown>
+                </Menu>
+              )}
+            </Group>
             <Group
               gap={4}
               align="center"
@@ -468,6 +434,38 @@ function LookupEntry({
                 onError={setError}
               />
             </Group>
+          </Group>
+          <Group gap="xs">
+            {ipa.map((pronunciation) => (
+              <Text
+                key={pronunciation}
+                variant="supporting"
+                component="span"
+                maw="100%"
+                style={{ overflowWrap: "anywhere" }}
+              >
+                {pronunciation}
+              </Text>
+            ))}
+            {word.reading && !ipa.includes(word.reading) && (
+              <Text variant="supporting" component="span" inherit>
+                {word.reading}
+              </Text>
+            )}
+            <FrequencyBadge word={word} />
+            {saved && (
+              <Badge w="fit-content">
+                {t(
+                  wordStateLabels[
+                    stateOf(
+                      saved,
+                      settings.matureIntervalDays,
+                      saved.encounterKey,
+                    )
+                  ],
+                )}
+              </Badge>
+            )}
           </Group>
 
           {saved && !context && (

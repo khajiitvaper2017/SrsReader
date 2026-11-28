@@ -2,8 +2,7 @@ import type { Deck } from "@/srs/deck-model";
 import type { WordWithCards } from "@/vocabulary/model";
 import { t } from "@/shared/i18n/i18n";
 import { deckBranch, deckTree } from "@/srs/deck-tree";
-
-export const isFrequencyWord = (term: string) => /\p{L}/u.test(term);
+import { isFrequencyWord } from "@/srs/frequency-headword";
 
 import type { QueueEntry } from "@/srs/queue-entries";
 type GroupWord = WordWithCards | QueueEntry;
